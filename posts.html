@@ -1077,16 +1077,16 @@
                 /* CREATE AUTH USER */
 
                 const {
-                    data,
-                    error
-                } =
-                await supabaseClient.auth.signUp({
+    data,
+    error
+} = await supabaseClient.auth.signUp({
+    email: email,
+    password: password,
 
-                    email: email,
-
-                    password: password
-
-                });
+    options: {
+        emailRedirectTo: "https://wfesc.github.io/wfesc/"
+    }
+});
 
 
                 if (error) {
