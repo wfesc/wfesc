@@ -4,13 +4,17 @@
     function addPostsLink() {
         if (document.getElementById("wfesc-posts-link")) return;
 
-        const links = document.querySelectorAll(".nav-links a");
+        const allLinks = document.querySelectorAll("a");
         let target = null;
 
-        links.forEach(link => {
+        allLinks.forEach(link => {
             const text = link.textContent.trim();
 
-            if (text === "تعرف علينا" || text === "من نحن") {
+            if (
+                text === "تعرف علينا" ||
+                text === "من نحن" ||
+                text === "تعرف علينا بنا" 
+            ) {
                 target = link;
             }
         });
@@ -23,7 +27,12 @@
         postsLink.href = "./posts.html";
         postsLink.textContent = "المنشورات";
 
-        target.insertAdjacentElement("afterend", postsLink);
+        postsLink.style.cursor = "pointer";
+
+        target.parentNode.insertBefore(
+            postsLink,
+            target.nextSibling
+        );
     }
 
     if (document.readyState === "loading") {
