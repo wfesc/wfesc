@@ -2178,3 +2178,337 @@ function solvePuzzleTwo(){
 
 
 
+/* =====================================================
+   PUZZLE 3
+===================================================== */
+
+let arrowTimer = null;
+let arrowTime = 15;
+
+const arrowAnswer = [
+    "up",
+    "down",
+    "right",
+    "left",
+    "left"
+];
+
+let arrowPosition = 0;
+
+
+function startPuzzleThree(){
+
+    stopAllTimers();
+
+    arrowTime = 15;
+    arrowPosition = 0;
+
+    document.getElementById("timer")
+        .textContent = arrowTime;
+
+    document.getElementById("arrowProgress")
+        .textContent = "0 / 5";
+
+    document.getElementById("p3Failed")
+        .classList.remove("active");
+
+    const p3 =
+        document.getElementById("puzzle3");
+
+    p3.classList.remove("danger");
+
+    setTimeout(function(){
+
+        p3.classList.add("danger");
+
+    },50);
+
+    arrowTimer = setInterval(function(){
+
+        arrowTime--;
+
+        document.getElementById("timer")
+            .textContent = arrowTime;
+
+        if(arrowTime <= 0){
+
+            clearInterval(arrowTimer);
+            arrowTimer = null;
+
+            failPuzzleThree();
+        }
+
+    },1000);
+}
+
+
+function pressArrow(direction){
+
+    if(!arrowTimer){
+        return;
+    }
+
+    if(
+        direction ===
+        arrowAnswer[arrowPosition]
+    ){
+
+        arrowPosition++;
+
+        document.getElementById("arrowProgress")
+            .textContent =
+            arrowPosition + " / 5";
+
+        if(arrowPosition === 5){
+
+            clearInterval(arrowTimer);
+            arrowTimer = null;
+
+            setTimeout(function(){
+
+                show("puzzle4");
+
+                startPuzzleFour();
+
+            },500);
+        }
+
+    }else{
+
+        failPuzzleThree();
+
+    }
+
+}
+
+
+function failPuzzleThree(){
+
+    if(arrowTimer){
+        clearInterval(arrowTimer);
+        arrowTimer = null;
+    }
+
+    document.getElementById("p3Failed")
+        .classList.add("active");
+}
+
+
+
+/* =====================================================
+   PUZZLE 4
+===================================================== */
+
+function startPuzzleFour(){
+
+    const text =
+        document.getElementById("typingText");
+
+    const buttons =
+        document.getElementById("p4Buttons");
+
+    buttons.style.display = "none";
+
+    text.innerHTML = "";
+
+    const messages = [
+
+        "تظن نفسك قويًا بما فيه الكفاية وتغلبت على كل عقبات النظام وأصلحته؟",
+
+        "هاهاها... حسنًا، سوف أجعلك تنهي كل شيء بنفسك وتتمنى أنك لم تكن هنا."
+
+    ];
+
+    let messageIndex = 0;
+    let charIndex = 0;
+
+    function typeMessage(){
+
+        if(messageIndex >= messages.length){
+
+            text.innerHTML +=
+                '<span class="typing-cursor"></span>';
+
+            buttons.style.display =
+                "flex";
+
+            return;
+        }
+
+        const message =
+            messages[messageIndex];
+
+        if(charIndex < message.length){
+
+            const cursor =
+                text.querySelector(".typing-cursor");
+
+            if(cursor){
+                cursor.remove();
+            }
+
+            text.innerHTML +=
+                message.charAt(charIndex);
+
+            text.innerHTML +=
+                '<span class="typing-cursor"></span>';
+
+            charIndex++;
+
+            setTimeout(
+                typeMessage,
+                45
+            );
+
+        }else{
+
+            const cursor =
+                text.querySelector(".typing-cursor");
+
+            if(cursor){
+                cursor.remove();
+            }
+
+            text.innerHTML += "<br><br>";
+
+            messageIndex++;
+            charIndex = 0;
+
+            setTimeout(
+                typeMessage,
+                700
+            );
+        }
+    }
+
+    typeMessage();
+}
+
+
+
+/* =====================================================
+   PUZZLE 5
+===================================================== */
+
+function checkFinalCode(){
+
+    const input =
+        document.getElementById("finalInput")
+        .value
+        .trim()
+        .toUpperCase();
+
+    const result =
+        document.getElementById("codeResult");
+
+    if(input === "WFESC"){
+
+        result.style.color =
+            "#25b925";
+
+        result.textContent =
+            "ANALYSIS ACCEPTED // ACCESS GRANTED";
+
+        setTimeout(function(){
+
+            showFinal();
+
+        },900);
+
+    }else{
+
+        result.style.color =
+            "#c00000";
+
+        result.textContent =
+            "ANALYSIS FAILED // TRY AGAIN";
+
+    }
+}
+
+
+
+/* =====================================================
+   FINAL RANDOM CODE
+===================================================== */
+
+const finalCodes = [
+
+    "TR3UO",
+    "SDGJP",
+    "VKSKW",
+    "VK38F",
+    "ALPQ2",
+    "HNMAW",
+    "GKSO2",
+    "COWI7",
+    "XBWK4",
+    "DFGYU"
+
+];
+
+
+function showFinal(){
+
+    const code =
+        finalCodes[
+            Math.floor(
+                Math.random() *
+                finalCodes.length
+            )
+        ];
+
+    document.getElementById("randomCode")
+        .textContent = code;
+
+    show("final");
+}
+
+
+
+/* =====================================================
+   KEYBOARD / ENTER SUPPORT
+===================================================== */
+
+document.addEventListener("keydown",function(event){
+
+    if(
+        document.getElementById("puzzle-screen")
+        .classList.contains("active")
+    ){
+
+        if(event.key === "Enter"){
+
+            const current =
+                document.querySelector(
+                    "#puzzle-screen .p-screen.active"
+                );
+
+            if(!current){
+                return;
+            }
+
+            if(current.id === "puzzle1"){
+                checkPuzzleOne();
+            }
+
+            if(current.id === "puzzle5"){
+                checkFinalCode();
+            }
+        }
+
+    }
+
+});
+
+
+/* =====================================================
+   INITIAL
+===================================================== */
+
+show("boot");
+
+</script>
+
+</body>
+</html>
