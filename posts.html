@@ -1032,19 +1032,45 @@
         /* =========================
            تسجيل الدخول
         ========================= */
+loginForm.addEventListener(
+    "submit",
+    async function (event) {
 
-        loginForm.addEventListener(
-            "submit",
-            function (event) {
+        event.preventDefault();
 
-                event.preventDefault();
+        const email = loginUsername.value.trim();
+        const password = loginPassword.value;
 
-                loginMessage.textContent =
-                    "نظام تسجيل الدخول غير مربوط بالخادم حالياً.";
+        loginMessage.textContent = "جاري تسجيل الدخول...";
 
-            }
-        );
+        if (!window.supabaseClient) {
+            loginMessage.textContent =
+                "الاتصال بالخادم غير جاهز، حاول مرة أخرى.";
+            return;
+        }
 
+        const { data, error } =
+            await window.supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+        if (error) {
+            loginMessage.textContent =
+                "فشل تسجيل الدخول: " + error.message;
+            return;
+        }
+
+        loginMessage.textContent =
+            "تم تسجيل الدخول بنجاح.";
+
+        setTimeout(() => {
+            loginOverlay.classList.remove("show");
+        }, 800);
+
+        console.log("WFESC: Logged in", data.user);
+    }
+);
 
         /* =========================
            أزرار المنشورات
