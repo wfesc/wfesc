@@ -2,11 +2,26 @@
     "use strict";
 
     function addPostsButton() {
-        if (document.getElementById("wfesc-posts-button")) return;
 
-        const aboutButton = document.querySelector('.main-btn[href="#about"]');
+        if (document.getElementById("wfesc-posts-button")) {
+            return;
+        }
 
-        if (!aboutButton) return;
+        const buttons = document.querySelectorAll("a");
+
+        let aboutButton = null;
+
+        buttons.forEach(function (button) {
+
+            if (button.textContent.trim() === "تعرف علينا") {
+                aboutButton = button;
+            }
+
+        });
+
+        if (!aboutButton) {
+            return;
+        }
 
         const postsButton = document.createElement("a");
 
@@ -14,8 +29,8 @@
         postsButton.href = "./posts.html";
         postsButton.textContent = "عرض المنشورات";
 
-        postsButton.style.marginTop = "12px";
         postsButton.style.display = "inline-block";
+        postsButton.style.marginTop = "12px";
         postsButton.style.padding = "13px 27px";
         postsButton.style.border = "1px solid #303030";
         postsButton.style.borderRadius = "12px";
@@ -34,12 +49,23 @@
             postsButton.style.borderColor = "#303030";
         });
 
-        aboutButton.insertAdjacentElement("afterend", postsButton);
+        aboutButton.insertAdjacentElement(
+            "afterend",
+            postsButton
+        );
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", addPostsButton);
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            addPostsButton
+        );
+
     } else {
+
         addPostsButton();
+
     }
+
 })();
