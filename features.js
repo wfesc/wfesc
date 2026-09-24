@@ -1,5 +1,6 @@
 const features = [
-    "./features/settings.js"
+    "./features/settings.js",
+    "./features/loading.js"
 ];
 
 features.forEach(file => {
