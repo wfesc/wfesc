@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>منشورات WFESC</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: #050505;
+            color: #fff;
+            font-family: Arial, Tahoma, sans-serif;
+            min-height: 100vh;
+        }
+
+        .posts-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 65px;
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 20px;
+
+            background: rgba(5,5,5,.88);
+            border-bottom: 1px solid #202020;
+
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .posts-logo {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .back-button {
+            border: 1px solid #292929;
+            background: #101010;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 9px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            transition: .25s;
+        }
+
+        .back-button:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .posts-container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            padding-top: 65px;
+        }
+
+        .post {
+            min-height: calc(100vh - 65px);
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            padding: 20px 14px 35px;
+
+            border-bottom: 1px solid #202020;
+        }
+
+        .post-media {
+            width: 100%;
+            max-height: 72vh;
+
+            object-fit: contain;
+
+            background: #090909;
+
+            border-radius: 16px;
+
+            display: block;
+        }
+
+        .post-video {
+            width: 100%;
+            max-height: 72vh;
+
+            border-radius: 16px;
+
+            background: #000;
+
+            display: block;
+        }
+
+        .post-info {
+            padding: 18px 5px 0;
+        }
+
+        .post-title {
+            font-size: 19px;
+            margin-bottom: 9px;
+        }
+
+        .post-text {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .post-meta {
+            margin-top: 12px;
+            color: #666;
+            font-size: 11px;
+        }
+
+        .empty-posts {
+            min-height: 100vh;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+            padding: 30px;
+
+            color: #777;
+        }
+
+        @media (max-width: 600px) {
+
+            .posts-header {
+                padding: 0 13px;
+            }
+
+            .posts-logo {
+                font-size: 16px;
+            }
+
+            .post {
+                padding: 15px 10px 30px;
+            }
+
+            .post-media,
+            .post-video {
+                border-radius: 13px;
+            }
+
+            .post-title {
+                font-size: 17px;
+            }
+
+            .post-text {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="posts-header">
+
+        <div class="posts-logo">
+            WFESC
+        </div>
+
+        <a
+            class="back-button"
+            href="./index.html"
+        >
+            الرئيسية
+        </a>
+
+    </header>
+
+    <main class="posts-container">
+
+        <section class="post">
+
+            <img
+                class="post-media"
+                src="./sorg.jpg"
+                alt="WFESC"
+            >
+
+            <div class="post-info">
+
+                <h2 class="post-title">
+                    مرحباً بكم في WFESC
+                </h2>
+
+                <p class="post-text">
+                    ذاكرة العراق بصورة مختلفة.
+                </p>
+
+                <div class="post-meta">
+                    WFESC
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>
