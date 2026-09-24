@@ -1172,3 +1172,1342 @@ footer{
 <!-- PUZZLE SYSTEM -->
 <!-- ===================================================== -->
 
+<div id="puzzle-screen">
+
+
+<!-- ================= BOOT ================= -->
+
+<section id="boot" class="p-screen active">
+
+    <div class="boot-box">
+
+        <div class="boot-top">
+            WFESC // SECURE SYSTEM
+        </div>
+
+        <div class="boot-line">
+            &gt; INITIALIZING SECURITY INTERFACE...
+        </div>
+
+        <div class="boot-line">
+            &gt; CHECKING SYSTEM...
+        </div>
+
+        <div class="boot-line">
+            &gt; ESTABLISHING CONNECTION...
+        </div>
+
+        <div class="boot-line red">
+            &gt; UNKNOWN ROUTE DETECTED
+        </div>
+
+        <div class="boot-line">
+            &gt; VERIFYING ACCESS...
+        </div>
+
+        <div class="boot-glitch" id="bootGlitch">
+            X7#@_// ERROR // 0x00F // WF3SC // ACCESS
+        </div>
+
+        <div class="boot-progress">
+
+            <div
+                class="boot-progress-fill"
+                id="bootProgressFill">
+            </div>
+
+        </div>
+
+        <div
+            class="boot-percent"
+            id="bootPercent">
+            0%
+        </div>
+
+        <div
+            class="boot-continue"
+            id="bootContinue">
+
+            <p>
+                خطأ في عملية التحميل — توقفت العملية عند 92%
+            </p>
+
+            <button
+                class="p-btn red"
+                onclick="beginPuzzleOne()">
+                متابعة يدويًا
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 1 ================= -->
+
+<section id="puzzle1" class="p-screen">
+
+    <div class="p-center">
+
+        <div class="p1-terminal">
+
+            <div class="warning">
+                WARNING // MANUAL RECOVERY
+            </div>
+
+            <h2 class="p-title">
+                استعادة الاتصال
+            </h2>
+
+            <p class="p-text">
+                تعذر إكمال عملية التحميل تلقائيًا.
+                توجد ثلاث كلمات تالفة داخل النظام.
+                أكمل الأحرف الناقصة للمتابعة.
+            </p>
+
+            <div class="p1-status">
+                SYSTEM STATUS: CORRUPTED<br>
+                RECOVERY MODE: ACTIVE<br>
+                CONNECTION: UNSTABLE
+            </div>
+
+            <div class="missing-words">
+
+                <input
+                    id="word1"
+                    maxlength="5"
+                    placeholder="CYB_R">
+
+                <input
+                    id="word2"
+                    maxlength="6"
+                    placeholder="SEC_RE">
+
+                <input
+                    id="word3"
+                    maxlength="6"
+                    placeholder="ACC_SS">
+
+            </div>
+
+            <div
+                class="p1-error"
+                id="p1Error">
+            </div>
+
+            <button
+                class="p-btn"
+                onclick="checkPuzzleOne()">
+                إصلاح النظام
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 2 ================= -->
+
+<section id="puzzle2" class="p-screen">
+
+    <div class="p-center">
+
+        <div
+            class="error-interface"
+            id="errorInterface">
+
+            <div class="warning">
+                SYSTEM ERROR // UNSTABLE INTERFACE
+            </div>
+
+            <h2 class="p-title">
+                تحذير
+            </h2>
+
+            <p class="p-text">
+
+                وصلت إلى واجهة تحتوي على أخطاء غير معروفة.
+                المتابعة قد تؤدي إلى تغيير محتوى الصفحة
+                أو فقدان الاتصال بالنظام.
+
+                <br><br>
+
+                لا تتابع إلا إذا كنت متأكدًا.
+
+            </p>
+
+            <div class="error-code">
+                ERR_04 // ROUTE_FAIL<br>
+                0xA7 // UNKNOWN_INTERFACE<br>
+                DATA_CORRUPTED // 19:04:XX<br>
+                WFESC_NODE // UNSTABLE
+            </div>
+
+            <div id="p2Buttons">
+
+                <button
+                    class="p-btn yellow"
+                    onclick="closePuzzle()">
+                    العودة
+                </button>
+
+                <button
+                    class="p-btn red"
+                    onclick="showConfirm()">
+                    متابعة
+                </button>
+
+            </div>
+
+            <div
+                class="confirm-box"
+                id="confirmBox">
+
+                <p>
+                    هل أنت متأكد أنك تريد المتابعة؟
+                    <br>
+                    هذه الصفحة تحتوي على أخطاء وقد تتعرض للتخريب.
+                </p>
+
+                <button
+                    class="p-btn red"
+                    onclick="continuePuzzleTwo()">
+                    نعم، أتابع
+                </button>
+
+                <button
+                    class="p-btn"
+                    onclick="hideConfirm()">
+                    إلغاء
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 2 ERROR ================= -->
+
+<section id="puzzle2error" class="p-screen">
+
+    <div class="p-center">
+
+        <div
+            class="error-interface glitching"
+            id="p2Glitch">
+
+            <div class="warning">
+                BOOT SEQUENCE
+            </div>
+
+            <h2
+                class="p-title"
+                id="bootArabic">
+                جاري التهيئة
+            </h2>
+
+            <p
+                class="p-text"
+                id="loadingEnglish">
+                LOADING — LAUNCH SEQUENCE WILL BEGIN...
+            </p>
+
+            <div class="error-code">
+
+                &gt; STARTING ENGINE
+                <span id="dots">.</span>
+
+                <br>
+
+                &gt; CHECKING ACCESS
+
+                <br>
+
+                &gt; VERIFYING ROUTE
+
+            </div>
+
+            <div
+                id="p2Failure"
+                style="display:none;">
+
+                <div class="warning">
+                    SYSTEM FAILURE
+                </div>
+
+                <h2
+                    class="p-title"
+                    style="color:#ff2222;">
+
+                    خطأ — اكتشاف وصول غير مشبوه — تعذر المتابعة
+
+                </h2>
+
+                <p class="p-text">
+
+                    لا يمكن للنظام إكمال عملية الإقلاع.
+
+                    <br><br>
+
+                    حاول الرجوع إلى الواجهة السابقة.
+
+                </p>
+
+                <button
+                    class="p-btn red"
+                    onclick="solvePuzzleTwo()">
+
+                    <span style="color:#ff2222;">
+                        اكتشاف وصول غير مشبوه
+                    </span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 3 TRANSITION ================= -->
+
+<section id="puzzle3transition" class="p-screen">
+
+    <div class="p-center">
+
+        <div class="warning">
+            SYSTEM TRANSFER
+        </div>
+
+        <h2
+            class="p-title"
+            id="launchText">
+            يرجى الانتظار...
+        </h2>
+
+        <p class="p-text">
+            سيتم تحويلك إلى واجهة جديدة.
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 3 ================= -->
+
+<section id="puzzle3" class="p-screen">
+
+    <div class="red-threat"></div>
+
+    <div class="p3-content">
+
+        <div>
+
+            <div class="warning">
+                CRITICAL WARNING
+            </div>
+
+            <h2 class="p-title">
+                أسرع بالمتابعة قبل تلف الصفحة
+            </h2>
+
+            <p class="p-text">
+                يجب حل الأنماط بالترتيب الصحيح قبل انتهاء المدة.
+            </p>
+
+            <div
+                class="timer"
+                id="timer">
+                15
+            </div>
+
+            <div class="arrow-sequence">
+
+                <button
+                    class="arrow-btn"
+                    onclick="pressArrow('up')">
+                    ↑
+                </button>
+
+                <button
+                    class="arrow-btn"
+                    onclick="pressArrow('down')">
+                    ↓
+                </button>
+
+                <button
+                    class="arrow-btn"
+                    onclick="pressArrow('right')">
+                    →
+                </button>
+
+                <button
+                    class="arrow-btn"
+                    onclick="pressArrow('left')">
+                    ←
+                </button>
+
+            </div>
+
+            <div
+                class="arrow-progress"
+                id="arrowProgress">
+                0 / 5
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        class="p3-failed"
+        id="p3Failed">
+
+        <div class="p3-failed-inner">
+
+            <div
+                class="warning"
+                style="color:#fff;">
+                CRITICAL FAILURE
+            </div>
+
+            <h2
+                class="p-title"
+                style="color:#fff;">
+                تلف الواجهة
+            </h2>
+
+            <p
+                style="color:#eee;line-height:2;">
+                تعذر إكمال النظام.
+            </p>
+
+            <button
+                class="p-btn"
+                onclick="closePuzzle()"
+                style="margin-top:25px;">
+                العودة
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 4 ================= -->
+
+<section id="puzzle4" class="p-screen">
+
+    <div class="p-center">
+
+        <div class="typing-box">
+
+            <div
+                class="typing-text"
+                id="typingText">
+            </div>
+
+            <div
+                class="p4-buttons"
+                id="p4Buttons">
+
+                <button
+                    class="p-btn red"
+                    onclick="show('puzzle5')">
+                    متابعة
+                </button>
+
+                <button
+                    class="p-btn yellow"
+                    onclick="closePuzzle()">
+                    العودة
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= PUZZLE 5 ================= -->
+
+<section id="puzzle5" class="p-screen">
+
+    <div class="p-center">
+
+        <div class="code-analysis">
+
+            <div class="warning">
+                FINAL ANALYSIS
+            </div>
+
+            <h2 class="p-title">
+                حلل الكود
+            </h2>
+
+            <p class="p-text">
+                أمامك الكود التالي:
+            </p>
+
+            <div class="code-string">
+                R T D G F D W E S H C X
+            </div>
+
+            <p class="p-text">
+                استخرج النتيجة الصحيحة واكتبها في الحقل.
+            </p>
+
+            <input
+                id="finalInput"
+                class="code-input"
+                maxlength="5"
+                autocomplete="off"
+                placeholder="اكتب النتيجة">
+
+            <div
+                class="code-result"
+                id="codeResult">
+            </div>
+
+            <button
+                class="p-btn red"
+                onclick="checkFinalCode()">
+                متابعة
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ================= FINAL ================= -->
+
+<section id="final" class="p-screen">
+
+    <div class="p-center">
+
+        <div class="final-box">
+
+            <div class="warning">
+                ACCESS GRANTED
+            </div>
+
+            <h1>
+                واو! لقد تخطيت كل الصعوبات والتحديات
+            </h1>
+
+            <p>
+                لقد تخطيت كل الصعوبات والتحديات التي صنعناها
+                واستغرقت منا ساعات للاكتمال، بوقت قياسي.
+            </p>
+
+            <p>
+                وبما أنك أكملت حل هذه الصفحة واستطعت الوصول إلى هنا،
+                نشكرك على كل الجهد الذي استغرقته.
+            </p>
+
+            <p>
+                نريد منك التقاط صورة للشاشة وإرسالها لنا،
+                وإرسال الكود الذي يظهر داخل الإطار الأزرق.
+            </p>
+
+            <div
+                class="final-code"
+                id="randomCode">
+                -----
+            </div>
+
+            <p>
+                اختر الكود الظاهر أعلاه وأرسله لنا مع صورة الشاشة.
+            </p>
+
+            <br>
+
+            <button
+                class="p-btn"
+                onclick="closePuzzle()">
+                العودة إلى الصفحة الرئيسية
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+
+
+
+<script>
+
+/* =====================================================
+   OPEN SYSTEM — FIVE CLICKS
+===================================================== */
+
+let secretClicks = 0;
+let clickReset = null;
+
+const trigger =
+    document.getElementById("secretTrigger");
+
+trigger.addEventListener("click", function(){
+
+    secretClicks++;
+
+    if(secretClicks === 1){
+        return;
+    }
+
+    if(secretClicks === 2){
+        return;
+    }
+
+    if(secretClicks === 3){
+        effect(3);
+    }
+
+    if(secretClicks === 4){
+        effect(4);
+    }
+
+    if(secretClicks === 5){
+
+        effect(5);
+
+        secretClicks = 0;
+
+        setTimeout(function(){
+            openPuzzle();
+        },700);
+    }
+
+    clearTimeout(clickReset);
+
+    clickReset = setTimeout(function(){
+        secretClicks = 0;
+    },3500);
+
+});
+
+
+function effect(number){
+
+    document.body.classList.remove(
+        "shake3",
+        "shake4",
+        "shake5",
+        "flash3",
+        "flash4",
+        "flash5"
+    );
+
+    void document.body.offsetWidth;
+
+    document.body.classList.add(
+        "shake" + number,
+        "flash" + number
+    );
+
+    if(navigator.vibrate){
+
+        if(number === 3){
+            navigator.vibrate([30,30,30]);
+        }
+
+        if(number === 4){
+            navigator.vibrate([45,30,45,30]);
+        }
+
+        if(number === 5){
+            navigator.vibrate([60,25,60,25,60]);
+        }
+    }
+}
+
+
+
+/* =====================================================
+   PUZZLE CONTROL
+===================================================== */
+
+const puzzleScreen =
+    document.getElementById("puzzle-screen");
+
+function openPuzzle(){
+
+    puzzleScreen.classList.add("active");
+
+    document.body.style.overflow = "hidden";
+
+    show("boot");
+
+    startBoot();
+}
+
+
+function closePuzzle(){
+
+    puzzleScreen.classList.remove("active");
+
+    document.body.style.overflow = "";
+
+    secretClicks = 0;
+
+    stopAllTimers();
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+}
+
+
+function show(id){
+
+    document.querySelectorAll(".p-screen")
+    .forEach(function(screen){
+        screen.classList.remove("active");
+    });
+
+    const target =
+        document.getElementById(id);
+
+    if(target){
+        target.classList.add("active");
+    }
+}
+
+
+function stopAllTimers(){
+
+    if(bootTimer){
+        clearInterval(bootTimer);
+        bootTimer = null;
+    }
+
+    if(arrowTimer){
+        clearInterval(arrowTimer);
+        arrowTimer = null;
+    }
+
+    if(dotTimer){
+        clearInterval(dotTimer);
+        dotTimer = null;
+    }
+
+}
+
+
+
+/* =====================================================
+   BOOT — 92%
+===================================================== */
+
+let bootTimer = null;
+let bootProgress = 0;
+
+function startBoot(){
+
+    stopAllTimers();
+
+    bootProgress = 0;
+
+    const fill =
+        document.getElementById("bootProgressFill");
+
+    const percent =
+        document.getElementById("bootPercent");
+
+    const continueBox =
+        document.getElementById("bootContinue");
+
+    fill.style.width = "0%";
+    percent.textContent = "0%";
+    continueBox.style.display = "none";
+
+    const glitch =
+        document.getElementById("bootGlitch");
+
+    bootTimer = setInterval(function(){
+
+        if(bootProgress < 92){
+
+            bootProgress +=
+                Math.floor(Math.random() * 3) + 1;
+
+            if(bootProgress > 92){
+                bootProgress = 92;
+            }
+
+            fill.style.width =
+                bootProgress + "%";
+
+            percent.textContent =
+                bootProgress + "%";
+
+            const chars =
+                "X7#@_// ERROR 0x00F WF3SC ACCESS";
+
+            let randomText = "";
+
+            for(let i=0;i<35;i++){
+
+                randomText +=
+                    chars[
+                        Math.floor(
+                            Math.random()*chars.length
+                        )
+                    ];
+            }
+
+            glitch.textContent =
+                randomText;
+        }
+
+        if(bootProgress >= 92){
+
+            clearInterval(bootTimer);
+
+            bootTimer = null;
+
+            setTimeout(function(){
+
+                continueBox.style.display =
+                    "block";
+
+                document.querySelector(".boot-box")
+                    .classList.add("glitching");
+
+            },500);
+        }
+
+    },100);
+}
+
+
+function beginPuzzleOne(){
+
+    show("puzzle1");
+}
+
+
+
+/* =====================================================
+   PUZZLE 1
+===================================================== */
+
+function checkPuzzleOne(){
+
+    const w1 =
+        document.getElementById("word1")
+        .value.trim().toUpperCase();
+
+    const w2 =
+        document.getElementById("word2")
+        .value.trim().toUpperCase();
+
+    const w3 =
+        document.getElementById("word3")
+        .value.trim().toUpperCase();
+
+    const error =
+        document.getElementById("p1Error");
+
+    /*
+      الكلمات:
+      CYBER
+      SECURE
+      ACCESS
+    */
+
+    if(
+        w1 === "CYBER" &&
+        w2 === "SECURE" &&
+        w3 === "ACCESS"
+    ){
+
+        error.style.color =
+            "#27b327";
+
+        error.textContent =
+            "SYSTEM RECOVERED // ACCESS CONTINUES";
+
+        setTimeout(function(){
+            show("puzzle2");
+        },800);
+
+    }else{
+
+        error.style.color =
+            "#c00000";
+
+        error.textContent =
+            "ERROR // البيانات غير مكتملة أو غير صحيحة";
+
+    }
+}
+
+
+
+/* =====================================================
+   PUZZLE 2
+===================================================== */
+
+function showConfirm(){
+
+    document.getElementById("confirmBox")
+        .style.display = "block";
+}
+
+
+function hideConfirm(){
+
+    document.getElementById("confirmBox")
+        .style.display = "none";
+}
+
+
+function continuePuzzleTwo(){
+
+    document.getElementById("errorInterface")
+        .classList.add("glitching");
+
+    setTimeout(function(){
+
+        show("puzzle2error");
+
+        startPuzzleTwoError();
+
+    },500);
+}
+
+
+let dotTimer = null;
+
+function startPuzzleTwoError(){
+
+    stopAllTimers();
+
+    const dots =
+        document.getElementById("dots");
+
+    const failure =
+        document.getElementById("p2Failure");
+
+    const loading =
+        document.getElementById("loadingEnglish");
+
+    failure.style.display = "none";
+
+    let count = 0;
+
+    dotTimer = setInterval(function(){
+
+        count++;
+
+        if(count > 3){
+            count = 1;
+        }
+
+        dots.textContent =
+            ".".repeat(count);
+
+    },500);
+
+    setTimeout(function(){
+
+        clearInterval(dotTimer);
+        dotTimer = null;
+
+        loading.textContent =
+            "BOOT SEQUENCE FAILED";
+
+        document.getElementById("bootArabic")
+            .textContent =
+            "خطأ في التعريف";
+
+        failure.style.display =
+            "block";
+
+    },3500);
+}
+
+
+function solvePuzzleTwo(){
+
+    show("puzzle3transition");
+
+    setTimeout(function(){
+
+        show("puzzle3");
+
+        startPuzzleThree();
+
+    },2500);
+}
+
+
+
+/* =====================================================
+   PUZZLE 3
+===================================================== */
+
+let arrowTimer = null;
+let arrowTime = 15;
+
+const arrowAnswer = [
+    "up",
+    "down",
+    "right",
+    "left",
+    "left"
+];
+
+let arrowPosition = 0;
+
+
+function startPuzzleThree(){
+
+    stopAllTimers();
+
+    arrowTime = 15;
+    arrowPosition = 0;
+
+    document.getElementById("timer")
+        .textContent = arrowTime;
+
+    document.getElementById("arrowProgress")
+        .textContent = "0 / 5";
+
+    document.getElementById("p3Failed")
+        .classList.remove("active");
+
+    const p3 =
+        document.getElementById("puzzle3");
+
+    p3.classList.remove("danger");
+
+    setTimeout(function(){
+
+        p3.classList.add("danger");
+
+    },50);
+
+    arrowTimer = setInterval(function(){
+
+        arrowTime--;
+
+        document.getElementById("timer")
+            .textContent = arrowTime;
+
+        if(arrowTime <= 0){
+
+            clearInterval(arrowTimer);
+            arrowTimer = null;
+
+            failPuzzleThree();
+        }
+
+    },1000);
+}
+
+
+function pressArrow(direction){
+
+    if(!arrowTimer){
+        return;
+    }
+
+    if(
+        direction ===
+        arrowAnswer[arrowPosition]
+    ){
+
+        arrowPosition++;
+
+        document.getElementById("arrowProgress")
+            .textContent =
+            arrowPosition + " / 5";
+
+        if(arrowPosition === 5){
+
+            clearInterval(arrowTimer);
+            arrowTimer = null;
+
+            setTimeout(function(){
+
+                show("puzzle4");
+
+                startPuzzleFour();
+
+            },500);
+        }
+
+    }else{
+
+        failPuzzleThree();
+
+    }
+
+}
+
+
+function failPuzzleThree(){
+
+    if(arrowTimer){
+        clearInterval(arrowTimer);
+        arrowTimer = null;
+    }
+
+    document.getElementById("p3Failed")
+        .classList.add("active");
+}
+
+
+
+/* =====================================================
+   PUZZLE 4
+===================================================== */
+
+function startPuzzleFour(){
+
+    const text =
+        document.getElementById("typingText");
+
+    const buttons =
+        document.getElementById("p4Buttons");
+
+    buttons.style.display = "none";
+
+    text.innerHTML = "";
+
+    const messages = [
+
+        "تظن نفسك قويًا بما فيه الكفاية وتغلبت على كل عقبات النظام وأصلحته؟",
+
+        "هاهاها... حسنًا، سوف أجعلك تنهي كل شيء بنفسك وتتمنى أنك لم تكن هنا."
+
+    ];
+
+    let messageIndex = 0;
+    let charIndex = 0;
+
+    function typeMessage(){
+
+        if(messageIndex >= messages.length){
+
+            text.innerHTML +=
+                '<span class="typing-cursor"></span>';
+
+            buttons.style.display =
+                "flex";
+
+            return;
+        }
+
+        const message =
+            messages[messageIndex];
+
+        if(charIndex < message.length){
+
+            const cursor =
+                text.querySelector(".typing-cursor");
+
+            if(cursor){
+                cursor.remove();
+            }
+
+            text.innerHTML +=
+                message.charAt(charIndex);
+
+            text.innerHTML +=
+                '<span class="typing-cursor"></span>';
+
+            charIndex++;
+
+            setTimeout(
+                typeMessage,
+                45
+            );
+
+        }else{
+
+            const cursor =
+                text.querySelector(".typing-cursor");
+
+            if(cursor){
+                cursor.remove();
+            }
+
+            text.innerHTML += "<br><br>";
+
+            messageIndex++;
+            charIndex = 0;
+
+            setTimeout(
+                typeMessage,
+                700
+            );
+        }
+    }
+
+    typeMessage();
+}
+
+
+
+/* =====================================================
+   PUZZLE 5
+===================================================== */
+
+function checkFinalCode(){
+
+    const input =
+        document.getElementById("finalInput")
+        .value
+        .trim()
+        .toUpperCase();
+
+    const result =
+        document.getElementById("codeResult");
+
+    if(input === "WFESC"){
+
+        result.style.color =
+            "#25b925";
+
+        result.textContent =
+            "ANALYSIS ACCEPTED // ACCESS GRANTED";
+
+        setTimeout(function(){
+
+            showFinal();
+
+        },900);
+
+    }else{
+
+        result.style.color =
+            "#c00000";
+
+        result.textContent =
+            "ANALYSIS FAILED // TRY AGAIN";
+
+    }
+}
+
+
+
+/* =====================================================
+   FINAL RANDOM CODE
+===================================================== */
+
+const finalCodes = [
+
+    "TR3UO",
+    "SDGJP",
+    "VKSKW",
+    "VK38F",
+    "ALPQ2",
+    "HNMAW",
+    "GKSO2",
+    "COWI7",
+    "XBWK4",
+    "DFGYU"
+
+];
+
+
+function showFinal(){
+
+    const code =
+        finalCodes[
+            Math.floor(
+                Math.random() *
+                finalCodes.length
+            )
+        ];
+
+    document.getElementById("randomCode")
+        .textContent = code;
+
+    show("final");
+}
+
+
+
+/* =====================================================
+   KEYBOARD / ENTER SUPPORT
+===================================================== */
+
+document.addEventListener("keydown",function(event){
+
+    if(
+        document.getElementById("puzzle-screen")
+        .classList.contains("active")
+    ){
+
+        if(event.key === "Enter"){
+
+            const current =
+                document.querySelector(
+                    "#puzzle-screen .p-screen.active"
+                );
+
+            if(!current){
+                return;
+            }
+
+            if(current.id === "puzzle1"){
+                checkPuzzleOne();
+            }
+
+            if(current.id === "puzzle5"){
+                checkFinalCode();
+            }
+        }
+
+    }
+
+});
+
+
+/* =====================================================
+   INITIAL
+===================================================== */
+
+show("boot");
+
+</script>
+
+</body>
+</html>
