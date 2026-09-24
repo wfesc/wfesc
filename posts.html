@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>منشورات WFESC</title>
+    <title>WFESC Posts</title>
 
     <style>
 
@@ -21,42 +21,34 @@
 
         body {
             background: #050505;
-            color: #fff;
+            color: #eee;
             font-family: Arial, Tahoma, sans-serif;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-
         /* =========================
-           شاشة التحميل
+           LOADING
         ========================= */
 
         #posts-loader {
             position: fixed;
             inset: 0;
-            z-index: 99999;
-
+            background: #050505;
+            z-index: 999999;
             display: flex;
             align-items: center;
             justify-content: center;
-
-            background: #050505;
-
-            transition:
-                opacity .7s ease,
-                visibility .7s ease;
+            transition: opacity .6s ease;
         }
 
         #posts-loader.hide {
             opacity: 0;
-            visibility: hidden;
             pointer-events: none;
         }
 
-        .loader-content {
-            width: 90%;
-            max-width: 360px;
+        .loader-box {
+            width: 85%;
+            max-width: 380px;
             text-align: center;
         }
 
@@ -64,658 +56,461 @@
             font-size: 42px;
             font-weight: bold;
             letter-spacing: 8px;
-
-            animation:
-                logoPulse
-                1.8s
-                ease-in-out
-                infinite;
+            margin-bottom: 25px;
         }
 
-        .loader-subtitle {
-            margin-top: 12px;
-
+        .loader-text {
             color: #777;
-
-            font-size: 11px;
-            letter-spacing: 4px;
+            font-size: 13px;
+            margin-bottom: 18px;
         }
 
         .loader-line {
             width: 100%;
             height: 2px;
-
-            margin-top: 30px;
-
-            background: #171717;
-
+            background: #1b1b1b;
             overflow: hidden;
-            border-radius: 20px;
         }
 
-        .loader-line::after {
-            content: "";
-
-            display: block;
-
+        .loader-line div {
             width: 35%;
             height: 100%;
-
             background: #fff;
-
-            animation:
-                loadingLine
-                1.4s
-                ease-in-out
-                infinite;
+            animation: loaderMove 1.2s infinite ease-in-out;
         }
 
-        .loader-text {
-            margin-top: 15px;
-
-            color: #666;
-
-            font-size: 12px;
-        }
-
-        @keyframes logoPulse {
-
-            0%,
-            100% {
-                opacity: .45;
-                transform: scale(.98);
+        @keyframes loaderMove {
+            from {
+                transform: translateX(300%);
             }
 
-            50% {
-                opacity: 1;
-                transform: scale(1);
+            to {
+                transform: translateX(-300%);
             }
         }
-
-        @keyframes loadingLine {
-
-            0% {
-                transform: translateX(350%);
-            }
-
-            100% {
-                transform: translateX(-350%);
-            }
-        }
-
 
         /* =========================
-           الهيدر
+           HEADER
         ========================= */
 
         .posts-header {
             position: fixed;
-
             top: 0;
-            right: 0;
             left: 0;
+            right: 0;
+            height: 64px;
 
-            height: 65px;
+            background: rgba(5, 5, 5, .92);
+            backdrop-filter: blur(12px);
 
-            z-index: 1000;
+            border-bottom: 1px solid #181818;
 
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
 
-            padding: 0 20px;
-
-            background: rgba(5, 5, 5, .88);
-
-            border-bottom: 1px solid #202020;
-
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            z-index: 1000;
         }
 
-        .posts-logo {
-            font-size: 18px;
+        .posts-title {
+            font-size: 19px;
             font-weight: bold;
             letter-spacing: 3px;
         }
 
-
-        /* =========================
-           زر النشر
-        ========================= */
-
-        .publish-button {
-            position: absolute;
-
-            left: 20px;
-
-            border: 1px solid #292929;
-
-            background: #101010;
-
-            color: #fff;
-
-            padding: 8px 15px;
-
-            border-radius: 9px;
-
-            cursor: pointer;
-
-            font-size: 13px;
-
-            transition:
-                background .25s ease,
-                border-color .25s ease,
-                transform .25s ease;
-        }
-
-        .publish-button:hover {
-            background: #fff;
-            color: #000;
-            border-color: #fff;
-
-            transform: translateY(-1px);
-        }
-
-
-        /* =========================
-           زر الرئيسية
-        ========================= */
-
+        .publish-button,
         .back-button {
+            position: fixed;
+            top: 13px;
+
+            height: 38px;
+            padding: 0 16px;
+
             border: 1px solid #292929;
-
             background: #101010;
-
             color: #fff;
 
-            padding: 8px 14px;
-
-            border-radius: 9px;
+            border-radius: 20px;
 
             cursor: pointer;
-
             text-decoration: none;
 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
             font-size: 13px;
 
-            transition: .25s;
+            z-index: 1100;
         }
 
+        .publish-button {
+            left: 12px;
+        }
+
+        .back-button {
+            right: 12px;
+        }
+
+        .publish-button:hover,
         .back-button:hover {
-            background: #fff;
-            color: #000;
+            background: #181818;
         }
-
 
         /* =========================
-           المنشورات
+           POSTS
         ========================= */
 
         .posts-container {
-
             width: 100%;
             max-width: 600px;
 
             margin: auto;
-
-            padding-top: 65px;
+            padding: 90px 12px 40px;
         }
 
         .post {
+            background: #0c0c0c;
+            border: 1px solid #181818;
 
-            min-height: calc(100vh - 65px);
+            border-radius: 14px;
+            overflow: hidden;
 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-
-            padding: 20px 14px 35px;
-
-            border-bottom: 1px solid #202020;
-
-            opacity: 0;
-            transform: translateY(35px);
-
-            animation:
-                postAppear
-                .8s
-                ease
-                forwards;
+            margin-bottom: 22px;
         }
-
-        @keyframes postAppear {
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-
-        /* =========================
-           الصور
-        ========================= */
 
         .post-media {
-
             width: 100%;
-            max-height: 72vh;
-
-            object-fit: contain;
-
-            background: #090909;
-
-            border-radius: 16px;
-
-            display: block;
-
-            transition:
-                transform .4s ease,
-                filter .4s ease;
-        }
-
-        .post-media:hover {
-            transform: scale(1.01);
-            filter: brightness(1.08);
-        }
-
-
-        /* =========================
-           الفيديو
-        ========================= */
-
-        .post-video {
-
-            width: 100%;
-            max-height: 72vh;
-
-            border-radius: 16px;
-
             background: #000;
-
-            display: block;
         }
 
-
-        /* =========================
-           معلومات المنشور
-        ========================= */
+        .post-media img,
+        .post-media video {
+            display: block;
+            width: 100%;
+            max-height: 650px;
+            object-fit: contain;
+            background: #000;
+        }
 
         .post-info {
-            padding: 18px 5px 0;
+            padding: 15px;
+        }
+
+        .post-user {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
 
         .post-title {
-            font-size: 19px;
-            margin-bottom: 9px;
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 8px;
         }
 
-        .post-text {
+        .post-content {
             color: #aaa;
             font-size: 14px;
             line-height: 1.8;
         }
 
-        .post-meta {
-            margin-top: 12px;
-            color: #666;
-            font-size: 11px;
-        }
-
-
-        /* =========================
-           أزرار المنشور
-        ========================= */
-
         .post-actions {
-
             display: flex;
-
             gap: 8px;
-
-            margin-top: 16px;
+            padding: 0 15px 15px;
         }
 
         .post-action {
-
-            border: 1px solid #252525;
-
-            background: #0c0c0c;
-
-            color: #aaa;
-
-            padding: 8px 13px;
-
-            border-radius: 9px;
-
-            font-size: 12px;
-
-            cursor: pointer;
-
-            transition: .25s;
-        }
-
-        .post-action:hover {
-
-            background: #151515;
-
-            color: #fff;
-
-            border-color: #444;
-        }
-
-
-        /* =========================
-           شاشة تسجيل الدخول
-        ========================= */
-
-        #login-overlay {
-
-            position: fixed;
-
-            inset: 0;
-
-            z-index: 100000;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            padding: 20px;
-
-            background:
-                rgba(0, 0, 0, .82);
-
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-
-            opacity: 0;
-            visibility: hidden;
-
-            transition:
-                opacity .35s ease,
-                visibility .35s ease;
-        }
-
-        #login-overlay.show {
-
-            opacity: 1;
-            visibility: visible;
-        }
-
-
-        /* =========================
-           صندوق الدخول
-        ========================= */
-
-        .login-box {
-
-            width: 100%;
-
-            max-width: 380px;
-
-            padding: 30px 25px;
-
-            background: #080808;
-
-            border: 1px solid #252525;
+            border: 1px solid #222;
+            background: #111;
+            color: #ddd;
 
             border-radius: 18px;
 
-            box-shadow:
-                0 25px 80px rgba(0, 0, 0, .7);
+            padding: 8px 13px;
 
-            transform:
-                translateY(30px)
-                scale(.96);
-
-            transition:
-                transform .4s ease;
+            cursor: pointer;
+            font-size: 13px;
         }
 
-        #login-overlay.show
-        .login-box {
-
-            transform:
-                translateY(0)
-                scale(1);
+        .post-action:hover {
+            background: #1a1a1a;
         }
 
+        .post-action.active {
+            background: #fff;
+            color: #000;
+        }
 
         /* =========================
-           شعار الدخول
+           EMPTY
         ========================= */
 
-        .login-logo {
-
+        .empty-posts {
             text-align: center;
+            padding: 80px 20px;
+            color: #666;
+        }
 
-            font-size: 30px;
+        /* =========================
+           LOGIN OVERLAY
+        ========================= */
 
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+
+            background: rgba(0, 0, 0, .82);
+            backdrop-filter: blur(10px);
+
+            display: none;
+            align-items: center;
+            justify-content: center;
+
+            z-index: 9999999;
+
+            padding: 20px;
+        }
+
+        #login-overlay.show {
+            display: flex;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 390px;
+
+            background: #0b0b0b;
+            border: 1px solid #222;
+
+            border-radius: 18px;
+
+            padding: 25px;
+
+            box-shadow: 0 20px 80px rgba(0, 0, 0, .6);
+        }
+
+        .login-logo {
+            text-align: center;
+            font-size: 28px;
             font-weight: bold;
-
-            letter-spacing: 7px;
-
+            letter-spacing: 5px;
             margin-bottom: 8px;
         }
 
         .login-subtitle {
-
             text-align: center;
-
-            color: #666;
-
-            font-size: 11px;
-
-            letter-spacing: 2px;
-
-            margin-bottom: 28px;
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 25px;
         }
 
+        .auth-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 18px;
+        }
 
-        /* =========================
-           الحقول
-        ========================= */
+        .auth-tab {
+            flex: 1;
 
-        .login-label {
-
-            display: block;
-
+            border: 1px solid #222;
+            background: #111;
             color: #888;
 
-            font-size: 12px;
+            padding: 10px;
+            border-radius: 10px;
 
-            margin-bottom: 7px;
+            cursor: pointer;
         }
 
-        .login-input {
+        .auth-tab.active {
+            background: #fff;
+            color: #000;
+        }
 
+        .auth-input {
             width: 100%;
 
-            height: 46px;
+            background: #111;
+            color: #fff;
 
-            padding: 0 13px;
-
-            margin-bottom: 17px;
+            border: 1px solid #242424;
 
             border-radius: 10px;
 
-            border: 1px solid #252525;
+            padding: 13px;
+
+            margin-bottom: 10px;
 
             outline: none;
-
-            background: #0e0e0e;
-
-            color: #fff;
-
             font-size: 14px;
-
-            transition:
-                border-color .25s ease,
-                background .25s ease;
         }
 
-        .login-input:focus {
-
+        .auth-input:focus {
             border-color: #555;
-
-            background: #121212;
         }
 
+        .auth-submit {
+            width: 100%;
 
-        /* =========================
-           أزرار الدخول
-        ========================= */
+            border: none;
+            background: #fff;
+            color: #000;
 
-        .login-buttons {
+            padding: 13px;
 
-            display: flex;
+            border-radius: 10px;
 
-            gap: 9px;
+            font-weight: bold;
+
+            cursor: pointer;
 
             margin-top: 5px;
         }
 
-        .login-submit,
-        .login-cancel {
+        .auth-cancel {
+            width: 100%;
 
-            flex: 1;
+            border: 1px solid #222;
+            background: #111;
+            color: #aaa;
 
-            height: 44px;
+            padding: 12px;
 
             border-radius: 10px;
 
             cursor: pointer;
 
-            font-size: 13px;
-
-            transition: .25s;
+            margin-top: 8px;
         }
 
-        .login-submit {
+        #auth-message {
+            min-height: 20px;
 
-            border: 1px solid #fff;
-
-            background: #fff;
-
-            color: #000;
-        }
-
-        .login-submit:hover {
-
-            background: #ddd;
-        }
-
-        .login-cancel {
-
-            border: 1px solid #292929;
-
-            background: #101010;
-
-            color: #aaa;
-        }
-
-        .login-cancel:hover {
-
-            color: #fff;
-
-            border-color: #444;
-        }
-
-
-        /* =========================
-           رسالة الدخول
-        ========================= */
-
-        .login-message {
-
-            min-height: 18px;
-
-            margin-top: 15px;
+            color: #999;
 
             text-align: center;
 
-            color: #777;
+            font-size: 12px;
+
+            line-height: 1.6;
+
+            margin-top: 14px;
+        }
+
+        .logged-user {
+            position: fixed;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            background: #0c0c0c;
+            border: 1px solid #202020;
+
+            padding: 7px 13px;
+
+            border-radius: 20px;
+
+            color: #999;
+            font-size: 11px;
+
+            z-index: 900;
+        }
+
+        /* =========================
+           COMMENTS
+        ========================= */
+
+        .comments-box {
+            display: none;
+            padding: 0 15px 15px;
+        }
+
+        .comments-box.show {
+            display: block;
+        }
+
+        .comment-input-row {
+            display: flex;
+            gap: 7px;
+        }
+
+        .comment-input {
+            flex: 1;
+
+            background: #111;
+            color: #fff;
+
+            border: 1px solid #222;
+
+            border-radius: 10px;
+
+            padding: 10px;
+            outline: none;
+        }
+
+        .comment-send {
+            border: 1px solid #222;
+            background: #171717;
+            color: #fff;
+
+            border-radius: 10px;
+
+            padding: 0 13px;
+
+            cursor: pointer;
+        }
+
+        .comments-list {
+            margin-top: 12px;
+        }
+
+        .comment {
+            background: #111;
+            border-radius: 10px;
+
+            padding: 9px 11px;
+
+            margin-top: 7px;
 
             font-size: 12px;
         }
 
+        .comment-user {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
 
-        /* =========================
-           الهاتف
-        ========================= */
-
-        @media (max-width: 600px) {
-
-            .posts-header {
-                padding: 0 13px;
-            }
-
-            .posts-logo {
-                font-size: 16px;
-            }
-
-            .publish-button {
-                left: 13px;
-                padding: 8px 12px;
-            }
-
-            .post {
-                padding:
-                    15px
-                    10px
-                    30px;
-            }
-
-            .post-media,
-            .post-video {
-                border-radius: 13px;
-            }
-
-            .post-title {
-                font-size: 17px;
-            }
-
-            .post-text {
-                font-size: 13px;
-            }
-
-            .login-box {
-                padding: 26px 20px;
-            }
-
+        .comment-text {
+            color: #aaa;
         }
 
     </style>
-
 </head>
-
 
 <body>
 
-
     <!-- =========================
-         شاشة التحميل
+         LOADING
     ========================= -->
 
     <div id="posts-loader">
 
-        <div class="loader-content">
+        <div class="loader-box">
 
             <div class="loader-logo">
                 WFESC
             </div>
 
-            <div class="loader-subtitle">
-                POSTS
-            </div>
-
-            <div class="loader-line"></div>
-
             <div class="loader-text">
                 جاري تحميل المنشورات...
+            </div>
+
+            <div class="loader-line">
+                <div></div>
             </div>
 
         </div>
@@ -724,97 +519,120 @@
 
 
     <!-- =========================
-         الهيدر
+         HEADER
     ========================= -->
 
     <header class="posts-header">
 
-        <div class="posts-logo">
-            WFESC
+        <div class="posts-title">
+            POSTS
         </div>
-
-        <button
-            class="publish-button"
-            id="publishButton"
-            type="button"
-        >
-            + نشر
-        </button>
-
-        <a
-            class="back-button"
-            href="./index.html"
-        >
-            الرئيسية
-        </a>
 
     </header>
 
 
+    <button
+        class="publish-button"
+        id="publish-button">
+        + نشر
+    </button>
+
+
+    <a
+        class="back-button"
+        href="./index.html">
+        الرئيسية
+    </a>
+
+
     <!-- =========================
-         المنشورات
+         CURRENT USER
     ========================= -->
 
-    <main class="posts-container">
+    <div
+        class="logged-user"
+        id="logged-user"
+        style="display:none;">
+    </div>
 
 
-        <section class="post">
+    <!-- =========================
+         POSTS
+    ========================= -->
 
-            <img
-                class="post-media"
-                src="./sorg.jpg"
-                alt="WFESC"
-            >
+    <main class="posts-container" id="posts-container">
+
+        <article class="post">
+
+            <div class="post-media">
+
+                <img
+                    src="./sorg.jpg"
+                    alt="WFESC">
+
+            </div>
 
             <div class="post-info">
 
-                <h2 class="post-title">
-                    مرحباً بكم في WFESC
-                </h2>
-
-                <p class="post-text">
-                    ذاكرة العراق بصورة مختلفة.
-                    هنا تبدأ رحلة المنشورات والمحتوى الخاص بـ WFESC.
-                </p>
-
-                <div class="post-meta">
+                <div class="post-user">
                     WFESC
                 </div>
 
-                <div class="post-actions">
+                <div class="post-title">
+                    أهلاً بكم في منشورات WFESC
+                </div>
 
-                    <button
-                        class="post-action"
-                        type="button"
-                    >
-                        ♡ إعجاب
-                    </button>
-
-                    <button
-                        class="post-action"
-                        type="button"
-                    >
-                        💬 تعليق
-                    </button>
-
+                <div class="post-content">
+                    هنا ستظهر المنشورات والمحتوى الذي يتم نشره
+                    من المستخدمين.
                 </div>
 
             </div>
 
-        </section>
+            <div class="post-actions">
 
+                <button
+                    class="post-action like-button">
+                    ♡ إعجاب
+                </button>
+
+                <button
+                    class="post-action comment-button">
+                    💬 تعليق
+                </button>
+
+            </div>
+
+            <div class="comments-box">
+
+                <div class="comment-input-row">
+
+                    <input
+                        class="comment-input"
+                        type="text"
+                        placeholder="اكتب تعليقك...">
+
+                    <button
+                        class="comment-send">
+                        إرسال
+                    </button>
+
+                </div>
+
+                <div class="comments-list"></div>
+
+            </div>
+
+        </article>
 
     </main>
 
 
     <!-- =========================
-         تسجيل الدخول
+         AUTH
     ========================= -->
 
-    <div
-        id="login-overlay"
-        aria-hidden="true"
-    >
+    <div id="login-overlay">
 
         <div class="login-box">
 
@@ -823,177 +641,235 @@
             </div>
 
             <div class="login-subtitle">
-                PUBLISHER ACCESS
+                سجّل دخولك للتفاعل والنشر
             </div>
 
 
-            <form id="loginForm">
+            <div class="auth-tabs">
 
-                <label
-                    class="login-label"
-                    for="username"
-                >
-                    اسم المستخدم
-                </label>
+                <button
+                    class="auth-tab active"
+                    id="login-tab">
+                    تسجيل الدخول
+                </button>
 
-                <input
-                    class="login-input"
-                    id="username"
-                    type="text"
-                    placeholder="أدخل اسم المستخدم"
-                    autocomplete="username"
-                    required
-                >
+                <button
+                    class="auth-tab"
+                    id="register-tab">
+                    إنشاء حساب
+                </button>
+
+            </div>
 
 
-                <label
-                    class="login-label"
-                    for="password"
-                >
-                    كلمة المرور
-                </label>
+            <!-- LOGIN -->
+
+            <form id="login-form">
 
                 <input
-                    class="login-input"
-                    id="password"
+                    class="auth-input"
+                    id="login-email"
+                    type="email"
+                    placeholder="البريد الإلكتروني"
+                    autocomplete="email"
+                    required>
+
+                <input
+                    class="auth-input"
+                    id="login-password"
                     type="password"
-                    placeholder="أدخل كلمة المرور"
+                    placeholder="كلمة المرور"
                     autocomplete="current-password"
-                    required
-                >
+                    required>
 
-
-                <div class="login-buttons">
-
-                    <button
-                        class="login-submit"
-                        type="submit"
-                    >
-                        تسجيل الدخول
-                    </button>
-
-                    <button
-                        class="login-cancel"
-                        id="loginCancel"
-                        type="button"
-                    >
-                        إلغاء
-                    </button>
-
-                </div>
-
-                <div
-                    class="login-message"
-                    id="loginMessage"
-                ></div>
+                <button
+                    class="auth-submit"
+                    type="submit">
+                    تسجيل الدخول
+                </button>
 
             </form>
+
+
+            <!-- REGISTER -->
+
+            <form
+                id="register-form"
+                style="display:none;">
+
+                <input
+                    class="auth-input"
+                    id="register-username"
+                    type="text"
+                    placeholder="اسم المستخدم"
+                    autocomplete="username"
+                    maxlength="30"
+                    required>
+
+                <input
+                    class="auth-input"
+                    id="register-email"
+                    type="email"
+                    placeholder="البريد الإلكتروني"
+                    autocomplete="email"
+                    required>
+
+                <input
+                    class="auth-input"
+                    id="register-password"
+                    type="password"
+                    placeholder="كلمة المرور"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required>
+
+                <button
+                    class="auth-submit"
+                    type="submit">
+                    إنشاء الحساب
+                </button>
+
+            </form>
+
+
+            <button
+                class="auth-cancel"
+                id="auth-cancel">
+                إلغاء
+            </button>
+
+
+            <div id="auth-message"></div>
 
         </div>
 
     </div>
 
 
+    <!-- SUPABASE -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
     <script>
 
+        const SUPABASE_URL =
+            "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
-        /* =========================
-           شاشة التحميل
-        ========================= */
+        const SUPABASE_KEY =
+            "sb_publishable_5b7pTbiGY2D6vDLRsWgVzA_X926lBeM";
 
-        window.addEventListener(
-            "load",
-            function () {
 
-                setTimeout(
-                    function () {
-
-                        const loader =
-                            document.getElementById(
-                                "posts-loader"
-                            );
-
-                        if (loader) {
-
-                            loader.classList.add("hide");
-
-                        }
-
-                    },
-                    1300
-                );
-
-            }
-        );
+        const supabaseClient =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_KEY
+            );
 
 
         /* =========================
-           فتح تسجيل الدخول
+           ELEMENTS
         ========================= */
+
+        const loader =
+            document.getElementById("posts-loader");
 
         const publishButton =
-            document.getElementById(
-                "publishButton"
-            );
+            document.getElementById("publish-button");
 
         const loginOverlay =
-            document.getElementById(
-                "login-overlay"
-            );
-
-        const loginCancel =
-            document.getElementById(
-                "loginCancel"
-            );
+            document.getElementById("login-overlay");
 
         const loginForm =
-            document.getElementById(
-                "loginForm"
-            );
+            document.getElementById("login-form");
 
-        const loginMessage =
-            document.getElementById(
-                "loginMessage"
-            );
+        const registerForm =
+            document.getElementById("register-form");
+
+        const loginTab =
+            document.getElementById("login-tab");
+
+        const registerTab =
+            document.getElementById("register-tab");
+
+        const authCancel =
+            document.getElementById("auth-cancel");
+
+        const authMessage =
+            document.getElementById("auth-message");
+
+        const loggedUser =
+            document.getElementById("logged-user");
+
+
+        /* =========================
+           LOADING
+        ========================= */
+
+        window.addEventListener("load", function () {
+
+            setTimeout(function () {
+
+                loader.classList.add("hide");
+
+            }, 1300);
+
+        });
+
+
+        /* =========================
+           AUTH WINDOW
+        ========================= */
+
+        function openAuth() {
+
+            loginOverlay.classList.add("show");
+
+            authMessage.textContent = "";
+
+        }
+
+
+        function closeAuth() {
+
+            loginOverlay.classList.remove("show");
+
+            authMessage.textContent = "";
+
+        }
 
 
         publishButton.addEventListener(
             "click",
-            function () {
+            async function () {
 
-                loginOverlay.classList.add("show");
+                const {
+                    data: {
+                        user
+                    }
+                } = await supabaseClient.auth.getUser();
 
-                loginOverlay.setAttribute(
-                    "aria-hidden",
-                    "false"
-                );
 
-                setTimeout(
-                    function () {
+                if (!user) {
 
-                        document
-                            .getElementById("username")
-                            .focus();
+                    openAuth();
 
-                    },
-                    300
+                    return;
+
+                }
+
+
+                alert(
+                    "تم تسجيل الدخول. نظام إنشاء المنشور سنضيفه بالخطوة التالية."
                 );
 
             }
         );
 
 
-        /* =========================
-           إغلاق تسجيل الدخول
-        ========================= */
-
-        loginCancel.addEventListener(
+        authCancel.addEventListener(
             "click",
-            function () {
-
-                closeLogin();
-
-            }
+            closeAuth
         );
 
 
@@ -1005,7 +881,7 @@
                     event.target === loginOverlay
                 ) {
 
-                    closeLogin();
+                    closeAuth();
 
                 }
 
@@ -1013,93 +889,463 @@
         );
 
 
-        function closeLogin() {
+        /* =========================
+           TABS
+        ========================= */
 
-            loginOverlay.classList.remove("show");
+        loginTab.addEventListener(
+            "click",
+            function () {
 
-            loginOverlay.setAttribute(
-                "aria-hidden",
-                "true"
-            );
+                loginTab.classList.add("active");
+                registerTab.classList.remove("active");
 
-            loginMessage.textContent = "";
+                loginForm.style.display = "block";
+                registerForm.style.display = "none";
 
-            loginForm.reset();
+                authMessage.textContent = "";
 
-        }
+            }
+        );
+
+
+        registerTab.addEventListener(
+            "click",
+            function () {
+
+                registerTab.classList.add("active");
+                loginTab.classList.remove("active");
+
+                loginForm.style.display = "none";
+                registerForm.style.display = "block";
+
+                authMessage.textContent = "";
+
+            }
+        );
 
 
         /* =========================
-           تسجيل الدخول
-        ========================= */
-loginForm.addEventListener(
-    "submit",
-    async function (event) {
-
-        event.preventDefault();
-
-        const email = loginUsername.value.trim();
-        const password = loginPassword.value;
-
-        loginMessage.textContent = "جاري تسجيل الدخول...";
-
-        if (!window.supabaseClient) {
-            loginMessage.textContent =
-                "الاتصال بالخادم غير جاهز، حاول مرة أخرى.";
-            return;
-        }
-
-        const { data, error } =
-            await window.supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-
-        if (error) {
-            loginMessage.textContent =
-                "فشل تسجيل الدخول: " + error.message;
-            return;
-        }
-
-        loginMessage.textContent =
-            "تم تسجيل الدخول بنجاح.";
-
-        setTimeout(() => {
-            loginOverlay.classList.remove("show");
-        }, 800);
-
-        console.log("WFESC: Logged in", data.user);
-    }
-);
-
-        /* =========================
-           أزرار المنشورات
+           LOGIN
         ========================= */
 
-        
-        document
-            .querySelectorAll(".post-action")
-            .forEach(
-                function (button) {
+        loginForm.addEventListener(
+            "submit",
+            async function (event) {
 
-                    button.addEventListener(
-                        "click",
-                        function () {
+                event.preventDefault();
 
-                            /*
-                             * سيتم ربط نظام
-                             * الإعجاب والتعليقات لاحقاً.
-                             */
 
-                        }
-                    );
+                const email =
+                    document
+                    .getElementById("login-email")
+                    .value
+                    .trim();
+
+
+                const password =
+                    document
+                    .getElementById("login-password")
+                    .value;
+
+
+                authMessage.textContent =
+                    "جاري تسجيل الدخول...";
+
+
+                const {
+                    data,
+                    error
+                } =
+                await supabaseClient.auth.signInWithPassword({
+
+                    email: email,
+
+                    password: password
+
+                });
+
+
+                if (error) {
+
+                    authMessage.textContent =
+                        error.message;
+
+                    return;
 
                 }
-            );
+
+
+                authMessage.textContent =
+                    "تم تسجيل الدخول بنجاح.";
+
+
+                updateUser(data.user);
+
+
+                setTimeout(
+                    closeAuth,
+                    700
+                );
+
+            }
+        );
+
+
+        /* =========================
+           REGISTER
+        ========================= */
+
+        registerForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const username =
+                    document
+                    .getElementById("register-username")
+                    .value
+                    .trim();
+
+
+                const email =
+                    document
+                    .getElementById("register-email")
+                    .value
+                    .trim();
+
+
+                const password =
+                    document
+                    .getElementById("register-password")
+                    .value;
+
+
+                if (username.length < 3) {
+
+                    authMessage.textContent =
+                        "اسم المستخدم يجب أن يكون 3 أحرف أو أكثر.";
+
+                    return;
+
+                }
+
+
+                authMessage.textContent =
+                    "جاري إنشاء الحساب...";
+
+
+                /* CHECK USERNAME */
+
+                const {
+                    data: existingProfile,
+                    error: usernameCheckError
+                } =
+                await supabaseClient
+                    .from("profiles")
+                    .select("username")
+                    .eq("username", username)
+                    .maybeSingle();
+
+
+                if (usernameCheckError) {
+
+                    authMessage.textContent =
+                        "حدث خطأ أثناء فحص اسم المستخدم.";
+
+                    console.error(
+                        usernameCheckError
+                    );
+
+                    return;
+
+                }
+
+
+                if (existingProfile) {
+
+                    authMessage.textContent =
+                        "اسم المستخدم مستخدم مسبقاً.";
+
+                    return;
+
+                }
+
+
+                /* CREATE AUTH USER */
+
+                const {
+                    data,
+                    error
+                } =
+                await supabaseClient.auth.signUp({
+
+                    email: email,
+
+                    password: password
+
+                });
+
+
+                if (error) {
+
+                    authMessage.textContent =
+                        error.message;
+
+                    return;
+
+                }
+
+
+                if (!data.user) {
+
+                    authMessage.textContent =
+                        "تعذر إنشاء الحساب.";
+
+                    return;
+
+                }
+
+
+                /* CREATE PROFILE */
+
+                const {
+                    error: profileError
+                } =
+                await supabaseClient
+                    .from("profiles")
+                    .insert({
+
+                        id: data.user.id,
+
+                        username: username
+
+                    });
+
+
+                if (profileError) {
+
+                    authMessage.textContent =
+                        "تم إنشاء الحساب لكن تعذر إنشاء الملف الشخصي.";
+
+                    console.error(
+                        profileError
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    data.session
+                ) {
+
+                    authMessage.textContent =
+                        "تم إنشاء الحساب وتسجيل الدخول.";
+
+                    updateUser(data.user);
+
+                    setTimeout(
+                        closeAuth,
+                        900
+                    );
+
+                } else {
+
+                    authMessage.textContent =
+                        "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتفعيل الحساب.";
+
+                }
+
+            }
+        );
+
+
+        /* =========================
+           USER
+        ========================= */
+
+        async function updateUser(user) {
+
+            if (!user) {
+
+                loggedUser.style.display =
+                    "none";
+
+                return;
+
+            }
+
+
+            const {
+                data: profile
+            } =
+            await supabaseClient
+                .from("profiles")
+                .select("username")
+                .eq("id", user.id)
+                .maybeSingle();
+
+
+            if (profile) {
+
+                loggedUser.textContent =
+                    "مرحباً " + profile.username;
+
+            } else {
+
+                loggedUser.textContent =
+                    "مرحباً بك";
+
+            }
+
+
+            loggedUser.style.display =
+                "block";
+
+        }
+
+
+        /* =========================
+           CHECK SESSION
+        ========================= */
+
+        async function checkSession() {
+
+            const {
+                data: {
+                    session
+                }
+            } =
+            await supabaseClient.auth.getSession();
+
+
+            if (session) {
+
+                updateUser(session.user);
+
+            }
+
+        }
+
+
+        checkSession();
+
+
+        supabaseClient.auth.onAuthStateChange(
+            function (
+                event,
+                session
+            ) {
+
+                if (session) {
+
+                    updateUser(
+                        session.user
+                    );
+
+                } else {
+
+                    loggedUser.style.display =
+                        "none";
+
+                }
+
+            }
+        );
+
+
+        /* =========================
+           LIKE / COMMENT LOGIN
+        ========================= */
+
+        document
+            .querySelectorAll(".like-button")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const {
+                            data: {
+                                user
+                            }
+                        } =
+                        await supabaseClient
+                            .auth
+                            .getUser();
+
+
+                        if (!user) {
+
+                            openAuth();
+
+                            return;
+
+                        }
+
+
+                        button.classList.toggle(
+                            "active"
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document
+            .querySelectorAll(".comment-button")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const {
+                            data: {
+                                user
+                            }
+                        } =
+                        await supabaseClient
+                            .auth
+                            .getUser();
+
+
+                        if (!user) {
+
+                            openAuth();
+
+                            return;
+
+                        }
+
+
+                        const post =
+                            button.closest(".post");
+
+                        const comments =
+                            post.querySelector(
+                                ".comments-box"
+                            );
+
+                        comments.classList.toggle(
+                            "show"
+                        );
+
+                    }
+                );
+
+            });
+
 
     </script>
-<script src="./posts-system.js"></script>
 
 </body>
 
-</html>
+    
