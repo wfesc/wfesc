@@ -1,50 +1,19 @@
 (function () {
     "use strict";
 
-    function initPostsLink() {
-        if (document.getElementById("wfesc-posts-link")) {
-            return;
-        }
+    const button = document.createElement("button");
 
-        const nav = document.querySelector("nav");
+    button.textContent = "المنشورات";
+    button.style.position = "fixed";
+    button.style.top = "150px";
+    button.style.left = "20px";
+    button.style.zIndex = "999999";
+    button.style.padding = "12px 20px";
+    button.style.background = "#111";
+    button.style.color = "#fff";
+    button.style.border = "1px solid #333";
+    button.style.borderRadius = "10px";
+    button.style.fontSize = "14px";
 
-        if (!nav) {
-            return;
-        }
-
-        const links = nav.querySelectorAll("a");
-
-        if (links.length < 2) {
-            return;
-        }
-
-        const postsLink = document.createElement("a");
-
-        postsLink.id = "wfesc-posts-link";
-        postsLink.href = "./posts.html";
-        postsLink.textContent = "المنشورات";
-
-        postsLink.style.color = "#aaa";
-        postsLink.style.textDecoration = "none";
-        postsLink.style.margin = "0 16px";
-        postsLink.style.fontSize = "14px";
-        postsLink.style.transition = ".3s";
-
-        postsLink.addEventListener("mouseenter", function () {
-            postsLink.style.color = "#fff";
-        });
-
-        postsLink.addEventListener("mouseleave", function () {
-            postsLink.style.color = "#aaa";
-        });
-
-        nav.insertBefore(postsLink, links[2]);
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initPostsLink);
-    } else {
-        initPostsLink();
-    }
-
+    document.body.appendChild(button);
 })();
