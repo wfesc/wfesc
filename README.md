@@ -6,7 +6,7 @@
 
     <title>اوفِس | WFESC</title>
 
-    <meta name="description" content="اوفِس | WFESC — منصة تهتم بتاريخ العراق وإنجازاته ومشاريعه وممتلكاته ونوادره، وتسعى إلى تقديم محتوى مميز وموثق.">
+    <meta name="description" content="اوفِس | WFESC — منصة تهتم بتاريخ العراق وإنجازاته ومشاريعه وممتلكاته ونوادره.">
     <meta name="keywords" content="اوفِس, اوفس, WFESC, العراق, تاريخ العراق, إنجازات العراق, مشاريع العراق, نوادر العراق">
     <meta name="author" content="WFESC">
 
@@ -37,7 +37,6 @@
             text-decoration: none;
         }
 
-        /* شريط التنقل */
         nav {
             position: sticky;
             top: 0;
@@ -82,7 +81,6 @@
             color: white;
         }
 
-        /* الواجهة الرئيسية */
         .hero {
             min-height: 90vh;
             display: flex;
@@ -143,7 +141,6 @@
             color: black;
         }
 
-        /* الأقسام */
         section {
             max-width: 1100px;
             margin: auto;
@@ -177,7 +174,6 @@
             font-size: 18px;
         }
 
-        /* البطاقات */
         .cards {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -211,7 +207,6 @@
             color: #999;
         }
 
-        /* الصفحات */
         .social-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -243,7 +238,6 @@
             font-size: 14px;
         }
 
-        /* المشاركة */
         .share-box {
             background: linear-gradient(145deg, #151515, #0d0d0d);
             border: 1px solid #292929;
@@ -275,7 +269,6 @@
             color: black;
         }
 
-        /* الفوتر */
         footer {
             border-top: 1px solid #222;
             text-align: center;
@@ -299,7 +292,12 @@
             color: #aaa;
         }
 
-        /* الموبايل */
+        .copyright {
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
         @media (max-width: 750px) {
 
             .nav-container {
@@ -365,7 +363,7 @@
     </nav>
 
 
-    <!-- الواجهة الرئيسية -->
+    <!-- الرئيسية -->
     <header class="hero" id="home">
 
         <div class="hero-content">
@@ -491,14 +489,14 @@
                 <span>@wfecs</span>
             </a>
 
-            <a class="social" href="https://www.facebook.com/" target="_blank">
+            <a class="social" href="https://www.facebook.com/wfesc" target="_blank">
                 <strong>Facebook</strong>
                 <span>WFESC</span>
             </a>
 
-            <a class="social" href="https://x.com/wfesc" target="_blank">
+            <a class="social" href="https://x.com/wfeesc" target="_blank">
                 <strong>X</strong>
-                <span>@wfesc</span>
+                <span>@wfeesc</span>
             </a>
 
         </div>
@@ -532,7 +530,7 @@
     </section>
 
 
-    <!-- أسفل الموقع -->
+    <!-- نهاية الموقع -->
     <footer>
 
         <div class="brand">
@@ -547,8 +545,8 @@
             المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
         </p>
 
-        <p style="margin-top:20px;">
-            © 2026 WFESC
+        <p class="copyright">
+            جميع الحقوق محفوظة لدى اوفس 𝑾𝑭𝑬𝑺𝑪 © 2026
         </p>
 
     </footer>
