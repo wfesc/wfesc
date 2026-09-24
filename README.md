@@ -935,7 +935,7 @@ footer{
 
     <div class="logo-trigger" id="secretTrigger">
 
-        <img src="sorg.jbg" alt="WFESC">
+        <img src="sorg.jpg" alt="WFESC">
 
         <h1>WFESC</h1>
 
