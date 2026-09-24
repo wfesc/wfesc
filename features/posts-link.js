@@ -1,19 +1,45 @@
 (function () {
     "use strict";
 
-    const button = document.createElement("button");
+    function addPostsButton() {
+        if (document.getElementById("wfesc-posts-button")) return;
 
-    button.textContent = "المنشورات";
-    button.style.position = "fixed";
-    button.style.top = "150px";
-    button.style.left = "20px";
-    button.style.zIndex = "999999";
-    button.style.padding = "12px 20px";
-    button.style.background = "#111";
-    button.style.color = "#fff";
-    button.style.border = "1px solid #333";
-    button.style.borderRadius = "10px";
-    button.style.fontSize = "14px";
+        const aboutButton = document.querySelector('.main-btn[href="#about"]');
 
-    document.body.appendChild(button);
+        if (!aboutButton) return;
+
+        const postsButton = document.createElement("a");
+
+        postsButton.id = "wfesc-posts-button";
+        postsButton.href = "./posts.html";
+        postsButton.textContent = "عرض المنشورات";
+
+        postsButton.style.marginTop = "12px";
+        postsButton.style.display = "inline-block";
+        postsButton.style.padding = "13px 27px";
+        postsButton.style.border = "1px solid #303030";
+        postsButton.style.borderRadius = "12px";
+        postsButton.style.color = "#fff";
+        postsButton.style.textDecoration = "none";
+        postsButton.style.background = "#0b0b0b";
+        postsButton.style.transition = ".3s";
+
+        postsButton.addEventListener("mouseenter", function () {
+            postsButton.style.background = "#151515";
+            postsButton.style.borderColor = "#555";
+        });
+
+        postsButton.addEventListener("mouseleave", function () {
+            postsButton.style.background = "#0b0b0b";
+            postsButton.style.borderColor = "#303030";
+        });
+
+        aboutButton.insertAdjacentElement("afterend", postsButton);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", addPostsButton);
+    } else {
+        addPostsButton();
+    }
 })();
