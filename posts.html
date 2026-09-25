@@ -2,1350 +2,1270 @@
 <html lang="ar" dir="rtl">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>WFESC Posts</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background: #050505;
-            color: #eee;
-            font-family: Arial, Tahoma, sans-serif;
-            min-height: 100vh;
-        }
-
-        /* =========================
-           LOADING
-        ========================= */
-
-        #posts-loader {
-            position: fixed;
-            inset: 0;
-            background: #050505;
-            z-index: 999999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity .6s ease;
-        }
-
-        #posts-loader.hide {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loader-box {
-            width: 85%;
-            max-width: 380px;
-            text-align: center;
-        }
-
-        .loader-logo {
-            font-size: 42px;
-            font-weight: bold;
-            letter-spacing: 8px;
-            margin-bottom: 25px;
-        }
-
-        .loader-text {
-            color: #777;
-            font-size: 13px;
-            margin-bottom: 18px;
-        }
-
-        .loader-line {
-            width: 100%;
-            height: 2px;
-            background: #1b1b1b;
-            overflow: hidden;
-        }
-
-        .loader-line div {
-            width: 35%;
-            height: 100%;
-            background: #fff;
-            animation: loaderMove 1.2s infinite ease-in-out;
-        }
-
-        @keyframes loaderMove {
-            from {
-                transform: translateX(300%);
-            }
-
-            to {
-                transform: translateX(-300%);
-            }
-        }
-
-        /* =========================
-           HEADER
-        ========================= */
-
-        .posts-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 64px;
-
-            background: rgba(5, 5, 5, .92);
-            backdrop-filter: blur(12px);
-
-            border-bottom: 1px solid #181818;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            z-index: 1000;
-        }
-
-        .posts-title {
-            font-size: 19px;
-            font-weight: bold;
-            letter-spacing: 3px;
-        }
-
-        .publish-button,
-        .back-button {
-            position: fixed;
-            top: 13px;
-
-            height: 38px;
-            padding: 0 16px;
-
-            border: 1px solid #292929;
-            background: #101010;
-            color: #fff;
-
-            border-radius: 20px;
-
-            cursor: pointer;
-            text-decoration: none;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>WFESC Posts</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    background:#050505;
+    color:#eee;
+    font-family:Arial,Tahoma,sans-serif;
+    min-height:100vh;
+}
+
+button,
+input,
+textarea{
+    font-family:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.hidden{
+    display:none!important;
+}
+
+/* =========================
+   LOADER
+========================= */
+
+#posts-loader{
+    position:fixed;
+    inset:0;
+    background:#050505;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.6s;
+}
+
+#posts-loader.hide{
+    opacity:0;
+    pointer-events:none;
+}
+
+.loader-box{
+    width:85%;
+    max-width:380px;
+    text-align:center;
+}
+
+.loader-logo{
+    font-size:42px;
+    font-weight:bold;
+    letter-spacing:8px;
+    margin-bottom:25px;
+}
+
+.loader-text{
+    color:#777;
+    font-size:13px;
+    margin-bottom:18px;
+}
+
+.loader-line{
+    width:100%;
+    height:2px;
+    background:#1b1b1b;
+    overflow:hidden;
+}
+
+.loader-line div{
+    width:35%;
+    height:100%;
+    background:#fff;
+    animation:loaderMove 1.2s infinite ease-in-out;
+}
+
+@keyframes loaderMove{
+    from{transform:translateX(300%)}
+    to{transform:translateX(-300%)}
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.posts-header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    height:64px;
+    background:rgba(5,5,5,.94);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid #181818;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+}
+
+.posts-title{
+    font-size:19px;
+    font-weight:bold;
+    letter-spacing:3px;
+}
+
+.header-btn{
+    position:fixed;
+    top:13px;
+    height:38px;
+    padding:0 14px;
+    border:1px solid #292929;
+    background:#101010;
+    color:#fff;
+    border-radius:20px;
+    z-index:1100;
+    font-size:13px;
+}
+
+.header-btn:hover{
+    background:#181818;
+}
+
+#publish-button{
+    left:12px;
+}
+
+#settings-button{
+    right:12px;
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-wrap{
+    position:fixed;
+    top:76px;
+    left:50%;
+    transform:translateX(-50%);
+    width:calc(100% - 24px);
+    max-width:600px;
+    z-index:800;
+}
+
+.search-input{
+    width:100%;
+    height:42px;
+    background:#0d0d0d;
+    border:1px solid #222;
+    color:#fff;
+    border-radius:22px;
+    padding:0 17px;
+    outline:none;
+}
+
+.search-results{
+    margin-top:7px;
+    background:#0b0b0b;
+    border:1px solid #222;
+    border-radius:14px;
+    overflow:hidden;
+    display:none;
+}
+
+.search-result{
+    padding:12px 14px;
+    border-bottom:1px solid #181818;
+    cursor:pointer;
+}
+
+.search-result:last-child{
+    border-bottom:0;
+}
+
+.search-result:hover{
+    background:#151515;
+}
+
+.search-result small{
+    color:#777;
+}
+
+/* =========================
+   POSTS
+========================= */
+
+.posts-container{
+    width:100%;
+    max-width:600px;
+    margin:auto;
+    padding:135px 12px 50px;
+}
+
+.post{
+    background:#0c0c0c;
+    border:1px solid #181818;
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:22px;
+}
+
+.post-media{
+    width:100%;
+    background:#000;
+}
+
+.post-media img,
+.post-media video{
+    display:block;
+    width:100%;
+    max-height:650px;
+    object-fit:contain;
+    background:#000;
+}
+
+.post-info{
+    padding:15px;
+}
+
+.post-user-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:13px;
+}
+
+.avatar{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    object-fit:cover;
+    background:#171717;
+    border:1px solid #292929;
+}
+
+.avatar.small{
+    width:31px;
+    height:31px;
+}
+
+.post-user{
+    font-size:14px;
+    font-weight:bold;
+}
+
+.post-date{
+    display:block;
+    color:#666;
+    font-size:10px;
+    margin-top:3px;
+}
+
+.post-title{
+    font-size:17px;
+    font-weight:bold;
+    margin-bottom:8px;
+}
+
+.post-content{
+    color:#aaa;
+    font-size:14px;
+    line-height:1.8;
+    white-space:pre-wrap;
+}
+
+.post-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    padding:0 15px 15px;
+}
+
+.post-action{
+    border:1px solid #222;
+    background:#111;
+    color:#ddd;
+    border-radius:18px;
+    padding:8px 12px;
+    font-size:12px;
+}
+
+.post-action:hover{
+    background:#1b1b1b;
+}
+
+.post-action.active{
+    background:#fff;
+    color:#000;
+}
+
+.post-menu{
+    margin-right:auto;
+}
+
+.empty-posts{
+    text-align:center;
+    padding:80px 20px;
+    color:#666;
+}
+
+/* =========================
+   COMMENTS
+========================= */
+
+.comments-box{
+    display:none;
+    padding:0 15px 15px;
+}
+
+.comments-box.show{
+    display:block;
+}
+
+.comment-input-row{
+    display:flex;
+    gap:7px;
+}
+
+.comment-input{
+    flex:1;
+    background:#111;
+    color:#fff;
+    border:1px solid #222;
+    border-radius:10px;
+    padding:10px;
+    outline:none;
+}
+
+.comment-send{
+    border:1px solid #222;
+    background:#171717;
+    color:#fff;
+    border-radius:10px;
+    padding:0 13px;
+}
+
+.comment-empty{
+    text-align:center;
+    color:#666;
+    padding:25px 5px;
+    font-size:12px;
+}
+
+.comment{
+    background:#111;
+    border-radius:11px;
+    padding:10px;
+    margin-top:8px;
+}
+
+.comment-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.comment-name{
+    color:#fff;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.comment-time{
+    color:#555;
+    font-size:9px;
+}
+
+.comment-text{
+    color:#aaa;
+    font-size:12px;
+    line-height:1.7;
+    margin-top:7px;
+}
+
+.comment-actions{
+    display:flex;
+    gap:5px;
+    margin-top:8px;
+}
+
+.comment-action{
+    border:0;
+    background:transparent;
+    color:#777;
+    font-size:11px;
+    padding:4px 7px;
+    border-radius:7px;
+}
+
+.comment-action:hover,
+.comment-action.active{
+    background:#1b1b1b;
+    color:#fff;
+}
+
+.replies{
+    margin-right:25px;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.84);
+    backdrop-filter:blur(10px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:999999;
+    padding:18px;
+}
+
+.modal.show{
+    display:flex;
+}
+
+.modal-box{
+    width:100%;
+    max-width:430px;
+    max-height:90vh;
+    overflow:auto;
+    background:#0b0b0b;
+    border:1px solid #222;
+    border-radius:18px;
+    padding:23px;
+}
+
+.modal-title{
+    text-align:center;
+    font-size:20px;
+    font-weight:bold;
+    margin-bottom:18px;
+}
+
+.modal-subtitle{
+    text-align:center;
+    color:#777;
+    font-size:12px;
+    margin-bottom:20px;
+}
+
+.field{
+    width:100%;
+    background:#111;
+    color:#fff;
+    border:1px solid #242424;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+    outline:none;
+    resize:vertical;
+}
+
+.field:focus{
+    border-color:#555;
+}
+
+.primary-btn{
+    width:100%;
+    border:0;
+    background:#fff;
+    color:#000;
+    padding:12px;
+    border-radius:10px;
+    font-weight:bold;
+}
+
+.secondary-btn{
+    width:100%;
+    border:1px solid #222;
+    background:#111;
+    color:#aaa;
+    padding:11px;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+.danger-btn{
+    width:100%;
+    border:1px solid #3b2020;
+    background:#170d0d;
+    color:#d88;
+    padding:11px;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+/* =========================
+   AUTH
+========================= */
+
+.auth-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+}
+
+.auth-tab{
+    flex:1;
+    border:1px solid #222;
+    background:#111;
+    color:#888;
+    padding:10px;
+    border-radius:10px;
+}
+
+.auth-tab.active{
+    background:#fff;
+    color:#000;
+}
+
+.auth-message{
+    min-height:20px;
+    text-align:center;
+    color:#999;
+    font-size:12px;
+    line-height:1.7;
+    margin-top:13px;
+}
+
+.verify-message{
+    display:none;
+    text-align:center;
+    color:#fff;
+    line-height:2;
+    padding:10px;
+}
+
+.verify-message.show{
+    display:block;
+    animation:blink 1s infinite;
+}
+
+@keyframes blink{
+    0%,100%{opacity:1}
+    50%{opacity:.35}
+}
+
+/* =========================
+   PROFILE
+========================= */
+
+.profile-head{
+    text-align:center;
+}
+
+.profile-big-avatar{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    object-fit:cover;
+    border:2px solid #292929;
+    background:#151515;
+    margin-bottom:12px;
+}
+
+.profile-name{
+    font-size:18px;
+    font-weight:bold;
+}
+
+.profile-bio{
+    color:#888;
+    font-size:12px;
+    margin:8px 0 15px;
+    line-height:1.7;
+}
+
+.profile-stats{
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    margin:15px 0;
+}
+
+.stat{
+    text-align:center;
+}
+
+.stat strong{
+    display:block;
+    font-size:16px;
+}
+
+.stat span{
+    color:#666;
+    font-size:10px;
+}
+
+.profile-actions{
+    display:flex;
+    gap:7px;
+}
+
+.profile-actions button{
+    flex:1;
+}
+
+.profile-posts{
+    margin-top:20px;
+}
+
+/* =========================
+   SETTINGS
+========================= */
+
+.settings-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#111;
+    border:1px solid #1d1d1d;
+    padding:13px;
+    border-radius:11px;
+    margin-bottom:8px;
+}
+
+.settings-row button{
+    border:1px solid #292929;
+    background:#171717;
+    color:#fff;
+    border-radius:8px;
+    padding:7px 10px;
+}
+
+.settings-user{
+    text-align:center;
+    margin-bottom:17px;
+}
+
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+.notification{
+    padding:12px;
+    border-bottom:1px solid #191919;
+    font-size:12px;
+    color:#ccc;
+}
+
+.notification.unread{
+    background:#111;
+}
+
+.notification-time{
+    display:block;
+    color:#555;
+    font-size:9px;
+    margin-top:4px;
+}
+
+/* =========================
+   TOAST
+========================= */
+
+#toast{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%) translateY(30px);
+    background:#fff;
+    color:#000;
+    padding:12px 18px;
+    border-radius:20px;
+    font-size:12px;
+    opacity:0;
+    pointer-events:none;
+    transition:.3s;
+    z-index:99999999;
+    max-width:90%;
+    text-align:center;
+}
+
+#toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+/* =========================
+   CURRENT USER
+========================= */
+
+.logged-user{
+    position:fixed;
+    top:72px;
+    right:15px;
+    background:#0c0c0c;
+    border:1px solid #202020;
+    padding:6px 10px;
+    border-radius:20px;
+    color:#999;
+    font-size:10px;
+    z-index:850;
+}
+
+</style>
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-size: 13px;
-
-            z-index: 1100;
-        }
-
-        .publish-button {
-            left: 12px;
-        }
-
-        .back-button {
-            right: 12px;
-        }
-
-        .publish-button:hover,
-        .back-button:hover {
-            background: #181818;
-        }
-
-        /* =========================
-           POSTS
-        ========================= */
-
-        .posts-container {
-            width: 100%;
-            max-width: 600px;
-
-            margin: auto;
-            padding: 90px 12px 40px;
-        }
-
-        .post {
-            background: #0c0c0c;
-            border: 1px solid #181818;
-
-            border-radius: 14px;
-            overflow: hidden;
-
-            margin-bottom: 22px;
-        }
-
-        .post-media {
-            width: 100%;
-            background: #000;
-        }
-
-        .post-media img,
-        .post-media video {
-            display: block;
-            width: 100%;
-            max-height: 650px;
-            object-fit: contain;
-            background: #000;
-        }
-
-        .post-info {
-            padding: 15px;
-        }
-
-        .post-user {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .post-title {
-            font-size: 17px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .post-content {
-            color: #aaa;
-            font-size: 14px;
-            line-height: 1.8;
-        }
-
-        .post-actions {
-            display: flex;
-            gap: 8px;
-            padding: 0 15px 15px;
-        }
-
-        .post-action {
-            border: 1px solid #222;
-            background: #111;
-            color: #ddd;
-
-            border-radius: 18px;
-
-            padding: 8px 13px;
-
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .post-action:hover {
-            background: #1a1a1a;
-        }
-
-        .post-action.active {
-            background: #fff;
-            color: #000;
-        }
-
-        /* =========================
-           EMPTY
-        ========================= */
-
-        .empty-posts {
-            text-align: center;
-            padding: 80px 20px;
-            color: #666;
-        }
-
-        /* =========================
-           LOGIN OVERLAY
-        ========================= */
-
-        #login-overlay {
-            position: fixed;
-            inset: 0;
-
-            background: rgba(0, 0, 0, .82);
-            backdrop-filter: blur(10px);
-
-            display: none;
-            align-items: center;
-            justify-content: center;
-
-            z-index: 9999999;
-
-            padding: 20px;
-        }
-
-        #login-overlay.show {
-            display: flex;
-        }
-
-        .login-box {
-            width: 100%;
-            max-width: 390px;
-
-            background: #0b0b0b;
-            border: 1px solid #222;
-
-            border-radius: 18px;
-
-            padding: 25px;
-
-            box-shadow: 0 20px 80px rgba(0, 0, 0, .6);
-        }
-
-        .login-logo {
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            letter-spacing: 5px;
-            margin-bottom: 8px;
-        }
-
-        .login-subtitle {
-            text-align: center;
-            color: #777;
-            font-size: 13px;
-            margin-bottom: 25px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 18px;
-        }
-
-        .auth-tab {
-            flex: 1;
-
-            border: 1px solid #222;
-            background: #111;
-            color: #888;
-
-            padding: 10px;
-            border-radius: 10px;
-
-            cursor: pointer;
-        }
-
-        .auth-tab.active {
-            background: #fff;
-            color: #000;
-        }
-
-        .auth-input {
-            width: 100%;
-
-            background: #111;
-            color: #fff;
-
-            border: 1px solid #242424;
-
-            border-radius: 10px;
-
-            padding: 13px;
-
-            margin-bottom: 10px;
-
-            outline: none;
-            font-size: 14px;
-        }
-
-        .auth-input:focus {
-            border-color: #555;
-        }
-
-        .auth-submit {
-            width: 100%;
-
-            border: none;
-            background: #fff;
-            color: #000;
-
-            padding: 13px;
-
-            border-radius: 10px;
-
-            font-weight: bold;
-
-            cursor: pointer;
-
-            margin-top: 5px;
-        }
-
-        .auth-cancel {
-            width: 100%;
-
-            border: 1px solid #222;
-            background: #111;
-            color: #aaa;
-
-            padding: 12px;
-
-            border-radius: 10px;
-
-            cursor: pointer;
-
-            margin-top: 8px;
-        }
-
-        #auth-message {
-            min-height: 20px;
-
-            color: #999;
-
-            text-align: center;
-
-            font-size: 12px;
-
-            line-height: 1.6;
-
-            margin-top: 14px;
-        }
-
-        .logged-user {
-            position: fixed;
-            top: 72px;
-            left: 50%;
-            transform: translateX(-50%);
-
-            background: #0c0c0c;
-            border: 1px solid #202020;
-
-            padding: 7px 13px;
-
-            border-radius: 20px;
-
-            color: #999;
-            font-size: 11px;
-
-            z-index: 900;
-        }
-
-        /* =========================
-           COMMENTS
-        ========================= */
-
-        .comments-box {
-            display: none;
-            padding: 0 15px 15px;
-        }
-
-        .comments-box.show {
-            display: block;
-        }
-
-        .comment-input-row {
-            display: flex;
-            gap: 7px;
-        }
-
-        .comment-input {
-            flex: 1;
-
-            background: #111;
-            color: #fff;
-
-            border: 1px solid #222;
-
-            border-radius: 10px;
-
-            padding: 10px;
-            outline: none;
-        }
-
-        .comment-send {
-            border: 1px solid #222;
-            background: #171717;
-            color: #fff;
-
-            border-radius: 10px;
-
-            padding: 0 13px;
-
-            cursor: pointer;
-        }
-
-        .comments-list {
-            margin-top: 12px;
-        }
-
-        .comment {
-            background: #111;
-            border-radius: 10px;
-
-            padding: 9px 11px;
-
-            margin-top: 7px;
-
-            font-size: 12px;
-        }
-
-        .comment-user {
-            color: #fff;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .comment-text {
-            color: #aaa;
-        }
-
-    </style>
 </head>
 
 <body>
 
-    <!-- =========================
-         LOADING
-    ========================= -->
+<!-- LOADER -->
 
-    <div id="posts-loader">
+<div id="posts-loader">
 
-        <div class="loader-box">
+    <div class="loader-box">
 
-            <div class="loader-logo">
-                WFESC
-            </div>
+        <div class="loader-logo">
+            WFESC
+        </div>
 
-            <div class="loader-text">
-                جاري تحميل المنشورات...
-            </div>
+        <div class="loader-text">
+            جاري تحميل المنشورات...
+        </div>
 
-            <div class="loader-line">
-                <div></div>
-            </div>
-
+        <div class="loader-line">
+            <div></div>
         </div>
 
     </div>
 
-
-    <!-- =========================
-         HEADER
-    ========================= -->
-
-    <header class="posts-header">
-
-        <div class="posts-title">
-            POSTS
-        </div>
-
-    </header>
+</div>
 
 
-    <button
-        class="publish-button"
-        id="publish-button">
-        + نشر
-    </button>
+<!-- HEADER -->
+
+<header class="posts-header">
+
+    <div class="posts-title">
+        POSTS
+    </div>
+
+</header>
 
 
-    <a
-        class="back-button"
-        href="./index.html">
-        الرئيسية
-    </a>
+<button
+    class="header-btn"
+    id="publish-button">
+    + نشر
+</button>
 
 
-    <!-- =========================
-         CURRENT USER
-    ========================= -->
+<button
+    class="header-btn"
+    id="settings-button">
+    ⚙
+</button>
+
+
+<div
+    class="logged-user"
+    id="logged-user"
+    style="display:none;">
+</div>
+
+
+<!-- SEARCH -->
+
+<div class="search-wrap">
+
+    <input
+        class="search-input"
+        id="search-input"
+        placeholder="🔎 ابحث عن مستخدم أو منشور..."
+        autocomplete="off">
 
     <div
-        class="logged-user"
-        id="logged-user"
-        style="display:none;">
+        class="search-results"
+        id="search-results">
     </div>
 
-
-    <!-- =========================
-         POSTS
-    ========================= -->
-
-    <main class="posts-container" id="posts-container">
-
-        <article class="post">
-
-            <div class="post-media">
-
-                <img
-                    src="./sorg.jpg"
-                    alt="WFESC">
-
-            </div>
-
-            <div class="post-info">
-
-                <div class="post-user">
-                    WFESC
-                </div>
-
-                <div class="post-title">
-                    أهلاً بكم في منشورات WFESC
-                </div>
-
-                <div class="post-content">
-                    هنا ستظهر المنشورات والمحتوى الذي يتم نشره
-                    من المستخدمين.
-                </div>
-
-            </div>
-
-            <div class="post-actions">
-
-                <button
-                    class="post-action like-button">
-                    ♡ إعجاب
-                </button>
-
-                <button
-                    class="post-action comment-button">
-                    💬 تعليق
-                </button>
-
-            </div>
-
-            <div class="comments-box">
-
-                <div class="comment-input-row">
-
-                    <input
-                        class="comment-input"
-                        type="text"
-                        placeholder="اكتب تعليقك...">
-
-                    <button
-                        class="comment-send">
-                        إرسال
-                    </button>
-
-                </div>
-
-                <div class="comments-list"></div>
-
-            </div>
-
-        </article>
-
-    </main>
+</div>
 
 
-    <!-- =========================
-         AUTH
-    ========================= -->
+<!-- POSTS -->
 
-    <div id="login-overlay">
+<main
+    class="posts-container"
+    id="posts-container">
 
-        <div class="login-box">
-
-            <div class="login-logo">
-                WFESC
-            </div>
-
-            <div class="login-subtitle">
-                سجّل دخولك للتفاعل والنشر
-            </div>
+</main>
 
 
-            <div class="auth-tabs">
+<!-- AUTH -->
 
-                <button
-                    class="auth-tab active"
-                    id="login-tab">
-                    تسجيل الدخول
-                </button>
+<div
+    class="modal"
+    id="auth-modal">
 
-                <button
-                    class="auth-tab"
-                    id="register-tab">
-                    إنشاء حساب
-                </button>
+    <div class="modal-box">
 
-            </div>
+        <div class="modal-title">
+            WFESC
+        </div>
 
-
-            <!-- LOGIN -->
-
-            <form id="login-form">
-
-                <input
-                    class="auth-input"
-                    id="login-email"
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    autocomplete="email"
-                    required>
-
-                <input
-                    class="auth-input"
-                    id="login-password"
-                    type="password"
-                    placeholder="كلمة المرور"
-                    autocomplete="current-password"
-                    required>
-
-                <button
-                    class="auth-submit"
-                    type="submit">
-                    تسجيل الدخول
-                </button>
-
-            </form>
+        <div class="modal-subtitle">
+            سجّل دخولك للتفاعل والنشر
+        </div>
 
 
-            <!-- REGISTER -->
-
-            <form
-                id="register-form"
-                style="display:none;">
-
-                <input
-                    class="auth-input"
-                    id="register-username"
-                    type="text"
-                    placeholder="اسم المستخدم"
-                    autocomplete="username"
-                    maxlength="30"
-                    required>
-
-                <input
-                    class="auth-input"
-                    id="register-email"
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    autocomplete="email"
-                    required>
-
-                <input
-                    class="auth-input"
-                    id="register-password"
-                    type="password"
-                    placeholder="كلمة المرور"
-                    autocomplete="new-password"
-                    minlength="6"
-                    required>
-
-                <button
-                    class="auth-submit"
-                    type="submit">
-                    إنشاء الحساب
-                </button>
-
-            </form>
-
+        <div class="auth-tabs">
 
             <button
-                class="auth-cancel"
-                id="auth-cancel">
-                إلغاء
+                class="auth-tab active"
+                id="login-tab">
+                تسجيل الدخول
             </button>
 
+            <button
+                class="auth-tab"
+                id="register-tab">
+                إنشاء حساب
+            </button>
 
-            <div id="auth-message"></div>
+        </div>
 
+
+        <form id="login-form">
+
+            <input
+                class="field"
+                id="login-email"
+                type="email"
+                placeholder="البريد الإلكتروني"
+                required>
+
+            <input
+                class="field"
+                id="login-password"
+                type="password"
+                placeholder="كلمة المرور"
+                required>
+
+            <button
+                class="primary-btn"
+                type="submit">
+                تسجيل الدخول
+            </button>
+
+        </form>
+
+
+        <form
+            id="register-form"
+            style="display:none;">
+
+            <input
+                class="field"
+                id="register-username"
+                placeholder="اسم المستخدم"
+                maxlength="30"
+                required>
+
+            <input
+                class="field"
+                id="register-email"
+                type="email"
+                placeholder="البريد الإلكتروني"
+                required>
+
+            <input
+                class="field"
+                id="register-password"
+                type="password"
+                minlength="6"
+                placeholder="كلمة المرور"
+                required>
+
+            <button
+                class="primary-btn"
+                type="submit">
+                إنشاء الحساب
+            </button>
+
+        </form>
+
+
+        <div
+            class="verify-message"
+            id="verify-message">
+
+            📩 تم إنشاء حسابك بنجاح
+
+            <br>
+
+            تحقق من بريدك الإلكتروني
+
+            <br>
+
+            وإذا لم تجد الرسالة، افحص
+            <strong>الرسائل غير المرغوب فيها</strong>
+
+        </div>
+
+
+        <button
+            class="secondary-btn"
+            id="auth-close">
+            إغلاق
+        </button>
+
+
+        <div
+            class="auth-message"
+            id="auth-message">
         </div>
 
     </div>
 
+</div>
 
-    <!-- SUPABASE -->
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- PUBLISH -->
 
+<div
+    class="modal"
+    id="publish-modal">
 
-    <script>
+    <div class="modal-box">
 
-        const SUPABASE_URL =
-            "https://mcgbzfgbaxwmutniorlw.supabase.co";
+        <div class="modal-title">
+            منشور جديد
+        </div>
 
-        const SUPABASE_KEY =
-            "sb_publishable_5b7pTbiGY2D6vDLRsWgVzA_X926lBeM";
+        <input
+            class="field"
+            id="post-title-input"
+            placeholder="عنوان المنشور"
+            maxlength="120">
 
+        <textarea
+            class="field"
+            id="post-content-input"
+            rows="6"
+            placeholder="اكتب محتوى المنشور..."></textarea>
 
-        const supabaseClient =
-            window.supabase.createClient(
-                SUPABASE_URL,
-                SUPABASE_KEY
-            );
+        <input
+            class="field"
+            id="post-media-input"
+            type="file"
+            accept="image/*,video/*">
 
+        <button
+            class="primary-btn"
+            id="publish-submit">
+            نشر المنشور
+        </button>
 
-        /* =========================
-           ELEMENTS
-        ========================= */
+        <button
+            class="secondary-btn"
+            onclick="closeModal('publish-modal')">
+            إلغاء
+        </button>
 
-        const loader =
-            document.getElementById("posts-loader");
+    </div>
 
-        const publishButton =
-            document.getElementById("publish-button");
+</div>
 
-        const loginOverlay =
-            document.getElementById("login-overlay");
 
-        const loginForm =
-            document.getElementById("login-form");
+<!-- SETTINGS -->
 
-        const registerForm =
-            document.getElementById("register-form");
+<div
+    class="modal"
+    id="settings-modal">
 
-        const loginTab =
-            document.getElementById("login-tab");
+    <div class="modal-box">
 
-        const registerTab =
-            document.getElementById("register-tab");
+        <div class="modal-title">
+            الإعدادات
+        </div>
 
-        const authCancel =
-            document.getElementById("auth-cancel");
+        <div
+            class="settings-user"
+            id="settings-user">
+        </div>
 
-        const authMessage =
-            document.getElementById("auth-message");
+        <div class="settings-row">
 
-        const loggedUser =
-            document.getElementById("logged-user");
+            <span>
+                👤 الملف الشخصي
+            </span>
 
+            <button onclick="openMyProfile()">
+                فتح
+            </button>
 
-        /* =========================
-           LOADING
-        ========================= */
+        </div>
 
-        window.addEventListener("load", function () {
+        <div class="settings-row">
 
-            setTimeout(function () {
+            <span>
+                🖼️ صورة الحساب
+            </span>
 
-                loader.classList.add("hide");
+            <button onclick="openAvatarPicker()">
+                تغيير
+            </button>
 
-            }, 1300);
+        </div>
 
-        });
+        <div class="settings-row">
 
+            <span>
+                ✏️ تعديل الملف
+            </span>
 
-        /* =========================
-           AUTH WINDOW
-        ========================= */
+            <button onclick="openEditProfile()">
+                تعديل
+            </button>
 
-        function openAuth() {
+        </div>
 
-            loginOverlay.classList.add("show");
+        <div class="settings-row">
 
-            authMessage.textContent = "";
+            <span>
+                🔐 كلمة المرور
+            </span>
 
-        }
+            <button onclick="openPasswordChange()">
+                تغيير
+            </button>
 
+        </div>
 
-        function closeAuth() {
+        <div class="settings-row">
 
-            loginOverlay.classList.remove("show");
+            <span>
+                🔔 الإشعارات
+            </span>
 
-            authMessage.textContent = "";
+            <button onclick="openNotifications()">
+                فتح
+            </button>
 
-        }
+        </div>
 
+        <button
+            class="danger-btn"
+            id="logout-button">
+            تسجيل الخروج
+        </button>
 
-        publishButton.addEventListener(
-            "click",
-            async function () {
+        <button
+            class="secondary-btn"
+            onclick="closeModal('settings-modal')">
+            إغلاق
+        </button>
 
-                const {
-                    data: {
-                        user
-                    }
-                } = await supabaseClient.auth.getUser();
+    </div>
 
+</div>
 
-                if (!user) {
 
-                    openAuth();
+<!-- PROFILE -->
 
-                    return;
+<div
+    class="modal"
+    id="profile-modal">
 
-                }
+    <div class="modal-box">
 
+        <div
+            class="profile-head"
+            id="profile-content">
+        </div>
 
-                alert(
-                    "تم تسجيل الدخول. نظام إنشاء المنشور سنضيفه بالخطوة التالية."
-                );
+        <button
+            class="secondary-btn"
+            onclick="closeModal('profile-modal')">
+            إغلاق
+        </button>
 
-            }
-        );
+    </div>
 
+</div>
 
-        authCancel.addEventListener(
-            "click",
-            closeAuth
-        );
 
+<!-- EDIT PROFILE -->
 
-        loginOverlay.addEventListener(
-            "click",
-            function (event) {
+<div
+    class="modal"
+    id="edit-profile-modal">
 
-                if (
-                    event.target === loginOverlay
-                ) {
+    <div class="modal-box">
 
-                    closeAuth();
+        <div class="modal-title">
+            تعديل الملف الشخصي
+        </div>
 
-                }
+        <input
+            class="field"
+            id="edit-username"
+            placeholder="اسم المستخدم"
+            maxlength="30">
 
-            }
-        );
+        <textarea
+            class="field"
+            id="edit-bio"
+            rows="4"
+            placeholder="نبذة عنك..."></textarea>
 
+        <button
+            class="primary-btn"
+            onclick="saveProfile()">
+            حفظ
+        </button>
 
-        /* =========================
-           TABS
-        ========================= */
+        <button
+            class="secondary-btn"
+            onclick="closeModal('edit-profile-modal')">
+            إلغاء
+        </button>
 
-        loginTab.addEventListener(
-            "click",
-            function () {
+    </div>
 
-                loginTab.classList.add("active");
-                registerTab.classList.remove("active");
+</div>
 
-                loginForm.style.display = "block";
-                registerForm.style.display = "none";
 
-                authMessage.textContent = "";
+<!-- PASSWORD -->
 
-            }
-        );
+<div
+    class="modal"
+    id="password-modal">
 
+    <div class="modal-box">
 
-        registerTab.addEventListener(
-            "click",
-            function () {
+        <div class="modal-title">
+            تغيير كلمة المرور
+        </div>
 
-                registerTab.classList.add("active");
-                loginTab.classList.remove("active");
+        <input
+            class="field"
+            id="new-password"
+            type="password"
+            minlength="6"
+            placeholder="كلمة المرور الجديدة">
 
-                loginForm.style.display = "none";
-                registerForm.style.display = "block";
+        <button
+            class="primary-btn"
+            onclick="changePassword()">
+            تغيير كلمة المرور
+        </button>
 
-                authMessage.textContent = "";
+        <button
+            class="secondary-btn"
+            onclick="closeModal('password-modal')">
+            إلغاء
+        </button>
 
-            }
-        );
+    </div>
 
+</div>
 
-        /* =========================
-           LOGIN
-        ========================= */
 
-        loginForm.addEventListener(
-            "submit",
-            async function (event) {
+<!-- AVATAR -->
 
-                event.preventDefault();
+<div
+    class="modal"
+    id="avatar-modal">
 
+    <div class="modal-box">
 
-                const email =
-                    document
-                    .getElementById("login-email")
-                    .value
-                    .trim();
+        <div class="modal-title">
+            صورة الحساب
+        </div>
 
+        <input
+            class="field"
+            id="avatar-input"
+            type="file"
+            accept="image/*">
 
-                const password =
-                    document
-                    .getElementById("login-password")
-                    .value;
+        <button
+            class="primary-btn"
+            onclick="uploadAvatar()">
+            حفظ الصورة
+        </button>
 
+        <button
+            class="secondary-btn"
+            onclick="closeModal('avatar-modal')">
+            إلغاء
+        </button>
 
-                authMessage.textContent =
-                    "جاري تسجيل الدخول...";
+    </div>
 
+</div>
 
-                const {
-                    data,
-                    error
-                } =
-                await supabaseClient.auth.signInWithPassword({
 
-                    email: email,
+<!-- NOTIFICATIONS -->
 
-                    password: password
+<div
+    class="modal"
+    id="notifications-modal">
 
-                });
+    <div class="modal-box">
 
+        <div class="modal-title">
+            الإشعارات
+        </div>
 
-                if (error) {
+        <div id="notifications-list"></div>
 
-                    authMessage.textContent =
-                        error.message;
+        <button
+            class="secondary-btn"
+            onclick="closeModal('notifications-modal')">
+            إغلاق
+        </button>
 
-                    return;
+    </div>
 
-                }
+</div>
 
 
-                authMessage.textContent =
-                    "تم تسجيل الدخول بنجاح.";
+<div id="toast"></div>
 
 
-                updateUser(data.user);
+<!-- SUPABASE -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-                setTimeout(
-                    closeAuth,
-                    700
-                );
 
-            }
-        );
+<script>
 
+/* =====================================================
+   SUPABASE
+===================================================== */
 
-        /* =========================
-           REGISTER
-        ========================= */
+const SUPABASE_URL =
+    "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
-        registerForm.addEventListener(
-            "submit",
-            async function (event) {
+const SUPABASE_KEY =
+    "sb_publishable_5b7pTbiGY2D6vDLRsWgVzA_X926lBeM";
 
-                event.preventDefault();
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 
 
-                const username =
-                    document
-                    .getElementById("register-username")
-                    .value
-                    .trim();
-
-
-                const email =
-                    document
-                    .getElementById("register-email")
-                    .value
-                    .trim();
-
-
-                const password =
-                    document
-                    .getElementById("register-password")
-                    .value;
-
-
-                if (username.length < 3) {
-
-                    authMessage.textContent =
-                        "اسم المستخدم يجب أن يكون 3 أحرف أو أكثر.";
-
-                    return;
-
-                }
-
-
-                authMessage.textContent =
-                    "جاري إنشاء الحساب...";
-
-
-                /* CHECK USERNAME */
-
-                const {
-                    data: existingProfile,
-                    error: usernameCheckError
-                } =
-                await supabaseClient
-                    .from("profiles")
-                    .select("username")
-                    .eq("username", username)
-                    .maybeSingle();
-
-
-                if (usernameCheckError) {
-
-                    authMessage.textContent =
-                        "حدث خطأ أثناء فحص اسم المستخدم.";
-
-                    console.error(
-                        usernameCheckError
-                    );
-
-                    return;
-
-                }
-
-
-                if (existingProfile) {
-
-                    authMessage.textContent =
-                        "اسم المستخدم مستخدم مسبقاً.";
-
-                    return;
-
-                }
-
-
-                /* CREATE AUTH USER */
-
-                const {
-    data,
-    error
-} = await supabaseClient.auth.signUp({
-    email: email,
-    password: password,
-
-    options: {
-        emailRedirectTo: "https://wfesc.github.io/wfesc/"
-    }
-});
-
-
-                if (error) {
-
-                    authMessage.textContent =
-                        error.message;
-
-                    return;
-
-                }
-
-
-                if (!data.user) {
-
-                    authMessage.textContent =
-                        "تعذر إنشاء الحساب.";
-
-                    return;
-
-                }
-
-
-                /* CREATE PROFILE */
-
-                const {
-                    error: profileError
-                } =
-                await supabaseClient
-                    .from("profiles")
-                    .insert({
-
-                        id: data.user.id,
-
-                        username: username
-
-                    });
-
-
-                if (profileError) {
-
-                    authMessage.textContent =
-                        "تم إنشاء الحساب لكن تعذر إنشاء الملف الشخصي.";
-
-                    console.error(
-                        profileError
-                    );
-
-                    return;
-
-                }
-
-
-                if (
-                    data.session
-                ) {
-
-                    authMessage.textContent =
-                        "تم إنشاء الحساب وتسجيل الدخول.";
-
-                    updateUser(data.user);
-
-                    setTimeout(
-                        closeAuth,
-                        900
-                    );
-
-                } else {
-
-                    authMessage.textContent =
-                        "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتفعيل الحساب.";
-
-                }
-
-            }
-        );
-
-
-        /* =========================
-           USER
-        ========================= */
-
-        async function updateUser(user) {
-
-            if (!user) {
-
-                loggedUser.style.display =
-                    "none";
-
-                return;
-
-            }
-
-
-            const {
-                data: profile
-            } =
-            await supabaseClient
-                .from("profiles")
-                .select("username")
-                .eq("id", user.id)
-                .maybeSingle();
-
-
-            if (profile) {
-
-                loggedUser.textContent =
-                    "مرحباً " + profile.username;
-
-            } else {
-
-                loggedUser.textContent =
-                    "مرحباً بك";
-
-            }
-
-
-            loggedUser.style.display =
-                "block";
-
-        }
-
-
-        /* =========================
-           CHECK SESSION
-        ========================= */
-
-        async function checkSession() {
-
-            const {
-                data: {
-                    session
-                }
-            } =
-            await supabaseClient.auth.getSession();
-
-
-            if (session) {
-
-                updateUser(session.user);
-
-            }
-
-        }
-
-
-        checkSession();
-
-
-        supabaseClient.auth.onAuthStateChange(
-            function (
-                event,
-                session
-            ) {
-
-                if (session) {
-
-                    updateUser(
-                        session.user
-                    );
-
-                } else {
-
-                    loggedUser.style.display =
-                        "none";
-
-                }
-
-            }
-        );
-
-
-        /* =========================
-           LIKE / COMMENT LOGIN
-        ========================= */
-
-        document
-            .querySelectorAll(".like-button")
-            .forEach(function (button) {
-
-                button.addEventListener(
-                    "click",
-                    async function () {
-
-                        const {
-                            data: {
-                                user
-                            }
-                        } =
-                        await supabaseClient
-                            .auth
-                            .getUser();
-
-
-                        if (!user) {
-
-                            openAuth();
-
-                            return;
-
-                        }
-
-
-                        button.classList.toggle(
-                            "active"
-                        );
-
-                    }
-                );
-
-            });
-
-
-        document
-            .querySelectorAll(".comment-button")
-            .forEach(function (button) {
-
-                button.addEventListener(
-                    "click",
-                    async function () {
-
-                        const {
-                            data: {
-                                user
-                            }
-                        } =
-                        await supabaseClient
-                            .auth
-                            .getUser();
-
-
-                        if (!user) {
-
-                            openAuth();
-
-                            return;
-
-                        }
-
-
-                        const post =
-                            button.closest(".post");
-
-                        const comments =
-                            post.querySelector(
-                                ".comments-box"
-                            );
-
-                        comments.classList.toggle(
-                            "show"
-                        );
-
-                    }
-                );
-
-            });
-
-
-    </script>
-
-</body>
+/* =====================================================
+   ELEMENTS
+===================================================== */
 
     
