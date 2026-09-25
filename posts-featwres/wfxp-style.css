@@ -1,1 +1,97 @@
+/* =========================================================
+   WFESC POSTS EXTENSION
+   WFXP STYLE
+   جميع التعديلات البصرية المستقبلية للمنشورات
+   ========================================================= */
 
+/* التعليقات */
+
+.wfxp-comment {
+    transition:
+        opacity 350ms ease,
+        transform 350ms ease,
+        background-color 250ms ease;
+}
+
+
+/* حالة الظهور */
+
+.wfxp-comment.wfxp-enter {
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+.wfxp-comment.wfxp-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* الردود */
+
+.wfxp-replies {
+    overflow: hidden;
+    transition:
+        max-height 350ms ease,
+        opacity 350ms ease;
+}
+
+
+/* أزرار التفاعل */
+
+.wfxp-reaction,
+.wfxp-reply-button,
+.wfxp-show-replies {
+    transition:
+        transform 160ms ease,
+        opacity 160ms ease;
+}
+
+
+/* حركة الضغط */
+
+.wfxp-reaction:active,
+.wfxp-reply-button:active,
+.wfxp-show-replies:active {
+    transform: scale(0.92);
+}
+
+
+/* حركة التفاعل */
+
+.wfxp-reaction.wfxp-active {
+    animation: wfxpReactionPop 280ms ease;
+}
+
+
+@keyframes wfxpReactionPop {
+
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.25);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+}
+
+
+/* =========================================================
+   مكان التعديلات المستقبلية
+   ========================================================= */
+
+/*
+   أي تعديل بصري مستقبلاً يوضع هنا.
+
+   مثال:
+
+   .wfxp-comment {
+       border-radius: 16px;
+   }
+
+*/
