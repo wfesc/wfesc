@@ -3164,7 +3164,7 @@ async function openEditProfile(){
 }
 
 
-async function saveProfile(){
+    async function saveProfile(){
 
     const username =
         document
@@ -3180,19 +3180,27 @@ async function saveProfile(){
             .trim();
 
 
+    if(!currentUser)
+        return;
+
+
     const {
+        data,
         error
     } =
     await supabaseClient
         .from("profiles")
-        .update({
+        .upsert({
 
-            username:username,
+            id: currentUser.id,
 
-            bio:bio
+            username: username,
+
+            bio: bio
 
         })
-        .eq("id",currentUser.id);
+        .select()
+        .single();
 
 
     if(error){
@@ -3206,13 +3214,17 @@ async function saveProfile(){
     }
 
 
-    await loadCurrentProfile();
+    profilesCache[currentUser.id] =
+        data;
+
 
     closeModal(
         "edit-profile-modal"
     );
 
+
     renderUserState();
+
 
     showToast(
         "تم تحديث الملف الشخصي."
