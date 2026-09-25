@@ -3377,3 +3377,325 @@ async function changePassword(){
 ===================================================== */
     
   
+let searchTimer;
+
+
+searchInput.addEventListener(
+    "input",
+    function(){
+
+        clearTimeout(
+            searchTimer
+        );
+
+
+        const value =
+            this.value.trim();
+
+
+        if(value.length < 2){
+
+            searchResults.style.display =
+                "none";
+
+            return;
+
+        }
+
+
+        searchTimer =
+            setTimeout(
+                () => searchEverything(value),
+                300
+            );
+
+    }
+);
+
+
+async function searchEverything(value){
+
+    const [
+        usersResult,
+        postsResult
+    ] =
+    await Promise.all([
+
+        supabaseClient
+            .from("profiles")
+            .select("*")
+            .ilike(
+                "username",
+                "%" + value + "%"
+            )
+            .limit(5),
+
+        supabaseClient
+            .from("posts")
+            .select("*")
+            .or(
+                "title.ilike.%" +
+                value +
+                "%,content.ilike.%" +
+                value +
+                "%"
+            )
+            .limit(5)
+
+    ]);
+
+
+    searchResults.innerHTML = "";
+
+
+    (usersResult.data || [])
+        .forEach(
+            user => {
+
+                const item =
+                    document.createElement("div");
+
+                item.className =
+                    "search-result";
+
+                item.innerHTML = `
+
+                    👤 ${esc(user.username)}
+
+                    <br>
+
+                    <small>
+                        مستخدم
+                    </small>
+
+                `;
+
+
+                item.onclick =
+                    () => {
+
+                        searchResults.style.display =
+                            "none";
+
+                        searchInput.value =
+                            "";
+
+                        openProfile(
+                            user.id
+                        );
+
+                    };
+
+
+                searchResults.appendChild(
+                    item
+                );
+
+            }
+        );
+
+
+    (postsResult.data || [])
+        .forEach(
+            post => {
+
+                const item =
+                    document.createElement("div");
+
+                item.className =
+                    "search-result";
+
+                item.innerHTML = `
+
+                    📝 ${esc(post.title)}
+
+                    <br>
+
+                    <small>
+                        منشور
+                    </small>
+
+                `;
+
+
+                item.onclick =
+                    () => {
+
+                        searchResults.style.display =
+                            "none";
+
+                        searchInput.value =
+                            "";
+
+                        const target =
+                            document.querySelector(
+                                `.post[data-id="${post.id}"]`
+                            );
+
+
+                        if(target){
+
+                            target.scrollIntoView({
+                                behavior:"smooth",
+                                block:"center"
+                            });
+
+                        }
+
+                    };
+
+
+                searchResults.appendChild(
+                    item
+                );
+
+            }
+        );
+
+
+    if(!searchResults.children.length){
+
+        searchResults.innerHTML =
+            '<div class="search-result">لا توجد نتائج.</div>';
+
+    }
+
+
+    searchResults.style.display =
+        "block";
+
+}
+
+
+/* =====================================================
+   NOTIFICATIONS
+===================================================== */
+
+async function openNotifications(){
+
+    if(!requireLogin())
+        return;
+
+
+    closeModal(
+        "settings-modal"
+    );
+
+
+    const {
+        data,
+        error
+    } =
+    await supabaseClient
+        .from("notifications")
+        .select("*")
+        .eq("user_id",currentUser.id)
+        .order("created_at",{ascending:false})
+        .limit(50);
+
+
+    const list =
+        document.getElementById(
+            "notifications-list"
+        );
+
+
+    if(error){
+
+        list.innerHTML =
+            '<div class="notification">لم يتم إعداد الإشعارات بعد.</div>';
+
+        showModal(
+            "notifications-modal"
+        );
+
+        return;
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    if(!data.length){
+
+        list.innerHTML =
+            '<div class="notification">لا توجد إشعارات.</div>';
+
+    }
+
+
+    data.forEach(
+        notification => {
+
+            const div =
+                document.createElement("div");
+
+            div.className =
+                "notification " +
+                (
+                    notification.is_read
+                    ? ""
+                    : "unread"
+                );
+
+
+            div.innerHTML = `
+
+                ${esc(notification.message)}
+
+                <span class="notification-time">
+
+                    ${formatDate(notification.created_at)}
+
+                </span>
+
+            `;
+
+
+            list.appendChild(
+                div
+            );
+
+        }
+    );
+
+
+    showModal(
+        "notifications-modal"
+    );
+
+}
+
+
+/* =====================================================
+   START
+===================================================== */
+
+window.addEventListener(
+    "load",
+    async function(){
+
+        setTimeout(
+            function(){
+
+                document
+                    .getElementById("posts-loader")
+                    .classList
+                    .add("hide");
+
+            },
+            1000
+        );
+
+
+        await restoreSession();
+
+    }
+);
+
+</script>
+
+</body>
+</html>
+
