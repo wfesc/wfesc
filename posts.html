@@ -2487,6 +2487,7 @@ async function getPostCounts(postId){
    COMMENTS
 ===================================================== */
 
+
 async function toggleComments(postId,article){
 
     const box =
@@ -2494,9 +2495,7 @@ async function toggleComments(postId,article){
             ".comments-box"
         );
 
-
     box.classList.toggle("show");
-
 
     if(box.classList.contains("show")){
 
@@ -2517,10 +2516,8 @@ async function loadComments(postId,article){
             ".comments-list"
         );
 
-
     list.innerHTML =
         '<div class="comment-empty">جاري تحميل التعليقات...</div>';
-
 
     const {
         data,
@@ -2532,18 +2529,18 @@ async function loadComments(postId,article){
         .eq("post_id",postId)
         .order("created_at",{ascending:true});
 
-
     if(error){
 
         list.innerHTML =
             '<div class="comment-empty">تعذر تحميل التعليقات.</div>';
 
+        console.error(error);
+
         return;
 
     }
 
-
-    if(!data.length){
+    if(!data || !data.length){
 
         list.innerHTML =
             '<div class="comment-empty">كن أول من يعلّق 💬</div>';
@@ -2552,15 +2549,12 @@ async function loadComments(postId,article){
 
     }
 
-
     const roots =
         data.filter(
             c => !c.parent_id
         );
 
-
     list.innerHTML = "";
-
 
     for(const comment of roots){
 
@@ -2568,23 +2562,30 @@ async function loadComments(postId,article){
             await createComment(
                 comment,
                 data,
-                postId
+                postId,
+                article
             );
 
-        list.appendChild(element);
+        list.appendChild(
+            element
+        );
 
     }
 
 }
 
 
-async function createComment(comment,allComments,postId){
+async function createComment(
+    comment,
+    allComments,
+    postId,
+    article
+){
 
     const profile =
         await getProfile(
             comment.user_id
         );
-
 
     const wrapper =
         document.createElement("div");
@@ -2592,12 +2593,31 @@ async function createComment(comment,allComments,postId){
     wrapper.className =
         "comment";
 
+    wrapper.dataset.id =
+        comment.id;
 
     const replies =
         allComments.filter(
             c => c.parent_id === comment.id
         );
 
+    const isCommentOwner =
+        currentUser &&
+        currentUser.id === comment.user_id;
+
+    const post =
+        postsCache.find(
+            p => p.id === postId
+        );
+
+    const isPostOwner =
+        currentUser &&
+        post &&
+        currentUser.id === post.user_id;
+
+    const canDelete =
+        isCommentOwner ||
+        isPostOwner;
 
     wrapper.innerHTML = `
 
@@ -2610,69 +2630,149 @@ async function createComment(comment,allComments,postId){
             <div>
 
                 <div class="comment-name">
-                    ${esc(profile?.username || "مستخدم")}
+                    ${esc(
+                        profile?.username ||
+                        "مستخدم"
+                    )}
                 </div>
 
                 <div class="comment-time">
-                    ${formatDate(comment.created_at)}
+                    ${formatDate(
+                        comment.created_at
+                    )}
                 </div>
 
             </div>
 
         </div>
 
+
         <div class="comment-text">
             ${esc(comment.content)}
         </div>
+
+
+        <div class="comment-actions">
+
+            <button
+                class="comment-action comment-like">
+                ❤️ <span>0</span>
+            </button>
+
+            <button
+                class="comment-action comment-dislike">
+                👎 <span>0</span>
+            </button>
+
+            <button
+                class="comment-action comment-reply">
+                ↩️ رد
+            </button>
+
+            ${
+                canDelete
+                ?
+                `
+                <button
+                    class="comment-action comment-delete">
+                    🗑️ حذف
+                </button>
+                `
+                :
+                ""
+            }
+
+        </div>
+
+
+        <div class="comment-reply-box"></div>
+
 
         <div class="replies"></div>
 
     `;
 
 
+    const likeButton =
+        wrapper.querySelector(
+            ".comment-like"
+        );
+
+    const dislikeButton =
+        wrapper.querySelector(
+            ".comment-dislike"
+        );
+
+
+    await loadCommentReactions(
+        comment.id,
+        likeButton,
+        dislikeButton
+    );
+
+
+    likeButton.onclick =
+        () => reactComment(
+            comment.id,
+            "like",
+            wrapper
+        );
+
+
+    dislikeButton.onclick =
+        () => reactComment(
+            comment.id,
+            "dislike",
+            wrapper
+        );
+
+
+    const replyButton =
+        wrapper.querySelector(
+            ".comment-reply"
+        );
+
+    replyButton.onclick =
+        () => showReplyBox(
+            comment.id,
+            wrapper,
+            postId,
+            article
+        );
+
+
+    const deleteButton =
+        wrapper.querySelector(
+            ".comment-delete"
+        );
+
+    if(deleteButton){
+
+        deleteButton.onclick =
+            () => deleteComment(
+                comment.id,
+                postId,
+                article
+            );
+
+    }
+
+
     const repliesBox =
-        wrapper.querySelector(".replies");
+        wrapper.querySelector(
+            ".replies"
+        );
 
 
     for(const reply of replies){
 
-        const replyProfile =
-            await getProfile(reply.user_id);
-
         const replyElement =
-            document.createElement("div");
-
-        replyElement.className =
-            "comment";
-
-        replyElement.innerHTML = `
-
-            <div class="comment-head">
-
-                <img
-                    class="avatar small"
-                    src="${esc(profileAvatar(replyProfile))}">
-
-                <div>
-
-                    <div class="comment-name">
-                        ${esc(replyProfile?.username || "مستخدم")}
-                    </div>
-
-                    <div class="comment-time">
-                        ${formatDate(reply.created_at)}
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="comment-text">
-                ${esc(reply.content)}
-            </div>
-
-        `;
-
+            await createComment(
+                reply,
+                allComments,
+                postId,
+                article
+            );
 
         repliesBox.appendChild(
             replyElement
@@ -2685,6 +2785,717 @@ async function createComment(comment,allComments,postId){
 
 }
 
+
+async function sendComment(postId,article){
+
+    if(!requireLogin())
+        return;
+
+    const input =
+        article.querySelector(
+            ".comment-input"
+        );
+
+    const text =
+        input.value.trim();
+
+    if(!text){
+
+        showToast(
+            "اكتب تعليق أولاً."
+        );
+
+        return;
+
+    }
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .from("comments")
+        .insert({
+
+            post_id:postId,
+
+            user_id:currentUser.id,
+
+            content:text,
+
+            parent_id:null
+
+        });
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+    input.value = "";
+
+    await loadComments(
+        postId,
+        article
+    );
+
+    const commentButton =
+        article.querySelector(
+            ".comment-button"
+        );
+
+    const count =
+        commentButton.querySelector(
+            "span"
+        );
+
+    count.textContent =
+        Number(
+            count.textContent
+        ) + 1;
+
+}
+
+
+async function showReplyBox(
+    commentId,
+    wrapper,
+    postId,
+    article
+){
+
+    if(!requireLogin())
+        return;
+
+    const box =
+        wrapper.querySelector(
+            ".comment-reply-box"
+        );
+
+    if(box.innerHTML){
+
+        box.innerHTML = "";
+
+        return;
+
+    }
+
+    box.innerHTML = `
+
+        <div class="comment-input-row">
+
+            <input
+                class="comment-input reply-input"
+                placeholder="اكتب ردك...">
+
+            <button
+                class="comment-send reply-send">
+                إرسال
+            </button>
+
+        </div>
+
+    `;
+
+    const input =
+        box.querySelector(
+            ".reply-input"
+        );
+
+    const button =
+        box.querySelector(
+            ".reply-send"
+        );
+
+
+    button.onclick =
+        async () => {
+
+            const text =
+                input.value.trim();
+
+            if(!text){
+
+                showToast(
+                    "اكتب الرد أولاً."
+                );
+
+                return;
+
+            }
+
+            const {
+                error
+            } =
+            await supabaseClient
+                .from("comments")
+                .insert({
+
+                    post_id:postId,
+
+                    user_id:currentUser.id,
+
+                    content:text,
+
+                    parent_id:commentId
+
+                });
+
+            if(error){
+
+                showToast(
+                    error.message
+                );
+
+                console.error(error);
+
+                return;
+
+            }
+
+            await loadComments(
+                postId,
+                article
+            );
+
+        };
+
+}
+
+
+async function loadCommentReactions(
+    commentId,
+    likeButton,
+    dislikeButton
+){
+
+    const likes =
+        await supabaseClient
+            .from("comment_likes")
+            .select(
+                "id",
+                {
+                    count:"exact",
+                    head:true
+                }
+            )
+            .eq(
+                "comment_id",
+                commentId
+            );
+
+    const dislikes =
+        await supabaseClient
+            .from("comment_dislikes")
+            .select(
+                "id",
+                {
+                    count:"exact",
+                    head:true
+                }
+            )
+            .eq(
+                "comment_id",
+                commentId
+            );
+
+
+    likeButton
+        .querySelector("span")
+        .textContent =
+        likes.count || 0;
+
+
+    dislikeButton
+        .querySelector("span")
+        .textContent =
+        dislikes.count || 0;
+
+
+    if(!currentUser)
+        return;
+
+
+    const myLike =
+        await supabaseClient
+            .from("comment_likes")
+            .select("id")
+            .eq(
+                "comment_id",
+                commentId
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+    const myDislike =
+        await supabaseClient
+            .from("comment_dislikes")
+            .select("id")
+            .eq(
+                "comment_id",
+                commentId
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+    if(myLike.data){
+
+        likeButton.classList.add(
+            "active"
+        );
+
+    }
+
+
+    if(myDislike.data){
+
+        dislikeButton.classList.add(
+            "active"
+        );
+
+    }
+
+}
+
+
+async function reactComment(
+    commentId,
+    type,
+    wrapper
+){
+
+    if(!requireLogin())
+        return;
+
+
+    const likeButton =
+        wrapper.querySelector(
+            ".comment-like"
+        );
+
+    const dislikeButton =
+        wrapper.querySelector(
+            ".comment-dislike"
+        );
+
+
+    const likeCount =
+        likeButton.querySelector(
+            "span"
+        );
+
+    const dislikeCount =
+        dislikeButton.querySelector(
+            "span"
+        );
+
+
+    if(type === "like"){
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient
+            .from("comment_likes")
+            .select("id")
+            .eq(
+                "comment_id",
+                commentId
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+        if(error){
+
+            showToast(
+                error.message
+            );
+
+            return;
+
+        }
+
+
+        if(data){
+
+            const {
+                error:deleteError
+            } =
+            await supabaseClient
+                .from("comment_likes")
+                .delete()
+                .eq(
+                    "id",
+                    data.id
+                );
+
+
+            if(deleteError){
+
+                showToast(
+                    deleteError.message
+                );
+
+                return;
+
+            }
+
+
+            likeCount.textContent =
+                Math.max(
+                    0,
+                    Number(
+                        likeCount.textContent
+                    ) - 1
+                );
+
+
+            likeButton.classList.remove(
+                "active"
+            );
+
+        }else{
+
+            const {
+                error:removeDislikeError
+            } =
+            await supabaseClient
+                .from("comment_dislikes")
+                .delete()
+                .eq(
+                    "comment_id",
+                    commentId
+                )
+                .eq(
+                    "user_id",
+                    currentUser.id
+                );
+
+
+            if(removeDislikeError){
+
+                showToast(
+                    removeDislikeError.message
+                );
+
+                return;
+
+            }
+
+
+            const {
+                error:insertError
+            } =
+            await supabaseClient
+                .from("comment_likes")
+                .insert({
+
+                    comment_id:commentId,
+
+                    user_id:currentUser.id
+
+                });
+
+
+            if(insertError){
+
+                showToast(
+                    insertError.message
+                );
+
+                return;
+
+            }
+
+
+            likeCount.textContent =
+                Number(
+                    likeCount.textContent
+                ) + 1;
+
+
+            likeButton.classList.add(
+                "active"
+            );
+
+
+            if(
+                dislikeButton.classList.contains(
+                    "active"
+                )
+            ){
+
+                dislikeCount.textContent =
+                    Math.max(
+                        0,
+                        Number(
+                            dislikeCount.textContent
+                        ) - 1
+                    );
+
+                dislikeButton.classList.remove(
+                    "active"
+                );
+
+            }
+
+        }
+
+    }else{
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient
+            .from("comment_dislikes")
+            .select("id")
+            .eq(
+                "comment_id",
+                commentId
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+        if(error){
+
+            showToast(
+                error.message
+            );
+
+            return;
+
+        }
+
+
+        if(data){
+
+            const {
+                error:deleteError
+            } =
+            await supabaseClient
+                .from("comment_dislikes")
+                .delete()
+                .eq(
+                    "id",
+                    data.id
+                );
+
+
+            if(deleteError){
+
+                showToast(
+                    deleteError.message
+                );
+
+                return;
+
+            }
+
+
+            dislikeCount.textContent =
+                Math.max(
+                    0,
+                    Number(
+                        dislikeCount.textContent
+                    ) - 1
+                );
+
+
+            dislikeButton.classList.remove(
+                "active"
+            );
+
+        }else{
+
+            const {
+                error:removeLikeError
+            } =
+            await supabaseClient
+                .from("comment_likes")
+                .delete()
+                .eq(
+                    "comment_id",
+                    commentId
+                )
+                .eq(
+                    "user_id",
+                    currentUser.id
+                );
+
+
+            if(removeLikeError){
+
+                showToast(
+                    removeLikeError.message
+                );
+
+                return;
+
+            }
+
+
+            const {
+                error:insertError
+            } =
+            await supabaseClient
+                .from("comment_dislikes")
+                .insert({
+
+                    comment_id:commentId,
+
+                    user_id:currentUser.id
+
+                });
+
+
+            if(insertError){
+
+                showToast(
+                    insertError.message
+                );
+
+                return;
+
+            }
+
+
+            dislikeCount.textContent =
+                Number(
+                    dislikeCount.textContent
+                ) + 1;
+
+
+            dislikeButton.classList.add(
+                "active"
+            );
+
+
+            if(
+                likeButton.classList.contains(
+                    "active"
+                )
+            ){
+
+                likeCount.textContent =
+                    Math.max(
+                        0,
+                        Number(
+                            likeCount.textContent
+                        ) - 1
+                    );
+
+                likeButton.classList.remove(
+                    "active"
+                );
+
+            }
+
+        }
+
+    }
+
+}
+
+
+async function deleteComment(
+    commentId,
+    postId,
+    article
+){
+
+    if(!requireLogin())
+        return;
+
+
+    const confirmDelete =
+        confirm(
+            "هل تريد حذف هذا التعليق؟"
+        );
+
+
+    if(!confirmDelete)
+        return;
+
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .from("comments")
+        .delete()
+        .eq(
+            "id",
+            commentId
+        );
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    await loadComments(
+        postId,
+        article
+    );
+
+
+    const commentButton =
+        article.querySelector(
+            ".comment-button"
+        );
+
+    const count =
+        commentButton.querySelector(
+            "span"
+        );
+
+    count.textContent =
+        Math.max(
+            0,
+            Number(
+                count.textContent
+            ) - 1
+        );
+
+
+    showToast(
+        "تم حذف التعليق."
+    );
+
+}
 
 /* =====================================================
    SEND COMMENT
