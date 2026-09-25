@@ -1,17 +1,12 @@
 /* =========================================================
    WFESC SOCIAL SYSTEM
-   ACCOUNT ENGINE + ACCOUNT UI
-   نظام الحسابات والواجهة التفاعلية
+   ACCOUNT ENGINE
+   نظام الحسابات
    ========================================================= */
 
 (() => {
 
     "use strict";
-
-
-    /* =====================================================
-       منع التكرار
-       ===================================================== */
 
     if (window.WFESC_ACCOUNT_LOADED) {
         return;
@@ -21,93 +16,613 @@
 
 
     /* =====================================================
-       الإعدادات
+       الحالة
        ===================================================== */
 
-    const WFX_ACCOUNT_SETTINGS = {
-
-        enabled: true,
-
-        passwordResetRedirect:
-            window.location.origin +
-            window.location.pathname,
-
-        messageDuration: 5000
-
-    };
-
-
-    /* =====================================================
-       حالة الحساب
-       ===================================================== */
-
-    const WFX_ACCOUNT_STATE = {
-
+    const ACCOUNT_STATE = {
         initialized: false,
-
         loggedIn: false,
-
         user: null,
-
         session: null
-
     };
 
 
     /* =====================================================
-       أدوات عامة
+       Supabase
        ===================================================== */
 
-    function WFX_ACCOUNT_getSupabase() {
+    function getSupabase() {
 
         if (
-            typeof supabaseClient ===
-            "undefined"
+            typeof window.supabaseClient !== "undefined" &&
+            window.supabaseClient
         ) {
-
-            console.error(
-                "[WFESC ACCOUNT] supabaseClient غير موجود."
-            );
-
-            return null;
+            return window.supabaseClient;
         }
 
-        return supabaseClient;
-
+        return null;
     }
 
 
-    function WFX_ACCOUNT_dispatchEvent(
-        eventName,
-        detail = null
-    ) {
+    /* =====================================================
+       إنشاء عنصر الحساب داخل الإعدادات
+       ===================================================== */
 
-        document.dispatchEvent(
+    function createSettingsAccount() {
 
-            new CustomEvent(
-                "wfesc-account-" + eventName,
-                {
-                    detail
-                }
+        const panel =
+            document.getElementById(
+                "wfesc-settings-panel"
+            );
+
+        if (!panel) {
+            return false;
+        }
+
+        if (
+            document.getElementById(
+                "wfesc-account-setting"
             )
+        ) {
+            return true;
+        }
 
+
+        const accountBox =
+            document.createElement("div");
+
+        accountBox.id =
+            "wfesc-account-setting";
+
+        accountBox.innerHTML = `
+
+            <div class="wfesc-account-setting-row">
+
+                <div class="wfesc-account-setting-info">
+
+                    <span>
+                        👤 الحساب
+                    </span>
+
+                    <small id="wfesc-account-setting-status">
+                        غير مسجل الدخول
+                    </small>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="wfesc-account-login-button"
+                    class="wfesc-account-setting-button"
+                >
+                    تسجيل الدخول
+                </button>
+
+            </div>
+
+        `;
+
+
+        const themeRow =
+            panel.querySelector(
+                ".wfesc-setting-row"
+            );
+
+
+        if (themeRow) {
+
+            panel.insertBefore(
+                accountBox,
+                themeRow
+            );
+
+        } else {
+
+            panel.appendChild(
+                accountBox
+            );
+
+        }
+
+
+        const style =
+            document.createElement("style");
+
+        style.id =
+            "wfesc-account-setting-style";
+
+        style.textContent = `
+
+            #wfesc-account-setting {
+                margin-bottom: 18px;
+                padding-bottom: 18px;
+                border-bottom: 1px solid
+                    rgba(255,255,255,.08);
+            }
+
+            .wfesc-account-setting-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .wfesc-account-setting-info {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                min-width: 0;
+            }
+
+            .wfesc-account-setting-info span {
+                font-size: 14px;
+            }
+
+            .wfesc-account-setting-info small {
+                color: #888;
+                font-size: 11px;
+                transition: color .35s ease;
+            }
+
+            .wfesc-account-setting-button {
+                border: 1px solid
+                    rgba(255,255,255,.16);
+
+                background:
+                    rgba(255,255,255,.06);
+
+                color: #fff;
+
+                border-radius: 9px;
+
+                padding: 8px 11px;
+
+                font-family:
+                    Arial,
+                    Tahoma,
+                    sans-serif;
+
+                font-size: 11px;
+
+                cursor: pointer;
+
+                white-space: nowrap;
+
+                transition:
+                    background .3s ease,
+                    color .3s ease,
+                    border-color .3s ease,
+                    transform .2s ease;
+            }
+
+            .wfesc-account-setting-button:hover {
+                background: #fff;
+                color: #000;
+                border-color: #fff;
+                transform: translateY(-1px);
+            }
+
+            .wfesc-account-setting-button:active {
+                transform: scale(.95);
+            }
+
+            body.wfesc-light
+            #wfesc-account-setting {
+                border-bottom-color: #ddd;
+            }
+
+            body.wfesc-light
+            .wfesc-account-setting-info small {
+                color: #777;
+            }
+
+            body.wfesc-light
+            .wfesc-account-setting-button {
+                background: #f3f3f3;
+                color: #111;
+                border-color: #ccc;
+            }
+
+            body.wfesc-light
+            .wfesc-account-setting-button:hover {
+                background: #111;
+                color: #fff;
+                border-color: #111;
+            }
+
+            @media (max-width: 700px) {
+
+                .wfesc-account-setting-row {
+                    gap: 8px;
+                }
+
+                .wfesc-account-setting-button {
+                    padding: 8px 9px;
+                    font-size: 10px;
+                }
+
+            }
+
+        `;
+
+        document.head.appendChild(style);
+
+
+        const loginButton =
+            document.getElementById(
+                "wfesc-account-login-button"
+            );
+
+
+        if (loginButton) {
+
+            loginButton.addEventListener(
+                "click",
+                function () {
+
+                    openAccountUI("login");
+
+                }
+            );
+
+        }
+
+
+        return true;
+    }
+
+
+    /* =====================================================
+       نافذة تسجيل الدخول
+       ===================================================== */
+
+    function createAccountUI() {
+
+        if (
+            document.getElementById(
+                "wfesc-social-account"
+            )
+        ) {
+            return;
+        }
+
+
+        const overlay =
+            document.createElement("div");
+
+        overlay.id =
+            "wfesc-social-account";
+
+        overlay.innerHTML = `
+
+            <div
+                class="wfesc-social-account-box"
+                role="dialog"
+                aria-modal="true"
+            >
+
+                <button
+                    type="button"
+                    id="wfesc-account-close"
+                    class="wfesc-account-close"
+                    aria-label="إغلاق"
+                >
+                    ×
+                </button>
+
+
+                <div class="wfesc-account-header">
+
+                    <div class="wfesc-account-icon">
+                        👤
+                    </div>
+
+                    <h2>
+                        تسجيل الدخول
+                    </h2>
+
+                    <p>
+                        سجّل الدخول إلى حساب WFESC
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="wfesc-account-message"
+                    class="wfesc-social-message"
+                    aria-live="polite"
+                ></div>
+
+
+                <div
+                    id="wfesc-account-login-view"
+                    class="wfesc-account-view wfesc-account-view-active"
+                >
+
+                    <label>
+                        البريد الإلكتروني
+                    </label>
+
+                    <input
+                        type="email"
+                        id="wfesc-login-email"
+                        placeholder="البريد الإلكتروني"
+                        autocomplete="email"
+                    >
+
+
+                    <label>
+                        كلمة المرور
+                    </label>
+
+                    <div class="wfesc-password-wrap">
+
+                        <input
+                            type="password"
+                            id="wfesc-login-password"
+                            placeholder="كلمة المرور"
+                            autocomplete="current-password"
+                        >
+
+                        <button
+                            type="button"
+                            class="wfesc-password-eye"
+                            data-eye-for="wfesc-login-password"
+                            aria-label="إظهار كلمة المرور"
+                        >
+                            🙉
+                        </button>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="wfesc-login-button"
+                        class="wfesc-account-main-button"
+                    >
+                        تسجيل الدخول
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="wfesc-forgot-link"
+                        class="wfesc-account-link"
+                    >
+                        نسيت كلمة المرور؟
+                    </button>
+
+
+                    <div class="wfesc-account-divider">
+                        <span>أو</span>
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="wfesc-register-link"
+                        class="wfesc-account-secondary-button"
+                    >
+                        إنشاء حساب
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="wfesc-account-forgot-view"
+                    class="wfesc-account-view"
+                >
+
+                    <label>
+                        البريد الإلكتروني
+                    </label>
+
+                    <input
+                        type="email"
+                        id="wfesc-forgot-email"
+                        placeholder="البريد الإلكتروني"
+                        autocomplete="email"
+                    >
+
+
+                    <button
+                        type="button"
+                        id="wfesc-forgot-button"
+                        class="wfesc-account-main-button"
+                    >
+                        إرسال رابط الاستعادة
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="wfesc-back-login"
+                        class="wfesc-account-link"
+                    >
+                        العودة لتسجيل الدخول
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="wfesc-account-register-view"
+                    class="wfesc-account-view"
+                >
+
+                    <label>
+                        البريد الإلكتروني
+                    </label>
+
+                    <input
+                        type="email"
+                        id="wfesc-register-email"
+                        placeholder="البريد الإلكتروني"
+                        autocomplete="email"
+                    >
+
+
+                    <label>
+                        كلمة المرور
+                    </label>
+
+                    <div class="wfesc-password-wrap">
+
+                        <input
+                            type="password"
+                            id="wfesc-register-password"
+                            placeholder="كلمة المرور"
+                            autocomplete="new-password"
+                        >
+
+                        <button
+                            type="button"
+                            class="wfesc-password-eye"
+                            data-eye-for="wfesc-register-password"
+                            aria-label="إظهار كلمة المرور"
+                        >
+                            🙉
+                        </button>
+
+                    </div>
+
+
+                    <label>
+                        تأكيد كلمة المرور
+                    </label>
+
+                    <div class="wfesc-password-wrap">
+
+                        <input
+                            type="password"
+                            id="wfesc-register-confirm"
+                            placeholder="تأكيد كلمة المرور"
+                            autocomplete="new-password"
+                        >
+
+                        <button
+                            type="button"
+                            class="wfesc-password-eye"
+                            data-eye-for="wfesc-register-confirm"
+                            aria-label="إظهار كلمة المرور"
+                        >
+                            🙉
+                        </button>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="wfesc-register-button"
+                        class="wfesc-account-main-button"
+                    >
+                        إنشاء حساب
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="wfesc-back-login-register"
+                        class="wfesc-account-link"
+                    >
+                        العودة لتسجيل الدخول
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        document.body.appendChild(
+            overlay
         );
+
+
+        bindAccountUI();
+    }
+
+
+    /* =====================================================
+       تبديل الواجهات
+       ===================================================== */
+
+    function switchView(view) {
+
+        const login =
+            document.getElementById(
+                "wfesc-account-login-view"
+            );
+
+        const forgot =
+            document.getElementById(
+                "wfesc-account-forgot-view"
+            );
+
+        const register =
+            document.getElementById(
+                "wfesc-account-register-view"
+            );
+
+
+        if (!login || !forgot || !register) {
+            return;
+        }
+
+
+        login.classList.remove(
+            "wfesc-account-view-active"
+        );
+
+        forgot.classList.remove(
+            "wfesc-account-view-active"
+        );
+
+        register.classList.remove(
+            "wfesc-account-view-active"
+        );
+
+
+        if (view === "forgot") {
+
+            forgot.classList.add(
+                "wfesc-account-view-active"
+            );
+
+        } else if (view === "register") {
+
+            register.classList.add(
+                "wfesc-account-view-active"
+            );
+
+        } else {
+
+            login.classList.add(
+                "wfesc-account-view-active"
+            );
+
+        }
 
     }
 
 
     /* =====================================================
-       رسائل الواجهة
+       الرسائل
        ===================================================== */
 
-    function WFX_ACCOUNT_showMessage(
+    function showMessage(
         message,
-        type = "info"
+        type = "error"
     ) {
 
         const box =
-            document.querySelector(
-                "#wfesc-account-message"
+            document.getElementById(
+                "wfesc-account-message"
             );
 
         if (!box) {
@@ -118,1755 +633,64 @@
         box.textContent =
             message;
 
-
         box.className =
-            "wfesc-social-message wfesc-social-show " +
-            "wfesc-message-" +
+            "wfesc-social-message wfesc-message-" +
             type;
 
 
-        clearTimeout(
-            box._wfescTimer
-        );
-
-
-        box._wfescTimer =
-            setTimeout(
-                () => {
-
-                    box.classList.remove(
-                        "wfesc-social-show"
-                    );
-
-                },
-                WFX_ACCOUNT_SETTINGS
-                    .messageDuration
-            );
+        box.style.display =
+            "block";
 
     }
 
 
-    /* =====================================================
-       التحقق من المدخلات
-       ===================================================== */
-
-    function WFX_ACCOUNT_validateEmail(
-        email
-    ) {
-
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-            .test(
-                String(email).trim()
-            );
-
-    }
-
-
-    function WFX_ACCOUNT_validatePassword(
-        password
-    ) {
-
-        return (
-            typeof password === "string" &&
-            password.length >= 6
-        );
-
-    }
-
-
-    /* =====================================================
-       زر التحميل
-       ===================================================== */
-
-    function WFX_ACCOUNT_setLoading(
-        button,
-        loading,
-        text
-    ) {
-
-        if (!button) {
-            return;
-        }
-
-
-        if (loading) {
-
-            button.dataset.originalText =
-                button.textContent;
-
-            button.disabled =
-                true;
-
-            button.innerHTML = `
-                <span class="wfesc-social-spinner"></span>
-                <span>${text}</span>
-            `;
-
-            button.classList.add(
-                "wfesc-social-loading"
-            );
-
-        } else {
-
-            button.disabled =
-                false;
-
-            button.textContent =
-                button.dataset.originalText ||
-                text;
-
-            button.classList.remove(
-                "wfesc-social-loading"
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       تغيير نوع الصفحة
-       ===================================================== */
-
-    function WFX_ACCOUNT_switchView(
-        view
-    ) {
-
-        const views =
-            document.querySelectorAll(
-                ".wfesc-account-view"
-            );
-
-
-        views.forEach(
-            item => {
-
-                item.classList.remove(
-                    "wfesc-account-view-active"
-                );
-
-            }
-        );
-
-
-        const target =
-            document.querySelector(
-                `[data-account-view="${view}"]`
-            );
-
-
-        if (target) {
-
-            target.classList.add(
-                "wfesc-account-view-active"
-            );
-
-        }
-
+    function clearMessage() {
 
         const box =
-            document.querySelector(
-                ".wfesc-social-account-box"
-            );
-
-
-        if (box) {
-
-            box.classList.remove(
-                "wfesc-account-view-change"
-            );
-
-            void box.offsetWidth;
-
-            box.classList.add(
-                "wfesc-account-view-change"
-            );
-
-        }
-
-
-        WFX_ACCOUNT_clearMessage();
-
-    }
-
-
-    function WFX_ACCOUNT_clearMessage() {
-
-        const box =
-            document.querySelector(
-                "#wfesc-account-message"
+            document.getElementById(
+                "wfesc-account-message"
             );
 
         if (!box) {
             return;
         }
 
-        box.classList.remove(
-            "wfesc-social-show"
-        );
+        box.textContent = "";
 
+        box.className =
+            "wfesc-social-message";
+
+        box.style.display =
+            "none";
     }
 
 
     /* =====================================================
-       إظهار / إخفاء كلمة المرور
-       🙉 → 🙈
+       فتح وإغلاق الحساب
        ===================================================== */
 
-    function WFX_ACCOUNT_togglePassword(
-        input,
-        button
-    ) {
-
-        if (!input || !button) {
-            return;
-        }
-
-
-        const hidden =
-            input.type === "password";
-
-
-        input.type =
-            hidden
-                ? "text"
-                : "password";
-
-
-        button.textContent =
-            hidden
-                ? "🙈"
-                : "🙉";
-
-
-        button.setAttribute(
-            "aria-label",
-            hidden
-                ? "إخفاء كلمة المرور"
-                : "إظهار كلمة المرور"
-        );
-
-
-        button.classList.remove(
-            "wfesc-eye-animation"
-        );
-
-        void button.offsetWidth;
-
-        button.classList.add(
-            "wfesc-eye-animation"
-        );
-
-    }
-
-
-    /* =====================================================
-       تسجيل الدخول
-       ===================================================== */
-
-    async function WFX_ACCOUNT_login(
-        email,
-        password
-    ) {
-
-        const client =
-            WFX_ACCOUNT_getSupabase();
-
-
-        if (!client) {
-
-            return {
-                success: false,
-                error:
-                    "نظام الحساب غير متصل حالياً."
-            };
-
-        }
-
-
-        if (!email) {
-
-            return {
-                success: false,
-                error:
-                    "يرجى كتابة البريد الإلكتروني."
-            };
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validateEmail(
-                email
-            )
-        ) {
-
-            return {
-                success: false,
-                error:
-                    "البريد الإلكتروني غير صحيح."
-            };
-
-        }
-
-
-        if (!password) {
-
-            return {
-                success: false,
-                error:
-                    "يرجى كتابة كلمة المرور."
-            };
-
-        }
-
-
-        try {
-
-            const result =
-                await client.auth
-                    .signInWithPassword({
-
-                        email:
-                            String(email).trim(),
-
-                        password:
-                            String(password)
-
-                    });
-
-
-            if (result.error) {
-
-                return {
-                    success: false,
-                    error:
-                        result.error.message
-                };
-
-            }
-
-
-            WFX_ACCOUNT_STATE.session =
-                result.data.session || null;
-
-
-            WFX_ACCOUNT_STATE.user =
-                result.data.user || null;
-
-
-            WFX_ACCOUNT_STATE.loggedIn =
-                Boolean(
-                    result.data.user
-                );
-
-
-            WFX_ACCOUNT_STATE.initialized =
-                true;
-
-
-            window.WFESC_CURRENT_USER =
-                WFX_ACCOUNT_STATE.user;
-
-
-            window.WFESC_ACCOUNT_STATE =
-                WFX_ACCOUNT_STATE;
-
-
-            WFX_ACCOUNT_dispatchEvent(
-                "login",
-                WFX_ACCOUNT_STATE.user
-            );
-
-
-            return {
-
-                success: true,
-
-                user:
-                    WFX_ACCOUNT_STATE.user,
-
-                session:
-                    WFX_ACCOUNT_STATE.session
-
-            };
-
-
-        } catch (error) {
-
-            console.error(
-                "[WFESC ACCOUNT] Login:",
-                error
-            );
-
-
-            return {
-
-                success: false,
-
-                error:
-                    error.message ||
-                    "حدث خطأ أثناء تسجيل الدخول."
-
-            };
-
-        }
-
-    }
-
-
-    /* =====================================================
-       إنشاء حساب
-       ===================================================== */
-
-    async function WFX_ACCOUNT_register(
-        email,
-        password,
-        confirmPassword
-    ) {
-
-        const client =
-            WFX_ACCOUNT_getSupabase();
-
-
-        if (!client) {
-
-            return {
-                success: false,
-                error:
-                    "نظام الحساب غير متصل حالياً."
-            };
-
-        }
-
-
-        if (!email) {
-
-            return {
-                success: false,
-                error:
-                    "يرجى كتابة البريد الإلكتروني."
-            };
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validateEmail(
-                email
-            )
-        ) {
-
-            return {
-                success: false,
-                error:
-                    "البريد الإلكتروني غير صحيح."
-            };
-
-        }
-
-
-        if (!password) {
-
-            return {
-                success: false,
-                error:
-                    "يرجى كتابة كلمة المرور."
-            };
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validatePassword(
-                password
-            )
-        ) {
-
-            return {
-                success: false,
-                error:
-                    "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
-            };
-
-        }
-
-
-        if (
-            password !==
-            confirmPassword
-        ) {
-
-            return {
-                success: false,
-                error:
-                    "كلمتا المرور غير متطابقتين."
-            };
-
-        }
-
-
-        try {
-
-            const result =
-                await client.auth.signUp({
-
-                    email:
-                        String(email).trim(),
-
-                    password:
-                        String(password)
-
-                });
-
-
-            if (result.error) {
-
-                return {
-                    success: false,
-                    error:
-                        result.error.message
-                };
-
-            }
-
-
-            WFX_ACCOUNT_STATE.session =
-                result.data.session || null;
-
-
-            WFX_ACCOUNT_STATE.user =
-                result.data.user || null;
-
-
-            WFX_ACCOUNT_STATE.loggedIn =
-                Boolean(
-                    result.data.user
-                );
-
-
-            WFX_ACCOUNT_STATE.initialized =
-                true;
-
-
-            window.WFESC_CURRENT_USER =
-                WFX_ACCOUNT_STATE.user;
-
-
-            window.WFESC_ACCOUNT_STATE =
-                WFX_ACCOUNT_STATE;
-
-
-            WFX_ACCOUNT_dispatchEvent(
-                "register",
-                WFX_ACCOUNT_STATE.user
-            );
-
-
-            return {
-
-                success: true,
-
-                user:
-                    WFX_ACCOUNT_STATE.user,
-
-                session:
-                    WFX_ACCOUNT_STATE.session
-
-            };
-
-
-        } catch (error) {
-
-            console.error(
-                "[WFESC ACCOUNT] Register:",
-                error
-            );
-
-
-            return {
-
-                success: false,
-
-                error:
-                    error.message ||
-                    "حدث خطأ أثناء إنشاء الحساب."
-
-            };
-
-        }
-
-    }
-
-
-    /* =====================================================
-       تسجيل الخروج
-       ===================================================== */
-
-    async function WFX_ACCOUNT_logout() {
-
-        const client =
-            WFX_ACCOUNT_getSupabase();
-
-
-        if (!client) {
-
-            return {
-                success: false,
-                error:
-                    "نظام الحساب غير متصل."
-            };
-
-        }
-
-
-        try {
-
-            const result =
-                await client.auth.signOut();
-
-
-            if (result.error) {
-
-                return {
-                    success: false,
-                    error:
-                        result.error.message
-                };
-
-            }
-
-
-            WFX_ACCOUNT_STATE.session =
-                null;
-
-            WFX_ACCOUNT_STATE.user =
-                null;
-
-            WFX_ACCOUNT_STATE.loggedIn =
-                false;
-
-
-            window.WFESC_CURRENT_USER =
-                null;
-
-
-            window.WFESC_ACCOUNT_STATE =
-                WFX_ACCOUNT_STATE;
-
-
-            WFX_ACCOUNT_dispatchEvent(
-                "logout"
-            );
-
-
-            return {
-                success: true
-            };
-
-
-        } catch (error) {
-
-            return {
-
-                success: false,
-
-                error:
-                    error.message ||
-                    "حدث خطأ أثناء تسجيل الخروج."
-
-            };
-
-        }
-
-    }
-
-
-    /* =====================================================
-       نسيت كلمة المرور
-       ===================================================== */
-
-    async function WFX_ACCOUNT_resetPassword(
-        email
-    ) {
-
-        const client =
-            WFX_ACCOUNT_getSupabase();
-
-
-        if (!client) {
-
-            return {
-                success: false,
-                error:
-                    "نظام الحساب غير متصل."
-            };
-
-        }
-
-
-        if (!email) {
-
-            return {
-                success: false,
-                error:
-                    "يرجى كتابة البريد الإلكتروني."
-            };
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validateEmail(
-                email
-            )
-        ) {
-
-            return {
-                success: false,
-                error:
-                    "البريد الإلكتروني غير صحيح."
-            };
-
-        }
-
-
-        try {
-
-            const result =
-                await client.auth
-                    .resetPasswordForEmail(
-
-                        String(email).trim(),
-
-                        {
-                            redirectTo:
-                                WFX_ACCOUNT_SETTINGS
-                                    .passwordResetRedirect
-                        }
-
-                    );
-
-
-            if (result.error) {
-
-                return {
-                    success: false,
-                    error:
-                        result.error.message
-                };
-
-            }
-
-
-            WFX_ACCOUNT_dispatchEvent(
-                "password-reset",
-                email
-            );
-
-
-            return {
-                success: true
-            };
-
-
-        } catch (error) {
-
-            return {
-
-                success: false,
-
-                error:
-                    error.message ||
-                    "تعذر إرسال رابط استعادة كلمة المرور."
-
-            };
-
-        }
-
-    }
-
-
-    /* =====================================================
-       إنشاء واجهة الحساب
-       ===================================================== */
-
-    function WFX_ACCOUNT_createUI() {
-
-        if (
-            document.querySelector(
-                "#wfesc-social-account"
-            )
-        ) {
-            return;
-        }
-
-
-        const wrapper =
-            document.createElement(
-                "div"
-            );
-
-
-        wrapper.id =
-            "wfesc-social-account";
-
-
-        wrapper.className =
-            "wfesc-social-account";
-
-
-        wrapper.innerHTML = `
-
-            <div
-                class="wfesc-social-account-box"
-                role="dialog"
-                aria-modal="true"
-            >
-
-                <button
-                    type="button"
-                    class="wfesc-social-close"
-                    id="wfesc-account-close"
-                    aria-label="إغلاق"
-                >
-                    ×
-                </button>
-
-
-                <div
-                    class="wfesc-account-header-icon"
-                >
-                    👤
-                </div>
-
-
-                <div
-                    class="wfesc-social-account-title"
-                >
-                    WFESC
-                </div>
-
-
-                <div
-                    class="wfesc-social-account-description"
-                >
-                    حسابك في WFESC
-                </div>
-
-
-                <div
-                    id="wfesc-account-message"
-                    class="wfesc-social-message"
-                ></div>
-
-
-                <!-- ==============================
-                     تسجيل الدخول
-                =============================== -->
-
-                <section
-                    class="wfesc-account-view wfesc-account-view-active"
-                    data-account-view="login"
-                >
-
-                    <div class="wfesc-account-welcome">
-                        <strong>مرحباً بعودتك</strong>
-                        <span>سجل دخولك للمتابعة</span>
-                    </div>
-
-
-                    <div class="wfesc-social-field">
-
-                        <label>
-                            البريد الإلكتروني
-                        </label>
-
-                        <input
-                            id="wfesc-login-email"
-                            type="email"
-                            autocomplete="email"
-                            placeholder="example@email.com"
-                        >
-
-                    </div>
-
-
-                    <div class="wfesc-social-field">
-
-                        <label>
-                            كلمة المرور
-                        </label>
-
-                        <div
-                            class="wfesc-password-wrap"
-                        >
-
-                            <input
-                                id="wfesc-login-password"
-                                type="password"
-                                autocomplete="current-password"
-                                placeholder="كلمة المرور"
-                            >
-
-                            <button
-                                type="button"
-                                class="wfesc-password-eye"
-                                data-eye-for="wfesc-login-password"
-                                aria-label="إظهار كلمة المرور"
-                            >
-                                🙉
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-button"
-                        id="wfesc-login-button"
-                    >
-                        تسجيل الدخول
-                    </button>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-link"
-              data-account-switch="forgot"
-                    >
-                        نسيت كلمة المرور؟
-                    </button>
-
-
-                    <div
-                        class="wfesc-account-divider"
-                    >
-                        <span>أو</span>
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-button wfesc-social-button-secondary"
-                        data-account-switch="register"
-                    >
-                        إنشاء حساب جديد
-                    </button>
-
-                </section>
-
-
-                <!-- ==============================
-                     إنشاء حساب
-                =============================== -->
-
-                <section
-                    class="wfesc-account-view"
-                    data-account-view="register"
-                >
-
-                    <div class="wfesc-account-welcome">
-                        <strong>إنشاء حساب جديد</strong>
-                        <span>أنشئ حسابك في WFESC</span>
-                    </div>
-
-
-                    <div class="wfesc-social-field">
-
-                        <label>
-                            البريد الإلكتروني
-                        </label>
-
-                        <input
-                            id="wfesc-register-email"
-                            type="email"
-                            autocomplete="email"
-                            placeholder="example@email.com"
-                        >
-
-                    </div>
-
-
-                    <div class="wfesc-social-field">
-
-                        <label>
-                            كلمة المرور
-                        </label>
-
-                        <div
-                            class="wfesc-password-wrap"
-                        >
-
-                            <input
-                                id="wfesc-register-password"
-                                type="password"
-                                autocomplete="new-password"
-                                placeholder="6 أحرف أو أكثر"
-                            >
-
-                            <button
-                                type="button"
-                                class="wfesc-password-eye"
-                                data-eye-for="wfesc-register-password"
-                                aria-label="إظهار كلمة المرور"
-                            >
-                                🙉
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="wfesc-social-field">
-
-                        <label>
-                            تأكيد كلمة المرور
-                        </label>
-
-                        <div
-                            class="wfesc-password-wrap"
-                        >
-
-                            <input
-                                id="wfesc-register-confirm"
-                                type="password"
-                                autocomplete="new-password"
-                                placeholder="أعد كتابة كلمة المرور"
-                            >
-
-                            <button
-                                type="button"
-                                class="wfesc-password-eye"
-                                data-eye-for="wfesc-register-confirm"
-                                aria-label="إظهار كلمة المرور"
-                            >
-                                🙉
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-button"
-                        id="wfesc-register-button"
-                    >
-                        إنشاء الحساب
-                    </button>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-link"
-                        data-account-switch="login"
-                    >
-                        لدي حساب بالفعل
-                    </button>
-
-                </section>
-
-
-                <!-- ==============================
-                     استعادة كلمة المرور
-                =============================== -->
-
-                <section
-                    class="wfesc-account-view"
-                    data-account-view="forgot"
-                >
-
-                    <div class="wfesc-account-welcome">
-                        <strong>استعادة كلمة المرور</strong>
-                        <span>
-                            سنرسل لك رابطاً إلى بريدك الإلكتروني
-                        </span>
-                    </div>
-
-
-                    <div class="wfesc-social-field">
-
-                        <label>
-                            البريد الإلكتروني
-                        </label>
-
-                        <input
-                            id="wfesc-forgot-email"
-                            type="email"
-                            autocomplete="email"
-                            placeholder="example@email.com"
-                        >
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-button"
-                        id="wfesc-forgot-button"
-                    >
-                        إرسال رابط الاستعادة
-                    </button>
-
-
-                    <button
-                        type="button"
-                        class="wfesc-social-link"
-                        data-account-switch="login"
-                    >
-                        العودة لتسجيل الدخول
-                    </button>
-
-                </section>
-
-            </div>
-
-        `;
-
-
-        document.body.appendChild(
-            wrapper
-        );
-
-
-        WFX_ACCOUNT_bindUI();
-
-    }
-
-
-    /* =====================================================
-       ربط أحداث الواجهة
-       ===================================================== */
-
-    function WFX_ACCOUNT_bindUI() {
-
-        const wrapper =
-            document.querySelector(
-                "#wfesc-social-account"
-            );
-
-
-        if (!wrapper) {
-            return;
-        }
-
-
-        /* إغلاق */
-
-        const close =
-            wrapper.querySelector(
-                "#wfesc-account-close"
-            );
-
-
-        close.addEventListener(
-            "click",
-            WFX_ACCOUNT_close
-        );
-
-
-        /* الضغط خارج الصندوق */
-
-        wrapper.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target ===
-                    wrapper
-                ) {
-
-                    WFX_ACCOUNT_close();
-
-                }
-
-            }
-        );
-
-
-        /* التنقل */
-
-        wrapper
-            .querySelectorAll(
-                "[data-account-switch]"
-            )
-            .forEach(
-                button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            WFX_ACCOUNT_switchView(
-                                button.dataset
-                                    .accountSwitch
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-
-        /* العيون */
-
-        wrapper
-            .querySelectorAll(
-                ".wfesc-password-eye"
-            )
-            .forEach(
-                button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            const input =
-                                document.getElementById(
-                                    button.dataset
-                                        .eyeFor
-                                );
-
-
-                            WFX_ACCOUNT_togglePassword(
-                                input,
-                                button
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-
-        /* تسجيل الدخول */
-
-        wrapper
-            .querySelector(
-                "#wfesc-login-button"
-            )
-            .addEventListener(
-                "click",
-                WFX_ACCOUNT_handleLogin
-            );
-
-
-        /* إنشاء حساب */
-
-        wrapper
-            .querySelector(
-                "#wfesc-register-button"
-            )
-            .addEventListener(
-                "click",
-                WFX_ACCOUNT_handleRegister
-            );
-
-
-        /* استعادة */
-
-        wrapper
-            .querySelector(
-                "#wfesc-forgot-button"
-            )
-            .addEventListener(
-                "click",
-                WFX_ACCOUNT_handleForgot
-            );
-
-
-        /* Enter */
-
-        wrapper.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key !==
-                    "Enter"
-                ) {
-                    return;
-                }
-
-
-                const active =
-                    wrapper.querySelector(
-                        ".wfesc-account-view-active"
-                    );
-
-
-                if (!active) {
-                    return;
-                }
-
-
-                if (
-                    active.dataset.accountView ===
-                    "login"
-                ) {
-
-                    WFX_ACCOUNT_handleLogin();
-
-                }
-
-
-                if (
-                    active.dataset.accountView ===
-                    "register"
-                ) {
-
-                    WFX_ACCOUNT_handleRegister();
-
-                }
-
-
-                if (
-                    active.dataset.accountView ===
-                    "forgot"
-                ) {
-
-                    WFX_ACCOUNT_handleForgot();
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       معالجة تسجيل الدخول
-       ===================================================== */
-
-    async function WFX_ACCOUNT_handleLogin() {
-
-        const email =
-            document.querySelector(
-                "#wfesc-login-email"
-            ).value.trim();
-
-
-        const password =
-            document.querySelector(
-                "#wfesc-login-password"
-            ).value;
-
-
-        const button =
-            document.querySelector(
-                "#wfesc-login-button"
-            );
-
-
-        if (!email) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ اكتب البريد الإلكتروني أولاً.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validateEmail(
-                email
-            )
-        ) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ البريد الإلكتروني غير صحيح.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!password) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ اكتب كلمة المرور.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        WFX_ACCOUNT_setLoading(
-            button,
-            true,
-            "جاري تسجيل الدخول..."
-        );
-
-
-        const result =
-            await WFX_ACCOUNT_login(
-                email,
-                password
-            );
-
-
-        WFX_ACCOUNT_setLoading(
-            button,
-            false,
-            "تسجيل الدخول"
-        );
-
-
-        if (!result.success) {
-
-            WFX_ACCOUNT_showMessage(
-                "❌ " + result.error,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        WFX_ACCOUNT_showMessage(
-            "✓ تم تسجيل الدخول بنجاح.",
-            "success"
-        );
-
-
-        setTimeout(
-            () => {
-
-                WFX_ACCOUNT_close();
-
-            },
-            900
-        );
-
-    }
-
-
-    /* =====================================================
-       معالجة إنشاء الحساب
-       ===================================================== */
-
-    async function WFX_ACCOUNT_handleRegister() {
-
-        const email =
-            document.querySelector(
-                "#wfesc-register-email"
-            ).value.trim();
-
-
-        const password =
-            document.querySelector(
-                "#wfesc-register-password"
-            ).value;
-
-
-        const confirm =
-            document.querySelector(
-                "#wfesc-register-confirm"
-            ).value;
-
-
-        const button =
-            document.querySelector(
-                "#wfesc-register-button"
-            );
-
-
-        if (!email) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ اكتب البريد الإلكتروني.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validateEmail(
-                email
-            )
-        ) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ البريد الإلكتروني غير صحيح.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!password) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ اكتب كلمة المرور.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            password.length < 6
-        ) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ كلمة المرور يجب أن تحتوي على 6 أحرف أو أكثر.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!confirm) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ أكد كلمة المرور.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            password !==
-            confirm
-        ) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ كلمتا المرور غير متطابقتين.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        WFX_ACCOUNT_setLoading(
-            button,
-            true,
-            "جاري إنشاء الحساب..."
-        );
-
-
-        const result =
-            await WFX_ACCOUNT_register(
-                email,
-                password,
-                confirm
-            );
-
-
-        WFX_ACCOUNT_setLoading(
-            button,
-            false,
-            "إنشاء الحساب"
-        );
-
-
-        if (!result.success) {
-
-            WFX_ACCOUNT_showMessage(
-                "❌ " + result.error,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * إذا لم توجد جلسة فهذا يعني غالباً
-         * أن Supabase ينتظر تأكيد البريد.
-         */
-
-        if (!result.session) {
-
-            WFX_ACCOUNT_showMessage(
-                "📧 تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو مجلد الرسائل غير المرغوب فيها.",
-                "success"
-            );
-
-
-            const buttonBox =
-                document.querySelector(
-                    "#wfesc-register-button"
-                );
-
-
-            if (buttonBox) {
-
-                buttonBox.classList.add(
-                    "wfesc-email-sent"
-                );
-
-            }
-
-
-            return;
-
-        }
-
-
-        WFX_ACCOUNT_showMessage(
-            "✓ تم إنشاء الحساب وتسجيل الدخول.",
-            "success"
-        );
-
-
-        setTimeout(
-            () => {
-
-                WFX_ACCOUNT_close();
-
-            },
-            1000
-        );
-
-    }
-
-
-    /* =====================================================
-       معالجة نسيت كلمة المرور
-       ===================================================== */
-
-    async function WFX_ACCOUNT_handleForgot() {
-
-        const email =
-            document.querySelector(
-                "#wfesc-forgot-email"
-            ).value.trim();
-
-
-        const button =
-            document.querySelector(
-                "#wfesc-forgot-button"
-            );
-
-
-        if (!email) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ اكتب البريد الإلكتروني.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !WFX_ACCOUNT_validateEmail(
-                email
-            )
-        ) {
-
-            WFX_ACCOUNT_showMessage(
-                "⚠️ البريد الإلكتروني غير صحيح.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        WFX_ACCOUNT_setLoading(
-            button,
-            true,
-            "جاري الإرسال..."
-        );
-
-
-        const result =
-            await WFX_ACCOUNT_resetPassword(
-                email
-            );
-
-
-        WFX_ACCOUNT_setLoading(
-            button,
-            false,
-            "إرسال رابط الاستعادة"
-        );
-
-
-        if (!result.success) {
-
-            WFX_ACCOUNT_showMessage(
-                "❌ " + result.error,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        WFX_ACCOUNT_showMessage(
-            "📧 تم إرسال رابط استعادة كلمة المرور. تحقق من البريد والرسائل غير المرغوب فيها.",
-            "success"
-        );
-
-    }
-
-
-    /* =====================================================
-       فتح الواجهة
-       ===================================================== */
-
-    function WFX_ACCOUNT_open(
+    function openAccountUI(
         view = "login"
     ) {
 
-        WFX_ACCOUNT_createUI();
+        createAccountUI();
+
+        switchView(view);
+
+        clearMessage();
 
 
-        const wrapper =
-            document.querySelector(
-                "#wfesc-social-account"
+        const overlay =
+            document.getElementById(
+                "wfesc-social-account"
             );
 
-
-        if (!wrapper) {
+        if (!overlay) {
             return;
         }
 
 
-        WFX_ACCOUNT_switchView(
-            view
-        );
-
-
-        wrapper.classList.add(
+        overlay.classList.add(
             "wfesc-social-open"
         );
 
@@ -1875,47 +699,22 @@
             "wfesc-account-lock-scroll"
         );
 
-
-        setTimeout(
-            () => {
-
-                const firstInput =
-                    wrapper.querySelector(
-                        ".wfesc-account-view-active input"
-                    );
-
-
-                if (firstInput) {
-
-                    firstInput.focus();
-
-                }
-
-            },
-            180
-        );
-
     }
 
 
-    /* =====================================================
-       إغلاق الواجهة
-       ===================================================== */
+    function closeAccountUI() {
 
-    function WFX_ACCOUNT_close() {
-
-        const wrapper =
-            document.querySelector(
-                "#wfesc-social-account"
+        const overlay =
+            document.getElementById(
+                "wfesc-social-account"
             );
 
-
-        if (!wrapper) {
+        if (!overlay) {
             return;
         }
 
 
-        wrapper.classList.remove(
+        overlay.classList.remove(
             "wfesc-social-open"
         );
 
@@ -1928,80 +727,171 @@
 
 
     /* =====================================================
-       حالة الحساب من Supabase
+       تسجيل الدخول
        ===================================================== */
 
-    async function WFX_ACCOUNT_refreshState() {
+    async function login() {
 
-        const client =
-            WFX_ACCOUNT_getSupabase();
+        const supabase =
+            getSupabase();
+
+        if (!supabase) {
+
+            showMessage(
+                "تعذر الاتصال بنظام الحسابات.",
+                "error"
+            );
+
+            return;
+        }
 
 
-        if (!client) {
-            return WFX_ACCOUNT_STATE;
+        const email =
+            document.getElementById(
+                "wfesc-login-email"
+            )?.value.trim();
+
+
+        const password =
+            document.getElementById(
+                "wfesc-login-password"
+            )?.value;
+
+
+        if (!email) {
+
+            showMessage(
+                "يرجى إدخال البريد الإلكتروني.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (!password) {
+
+            showMessage(
+                "يرجى إدخال كلمة المرور.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                email
+            )
+        ) {
+
+            showMessage(
+                "يرجى إدخال بريد إلكتروني صحيح.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const button =
+            document.getElementById(
+                "wfesc-login-button"
+            );
+
+
+        if (button) {
+
+            button.disabled = true;
+
+            button.textContent =
+                "جارٍ تسجيل الدخول...";
         }
 
 
         try {
 
             const result =
-                await client.auth
-                    .getSession();
+                await supabase.auth.signInWithPassword({
+
+                    email: email,
+
+                    password: password
+
+                });
 
 
             if (result.error) {
 
-                console.error(
-                    "[WFESC ACCOUNT] Session:",
-                    result.error
+                showMessage(
+                    result.error.message ||
+                    "تعذر تسجيل الدخول.",
+                    "error"
                 );
 
-                return WFX_ACCOUNT_STATE;
-
+                return;
             }
 
 
-            const session =
+            ACCOUNT_STATE.loggedIn =
+                true;
+
+            ACCOUNT_STATE.user =
+                result.data.user;
+
+            ACCOUNT_STATE.session =
                 result.data.session;
 
 
-            WFX_ACCOUNT_STATE.session =
-                session || null;
+            updateSettingsAccount();
 
 
-            WFX_ACCOUNT_STATE.user =
-                session?.user || null;
-
-
-            WFX_ACCOUNT_STATE.loggedIn =
-                Boolean(
-                    session?.user
-                );
-
-
-            WFX_ACCOUNT_STATE.initialized =
-                true;
-
-
-            window.WFESC_CURRENT_USER =
-                WFX_ACCOUNT_STATE.user;
-
-
-            window.WFESC_ACCOUNT_STATE =
-                WFX_ACCOUNT_STATE;
-
-
-            return WFX_ACCOUNT_STATE;
-
-        } catch (error) {
-
-            console.error(
-                "[WFESC ACCOUNT] Refresh:",
-                error
+            showMessage(
+                "تم تسجيل الدخول بنجاح.",
+                "success"
             );
 
 
-            return WFX_ACCOUNT_STATE;
+            setTimeout(() => {
+
+                closeAccountUI();
+
+            }, 900);
+
+
+            document.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:login",
+                    {
+                        detail: {
+                            user:
+                                ACCOUNT_STATE.user,
+
+                            session:
+                                ACCOUNT_STATE.session
+                        }
+                    }
+                )
+            );
+
+
+        } catch (error) {
+
+            showMessage(
+                "حدث خطأ أثناء تسجيل الدخول.",
+                "error"
+            );
+
+        } finally {
+
+            if (button) {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "تسجيل الدخول";
+            }
 
         }
 
@@ -2009,59 +899,690 @@
 
 
     /* =====================================================
-       مراقبة حالة الدخول
+       إنشاء الحساب
        ===================================================== */
 
-    function WFX_ACCOUNT_listenAuthChanges() {
+    async function register() {
 
-        const client =
-            WFX_ACCOUNT_getSupabase();
+        const supabase =
+            getSupabase();
 
+        if (!supabase) {
 
-        if (!client) {
+            showMessage(
+                "تعذر الاتصال بنظام الحسابات.",
+                "error"
+            );
+
             return;
         }
 
 
-        client.auth.onAuthStateChange(
-            (
-                event,
-                session
-            ) => {
-
-                WFX_ACCOUNT_STATE.session =
-                    session || null;
+        const email =
+            document.getElementById(
+                "wfesc-register-email"
+            )?.value.trim();
 
 
-                WFX_ACCOUNT_STATE.user =
-                    session?.user || null;
+        const password =
+            document.getElementById(
+                "wfesc-register-password"
+            )?.value;
 
 
-                WFX_ACCOUNT_STATE.loggedIn =
-                    Boolean(
-                        session?.user
-                    );
+        const confirm =
+            document.getElementById(
+                "wfesc-register-confirm"
+            )?.value;
 
 
-                WFX_ACCOUNT_STATE.initialized =
+        if (!email) {
+
+            showMessage(
+                "يرجى إدخال البريد الإلكتروني.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (!password) {
+
+            showMessage(
+                "يرجى إدخال كلمة المرور.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (password.length < 6) {
+
+            showMessage(
+                "كلمة المرور يجب أن تكون 6 أحرف على الأقل.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (password !== confirm) {
+
+            showMessage(
+                "كلمتا المرور غير متطابقتين.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const button =
+            document.getElementById(
+                "wfesc-register-button"
+            );
+
+
+        if (button) {
+
+            button.disabled = true;
+
+            button.textContent =
+                "جارٍ إنشاء الحساب...";
+        }
+
+
+        try {
+
+            const result =
+                await supabase.auth.signUp({
+
+                    email: email,
+
+                    password: password
+
+                });
+
+
+            if (result.error) {
+
+                showMessage(
+                    result.error.message ||
+                    "تعذر إنشاء الحساب.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "📧 تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو مجلد الرسائل غير المرغوب فيها.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            showMessage(
+                "حدث خطأ أثناء إنشاء الحساب.",
+                "error"
+            );
+
+        } finally {
+
+            if (button) {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "إنشاء حساب";
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       استعادة كلمة المرور
+       ===================================================== */
+
+    async function resetPassword() {
+
+        const supabase =
+            getSupabase();
+
+        if (!supabase) {
+
+            showMessage(
+                "تعذر الاتصال بنظام الحسابات.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const email =
+            document.getElementById(
+                "wfesc-forgot-email"
+            )?.value.trim();
+
+
+        if (!email) {
+
+            showMessage(
+                "يرجى إدخال البريد الإلكتروني.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const button =
+            document.getElementById(
+                "wfesc-forgot-button"
+            );
+
+
+        if (button) {
+
+            button.disabled = true;
+
+            button.textContent =
+                "جارٍ الإرسال...";
+        }
+
+
+        try {
+
+            const redirectTo =
+                window.location.origin +
+                window.location.pathname;
+
+
+            const result =
+                await supabase.auth.resetPasswordForEmail(
+
+                    email,
+
+                    {
+                        redirectTo:
+                            redirectTo
+                    }
+
+                );
+
+
+            if (result.error) {
+
+                showMessage(
+                    result.error.message ||
+                    "تعذر إرسال رابط الاستعادة.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "📧 تم إرسال رابط استعادة كلمة المرور. تحقق من البريد والرسائل غير المرغوب فيها.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            showMessage(
+                "حدث خطأ أثناء إرسال رابط الاستعادة.",
+                "error"
+            );
+
+        } finally {
+
+            if (button) {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "إرسال رابط الاستعادة";
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       تحديث حالة الحساب داخل الإعدادات
+       ===================================================== */
+
+    function updateSettingsAccount() {
+
+        const status =
+            document.getElementById(
+                "wfesc-account-setting-status"
+            );
+
+        const button =
+            document.getElementById(
+                "wfesc-account-login-button"
+            );
+
+
+        if (!status || !button) {
+            return;
+        }
+
+
+        if (
+            ACCOUNT_STATE.loggedIn &&
+            ACCOUNT_STATE.user
+        ) {
+
+            status.textContent =
+                ACCOUNT_STATE.user.email ||
+                "مسجل الدخول";
+
+
+            button.textContent =
+                "الحساب";
+
+
+            button.onclick =
+                function () {
+
+                    openAccountUI("login");
+
+                };
+
+        } else {
+
+            status.textContent =
+                "غير مسجل الدخول";
+
+
+            button.textContent =
+                "تسجيل الدخول";
+
+
+            button.onclick =
+                function () {
+
+                    openAccountUI("login");
+
+                };
+
+        }
+
+    }
+
+
+    /* =====================================================
+       تسجيل الخروج
+       ===================================================== */
+
+    async function logout() {
+
+        const supabase =
+            getSupabase();
+
+        if (!supabase) {
+            return;
+        }
+
+
+        await supabase.auth.signOut();
+
+
+        ACCOUNT_STATE.loggedIn =
+            false;
+
+        ACCOUNT_STATE.user =
+            null;
+
+        ACCOUNT_STATE.session =
+            null;
+
+
+        updateSettingsAccount();
+
+
+        document.dispatchEvent(
+            new CustomEvent(
+                "wfesc:logout"
+            )
+        );
+
+    }
+
+
+    /* =====================================================
+       مراقبة جلسة Supabase
+       ===================================================== */
+
+    async function refreshSession() {
+
+        const supabase =
+            getSupabase();
+
+        if (!supabase) {
+            return;
+        }
+
+
+        try {
+
+            const result =
+                await supabase.auth.getSession();
+
+
+            const session =
+                result.data?.session;
+
+
+            if (session) {
+
+                ACCOUNT_STATE.loggedIn =
                     true;
 
+                ACCOUNT_STATE.session =
+                    session;
 
-                window.WFESC_CURRENT_USER =
-                    WFX_ACCOUNT_STATE.user;
+                ACCOUNT_STATE.user =
+                    session.user;
+
+            } else {
+
+                ACCOUNT_STATE.loggedIn =
+                    false;
+
+                ACCOUNT_STATE.session =
+                    null;
+
+                ACCOUNT_STATE.user =
+                    null;
+
+            }
 
 
-                window.WFESC_ACCOUNT_STATE =
-                    WFX_ACCOUNT_STATE;
+            updateSettingsAccount();
 
 
-                WFX_ACCOUNT_dispatchEvent(
-                    event,
-                    WFX_ACCOUNT_STATE.user
+        } catch (error) {
+
+            console.error(
+                "[WFESC ACCOUNT] Session error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    function listenAuthChanges() {
+
+        const supabase =
+            getSupabase();
+
+        if (!supabase) {
+            return;
+        }
+
+
+        supabase.auth.onAuthStateChange(
+
+            function (
+                event,
+                session
+            ) {
+
+                ACCOUNT_STATE.session =
+                    session || null;
+
+                ACCOUNT_STATE.user =
+                    session?.user || null;
+
+                ACCOUNT_STATE.loggedIn =
+                    Boolean(session);
+
+
+                updateSettingsAccount();
+
+
+                document.dispatchEvent(
+                    new CustomEvent(
+                        "wfesc:auth-change",
+                        {
+                            detail: {
+                                event:
+                                    event,
+
+                                user:
+                                    ACCOUNT_STATE.user,
+
+                                session:
+                                    ACCOUNT_STATE.session,
+
+                                loggedIn:
+                                    ACCOUNT_STATE.loggedIn
+                            }
+                        }
+                    )
                 );
 
             }
+
         );
+
+    }
+
+
+    /* =====================================================
+       ربط الواجهة
+       ===================================================== */
+
+    function bindAccountUI() {
+
+        const close =
+            document.getElementById(
+                "wfesc-account-close"
+            );
+
+        if (close) {
+
+            close.addEventListener(
+                "click",
+                closeAccountUI
+            );
+
+        }
+
+
+        const overlay =
+            document.getElementById(
+                "wfesc-social-account"
+            );
+
+        if (overlay) {
+
+            overlay.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target === overlay
+                    ) {
+
+                        closeAccountUI();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        document
+            .querySelectorAll(
+                ".wfesc-password-eye"
+            )
+            .forEach(
+                function (eye) {
+
+                    eye.addEventListener(
+                        "click",
+                        function () {
+
+                            const id =
+                                eye.dataset.eyeFor;
+
+                            const input =
+                                document.getElementById(
+                                    id
+                                );
+
+                            if (!input) {
+                                return;
+                            }
+
+
+                            if (
+                                input.type ===
+                                "password"
+                            ) {
+
+                                input.type =
+                                    "text";
+
+                                eye.textContent =
+                                    "🙈";
+
+                            } else {
+
+                                input.type =
+                                    "password";
+
+                                eye.textContent =
+                                    "🙉";
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-login-button"
+            )
+            ?.addEventListener(
+                "click",
+                login
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-register-button"
+            )
+            ?.addEventListener(
+                "click",
+                register
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-forgot-button"
+            )
+            ?.addEventListener(
+                "click",
+                resetPassword
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-forgot-link"
+            )
+            ?.addEventListener(
+                "click",
+                function () {
+
+                    clearMessage();
+
+                    switchView(
+                        "forgot"
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-register-link"
+            )
+            ?.addEventListener(
+                "click",
+                function () {
+
+                    clearMessage();
+
+                    switchView(
+                        "register"
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-back-login"
+            )
+            ?.addEventListener(
+                "click",
+                function () {
+
+                    clearMessage();
+
+                    switchView(
+                        "login"
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "wfesc-back-login-register"
+            )
+            ?.addEventListener(
+                "click",
+                function () {
+
+                    clearMessage();
+
+                    switchView(
+                        "login"
+                    );
+
+                }
+            );
 
     }
 
@@ -2070,75 +1591,76 @@
        تشغيل النظام
        ===================================================== */
 
-    async function WFX_ACCOUNT_start() {
+    async function start() {
 
-        if (
-            !WFX_ACCOUNT_SETTINGS.enabled
-        ) {
+        if (ACCOUNT_STATE.initialized) {
             return;
         }
 
 
-        WFX_ACCOUNT_createUI();
+        ACCOUNT_STATE.initialized =
+            true;
 
 
-        await WFX_ACCOUNT_refreshState();
+        createSettingsAccount();
 
+        createAccountUI();
 
-        WFX_ACCOUNT_listenAuthChanges();
+        await refreshSession();
+
+        listenAuthChanges();
 
 
         console.log(
-            "[WFESC ACCOUNT] Account system ready."
+            "[WFESC ACCOUNT] Account system loaded."
         );
 
     }
 
 
     /* =====================================================
-       الواجهة العامة
+       API
        ===================================================== */
 
     window.WFESC_ACCOUNT = {
 
-        start:
-            WFX_ACCOUNT_start,
+        start: start,
 
-        open:
-            WFX_ACCOUNT_open,
+        open: openAccountUI,
 
-        close:
-            WFX_ACCOUNT_close,
+        close: closeAccountUI,
 
-        login:
-            WFX_ACCOUNT_login,
+        login: login,
 
-        register:
-            WFX_ACCOUNT_register,
+        register: register,
 
-        logout:
-            WFX_ACCOUNT_logout,
+        logout: logout,
 
-        resetPassword:
-            WFX_ACCOUNT_resetPassword,
+        resetPassword: resetPassword,
 
-        refresh:
-            WFX_ACCOUNT_refreshState,
+        getUser: function () {
 
-        getUser:
-            () =>
-                WFX_ACCOUNT_STATE.user,
+            return ACCOUNT_STATE.user;
 
-        getState:
-            () => ({
-                ...WFX_ACCOUNT_STATE
-            })
+        },
+
+        getSession: function () {
+
+            return ACCOUNT_STATE.session;
+
+        },
+
+        isLoggedIn: function () {
+
+            return ACCOUNT_STATE.loggedIn;
+
+        }
 
     };
 
 
     /* =====================================================
-       التشغيل
+       التشغيل التلقائي
        ===================================================== */
 
     if (
@@ -2148,15 +1670,15 @@
 
         document.addEventListener(
             "DOMContentLoaded",
-            WFX_ACCOUNT_start
+            start
         );
 
     } else {
 
-        WFX_ACCOUNT_start();
+        start();
 
     }
 
 
 })();
-    
+ 
