@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#050505"
+    >
+
+    <title>النشر | WFESC</title>
+
+    <!-- نظام تنقل WFESC -->
+    <script src="navigation-features/navigation-loader.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #171717 0%,
+                    #080808 45%,
+                    #030303 100%
+                );
+
+            color: #fff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            padding-bottom: 105px;
+        }
+
+        .publish-page {
+            width: 100%;
+            min-height: 100vh;
+            padding: 25px 14px 115px;
+        }
+
+        .publish-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* العنوان */
+
+        .publish-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .publish-title-box {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .publish-title {
+            font-size: 27px;
+            font-weight: 800;
+        }
+
+        .publish-subtitle {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .publish-icon {
+            width: 52px;
+            height: 52px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 17px;
+
+            background:
+                rgba(255,255,255,0.06);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            font-size: 25px;
+        }
+
+        /* البطاقة */
+
+        .publish-card {
+            width: 100%;
+
+            padding: 18px;
+
+            border-radius: 22px;
+
+            background:
+                rgba(255,255,255,0.045);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.075);
+
+            box-shadow:
+                0 20px 70px
+                rgba(0,0,0,0.3);
+        }
+
+        /* اسم الحساب */
+
+        .publish-user {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 17px;
+        }
+
+        .publish-avatar {
+            width: 46px;
+            height: 46px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #2b2b2b,
+                    #090909
+                );
+
+            border:
+                1px solid
+                rgba(255,255,255,0.1);
+
+            font-weight: 800;
+            font-size: 19px;
+        }
+
+        .publish-user-name {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .publish-user-label {
+            color: #777;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        /* النص */
+
+        .publish-text {
+            width: 100%;
+            min-height: 155px;
+
+            resize: vertical;
+
+            padding: 15px;
+
+            border-radius: 16px;
+
+            outline: none;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background:
+                rgba(0,0,0,0.25);
+
+            color: #fff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            font-size: 14px;
+
+            line-height: 1.8;
+        }
+
+        .publish-text::placeholder {
+            color: #666;
+        }
+
+        .publish-text:focus {
+            border-color:
+                rgba(255,255,255,0.22);
+        }
+
+        /* معاينة الصورة */
+
+        .publish-preview {
+            display: none;
+
+            position: relative;
+
+            margin-top: 13px;
+
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background: #080808;
+        }
+
+        .publish-preview.show {
+            display: block;
+        }
+
+        .publish-preview img {
+            width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .remove-image {
+            position: absolute;
+
+            top: 9px;
+            left: 9px;
+
+            width: 35px;
+            height: 35px;
+
+            border: 0;
+
+            border-radius: 50%;
+
+            background:
+                rgba(0,0,0,0.75);
+
+            color: #fff;
+
+            cursor: pointer;
+
+            font-size: 16px;
+        }
+
+        /* الأدوات */
+
+        .publish-tools {
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 9px;
+
+            margin-top: 13px;
+        }
+
+        .publish-tool {
+            height: 47px;
+
+            border-radius: 13px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background:
+                rgba(255,255,255,0.05);
+
+            color: #fff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+        }
+
+        .publish-tool:active {
+            transform: scale(0.97);
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        /* عداد الحروف */
+
+        .publish-bottom {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 10px;
+
+            margin-top: 12px;
+        }
+
+        .character-count {
+            color: #777;
+            font-size: 11px;
+        }
+
+        .publish-button {
+            height: 48px;
+
+            padding:
+                0 25px;
+
+            border: 0;
+
+            border-radius: 14px;
+
+            background:
+                #fff;
+
+            color: #050505;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.2s ease,
+                opacity 0.2s ease;
+        }
+
+        .publish-button:active {
+            transform: scale(0.96);
+        }
+
+        .publish-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* رسالة الحالة */
+
+        .publish-status {
+            display: none;
+
+            margin-top: 13px;
+
+            padding: 12px 14px;
+
+            border-radius: 13px;
+
+            background:
+                rgba(255,255,255,0.05);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.07);
+
+            color: #bbb;
+
+            font-size: 12px;
+
+            line-height: 1.7;
+
+            text-align: center;
+        }
+
+        .publish-status.show {
+            display: block;
+        }
+
+        /* الموبايل */
+
+        @media (max-width: 600px) {
+
+            .publish-page {
+                padding:
+                    20px 11px 110px;
+            }
+
+            .publish-title {
+                font-size: 24px;
+            }
+
+            .publish-card {
+                padding: 14px;
+                border-radius: 19px;
+            }
+
+            .publish-tools {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+            .publish-bottom {
+                align-items: stretch;
+            }
+
+            .publish-button {
+                padding:
+                    0 18px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <main class="publish-page">
+
+        <div class="publish-container">
+
+            <!-- العنوان -->
+
+            <header class="publish-header">
+
+                <div class="publish-title-box">
+
+                    <h1 class="publish-title">
+                        النشر
+                    </h1>
+
+                    <p class="publish-subtitle">
+                        أنشئ منشورك وشاركه على WFESC
+                    </p>
+
+                </div>
+
+                <div
+                    class="publish-icon"
+                    aria-hidden="true"
+                >
+                    ＋
+                </div>
+
+            </header>
+
+
+            <!-- بطاقة النشر -->
+
+            <section class="publish-card">
+
+                <!-- المستخدم -->
+
+                <div class="publish-user">
+
+                    <div class="publish-avatar">
+                        W
+                    </div>
+
+                    <div>
+
+                        <div class="publish-user-name">
+                            WFESC
+                        </div>
+
+                        <div class="publish-user-label">
+                            إنشاء منشور جديد
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- النص -->
+
+                <textarea
+                    id="publishText"
+                    class="publish-text"
+                    maxlength="5000"
+                    placeholder="بماذا تفكر؟ اكتب منشورك هنا..."
+                ></textarea>
+
+
+                <!-- معاينة الصورة -->
+
+                <div
+                    id="publishPreview"
+                    class="publish-preview"
+                >
+
+                    <img
+                        id="previewImage"
+                        alt="معاينة الصورة"
+                    >
+
+                    <button
+                        id="removeImage"
+                        class="remove-image"
+                        type="button"
+                        aria-label="إزالة الصورة"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <!-- الأدوات -->
+
+                <div class="publish-tools">
+
+                    <button
+                        id="imageButton"
+                        class="publish-tool"
+                        type="button"
+                    >
+                        🖼️ إضافة صورة
+                    </button>
+
+                    <button
+                        id="clearButton"
+                        class="publish-tool"
+                        type="button"
+                    >
+                        🗑️ مسح
+                    </button>
+
+                </div>
+
+
+                <input
+                    id="imageInput"
+                    type="file"
+                    accept="image/*"
+                >
+
+
+                <!-- أسفل البطاقة -->
+
+                <div class="publish-bottom">
+
+                    <span
+                        id="characterCount"
+                        class="character-count"
+                    >
+                        0 / 5000
+                    </span>
+
+                    <button
+                        id="publishButton"
+                        class="publish-button"
+                        type="button"
+                    >
+                        نشر المنشور
+                    </button>
+
+                </div>
+
+
+                <!-- حالة النشر -->
+
+                <div
+                    id="publishStatus"
+                    class="publish-status"
+                ></div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const publishText =
+            document.getElementById(
+                "publishText"
+            );
+
+        const characterCount =
+            document.getElementById(
+                "characterCount"
+            );
+
+        const imageButton =
+            document.getElementById(
+                "imageButton"
+            );
+
+        const imageInput =
+            document.getElementById(
+                "imageInput"
+            );
+
+        const publishPreview =
+            document.getElementById(
+                "publishPreview"
+            );
+
+        const previewImage =
+            document.getElementById(
+                "previewImage"
+            );
+
+        const removeImage =
+            document.getElementById(
+                "removeImage"
+            );
+
+        const clearButton =
+            document.getElementById(
+                "clearButton"
+            );
+
+        const publishButton =
+            document.getElementById(
+                "publishButton"
+            );
+
+        const publishStatus =
+            document.getElementById(
+                "publishStatus"
+            );
+
+
+        /*
+         * عداد الحروف
+         */
+
+        function updateCharacterCount() {
+
+            const length =
+                publishText.value.length;
+
+            characterCount.textContent =
+                length + " / 5000";
+
+        }
+
+
+        publishText.addEventListener(
+            "input",
+            updateCharacterCount
+        );
+
+
+        /*
+         * إضافة صورة
+         */
+
+        imageButton.addEventListener(
+            "click",
+            function () {
+
+                imageInput.click();
+
+            }
+        );
+
+
+        imageInput.addEventListener(
+            "change",
+            function () {
+
+                const file =
+                    this.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+
+                if (
+                    !file.type.startsWith(
+                        "image/"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        previewImage.src =
+                            event.target.result;
+
+                        publishPreview.classList.add(
+                            "show"
+                        );
+
+                    };
+
+
+                reader.readAsDataURL(file);
+
+            }
+        );
+
+
+        /*
+         * حذف الصورة
+         */
+
+        removeImage.addEventListener(
+            "click",
+            function () {
+
+                imageInput.value = "";
+
+                previewImage.src = "";
+
+                publishPreview.classList.remove(
+                    "show"
+                );
+
+            }
+        );
+
+
+        /*
+         * مسح المنشور
+         */
+
+        clearButton.addEventListener(
+            "click",
+            function () {
+
+                publishText.value = "";
+
+                imageInput.value = "";
+
+                previewImage.src = "";
+
+                publishPreview.classList.remove(
+                    "show"
+                );
+
+                publishStatus.classList.remove(
+                    "show"
+                );
+
+                publishStatus.textContent = "";
+
+                updateCharacterCount();
+
+            }
+        );
+
+
+        /*
+         * النشر التجريبي
+         */
+
+        publishButton.addEventListener(
+            "click",
+            function () {
+
+                const text =
+                    publishText.value.trim();
+
+
+                if (
+                    !text &&
+                    !imageInput.files.length
+                ) {
+
+                    publishStatus.textContent =
+                        "اكتب شيئًا أو أضف صورة قبل النشر.";
+
+                    publishStatus.classList.add(
+                        "show"
+                    );
+
+                    return;
+
+                }
+
+
+                /*
+                 * حاليًا واجهة نشر فقط.
+                 * الربط مع قاعدة البيانات يأتي لاحقًا.
+                 */
+
+                publishStatus.textContent =
+                    "تم تجهيز المنشور بنجاح. ربط النشر الفعلي بقاعدة البيانات يمكن إضافته لاحقًا.";
+
+                publishStatus.classList.add(
+                    "show"
+                );
+
+            }
+        );
+
+
+        updateCharacterCount();
+
+    </script>
+
+</body>
+
+</html>
