@@ -2012,4 +2012,151 @@
        مراقبة حالة الدخول
        ===================================================== */
 
+    function WFX_ACCOUNT_listenAuthChanges() {
+
+        const client =
+            WFX_ACCOUNT_getSupabase();
+
+
+        if (!client) {
+            return;
+        }
+
+
+        client.auth.onAuthStateChange(
+            (
+                event,
+                session
+            ) => {
+
+                WFX_ACCOUNT_STATE.session =
+                    session || null;
+
+
+                WFX_ACCOUNT_STATE.user =
+                    session?.user || null;
+
+
+                WFX_ACCOUNT_STATE.loggedIn =
+                    Boolean(
+                        session?.user
+                    );
+
+
+                WFX_ACCOUNT_STATE.initialized =
+                    true;
+
+
+                window.WFESC_CURRENT_USER =
+                    WFX_ACCOUNT_STATE.user;
+
+
+                window.WFESC_ACCOUNT_STATE =
+                    WFX_ACCOUNT_STATE;
+
+
+                WFX_ACCOUNT_dispatchEvent(
+                    event,
+                    WFX_ACCOUNT_STATE.user
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       تشغيل النظام
+       ===================================================== */
+
+    async function WFX_ACCOUNT_start() {
+
+        if (
+            !WFX_ACCOUNT_SETTINGS.enabled
+        ) {
+            return;
+        }
+
+
+        WFX_ACCOUNT_createUI();
+
+
+        await WFX_ACCOUNT_refreshState();
+
+
+        WFX_ACCOUNT_listenAuthChanges();
+
+
+        console.log(
+            "[WFESC ACCOUNT] Account system ready."
+        );
+
+    }
+
+
+    /* =====================================================
+       الواجهة العامة
+       ===================================================== */
+
+    window.WFESC_ACCOUNT = {
+
+        start:
+            WFX_ACCOUNT_start,
+
+        open:
+            WFX_ACCOUNT_open,
+
+        close:
+            WFX_ACCOUNT_close,
+
+        login:
+            WFX_ACCOUNT_login,
+
+        register:
+            WFX_ACCOUNT_register,
+
+        logout:
+            WFX_ACCOUNT_logout,
+
+        resetPassword:
+            WFX_ACCOUNT_resetPassword,
+
+        refresh:
+            WFX_ACCOUNT_refreshState,
+
+        getUser:
+            () =>
+                WFX_ACCOUNT_STATE.user,
+
+        getState:
+            () => ({
+                ...WFX_ACCOUNT_STATE
+            })
+
+    };
+
+
+    /* =====================================================
+       التشغيل
+       ===================================================== */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            WFX_ACCOUNT_start
+        );
+
+    } else {
+
+        WFX_ACCOUNT_start();
+
+    }
+
+
+})();
     
