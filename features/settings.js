@@ -1,23 +1,26 @@
 /* =========================================================
-   WFESC SOCIAL SYSTEM
-   SETTINGS ENGINE
+   WFESC SETTINGS
    نظام إعدادات WFESC
-
-   مسؤول عن:
-   - الوضع الداكن / الفاتح
-   - الأنميشن المعزز
+   ---------------------------------------------------------
+   المسؤول عن:
+   - الوضع المظلم / العادي
+   - الأنيميشن المعزز
    - حفظ الإعدادات
-   - استعادة الإعدادات
-   - إضافة إعدادات مستقبلية بسهولة
+   - واجهة الإعدادات
+   - خيار الحساب داخل الإعدادات
+
+   تسجيل الدخول نفسه يبقى مسؤولية:
+   account.js + auth.js
    ========================================================= */
 
 (() => {
 
     "use strict";
 
+
     /* =====================================================
-       منع تشغيل الملف أكثر من مرة
-       ===================================================== */
+       منع التشغيل المكرر
+    ===================================================== */
 
     if (window.WFESC_SETTINGS_LOADED) {
         return;
@@ -27,208 +30,871 @@
 
 
     /* =====================================================
-       الإعدادات الأساسية
-       ===================================================== */
+       مفاتيح الحفظ
+    ===================================================== */
 
-    const SETTINGS = {
+    const KEYS = {
 
         theme:
-            localStorage.getItem("wfesc-theme") ||
-            "dark",
+            "wfesc-theme",
 
         animations:
-            localStorage.getItem(
-                "wfesc-animations"
-            ) !== "off"
+            "wfesc-animations"
 
     };
 
 
     /* =====================================================
-       API النظام
-       ===================================================== */
+       الحالة الحالية
+    ===================================================== */
 
-    window.WFESC_SETTINGS = {
+    const state = {
 
-        version: "1.0.0",
+        theme:
+            localStorage.getItem(KEYS.theme)
+            || "dark",
 
-        get(key) {
-
-            return SETTINGS[key];
-
-        },
-
-        set(key, value) {
-
-            SETTINGS[key] = value;
-
-            saveSetting(
-                key,
-                value
-            );
-
-            applySettings();
-
-            updateUI();
-
-        },
-
-        getAll() {
-
-            return {
-                ...SETTINGS
-            };
-
-        }
+        animations:
+            localStorage.getItem(KEYS.animations) === null
+                ? true
+                : localStorage.getItem(KEYS.animations) === "true"
 
     };
 
 
     /* =====================================================
-       حفظ الإعداد
-       ===================================================== */
+       تطبيق الوضع
+    ===================================================== */
 
-    function saveSetting(
-        key,
-        value
-    ) {
+    function applyTheme() {
 
-        if (
-            key === "theme"
-        ) {
-
-            localStorage.setItem(
-                "wfesc-theme",
-                value
-            );
-
-            return;
-
-        }
+        const light =
+            state.theme === "light";
 
 
-        if (
-            key === "animations"
-        ) {
+        document.documentElement.classList.toggle(
+            "wfesc-light",
+            light
+        );
 
-            localStorage.setItem(
-                "wfesc-animations",
-                value
-                    ? "on"
-                    : "off"
+
+        if (document.body) {
+
+            document.body.classList.toggle(
+                "wfesc-light",
+                light
             );
 
         }
+
+
+        document.documentElement.setAttribute(
+            "data-wfesc-theme",
+            light
+                ? "light"
+                : "dark"
+        );
+
+
+        localStorage.setItem(
+            KEYS.theme,
+            state.theme
+        );
 
     }
 
 
     /* =====================================================
-       تطبيق الوضعيات
-       ===================================================== */
+       تطبيق الأنيميشن
+    ===================================================== */
 
-    function applySettings() {
+    function applyAnimations() {
 
-        /* الوضع الداكن / الفاتح */
+        const enabled =
+            state.animations;
 
-        if (
-            SETTINGS.theme ===
-            "light"
-        ) {
 
-            document.body.classList.add(
-                "wfesc-light"
+        document.documentElement.classList.toggle(
+            "wfesc-enhanced-animations",
+            enabled
+        );
+
+
+        document.documentElement.classList.toggle(
+            "wfesc-no-animations",
+            !enabled
+        );
+
+
+        if (document.body) {
+
+            document.body.classList.toggle(
+                "wfesc-enhanced-animations",
+                enabled
             );
 
-        } else {
 
-            document.body.classList.remove(
-                "wfesc-light"
-            );
-
-        }
-
-
-        /* الأنميشن */
-
-        if (
-            SETTINGS.animations
-        ) {
-
-            document.body.classList.add(
-                "wfesc-animations-enabled"
-            );
-
-        } else {
-
-            document.body.classList.remove(
-                "wfesc-animations-enabled"
+            document.body.classList.toggle(
+                "wfesc-no-animations",
+                !enabled
             );
 
         }
+
+
+        localStorage.setItem(
+            KEYS.animations,
+            String(enabled)
+        );
 
     }
 
 
     /* =====================================================
-       إنشاء زر الإعدادات
-       ===================================================== */
+       إنشاء CSS
+    ===================================================== */
 
-    function createSettingsButton() {
+    function createStyles() {
 
         if (
             document.getElementById(
-                "wfesc-settings-button"
+                "wfesc-settings-style"
             )
         ) {
-
             return;
-
         }
 
 
-        const button =
-            document.createElement(
-                "button"
-            );
+        const style =
+            document.createElement("style");
 
 
-        button.id =
-            "wfesc-settings-button";
+        style.id =
+            "wfesc-settings-style";
 
 
-        button.type =
-            "button";
+        style.textContent = `
+
+            /* =================================================
+               BASE
+            ================================================= */
+
+            html,
+            body {
+
+                background-color:
+                    #050505;
+
+                color:
+                    #eee;
+
+            }
 
 
-        button.setAttribute(
-            "aria-label",
-            "الإعدادات"
-        );
+            /* =================================================
+               LIGHT MODE
+            ================================================= */
+
+            html.wfesc-light,
+            html.wfesc-light body,
+            body.wfesc-light {
+
+                background-color:
+                    #ffffff !important;
+
+                color:
+                    #111111 !important;
+
+            }
 
 
-        button.innerHTML =
-            "⚙";
+            body.wfesc-light header,
+            body.wfesc-light nav,
+            body.wfesc-light main,
+            body.wfesc-light section,
+            body.wfesc-light article,
+            body.wfesc-light footer {
+
+                background-color:
+                    #ffffff;
+
+                color:
+                    #111111;
+
+            }
 
 
-        document.body.appendChild(
-            button
-        );
+            body.wfesc-light input,
+            body.wfesc-light textarea,
+            body.wfesc-light select {
+
+                background:
+                    #ffffff;
+
+                color:
+                    #111111;
+
+                border-color:
+                    #d5d5d5;
+
+            }
 
 
-        button.addEventListener(
-            "click",
-            openSettings
-        );
+            /* =================================================
+               SETTINGS BACKDROP
+            ================================================= */
+
+            #wfesc-settings-backdrop {
+
+                position:
+                    fixed;
+
+                inset:
+                    0;
+
+                width:
+                    100%;
+
+                height:
+                    100%;
+
+                z-index:
+                    999997;
+
+                background:
+                    rgba(0,0,0,.70);
+
+                backdrop-filter:
+                    blur(8px);
+
+                -webkit-backdrop-filter:
+                    blur(8px);
+
+                opacity:
+                    0;
+
+                visibility:
+                    hidden;
+
+                pointer-events:
+                    none;
+
+            }
+
+
+            #wfesc-settings-backdrop.wfesc-settings-open {
+
+                opacity:
+                    1;
+
+                visibility:
+                    visible;
+
+                pointer-events:
+                    auto;
+
+            }
+
+
+            /* =================================================
+               SETTINGS PANEL
+            ================================================= */
+
+            #wfesc-settings-panel {
+
+                position:
+                    fixed;
+
+                top:
+                    50%;
+
+                left:
+                    50%;
+
+                width:
+                    min(
+                        430px,
+                        calc(100% - 28px)
+                    );
+
+                max-height:
+                    calc(100vh - 40px);
+
+                overflow-y:
+                    auto;
+
+                transform:
+                    translate(-50%,-50%)
+                    scale(.94);
+
+                opacity:
+                    0;
+
+                visibility:
+                    hidden;
+
+                pointer-events:
+                    none;
+
+                z-index:
+                    999998;
+
+                padding:
+                    24px;
+
+                border-radius:
+                    20px;
+
+                background:
+                    #0b0b0b;
+
+                color:
+                    #fff;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.12);
+
+                box-shadow:
+                    0 30px 100px
+                    rgba(0,0,0,.65);
+
+            }
+
+
+            #wfesc-settings-panel.wfesc-settings-open {
+
+                opacity:
+                    1;
+
+                visibility:
+                    visible;
+
+                pointer-events:
+                    auto;
+
+                transform:
+                    translate(-50%,-50%)
+                    scale(1);
+
+            }
+
+
+            /* =================================================
+               LIGHT SETTINGS
+            ================================================= */
+
+            body.wfesc-light
+            #wfesc-settings-panel {
+
+                background:
+                    #ffffff;
+
+                color:
+                    #111111;
+
+                border-color:
+                    #dddddd;
+
+            }
+
+
+            /* =================================================
+               TITLE
+            ================================================= */
+
+            .wfesc-settings-title {
+
+                margin:
+                    0 0 20px;
+
+                text-align:
+                    center;
+
+                font-size:
+                    21px;
+
+                font-weight:
+                    600;
+
+            }
+
+
+            /* =================================================
+               SETTING ROW
+            ================================================= */
+
+            .wfesc-setting-row {
+
+                display:
+                    flex;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    space-between;
+
+                gap:
+                    14px;
+
+                padding:
+                    16px 0;
+
+                border-bottom:
+                    1px solid
+                    rgba(255,255,255,.08);
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-setting-row {
+
+                border-bottom-color:
+                    #e5e5e5;
+
+            }
+
+
+            /* =================================================
+               INFORMATION
+            ================================================= */
+
+            .wfesc-setting-info {
+
+                min-width:
+                    0;
+
+            }
+
+
+            .wfesc-setting-info strong {
+
+                display:
+                    block;
+
+                margin-bottom:
+                    5px;
+
+                font-size:
+                    14px;
+
+            }
+
+
+            .wfesc-setting-info small {
+
+                display:
+                    block;
+
+                color:
+                    #888;
+
+                font-size:
+                    11px;
+
+                line-height:
+                    1.5;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-setting-info small {
+
+                color:
+                    #777;
+
+            }
+
+
+            /* =================================================
+               TOGGLE
+            ================================================= */
+
+            .wfesc-toggle {
+
+                position:
+                    relative;
+
+                width:
+                    50px;
+
+                height:
+                    27px;
+
+                flex-shrink:
+                    0;
+
+                border:
+                    0;
+
+                border-radius:
+                    30px;
+
+                background:
+                    #444;
+
+                cursor:
+                    pointer;
+
+                padding:
+                    0;
+
+            }
+
+
+            .wfesc-toggle::after {
+
+                content:
+                    "";
+
+                position:
+                    absolute;
+
+                width:
+                    21px;
+
+                height:
+                    21px;
+
+                top:
+                    3px;
+
+                left:
+                    3px;
+
+                border-radius:
+                    50%;
+
+                background:
+                    #fff;
+
+                transition:
+                    transform .25s ease;
+
+            }
+
+
+            .wfesc-toggle.wfesc-toggle-on {
+
+                background:
+                    #fff;
+
+            }
+
+
+            .wfesc-toggle.wfesc-toggle-on::after {
+
+                transform:
+                    translateX(23px);
+
+                background:
+                    #111;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-toggle {
+
+                background:
+                    #ccc;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-toggle.wfesc-toggle-on {
+
+                background:
+                    #111;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-toggle.wfesc-toggle-on::after {
+
+                background:
+                    #fff;
+
+            }
+
+
+            /* =================================================
+               ACCOUNT
+            ================================================= */
+
+            #wfesc-account-setting {
+
+                margin:
+                    0;
+
+            }
+
+
+            .wfesc-account-setting-button {
+
+                flex-shrink:
+                    0;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.16);
+
+                background:
+                    rgba(255,255,255,.06);
+
+                color:
+                    #fff;
+
+                border-radius:
+                    9px;
+
+                padding:
+                    9px 12px;
+
+                font-family:
+                    Arial,
+                    Tahoma,
+                    sans-serif;
+
+                font-size:
+                    11px;
+
+                cursor:
+                    pointer;
+
+                white-space:
+                    nowrap;
+
+            }
+
+
+            .wfesc-account-setting-button:hover {
+
+                background:
+                    #fff;
+
+                color:
+                    #000;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-account-setting-button {
+
+                background:
+                    #f3f3f3;
+
+                color:
+                    #111;
+
+                border-color:
+                    #ccc;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-account-setting-button:hover {
+
+                background:
+                    #111;
+
+                color:
+                    #fff;
+
+            }
+
+
+            /* =================================================
+               ENHANCED ANIMATION
+            ================================================= */
+
+            html.wfesc-enhanced-animations {
+
+                scroll-behavior:
+                    smooth;
+
+            }
+
+
+            html.wfesc-enhanced-animations body {
+
+                transition:
+                    background-color .55s ease,
+                    color .55s ease;
+
+            }
+
+
+            html.wfesc-enhanced-animations
+            a {
+
+                transition:
+                    transform .25s ease,
+                    opacity .25s ease,
+                    color .3s ease;
+
+            }
+
+
+            html.wfesc-enhanced-animations
+            button {
+
+                transition:
+                    transform .25s ease,
+                    opacity .25s ease,
+                    background-color .3s ease,
+                    color .3s ease,
+                    border-color .3s ease;
+
+            }
+
+
+            html.wfesc-enhanced-animations
+            a:hover,
+            html.wfesc-enhanced-animations
+            button:hover {
+
+                transform:
+                    translateY(-1px);
+
+            }
+
+
+            html.wfesc-enhanced-animations
+            img {
+
+                transition:
+                    opacity .35s ease,
+                    transform .35s ease;
+
+            }
+
+
+            html.wfesc-enhanced-animations
+            #wfesc-settings-panel {
+
+                transition:
+                    opacity .35s ease,
+                    transform .45s cubic-bezier(
+                        .16,
+                        1,
+                        .3,
+                        1
+                    ),
+                    visibility .35s ease;
+
+            }
+
+
+            html.wfesc-enhanced-animations
+            #wfesc-settings-backdrop {
+
+                transition:
+                    opacity .4s ease,
+                    visibility .4s ease;
+
+            }
+
+
+            /* =================================================
+               NORMAL MODE
+               بدون مؤثرات
+            ================================================= */
+
+            html.wfesc-no-animations,
+            html.wfesc-no-animations * {
+
+                scroll-behavior:
+                    auto !important;
+
+            }
+
+
+            html.wfesc-no-animations *,
+            html.wfesc-no-animations *::before,
+            html.wfesc-no-animations *::after {
+
+                animation:
+                    none !important;
+
+                transition:
+                    none !important;
+
+            }
+
+
+            html.wfesc-no-animations
+            a:hover,
+
+            html.wfesc-no-animations
+            button:hover {
+
+                transform:
+                    none !important;
+
+            }
+
+
+            /* =================================================
+               MOBILE
+            ================================================= */
+
+            @media(max-width:600px) {
+
+                #wfesc-settings-panel {
+
+                    width:
+                        calc(100% - 24px);
+
+                    padding:
+                        19px;
+
+                    border-radius:
+                        16px;
+
+                }
+
+
+                .wfesc-setting-row {
+
+                    gap:
+                        9px;
+
+                }
+
+
+                .wfesc-account-setting-button {
+
+                    padding:
+                        8px 10px;
+
+                    font-size:
+                        10px;
+
+                }
+
+            }
+
+        `;
+
+
+        document.head.appendChild(style);
 
     }
 
 
     /* =====================================================
        إنشاء لوحة الإعدادات
-       ===================================================== */
+    ===================================================== */
 
-    function createSettingsPanel() {
+    function createPanel() {
 
         if (
             document.getElementById(
@@ -236,15 +902,32 @@
             )
         ) {
 
+            updateUI();
+
             return;
 
         }
 
 
+        /* BACKDROP */
+
+        const backdrop =
+            document.createElement("div");
+
+
+        backdrop.id =
+            "wfesc-settings-backdrop";
+
+
+        document.body.appendChild(
+            backdrop
+        );
+
+
+        /* PANEL */
+
         const panel =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
 
         panel.id =
@@ -253,130 +936,117 @@
 
         panel.innerHTML = `
 
+            <h2
+                class="wfesc-settings-title">
+
+                الإعدادات
+
+            </h2>
+
+
+            <!-- =========================================
+                 ACCOUNT
+            ========================================== -->
+
             <div
-                class="wfesc-settings-box"
-                role="dialog"
-                aria-modal="true"
-                aria-label="إعدادات WFESC"
-            >
+                id="wfesc-account-setting"
+                class="wfesc-setting-row">
+
+                <div
+                    class="wfesc-setting-info">
+
+                    <strong>
+                        👤 الحساب
+                    </strong>
+
+                    <small
+                        id="wfesc-account-setting-status">
+
+                        غير مسجل الدخول
+
+                    </small>
+
+                </div>
+
 
                 <button
                     type="button"
-                    id="wfesc-settings-close"
-                    class="wfesc-settings-close"
-                    aria-label="إغلاق"
-                >
-                    ×
+                    id="wfesc-account-login-button"
+                    class="wfesc-account-setting-button">
+
+                    تسجيل الدخول
+
                 </button>
 
+            </div>
+
+
+            <!-- =========================================
+                 THEME
+            ========================================== -->
+
+            <div
+                class="wfesc-setting-row">
 
                 <div
-                    class="wfesc-settings-header"
-                >
+                    class="wfesc-setting-info">
 
-                    <div
-                        class="wfesc-settings-icon"
-                    >
-                        ⚙
-                    </div>
+                    <strong>
+                        🌙 الوضع
+                    </strong>
 
-                    <h2>
-                        الإعدادات
-                    </h2>
+                    <small
+                        id="wfesc-theme-label">
 
-                    <p>
-                        تخصيص تجربة WFESC
-                    </p>
+                        الوضع المظلم
+
+                    </small>
 
                 </div>
 
 
+                <button
+                    type="button"
+                    id="wfesc-theme-toggle"
+                    class="wfesc-toggle"
+                    aria-label="تغيير الوضع">
+
+                </button>
+
+            </div>
+
+
+            <!-- =========================================
+                 ENHANCED ANIMATION
+            ========================================== -->
+
+            <div
+                class="wfesc-setting-row">
+
                 <div
-                    class="wfesc-settings-content"
-                >
+                    class="wfesc-setting-info">
 
-                    <!-- الوضع -->
+                    <strong>
+                        ✨ الأنيميشن المعزز
+                    </strong>
 
-                    <div
-                        class="wfesc-setting-row"
-                    >
+                    <small
+                        id="wfesc-animation-label">
 
-                        <div
-                            class="wfesc-setting-info"
-                        >
+                        انتقالات وحركة سلسة
 
-                            <span>
-                                الوضع
-                            </span>
-
-                            <small
-                                id="wfesc-theme-status"
-                            >
-                                الوضع الداكن
-                            </small>
-
-                        </div>
-
-
-                        <button
-                            type="button"
-                            id="wfesc-theme-toggle"
-                            class="wfesc-settings-action"
-                        >
-                            تبديل
-                        </button>
-
-                    </div>
-
-
-                    <!-- الأنميشن -->
-
-                    <div
-                        class="wfesc-setting-row"
-                    >
-
-                        <div
-                            class="wfesc-setting-info"
-                        >
-
-                            <span>
-                                الأنميشن المعزز
-                            </span>
-
-                            <small
-                                id="wfesc-animation-status"
-                            >
-                                مفعّل
-                            </small>
-
-                        </div>
-
-
-                        <label
-                            class="wfesc-switch"
-                        >
-
-                            <input
-                                type="checkbox"
-                                id="wfesc-animation-toggle"
-                            >
-
-                            <span
-                                class="wfesc-slider"
-                            ></span>
-
-                        </label>
-
-                    </div>
-
-
-                    <!-- مكان مخصص لإعدادات مستقبلية -->
-
-                    <div
-                        id="wfesc-future-settings"
-                    ></div>
+                    </small>
 
                 </div>
+
+
+                <button
+                    type="button"
+                    id="wfesc-animation-toggle"
+                    class="wfesc-toggle"
+                    aria-label="تشغيل الأنيميشن المعزز">
+
+                </button>
 
             </div>
 
@@ -388,48 +1058,51 @@
         );
 
 
-        bindSettingsPanel();
+        /* =================================================
+           BACKDROP CLICK
+        ================================================= */
 
-    }
-
-
-    /* =====================================================
-       ربط أزرار الإعدادات
-       ===================================================== */
-
-    function bindSettingsPanel() {
-
-        const closeButton =
-            document.getElementById(
-                "wfesc-settings-close"
-            );
+        backdrop.addEventListener(
+            "click",
+            closePanel
+        );
 
 
-        if (closeButton) {
+        /* =================================================
+           THEME
+        ================================================= */
 
-            closeButton.addEventListener(
-                "click",
-                closeSettings
-            );
-
-        }
-
-
-        const themeButton =
+        const themeToggle =
             document.getElementById(
                 "wfesc-theme-toggle"
             );
 
 
-        if (themeButton) {
+        if (themeToggle) {
 
-            themeButton.addEventListener(
+            themeToggle.addEventListener(
                 "click",
-                toggleTheme
+                function () {
+
+                    state.theme =
+                        state.theme === "dark"
+                            ? "light"
+                            : "dark";
+
+
+                    applyTheme();
+
+                    updateUI();
+
+                }
             );
 
         }
 
+
+        /* =================================================
+           ANIMATION
+        ================================================= */
 
         const animationToggle =
             document.getElementById(
@@ -440,20 +1113,14 @@
         if (animationToggle) {
 
             animationToggle.addEventListener(
-                "change",
+                "click",
                 function () {
 
-                    SETTINGS.animations =
-                        animationToggle.checked;
+                    state.animations =
+                        !state.animations;
 
 
-                    saveSetting(
-                        "animations",
-                        SETTINGS.animations
-                    );
-
-
-                    applySettings();
+                    applyAnimations();
 
                     updateUI();
 
@@ -463,24 +1130,40 @@
         }
 
 
-        const panel =
+        /* =================================================
+           ACCOUNT BUTTON
+        ================================================= */
+
+        const accountButton =
             document.getElementById(
-                "wfesc-settings-panel"
+                "wfesc-account-login-button"
             );
 
 
-        if (panel) {
+        if (accountButton) {
 
-            panel.addEventListener(
+            accountButton.addEventListener(
                 "click",
-                function (event) {
+                function () {
+
+                    closePanel();
+
 
                     if (
-                        event.target ===
-                        panel
+                        typeof window.WFESC_ACCOUNT_OPEN ===
+                        "function"
                     ) {
 
-                        closeSettings();
+                        window.WFESC_ACCOUNT_OPEN(
+                            "login"
+                        );
+
+                    } else {
+
+                        console.warn(
+                            "[WFESC SETTINGS] " +
+                            "account.js غير جاهز."
+                        );
 
                     }
 
@@ -489,44 +1172,173 @@
 
         }
 
+
+        /* =================================================
+           جاهزية الإعدادات
+        ================================================= */
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "wfesc-settings-ready"
+            )
+        );
+
+
+        updateUI();
+
     }
 
 
     /* =====================================================
-       تبديل الوضع
-       ===================================================== */
+       تحديث حالة الحساب
+    ===================================================== */
 
-    function toggleTheme() {
+    function updateAccountState() {
 
-        SETTINGS.theme =
-            SETTINGS.theme ===
-            "dark"
-                ? "light"
-                : "dark";
-
-
-        saveSetting(
-            "theme",
-            SETTINGS.theme
-        );
+        const status =
+            document.getElementById(
+                "wfesc-account-setting-status"
+            );
 
 
-        applySettings();
+        const button =
+            document.getElementById(
+                "wfesc-account-login-button"
+            );
 
-        updateUI();
+
+        if (!status || !button) {
+            return;
+        }
+
+
+        const auth =
+            window.WFESC_AUTH;
+
+
+        const user =
+            auth &&
+            typeof auth.getUser === "function"
+                ? auth.getUser()
+                : null;
+
+
+        if (user) {
+
+            const name =
+                user.user_metadata &&
+                (
+                    user.user_metadata.display_name ||
+                    user.user_metadata.username ||
+                    user.user_metadata.name
+                );
+
+
+            status.textContent =
+                name ||
+                user.email ||
+                "تم تسجيل الدخول";
+
+
+            button.textContent =
+                "الحساب";
+
+        } else {
+
+            status.textContent =
+                "غير مسجل الدخول";
+
+
+            button.textContent =
+                "تسجيل الدخول";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       تحديث واجهة الإعدادات
+    ===================================================== */
+
+    function updateUI() {
+
+        const themeToggle =
+            document.getElementById(
+                "wfesc-theme-toggle"
+            );
+
+
+        const animationToggle =
+            document.getElementById(
+                "wfesc-animation-toggle"
+            );
+
+
+        const themeLabel =
+            document.getElementById(
+                "wfesc-theme-label"
+            );
+
+
+        const animationLabel =
+            document.getElementById(
+                "wfesc-animation-label"
+            );
+
+
+        if (themeToggle) {
+
+            themeToggle.classList.toggle(
+                "wfesc-toggle-on",
+                state.theme === "light"
+            );
+
+        }
+
+
+        if (animationToggle) {
+
+            animationToggle.classList.toggle(
+                "wfesc-toggle-on",
+                state.animations
+            );
+
+        }
+
+
+        if (themeLabel) {
+
+            themeLabel.textContent =
+                state.theme === "light"
+                    ? "الوضع العادي"
+                    : "الوضع المظلم";
+
+        }
+
+
+        if (animationLabel) {
+
+            animationLabel.textContent =
+                state.animations
+                    ? "انتقالات وحركة سلسة"
+                    : "الحركة والانتقالات متوقفة";
+
+        }
+
+
+        updateAccountState();
 
     }
 
 
     /* =====================================================
        فتح الإعدادات
-       ===================================================== */
+    ===================================================== */
 
-    function openSettings() {
+    function openPanel() {
 
-        createSettingsPanel();
-
-        updateUI();
+        createPanel();
 
 
         const panel =
@@ -535,32 +1347,47 @@
             );
 
 
-        if (!panel) {
-            return;
+        const backdrop =
+            document.getElementById(
+                "wfesc-settings-backdrop"
+            );
+
+
+        if (panel) {
+
+            panel.classList.add(
+                "wfesc-settings-open"
+            );
+
         }
 
 
-        panel.classList.add(
-            "wfesc-settings-open"
-        );
+        if (backdrop) {
 
+            backdrop.classList.add(
+                "wfesc-settings-open"
+            );
 
-        document.body.classList.add(
-            "wfesc-settings-lock"
-        );
+        }
 
     }
 
 
     /* =====================================================
        إغلاق الإعدادات
-       ===================================================== */
+    ===================================================== */
 
-    function closeSettings() {
+    function closePanel() {
 
         const panel =
             document.getElementById(
                 "wfesc-settings-panel"
+            );
+
+
+        const backdrop =
+            document.getElementById(
+                "wfesc-settings-backdrop"
             );
 
 
@@ -573,62 +1400,11 @@
         }
 
 
-        document.body.classList.remove(
-            "wfesc-settings-lock"
-        );
+        if (backdrop) {
 
-    }
-
-
-    /* =====================================================
-       تحديث واجهة الإعدادات
-       ===================================================== */
-
-    function updateUI() {
-
-        const themeStatus =
-            document.getElementById(
-                "wfesc-theme-status"
+            backdrop.classList.remove(
+                "wfesc-settings-open"
             );
-
-
-        const animationStatus =
-            document.getElementById(
-                "wfesc-animation-status"
-            );
-
-
-        const animationToggle =
-            document.getElementById(
-                "wfesc-animation-toggle"
-            );
-
-
-        if (themeStatus) {
-
-            themeStatus.textContent =
-                SETTINGS.theme ===
-                "light"
-                    ? "الوضع الفاتح"
-                    : "الوضع الداكن";
-
-        }
-
-
-        if (animationStatus) {
-
-            animationStatus.textContent =
-                SETTINGS.animations
-                    ? "مفعّل"
-                    : "متوقف";
-
-        }
-
-
-        if (animationToggle) {
-
-            animationToggle.checked =
-                SETTINGS.animations;
 
         }
 
@@ -636,646 +1412,188 @@
 
 
     /* =====================================================
-       CSS
-       ===================================================== */
+       مراقبة زر الإعدادات
+    ===================================================== */
 
-    function createSettingsStyle() {
+    function connectSettingsButton() {
 
-        if (
-            document.getElementById(
-                "wfesc-settings-style"
-            )
-        ) {
+        document.addEventListener(
+            "click",
+            function (event) {
 
-            return;
+                const button =
+                    event.target.closest(
+                        "#wfesc-settings-button"
+                    );
 
-        }
 
-
-        const style =
-            document.createElement(
-                "style"
-            );
-
-
-        style.id =
-            "wfesc-settings-style";
-
-
-        style.textContent = `
-
-            #wfesc-settings-button {
-
-                position: fixed;
-
-                bottom: 20px;
-
-                left: 20px;
-
-                z-index: 99990;
-
-                width: 44px;
-
-                height: 44px;
-
-                border-radius: 50%;
-
-                border:
-                    1px solid
-                    rgba(255,255,255,.15);
-
-                background:
-                    rgba(15,15,15,.9);
-
-                color: #fff;
-
-                font-size: 19px;
-
-                cursor: pointer;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-
-                transition:
-                    transform .25s ease,
-                    background .25s ease;
-
-            }
-
-
-            #wfesc-settings-button:hover {
-
-                transform:
-                    rotate(25deg)
-                    scale(1.05);
-
-                background:
-                    #1c1c1c;
-
-            }
-
-
-            #wfesc-settings-panel {
-
-                position: fixed;
-
-                inset: 0;
-
-                z-index: 999999;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-
-                padding: 20px;
-
-                background:
-                    rgba(0,0,0,.72);
-
-                backdrop-filter:
-                    blur(8px);
-
-                -webkit-backdrop-filter:
-                    blur(8px);
-
-                opacity: 0;
-
-                visibility: hidden;
-
-                pointer-events: none;
-
-                transition:
-                    opacity .25s ease,
-                    visibility .25s ease;
-
-            }
-
-
-            #wfesc-settings-panel
-            .wfesc-settings-box {
-
-                width:
-                    min(430px, 100%);
-
-                max-height:
-                    calc(100vh - 40px);
-
-                overflow-y: auto;
-
-                padding: 25px;
-
-                position: relative;
-
-                border-radius: 18px;
-
-                background: #0b0b0b;
-
-                color: #fff;
-
-                border:
-                    1px solid
-                    rgba(255,255,255,.12);
-
-                box-shadow:
-                    0 25px 80px
-                    rgba(0,0,0,.55);
-
-                transform:
-                    translateY(15px)
-                    scale(.98);
-
-                transition:
-                    transform .25s ease;
-
-            }
-
-
-            #wfesc-settings-panel
-            .wfesc-settings-box {
-
-                transform:
-                    translateY(15px)
-                    scale(.98);
-
-            }
-
-
-            #wfesc-settings-panel.wfesc-settings-open {
-
-                opacity: 1;
-
-                visibility: visible;
-
-                pointer-events: auto;
-
-            }
-
-
-            #wfesc-settings-panel.wfesc-settings-open
-            .wfesc-settings-box {
-
-                transform:
-                    translateY(0)
-                    scale(1);
-
-            }
-
-
-            .wfesc-settings-close {
-
-                position: absolute;
-
-                top: 12px;
-
-                right: 12px;
-
-                width: 34px;
-
-                height: 34px;
-
-                border: 0;
-
-                border-radius: 50%;
-
-                background:
-                    rgba(255,255,255,.07);
-
-                color: #fff;
-
-                font-size: 23px;
-
-                cursor: pointer;
-
-            }
-
-
-            .wfesc-settings-header {
-
-                text-align: center;
-
-                margin-bottom: 22px;
-
-            }
-
-
-            .wfesc-settings-icon {
-
-                width: 55px;
-
-                height: 55px;
-
-                margin:
-                    0 auto 10px;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-
-                border-radius: 50%;
-
-                background:
-                    rgba(255,255,255,.08);
-
-                font-size: 25px;
-
-            }
-
-
-            .wfesc-settings-header h2 {
-
-                margin: 0 0 6px;
-
-                font-size: 21px;
-
-            }
-
-
-            .wfesc-settings-header p {
-
-                margin: 0;
-
-                color: #999;
-
-                font-size: 12px;
-
-            }
-
-
-            .wfesc-setting-row {
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content:
-                    space-between;
-
-                gap: 15px;
-
-                padding: 15px 0;
-
-                border-bottom:
-                    1px solid
-                    rgba(255,255,255,.08);
-
-            }
-
-
-            .wfesc-setting-info {
-
-                display: flex;
-
-                flex-direction: column;
-
-                gap: 5px;
-
-                min-width: 0;
-
-            }
-
-
-            .wfesc-setting-info span {
-
-                font-size: 14px;
-
-            }
-
-
-            .wfesc-setting-info small {
-
-                color: #888;
-
-                font-size: 11px;
-
-            }
-
-
-            .wfesc-settings-action {
-
-                border:
-                    1px solid
-                    rgba(255,255,255,.16);
-
-                background:
-                    rgba(255,255,255,.06);
-
-                color: #fff;
-
-                border-radius: 9px;
-
-                padding: 8px 12px;
-
-                cursor: pointer;
-
-                font-size: 11px;
-
-            }
-
-
-            .wfesc-switch {
-
-                position: relative;
-
-                width: 43px;
-
-                height: 23px;
-
-                flex-shrink: 0;
-
-            }
-
-
-            .wfesc-switch input {
-
-                opacity: 0;
-
-                width: 0;
-
-                height: 0;
-
-            }
-
-
-            .wfesc-slider {
-
-                position: absolute;
-
-                inset: 0;
-
-                cursor: pointer;
-
-                border-radius: 20px;
-
-                background: #333;
-
-                transition:
-                    background .25s ease;
-
-            }
-
-
-            .wfesc-slider::before {
-
-                content: "";
-
-                position: absolute;
-
-                width: 17px;
-
-                height: 17px;
-
-                left: 3px;
-
-                top: 3px;
-
-                border-radius: 50%;
-
-                background: #fff;
-
-                transition:
-                    transform .25s ease;
-
-            }
-
-
-            .wfesc-switch input:checked
-            + .wfesc-slider {
-
-                background: #777;
-
-            }
-
-
-            .wfesc-switch input:checked
-            + .wfesc-slider::before {
-
-                transform:
-                    translateX(20px);
-
-            }
-
-
-            body.wfesc-settings-lock {
-
-                overflow: hidden !important;
-
-            }
-
-
-            /* الأنميشن المعزز */
-
-            body.wfesc-animations-enabled
-            .wfesc-settings-box {
-
-                animation:
-                    wfescSettingsEnter
-                    .35s ease;
-
-            }
-
-
-            body.wfesc-animations-enabled
-            #wfesc-settings-button {
-
-                animation:
-                    wfescSettingsButtonIn
-                    .5s ease;
-
-            }
-
-
-            @keyframes wfescSettingsEnter {
-
-                from {
-
-                    opacity: 0;
-
-                    transform:
-                        translateY(20px)
-                        scale(.96);
-
-                }
-
-                to {
-
-                    opacity: 1;
-
-                    transform:
-                        translateY(0)
-                        scale(1);
-
-                }
-
-            }
-
-
-            @keyframes wfescSettingsButtonIn {
-
-                from {
-
-                    opacity: 0;
-
-                    transform:
-                        scale(.7)
-                        rotate(-30deg);
-
-                }
-
-                to {
-
-                    opacity: 1;
-
-                    transform:
-                        scale(1)
-                        rotate(0);
-
-                }
-
-            }
-
-
-            body.wfesc-light
-            #wfesc-settings-button {
-
-                background: #fff;
-
-                color: #111;
-
-                border-color: #ddd;
-
-            }
-
-
-            body.wfesc-light
-            #wfesc-settings-panel
-            .wfesc-settings-box {
-
-                background: #fff;
-
-                color: #111;
-
-                border-color: #ddd;
-
-            }
-
-
-            body.wfesc-light
-            .wfesc-settings-header p {
-
-                color: #777;
-
-            }
-
-
-            body.wfesc-light
-            .wfesc-setting-row {
-
-                border-bottom-color:
-                    #ddd;
-
-            }
-
-
-            body.wfesc-light
-            .wfesc-setting-info small {
-
-                color: #777;
-
-            }
-
-
-            body.wfesc-light
-            .wfesc-settings-action {
-
-                background: #f4f4f4;
-
-                color: #111;
-
-                border-color: #ccc;
-
-            }
-
-
-            body.wfesc-light
-            .wfesc-settings-close {
-
-                background: #eee;
-
-                color: #111;
-
-            }
-
-
-            @media (max-width: 500px) {
-
-                #wfesc-settings-button {
-
-                    bottom: 15px;
-
-                    left: 15px;
-
+                if (!button) {
+                    return;
                 }
 
 
-                #wfesc-settings-panel {
-
-                    padding: 12px;
-
-                }
+                event.preventDefault();
 
 
-                #wfesc-settings-panel
-                .wfesc-settings-box {
-
-                    padding: 20px;
-
-                }
+                openPanel();
 
             }
-
-        `;
-
-
-        document.head.appendChild(
-            style
         );
 
     }
+
+
+    /* =====================================================
+       مراقبة الحساب
+    ===================================================== */
+
+    function connectAccountEvents() {
+
+        window.addEventListener(
+            "wfesc-auth-state-change",
+            function () {
+
+                updateAccountState();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "wfesc-settings-ready",
+            function () {
+
+                updateAccountState();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       API عام
+    ===================================================== */
+
+    window.WFESC_SETTINGS = {
+
+        getTheme() {
+
+            return state.theme;
+
+        },
+
+
+        setTheme(theme) {
+
+            if (
+                theme !== "dark" &&
+                theme !== "light"
+            ) {
+
+                return false;
+
+            }
+
+
+            state.theme =
+                theme;
+
+
+            applyTheme();
+
+            updateUI();
+
+
+            return true;
+
+        },
+
+
+        getAnimations() {
+
+            return state.animations;
+
+        },
+
+
+        setAnimations(enabled) {
+
+            state.animations =
+                Boolean(enabled);
+
+
+            applyAnimations();
+
+            updateUI();
+
+        },
+
+
+        open:
+            openPanel,
+
+
+        close:
+            closePanel,
+
+
+        refresh:
+            updateUI
+
+    };
 
 
     /* =====================================================
        التهيئة
-       ===================================================== */
+    ===================================================== */
 
-    function initSettings() {
+    function init() {
 
-        createSettingsStyle();
-
-        createSettingsButton();
-
-        applySettings();
-
-        updateUI();
+        createStyles();
 
 
-        console.log(
-            "[WFESC SETTINGS] Loaded.",
-            SETTINGS
-        );
+        applyTheme();
+
+
+        applyAnimations();
+
+
+        connectSettingsButton();
+
+
+        connectAccountEvents();
+
+
+        /*
+         * إذا كان زر الإعدادات موجوداً
+         * من الموقع الأصلي، النظام جاهز.
+         */
+
+        if (
+            document.getElementById(
+                "wfesc-settings-button"
+            )
+        ) {
+
+            console.log(
+                "[WFESC SETTINGS] Ready."
+            );
+
+        } else {
+
+            console.log(
+                "[WFESC SETTINGS] Loaded."
+            );
+
+        }
 
     }
 
 
     /* =====================================================
-       تشغيل النظام
-       ===================================================== */
+       START
+    ===================================================== */
 
     if (
         document.readyState ===
@@ -1284,14 +1602,16 @@
 
         document.addEventListener(
             "DOMContentLoaded",
-            initSettings
+            init,
+            {
+                once: true
+            }
         );
 
     } else {
 
-        initSettings();
+        init();
 
     }
 
 })();
-                    
