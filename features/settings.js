@@ -1,16 +1,23 @@
 /* =========================================================
-   WFESC SETTINGS SYSTEM
+   WFESC SOCIAL SYSTEM
+   SETTINGS ENGINE
    نظام إعدادات WFESC
+
+   مسؤول عن:
+   - الوضع الداكن / الفاتح
+   - الأنميشن المعزز
+   - حفظ الإعدادات
+   - استعادة الإعدادات
+   - إضافة إعدادات مستقبلية بسهولة
    ========================================================= */
 
 (() => {
 
     "use strict";
 
-
     /* =====================================================
-       منع التكرار
-    ===================================================== */
+       منع تشغيل الملف أكثر من مرة
+       ===================================================== */
 
     if (window.WFESC_SETTINGS_LOADED) {
         return;
@@ -20,870 +27,145 @@
 
 
     /* =====================================================
-       الإعدادات المحفوظة
-    ===================================================== */
+       الإعدادات الأساسية
+       ===================================================== */
 
     const SETTINGS = {
 
         theme:
-            localStorage.getItem("wfesc-theme") || "dark",
+            localStorage.getItem("wfesc-theme") ||
+            "dark",
 
         animations:
-            localStorage.getItem("wfesc-animations") !== "off"
+            localStorage.getItem(
+                "wfesc-animations"
+            ) !== "off"
 
     };
 
 
     /* =====================================================
-       CSS
-    ===================================================== */
+       API النظام
+       ===================================================== */
 
-    function createStyles() {
+    window.WFESC_SETTINGS = {
+
+        version: "1.0.0",
+
+        get(key) {
+
+            return SETTINGS[key];
+
+        },
+
+        set(key, value) {
+
+            SETTINGS[key] = value;
+
+            saveSetting(
+                key,
+                value
+            );
+
+            applySettings();
+
+            updateUI();
+
+        },
+
+        getAll() {
+
+            return {
+                ...SETTINGS
+            };
+
+        }
+
+    };
+
+
+    /* =====================================================
+       حفظ الإعداد
+       ===================================================== */
+
+    function saveSetting(
+        key,
+        value
+    ) {
 
         if (
-            document.getElementById(
-                "wfesc-settings-style"
-            )
+            key === "theme"
         ) {
+
+            localStorage.setItem(
+                "wfesc-theme",
+                value
+            );
+
             return;
+
         }
 
 
-        const style =
-            document.createElement("style");
+        if (
+            key === "animations"
+        ) {
 
+            localStorage.setItem(
+                "wfesc-animations",
+                value
+                    ? "on"
+                    : "off"
+            );
 
-        style.id =
-            "wfesc-settings-style";
+        }
 
+    }
 
-        style.textContent = `
 
-            /* =================================================
-               GLOBAL TRANSITIONS
-            ================================================= */
+    /* =====================================================
+       تطبيق الوضعيات
+       ===================================================== */
 
-            body,
-            header,
-            section,
-            footer,
-            button,
-            a,
-            input,
-            textarea,
-            select,
-            .about-box,
-            .goal-card,
-            .social-link,
-            .share-box {
+    function applySettings() {
 
-                transition:
-                    background-color .45s ease,
-                    color .45s ease,
-                    border-color .45s ease,
-                    box-shadow .45s ease,
-                    transform .35s ease,
-                    opacity .35s ease;
+        /* الوضع الداكن / الفاتح */
 
-            }
+        if (
+            SETTINGS.theme ===
+            "light"
+        ) {
 
+            document.body.classList.add(
+                "wfesc-light"
+            );
 
-            /* =================================================
-               SETTINGS BUTTON
-            ================================================= */
+        } else {
 
-            #wfesc-settings-button {
+            document.body.classList.remove(
+                "wfesc-light"
+            );
 
-                position: fixed;
+        }
 
-                top: 82px;
-                right: 18px;
 
-                z-index: 9998;
+        /* الأنميشن */
 
-                padding: 9px 15px;
+        if (
+            SETTINGS.animations
+        ) {
 
-                background:
-                    rgba(12,12,12,.88);
+            document.body.classList.add(
+                "wfesc-animations-enabled"
+            );
 
-                color:
-                    #fff;
+        } else {
 
-                border:
-                    1px solid rgba(255,255,255,.12);
+            document.body.classList.remove(
+                "wfesc-animations-enabled"
+            );
 
-                border-radius:
-                    10px;
-
-                cursor:
-                    pointer;
-
-                font-family:
-                    Arial,
-                    Tahoma,
-                    sans-serif;
-
-                font-size:
-                    13px;
-
-                backdrop-filter:
-                    blur(12px);
-
-                -webkit-backdrop-filter:
-                    blur(12px);
-
-                transition:
-                    .3s ease;
-
-            }
-
-
-            #wfesc-settings-button:hover {
-
-                transform:
-                    translateY(-2px)
-                    scale(1.02);
-
-                background:
-                    rgba(255,255,255,.96);
-
-                color:
-                    #000;
-
-                border-color:
-                    rgba(255,255,255,.35);
-
-                box-shadow:
-                    0 8px 30px
-                    rgba(0,0,0,.30);
-
-            }
-
-
-            #wfesc-settings-button:active {
-
-                transform:
-                    scale(.94);
-
-            }
-
-
-            /* =================================================
-               SETTINGS PANEL
-            ================================================= */
-
-            #wfesc-settings-panel {
-
-                position:
-                    fixed;
-
-                top:
-                    130px;
-
-                right:
-                    18px;
-
-                width:
-                    290px;
-
-                max-height:
-                    calc(100vh - 155px);
-
-                overflow-y:
-                    auto;
-
-                z-index:
-                    9999;
-
-                padding:
-                    22px;
-
-                background:
-                    rgba(12,12,12,.94);
-
-                color:
-                    #fff;
-
-                border:
-                    1px solid
-                    rgba(255,255,255,.10);
-
-                border-radius:
-                    17px;
-
-                box-shadow:
-                    0 20px 60px
-                    rgba(0,0,0,.45);
-
-                backdrop-filter:
-                    blur(20px);
-
-                -webkit-backdrop-filter:
-                    blur(20px);
-
-                opacity:
-                    0;
-
-                visibility:
-                    hidden;
-
-                transform:
-                    translateY(-12px)
-                    scale(.96);
-
-                transform-origin:
-                    top right;
-
-                transition:
-                    opacity .28s ease,
-                    transform .28s ease,
-                    visibility .28s ease;
-
-            }
-
-
-            #wfesc-settings-panel.active {
-
-                opacity:
-                    1;
-
-                visibility:
-                    visible;
-
-                transform:
-                    translateY(0)
-                    scale(1);
-
-            }
-
-
-            #wfesc-settings-panel h3 {
-
-                margin:
-                    0 0 18px;
-
-                font-size:
-                    19px;
-
-                font-weight:
-                    600;
-
-            }
-
-
-            /* =================================================
-               SETTINGS ROW
-            ================================================= */
-
-            .wfesc-setting-row {
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                justify-content:
-                    space-between;
-
-                gap:
-                    15px;
-
-                padding:
-                    14px 0;
-
-                border-bottom:
-                    1px solid
-                    rgba(255,255,255,.07);
-
-            }
-
-
-            .wfesc-setting-info {
-
-                display:
-                    flex;
-
-                flex-direction:
-                    column;
-
-                gap:
-                    5px;
-
-                min-width:
-                    0;
-
-            }
-
-
-            .wfesc-setting-info span {
-
-                font-size:
-                    14px;
-
-            }
-
-
-            .wfesc-setting-info small {
-
-                color:
-                    #888;
-
-                font-size:
-                    11px;
-
-            }
-
-
-            /* =================================================
-               SWITCH
-            ================================================= */
-
-            .wfesc-switch {
-
-                position:
-                    relative;
-
-                width:
-                    54px;
-
-                height:
-                    30px;
-
-                flex-shrink:
-                    0;
-
-            }
-
-
-            .wfesc-switch input {
-
-                opacity:
-                    0;
-
-                width:
-                    0;
-
-                height:
-                    0;
-
-                position:
-                    absolute;
-
-            }
-
-
-            .wfesc-slider {
-
-                position:
-                    absolute;
-
-                inset:
-                    0;
-
-                cursor:
-                    pointer;
-
-                background:
-                    #292929;
-
-                border:
-                    1px solid
-                    #3a3a3a;
-
-                border-radius:
-                    30px;
-
-                transition:
-                    .35s ease;
-
-            }
-
-
-            .wfesc-slider::before {
-
-                content:
-                    "";
-
-                position:
-                    absolute;
-
-                width:
-                    22px;
-
-                height:
-                    22px;
-
-                left:
-                    3px;
-
-                top:
-                    3px;
-
-                background:
-                    #fff;
-
-                border-radius:
-                    50%;
-
-                box-shadow:
-                    0 2px 7px
-                    rgba(0,0,0,.35);
-
-                transition:
-                    transform .35s
-                    cubic-bezier(.4,0,.2,1),
-                    background .35s ease;
-
-            }
-
-
-            .wfesc-switch input:checked
-            + .wfesc-slider {
-
-                background:
-                    #e8e8e8;
-
-                border-color:
-                    #fff;
-
-            }
-
-
-            .wfesc-switch input:checked
-            + .wfesc-slider::before {
-
-                transform:
-                    translateX(24px);
-
-                background:
-                    #111;
-
-            }
-
-
-            /* =================================================
-               DARK MODE
-            ================================================= */
-
-            body {
-
-                background:
-                    #050505;
-
-                color:
-                    #eee;
-
-            }
-
-
-            /* =================================================
-               LIGHT MODE
-            ================================================= */
-
-            body.wfesc-light {
-
-                background:
-                    #f5f5f5;
-
-                color:
-                    #111;
-
-            }
-
-
-            body.wfesc-light header {
-
-                background:
-                    rgba(255,255,255,.94);
-
-                border-bottom-color:
-                    #ddd;
-
-            }
-
-
-            body.wfesc-light .nav-links a {
-
-                color:
-                    #555;
-
-            }
-
-
-            body.wfesc-light .nav-links a:hover {
-
-                color:
-                    #000;
-
-            }
-
-
-            body.wfesc-light .hero-subtitle {
-
-                color:
-                    #555;
-
-            }
-
-
-            body.wfesc-light section {
-
-                border-top-color:
-                    #ddd;
-
-            }
-
-
-            body.wfesc-light .about-box,
-            body.wfesc-light .goal-card,
-            body.wfesc-light .social-link,
-            body.wfesc-light .share-box {
-
-                background:
-                    #fff;
-
-                color:
-                    #111;
-
-                border-color:
-                    #ddd;
-
-            }
-
-
-            body.wfesc-light .goal-card p,
-            body.wfesc-light .social-user,
-            body.wfesc-light .share-box p,
-            body.wfesc-light .section-title p {
-
-                color:
-                    #666;
-
-            }
-
-
-            body.wfesc-light .social-link:hover {
-
-                background:
-                    #f0f0f0;
-
-                border-color:
-                    #bbb;
-
-            }
-
-
-            body.wfesc-light footer {
-
-                border-top-color:
-                    #ddd;
-
-            }
-
-
-            body.wfesc-light
-            #wfesc-settings-button {
-
-                background:
-                    rgba(255,255,255,.94);
-
-                color:
-                    #111;
-
-                border-color:
-                    #d5d5d5;
-
-            }
-
-
-            body.wfesc-light
-            #wfesc-settings-button:hover {
-
-                background:
-                    #111;
-
-                color:
-                    #fff;
-
-                border-color:
-                    #111;
-
-            }
-
-
-            body.wfesc-light
-            #wfesc-settings-panel {
-
-                background:
-                    rgba(255,255,255,.96);
-
-                color:
-                    #111;
-
-                border-color:
-                    #ddd;
-
-            }
-
-
-            body.wfesc-light
-            .wfesc-setting-info small {
-
-                color:
-                    #777;
-
-            }
-
-
-            /* =================================================
-               ENHANCED ANIMATION SYSTEM
-            ================================================= */
-
-            body.wfesc-animations-enabled {
-
-                animation:
-                    wfescPageEnter
-                    .55s
-                    cubic-bezier(.22,1,.36,1);
-
-            }
-
-
-            body.wfesc-animations-enabled
-            .hero {
-
-                animation:
-                    wfescHeroEnter
-                    .8s
-                    cubic-bezier(.22,1,.36,1);
-
-            }
-
-
-            body.wfesc-animations-enabled
-            section {
-
-                animation:
-                    wfescSectionEnter
-                    .7s
-                    both;
-
-            }
-
-
-            body.wfesc-animations-enabled
-            .about-box,
-            body.wfesc-animations-enabled
-            .goal-card,
-            body.wfesc-animations-enabled
-            .social-link,
-            body.wfesc-animations-enabled
-            .share-box {
-
-                animation:
-                    wfescCardEnter
-                    .65s
-                    cubic-bezier(.22,1,.36,1)
-                    both;
-
-            }
-
-
-            body.wfesc-animations-enabled
-            button:not(
-                #wfesc-settings-button
-            ) {
-
-                transition:
-                    transform .25s ease,
-                    box-shadow .25s ease,
-                    background .3s ease,
-                    color .3s ease;
-
-            }
-
-
-            body.wfesc-animations-enabled
-            button:not(
-                #wfesc-settings-button
-            ):hover {
-
-                transform:
-                    translateY(-2px);
-
-            }
-
-
-            body.wfesc-animations-enabled
-            a:hover {
-
-                transform:
-                    translateY(-1px);
-
-            }
-
-
-            /* =================================================
-               PAGE EXIT
-            ================================================= */
-
-            body.wfesc-page-leaving {
-
-                opacity:
-                    0;
-
-                transform:
-                    scale(.985);
-
-                transition:
-                    opacity .35s ease,
-                    transform .35s ease;
-
-            }
-
-
-            /* =================================================
-               ANIMATIONS
-            ================================================= */
-
-            @keyframes wfescPageEnter {
-
-                from {
-
-                    opacity:
-                        0;
-
-                }
-
-                to {
-
-                    opacity:
-                        1;
-
-                }
-
-            }
-
-
-            @keyframes wfescHeroEnter {
-
-                from {
-
-                    opacity:
-                        0;
-
-                    transform:
-                        translateY(25px)
-                        scale(.98);
-
-                }
-
-                to {
-
-                    opacity:
-                        1;
-
-                    transform:
-                        translateY(0)
-                        scale(1);
-
-                }
-
-            }
-
-
-            @keyframes wfescSectionEnter {
-
-                from {
-
-                    opacity:
-                        0;
-
-                    transform:
-                        translateY(18px);
-
-                }
-
-                to {
-
-                    opacity:
-                        1;
-
-                    transform:
-                        translateY(0);
-
-                }
-
-            }
-
-
-            @keyframes wfescCardEnter {
-
-                from {
-
-                    opacity:
-                        0;
-
-                    transform:
-                        translateY(15px)
-                        scale(.98);
-
-                }
-
-                to {
-
-                    opacity:
-                        1;
-
-                    transform:
-                        translateY(0)
-                        scale(1);
-
-                }
-
-            }
-
-
-            /* =================================================
-               MOBILE
-            ================================================= */
-
-            @media (max-width: 700px) {
-
-                #wfesc-settings-button {
-
-                    top:
-                        70px;
-
-                    right:
-                        12px;
-
-                }
-
-
-                #wfesc-settings-panel {
-
-                    top:
-                        112px;
-
-                    right:
-                        12px;
-
-                    width:
-                        calc(100vw - 24px);
-
-                    max-width:
-                        300px;
-
-                }
-
-            }
-
-        `;
-
-
-        document.head.appendChild(style);
+        }
 
     }
 
@@ -892,19 +174,23 @@
        إنشاء زر الإعدادات
        ===================================================== */
 
-    function createButton() {
+    function createSettingsButton() {
 
         if (
             document.getElementById(
                 "wfesc-settings-button"
             )
         ) {
+
             return;
+
         }
 
 
         const button =
-            document.createElement("button");
+            document.createElement(
+                "button"
+            );
 
 
         button.id =
@@ -915,11 +201,25 @@
             "button";
 
 
-        button.textContent =
-            "⚙ الإعدادات";
+        button.setAttribute(
+            "aria-label",
+            "الإعدادات"
+        );
 
 
-        document.body.appendChild(button);
+        button.innerHTML =
+            "⚙";
+
+
+        document.body.appendChild(
+            button
+        );
+
+
+        button.addEventListener(
+            "click",
+            openSettings
+        );
 
     }
 
@@ -928,19 +228,23 @@
        إنشاء لوحة الإعدادات
        ===================================================== */
 
-    function createPanel() {
+    function createSettingsPanel() {
 
         if (
             document.getElementById(
                 "wfesc-settings-panel"
             )
         ) {
+
             return;
+
         }
 
 
         const panel =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
 
         panel.id =
@@ -949,326 +253,214 @@
 
         panel.innerHTML = `
 
-            <h3>
-                الإعدادات
-            </h3>
+            <div
+                class="wfesc-settings-box"
+                role="dialog"
+                aria-modal="true"
+                aria-label="إعدادات WFESC"
+            >
+
+                <button
+                    type="button"
+                    id="wfesc-settings-close"
+                    class="wfesc-settings-close"
+                    aria-label="إغلاق"
+                >
+                    ×
+                </button>
 
 
-            <!-- الوضع الداكن -->
+                <div
+                    class="wfesc-settings-header"
+                >
 
-            <div class="wfesc-setting-row">
+                    <div
+                        class="wfesc-settings-icon"
+                    >
+                        ⚙
+                    </div>
 
-                <div class="wfesc-setting-info">
+                    <h2>
+                        الإعدادات
+                    </h2>
 
-                    <span>
-                        الوضع الداكن
-                    </span>
-
-                    <small
-                        id="wfesc-theme-status">
-                    </small>
+                    <p>
+                        تخصيص تجربة WFESC
+                    </p>
 
                 </div>
 
 
-                <label class="wfesc-switch">
+                <div
+                    class="wfesc-settings-content"
+                >
 
-                    <input
-                        type="checkbox"
-                        id="wfesc-theme-toggle"
+                    <!-- الوضع -->
+
+                    <div
+                        class="wfesc-setting-row"
                     >
 
-                    <span class="wfesc-slider"></span>
+                        <div
+                            class="wfesc-setting-info"
+                        >
 
-                </label>
+                            <span>
+                                الوضع
+                            </span>
 
-            </div>
+                            <small
+                                id="wfesc-theme-status"
+                            >
+                                الوضع الداكن
+                            </small>
+
+                        </div>
 
 
-            <!-- الأنميشن المعزز -->
+                        <button
+                            type="button"
+                            id="wfesc-theme-toggle"
+                            class="wfesc-settings-action"
+                        >
+                            تبديل
+                        </button>
 
-            <div class="wfesc-setting-row">
+                    </div>
 
-                <div class="wfesc-setting-info">
 
-                    <span>
-                        الأنميشن المعزز
-                    </span>
+                    <!-- الأنميشن -->
 
-                    <small
-                        id="wfesc-animation-status">
-                    </small>
+                    <div
+                        class="wfesc-setting-row"
+                    >
+
+                        <div
+                            class="wfesc-setting-info"
+                        >
+
+                            <span>
+                                الأنميشن المعزز
+                            </span>
+
+                            <small
+                                id="wfesc-animation-status"
+                            >
+                                مفعّل
+                            </small>
+
+                        </div>
+
+
+                        <label
+                            class="wfesc-switch"
+                        >
+
+                            <input
+                                type="checkbox"
+                                id="wfesc-animation-toggle"
+                            >
+
+                            <span
+                                class="wfesc-slider"
+                            ></span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- مكان مخصص لإعدادات مستقبلية -->
+
+                    <div
+                        id="wfesc-future-settings"
+                    ></div>
 
                 </div>
-
-
-                <label class="wfesc-switch">
-
-                    <input
-                        type="checkbox"
-                        id="wfesc-animation-toggle"
-                    >
-
-                    <span class="wfesc-slider"></span>
-
-                </label>
 
             </div>
 
         `;
 
 
-        document.body.appendChild(panel);
+        document.body.appendChild(
+            panel
+        );
+
+
+        bindSettingsPanel();
 
     }
 
 
     /* =====================================================
-       تطبيق الوضع
+       ربط أزرار الإعدادات
        ===================================================== */
 
-    
-    function applyTheme(theme) {
+    function bindSettingsPanel() {
 
-        const toggle =
+        const closeButton =
+            document.getElementById(
+                "wfesc-settings-close"
+            );
+
+
+        if (closeButton) {
+
+            closeButton.addEventListener(
+                "click",
+                closeSettings
+            );
+
+        }
+
+
+        const themeButton =
             document.getElementById(
                 "wfesc-theme-toggle"
             );
 
 
-        const status =
-            document.getElementById(
-                "wfesc-theme-status"
+        if (themeButton) {
+
+            themeButton.addEventListener(
+                "click",
+                toggleTheme
             );
 
-
-        if (theme === "light") {
-
-            document.body.classList.add(
-                "wfesc-light"
-            );
-
-
-            if (toggle) {
-                toggle.checked = false;
-            }
-
-
-            if (status) {
-
-                status.textContent =
-                    "الوضع العادي";
-
-            }
-
-
-            return;
-
         }
 
 
-        document.body.classList.remove(
-            "wfesc-light"
-        );
-
-
-        if (toggle) {
-            toggle.checked = true;
-        }
-
-
-        if (status) {
-
-            status.textContent =
-                "الوضع الداكن";
-
-        }
-
-    }
-
-
-    /* =====================================================
-       تطبيق الأنميشن
-       ===================================================== */
-
-    function applyAnimations(enabled) {
-
-        const toggle =
+        const animationToggle =
             document.getElementById(
                 "wfesc-animation-toggle"
             );
 
 
-        const status =
-            document.getElementById(
-                "wfesc-animation-status"
+        if (animationToggle) {
+
+            animationToggle.addEventListener(
+                "change",
+                function () {
+
+                    SETTINGS.animations =
+                        animationToggle.checked;
+
+
+                    saveSetting(
+                        "animations",
+                        SETTINGS.animations
+                    );
+
+
+                    applySettings();
+
+                    updateUI();
+
+                }
             );
-
-
-        if (enabled) {
-
-            document.body.classList.add(
-                "wfesc-animations-enabled"
-            );
-
-
-            if (toggle) {
-                toggle.checked = true;
-            }
-
-
-            if (status) {
-
-                status.textContent =
-                    "مفعّل";
-
-            }
-
-        } else {
-
-            document.body.classList.remove(
-                "wfesc-animations-enabled"
-            );
-
-
-            if (toggle) {
-                toggle.checked = false;
-            }
-
-
-            if (status) {
-
-                status.textContent =
-                    "متوقف";
-
-            }
 
         }
-
-    }
-
-
-    /* =====================================================
-       انتقال الصفحات
-       ===================================================== */
-
-    function initPageTransitions() {
-
-        document.addEventListener(
-            "click",
-            (event) => {
-
-                const link =
-                    event.target.closest("a");
-
-
-                if (!link) {
-                    return;
-                }
-
-
-                if (
-                    !SETTINGS.animations
-                ) {
-                    return;
-                }
-
-
-                const href =
-                    link.getAttribute("href");
-
-
-                if (!href) {
-                    return;
-                }
-
-
-                if (
-                    href.startsWith("#") ||
-                    href.startsWith("javascript:") ||
-                    href.startsWith("mailto:") ||
-                    href.startsWith("tel:")
-                ) {
-                    return;
-                }
-
-
-                if (
-                    link.target === "_blank" ||
-                    event.ctrlKey ||
-                    event.metaKey ||
-                    event.shiftKey ||
-                    event.altKey
-                ) {
-                    return;
-                }
-
-
-                let destination;
-
-
-                try {
-
-                    destination =
-                        new URL(
-                            href,
-                            window.location.href
-                        );
-
-                } catch {
-
-                    return;
-
-                }
-
-
-                if (
-                    destination.origin !==
-                    window.location.origin
-                ) {
-                    return;
-                }
-
-
-                if (
-                    destination.href ===
-                    window.location.href
-                ) {
-                    return;
-                }
-
-
-                event.preventDefault();
-
-
-                document.body.classList.add(
-                    "wfesc-page-leaving"
-                );
-
-
-                setTimeout(() => {
-
-                    window.location.href =
-                        destination.href;
-
-                }, 300);
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       الأحداث
-       ===================================================== */
-
-    function initEvents() {
-
-        const button =
-            document.getElementById(
-                "wfesc-settings-button"
-            );
 
 
         const panel =
@@ -1277,9 +469,132 @@
             );
 
 
-        const themeToggle =
+        if (panel) {
+
+            panel.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target ===
+                        panel
+                    ) {
+
+                        closeSettings();
+
+                    }
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       تبديل الوضع
+       ===================================================== */
+
+    function toggleTheme() {
+
+        SETTINGS.theme =
+            SETTINGS.theme ===
+            "dark"
+                ? "light"
+                : "dark";
+
+
+        saveSetting(
+            "theme",
+            SETTINGS.theme
+        );
+
+
+        applySettings();
+
+        updateUI();
+
+    }
+
+
+    /* =====================================================
+       فتح الإعدادات
+       ===================================================== */
+
+    function openSettings() {
+
+        createSettingsPanel();
+
+        updateUI();
+
+
+        const panel =
             document.getElementById(
-                "wfesc-theme-toggle"
+                "wfesc-settings-panel"
+            );
+
+
+        if (!panel) {
+            return;
+        }
+
+
+        panel.classList.add(
+            "wfesc-settings-open"
+        );
+
+
+        document.body.classList.add(
+            "wfesc-settings-lock"
+        );
+
+    }
+
+
+    /* =====================================================
+       إغلاق الإعدادات
+       ===================================================== */
+
+    function closeSettings() {
+
+        const panel =
+            document.getElementById(
+                "wfesc-settings-panel"
+            );
+
+
+        if (panel) {
+
+            panel.classList.remove(
+                "wfesc-settings-open"
+            );
+
+        }
+
+
+        document.body.classList.remove(
+            "wfesc-settings-lock"
+        );
+
+    }
+
+
+    /* =====================================================
+       تحديث واجهة الإعدادات
+       ===================================================== */
+
+    function updateUI() {
+
+        const themeStatus =
+            document.getElementById(
+                "wfesc-theme-status"
+            );
+
+
+        const animationStatus =
+            document.getElementById(
+                "wfesc-animation-status"
             );
 
 
@@ -1289,113 +604,670 @@
             );
 
 
-        if (
-            !button ||
-            !panel ||
-            !themeToggle ||
-            !animationToggle
-        ) {
-            return;
+        if (themeStatus) {
+
+            themeStatus.textContent =
+                SETTINGS.theme ===
+                "light"
+                    ? "الوضع الفاتح"
+                    : "الوضع الداكن";
+
         }
 
 
-        /* فتح الإعدادات */
+        if (animationStatus) {
 
-        button.addEventListener(
-            "click",
-            (event) => {
+            animationStatus.textContent =
+                SETTINGS.animations
+                    ? "مفعّل"
+                    : "متوقف";
 
-                event.stopPropagation();
+        }
 
-                panel.classList.toggle(
-                    "active"
-                );
+
+        if (animationToggle) {
+
+            animationToggle.checked =
+                SETTINGS.animations;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CSS
+       ===================================================== */
+
+    function createSettingsStyle() {
+
+        if (
+            document.getElementById(
+                "wfesc-settings-style"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const style =
+            document.createElement(
+                "style"
+            );
+
+
+        style.id =
+            "wfesc-settings-style";
+
+
+        style.textContent = `
+
+            #wfesc-settings-button {
+
+                position: fixed;
+
+                bottom: 20px;
+
+                left: 20px;
+
+                z-index: 99990;
+
+                width: 44px;
+
+                height: 44px;
+
+                border-radius: 50%;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.15);
+
+                background:
+                    rgba(15,15,15,.9);
+
+                color: #fff;
+
+                font-size: 19px;
+
+                cursor: pointer;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                transition:
+                    transform .25s ease,
+                    background .25s ease;
 
             }
+
+
+            #wfesc-settings-button:hover {
+
+                transform:
+                    rotate(25deg)
+                    scale(1.05);
+
+                background:
+                    #1c1c1c;
+
+            }
+
+
+            #wfesc-settings-panel {
+
+                position: fixed;
+
+                inset: 0;
+
+                z-index: 999999;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                padding: 20px;
+
+                background:
+                    rgba(0,0,0,.72);
+
+                backdrop-filter:
+                    blur(8px);
+
+                -webkit-backdrop-filter:
+                    blur(8px);
+
+                opacity: 0;
+
+                visibility: hidden;
+
+                pointer-events: none;
+
+                transition:
+                    opacity .25s ease,
+                    visibility .25s ease;
+
+            }
+
+
+            #wfesc-settings-panel
+            .wfesc-settings-box {
+
+                width:
+                    min(430px, 100%);
+
+                max-height:
+                    calc(100vh - 40px);
+
+                overflow-y: auto;
+
+                padding: 25px;
+
+                position: relative;
+
+                border-radius: 18px;
+
+                background: #0b0b0b;
+
+                color: #fff;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.12);
+
+                box-shadow:
+                    0 25px 80px
+                    rgba(0,0,0,.55);
+
+                transform:
+                    translateY(15px)
+                    scale(.98);
+
+                transition:
+                    transform .25s ease;
+
+            }
+
+
+            #wfesc-settings-panel
+            .wfesc-settings-box {
+
+                transform:
+                    translateY(15px)
+                    scale(.98);
+
+            }
+
+
+            #wfesc-settings-panel.wfesc-settings-open {
+
+                opacity: 1;
+
+                visibility: visible;
+
+                pointer-events: auto;
+
+            }
+
+
+            #wfesc-settings-panel.wfesc-settings-open
+            .wfesc-settings-box {
+
+                transform:
+                    translateY(0)
+                    scale(1);
+
+            }
+
+
+            .wfesc-settings-close {
+
+                position: absolute;
+
+                top: 12px;
+
+                right: 12px;
+
+                width: 34px;
+
+                height: 34px;
+
+                border: 0;
+
+                border-radius: 50%;
+
+                background:
+                    rgba(255,255,255,.07);
+
+                color: #fff;
+
+                font-size: 23px;
+
+                cursor: pointer;
+
+            }
+
+
+            .wfesc-settings-header {
+
+                text-align: center;
+
+                margin-bottom: 22px;
+
+            }
+
+
+            .wfesc-settings-icon {
+
+                width: 55px;
+
+                height: 55px;
+
+                margin:
+                    0 auto 10px;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                border-radius: 50%;
+
+                background:
+                    rgba(255,255,255,.08);
+
+                font-size: 25px;
+
+            }
+
+
+            .wfesc-settings-header h2 {
+
+                margin: 0 0 6px;
+
+                font-size: 21px;
+
+            }
+
+
+            .wfesc-settings-header p {
+
+                margin: 0;
+
+                color: #999;
+
+                font-size: 12px;
+
+            }
+
+
+            .wfesc-setting-row {
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content:
+                    space-between;
+
+                gap: 15px;
+
+                padding: 15px 0;
+
+                border-bottom:
+                    1px solid
+                    rgba(255,255,255,.08);
+
+            }
+
+
+            .wfesc-setting-info {
+
+                display: flex;
+
+                flex-direction: column;
+
+                gap: 5px;
+
+                min-width: 0;
+
+            }
+
+
+            .wfesc-setting-info span {
+
+                font-size: 14px;
+
+            }
+
+
+            .wfesc-setting-info small {
+
+                color: #888;
+
+                font-size: 11px;
+
+            }
+
+
+            .wfesc-settings-action {
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.16);
+
+                background:
+                    rgba(255,255,255,.06);
+
+                color: #fff;
+
+                border-radius: 9px;
+
+                padding: 8px 12px;
+
+                cursor: pointer;
+
+                font-size: 11px;
+
+            }
+
+
+            .wfesc-switch {
+
+                position: relative;
+
+                width: 43px;
+
+                height: 23px;
+
+                flex-shrink: 0;
+
+            }
+
+
+            .wfesc-switch input {
+
+                opacity: 0;
+
+                width: 0;
+
+                height: 0;
+
+            }
+
+
+            .wfesc-slider {
+
+                position: absolute;
+
+                inset: 0;
+
+                cursor: pointer;
+
+                border-radius: 20px;
+
+                background: #333;
+
+                transition:
+                    background .25s ease;
+
+            }
+
+
+            .wfesc-slider::before {
+
+                content: "";
+
+                position: absolute;
+
+                width: 17px;
+
+                height: 17px;
+
+                left: 3px;
+
+                top: 3px;
+
+                border-radius: 50%;
+
+                background: #fff;
+
+                transition:
+                    transform .25s ease;
+
+            }
+
+
+            .wfesc-switch input:checked
+            + .wfesc-slider {
+
+                background: #777;
+
+            }
+
+
+            .wfesc-switch input:checked
+            + .wfesc-slider::before {
+
+                transform:
+                    translateX(20px);
+
+            }
+
+
+            body.wfesc-settings-lock {
+
+                overflow: hidden !important;
+
+            }
+
+
+            /* الأنميشن المعزز */
+
+            body.wfesc-animations-enabled
+            .wfesc-settings-box {
+
+                animation:
+                    wfescSettingsEnter
+                    .35s ease;
+
+            }
+
+
+            body.wfesc-animations-enabled
+            #wfesc-settings-button {
+
+                animation:
+                    wfescSettingsButtonIn
+                    .5s ease;
+
+            }
+
+
+            @keyframes wfescSettingsEnter {
+
+                from {
+
+                    opacity: 0;
+
+                    transform:
+                        translateY(20px)
+                        scale(.96);
+
+                }
+
+                to {
+
+                    opacity: 1;
+
+                    transform:
+                        translateY(0)
+                        scale(1);
+
+                }
+
+            }
+
+
+            @keyframes wfescSettingsButtonIn {
+
+                from {
+
+                    opacity: 0;
+
+                    transform:
+                        scale(.7)
+                        rotate(-30deg);
+
+                }
+
+                to {
+
+                    opacity: 1;
+
+                    transform:
+                        scale(1)
+                        rotate(0);
+
+                }
+
+            }
+
+
+            body.wfesc-light
+            #wfesc-settings-button {
+
+                background: #fff;
+
+                color: #111;
+
+                border-color: #ddd;
+
+            }
+
+
+            body.wfesc-light
+            #wfesc-settings-panel
+            .wfesc-settings-box {
+
+                background: #fff;
+
+                color: #111;
+
+                border-color: #ddd;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-settings-header p {
+
+                color: #777;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-setting-row {
+
+                border-bottom-color:
+                    #ddd;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-setting-info small {
+
+                color: #777;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-settings-action {
+
+                background: #f4f4f4;
+
+                color: #111;
+
+                border-color: #ccc;
+
+            }
+
+
+            body.wfesc-light
+            .wfesc-settings-close {
+
+                background: #eee;
+
+                color: #111;
+
+            }
+
+
+            @media (max-width: 500px) {
+
+                #wfesc-settings-button {
+
+                    bottom: 15px;
+
+                    left: 15px;
+
+                }
+
+
+                #wfesc-settings-panel {
+
+                    padding: 12px;
+
+                }
+
+
+                #wfesc-settings-panel
+                .wfesc-settings-box {
+
+                    padding: 20px;
+
+                }
+
+            }
+
+        `;
+
+
+        document.head.appendChild(
+            style
         );
 
-
-        /* منع الإغلاق عند الضغط داخل اللوحة */
-
-        panel.addEventListener(
-            "click",
-            (event) => {
-
-                event.stopPropagation();
-
-            }
-        );
+    }
 
 
-        /* إغلاق عند الضغط خارجها */
+    /* =====================================================
+       التهيئة
+       ===================================================== */
 
-        document.addEventListener(
-            "click",
-            () => {
+    function initSettings() {
 
-                panel.classList.remove(
-                    "active"
-                );
+        createSettingsStyle();
 
-            }
-        );
+        createSettingsButton();
 
+        applySettings();
 
-        /* الوضع الداكن */
-
-        themeToggle.addEventListener(
-            "change",
-            () => {
-
-                const theme =
-                    themeToggle.checked
-                        ? "dark"
-                        : "light";
+        updateUI();
 
 
-                SETTINGS.theme =
-                    theme;
-
-
-                localStorage.setItem(
-                    "wfesc-theme",
-                    theme
-                );
-
-
-                applyTheme(theme);
-
-            }
-        );
-
-
-        /* الأنميشن */
-
-        animationToggle.addEventListener(
-            "change",
-            () => {
-
-                const enabled =
-                    animationToggle.checked;
-
-
-                SETTINGS.animations =
-                    enabled;
-
-
-                localStorage.setItem(
-                    "wfesc-animations",
-                    enabled
-                        ? "on"
-                        : "off"
-                );
-
-
-                applyAnimations(
-                    enabled
-                );
-
-            }
+        console.log(
+            "[WFESC SETTINGS] Loaded.",
+            SETTINGS
         );
 
     }
@@ -1405,114 +1277,9 @@
        تشغيل النظام
        ===================================================== */
 
-    function initSettings() {
-
-        createStyles();
-
-        createButton();
-
-        createPanel();
-
-        applyTheme(
-            SETTINGS.theme
-        );
-
-        applyAnimations(
-            SETTINGS.animations
-        );
-
-        initEvents();
-
-        initPageTransitions();
-
-
-        /* =================================================
-           API للمستقبل
-        ================================================= */
-
-        window.WFESC_SETTINGS = {
-
-            getTheme() {
-
-                return SETTINGS.theme;
-
-            },
-
-
-            setTheme(theme) {
-
-                if (
-                    theme !== "dark" &&
-                    theme !== "light"
-                ) {
-                    return false;
-                }
-
-
-                SETTINGS.theme =
-                    theme;
-
-
-                localStorage.setItem(
-                    "wfesc-theme",
-                    theme
-                );
-
-
-                applyTheme(theme);
-
-
-                return true;
-
-            },
-
-
-            getAnimations() {
-
-                return SETTINGS.animations;
-
-            },
-
-
-            setAnimations(enabled) {
-
-                SETTINGS.animations =
-                    Boolean(enabled);
-
-
-                localStorage.setItem(
-                    "wfesc-animations",
-                    SETTINGS.animations
-                        ? "on"
-                        : "off"
-                );
-
-
-                applyAnimations(
-                    SETTINGS.animations
-                );
-
-
-                return true;
-
-            }
-
-        };
-
-
-        console.log(
-            "[WFESC SETTINGS] Settings system loaded."
-        );
-
-    }
-
-
-    /* =====================================================
-       البداية
-       ===================================================== */
-
     if (
-        document.readyState === "loading"
+        document.readyState ===
+        "loading"
     ) {
 
         document.addEventListener(
@@ -1526,5 +1293,5 @@
 
     }
 
-
 })();
+                    
