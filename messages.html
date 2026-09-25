@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#050505"
+    >
+
+    <title>الرسائل | WFESC</title>
+
+
+    <!-- نظام تنقل WFESC -->
+
+    <script src="navigation-features/navigation-loader.js"></script>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+
+        body {
+
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #151515 0%,
+                    #080808 42%,
+                    #030303 100%
+                );
+
+            color: #ffffff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            padding-bottom: 90px;
+        }
+
+
+        /* =========================================
+           الحاوية الرئيسية
+           ========================================= */
+
+        .messages-page {
+
+            width: 100%;
+
+            min-height: 100vh;
+
+            padding:
+                25px 15px 110px;
+
+        }
+
+
+        .messages-container {
+
+            width: 100%;
+
+            max-width: 700px;
+
+            margin:
+                0 auto;
+
+        }
+
+
+        /* =========================================
+           العنوان
+           ========================================= */
+
+        .messages-header {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 22px;
+
+        }
+
+
+        .messages-title-box {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 5px;
+
+        }
+
+
+        .messages-title {
+
+            font-size: 27px;
+
+            font-weight: 800;
+
+            color: #ffffff;
+
+        }
+
+
+        .messages-subtitle {
+
+            color: #888888;
+
+            font-size: 13px;
+
+        }
+
+
+        .messages-icon {
+
+            width: 52px;
+
+            height: 52px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 17px;
+
+            background:
+                rgba(255,255,255,0.06);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            font-size: 24px;
+
+        }
+
+
+        /* =========================================
+           البحث
+           ========================================= */
+
+        .messages-search {
+
+            width: 100%;
+
+            height: 50px;
+
+            border-radius: 15px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background:
+                rgba(255,255,255,0.045);
+
+            color: #ffffff;
+
+            outline: none;
+
+            padding:
+                0 17px;
+
+            font-size: 14px;
+
+            margin-bottom: 18px;
+
+            transition:
+                border-color 0.2s ease,
+                background 0.2s ease;
+
+        }
+
+
+        .messages-search::placeholder {
+
+            color: #777777;
+
+        }
+
+
+        .messages-search:focus {
+
+            border-color:
+                rgba(255,255,255,0.22);
+
+            background:
+                rgba(255,255,255,0.065);
+
+        }
+
+
+        /* =========================================
+           قائمة الرسائل
+           ========================================= */
+
+        .messages-list {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+
+        }
+
+
+        .message-card {
+
+            width: 100%;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 13px;
+
+            padding:
+                13px;
+
+            border-radius: 18px;
+
+            background:
+                rgba(255,255,255,0.045);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.065);
+
+            text-decoration: none;
+
+            color: #ffffff;
+
+            transition:
+                transform 0.2s ease,
+                background 0.2s ease;
+
+        }
+
+
+        .message-card:active {
+
+            transform:
+                scale(0.98);
+
+        }
+
+
+        .message-card:hover {
+
+            background:
+                rgba(255,255,255,0.07);
+
+        }
+
+
+        /* =========================================
+           صورة المستخدم
+           ========================================= */
+
+        .message-avatar {
+
+            flex: 0 0 auto;
+
+            width: 50px;
+
+            height: 50px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #252525,
+                    #0c0c0c
+                );
+
+            border:
+                1px solid
+                rgba(255,255,255,0.09);
+
+            font-size: 21px;
+
+        }
+
+
+        /* =========================================
+           محتوى الرسالة
+           ========================================= */
+
+        .message-content {
+
+            flex: 1;
+
+            min-width: 0;
+
+        }
+
+
+        .message-top {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 10px;
+
+            margin-bottom: 5px;
+
+        }
+
+
+        .message-name {
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+
+        }
+
+
+        .message-time {
+
+            flex: 0 0 auto;
+
+            color: #777777;
+
+            font-size: 10px;
+
+        }
+
+
+        .message-preview {
+
+            color: #8d8d8d;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+
+        }
+
+
+        /* =========================================
+           نقطة الرسالة الجديدة
+           ========================================= */
+
+        .message-new {
+
+            width: 8px;
+
+            height: 8px;
+
+            flex: 0 0 auto;
+
+            border-radius: 50%;
+
+            background: #ffffff;
+
+        }
+
+
+        /* =========================================
+           لا توجد رسائل
+           ========================================= */
+
+        .messages-empty {
+
+            display: none;
+
+            text-align: center;
+
+            padding:
+                60px 20px;
+
+            color: #777777;
+
+        }
+
+
+        .messages-empty-icon {
+
+            font-size: 38px;
+
+            margin-bottom: 12px;
+
+        }
+
+
+        .messages-empty-title {
+
+            color: #cccccc;
+
+            font-size: 15px;
+
+            margin-bottom: 6px;
+
+        }
+
+
+        .messages-empty-text {
+
+            font-size: 12px;
+
+            line-height: 1.7;
+
+        }
+
+
+        /* =========================================
+           شاشة الموبايل
+           ========================================= */
+
+        @media (max-width: 600px) {
+
+            .messages-page {
+
+                padding:
+                    20px 12px 105px;
+
+            }
+
+
+            .messages-title {
+
+                font-size: 24px;
+
+            }
+
+
+            .messages-icon {
+
+                width: 48px;
+
+                height: 48px;
+
+            }
+
+
+            .message-card {
+
+                padding: 11px;
+
+                border-radius: 16px;
+
+            }
+
+
+            .message-avatar {
+
+                width: 47px;
+
+                height: 47px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <main class="messages-page">
+
+        <div class="messages-container">
+
+
+            <!-- =====================================
+                 رأس الصفحة
+                 ===================================== -->
+
+            <header class="messages-header">
+
+                <div class="messages-title-box">
+
+                    <h1 class="messages-title">
+                        الرسائل
+                    </h1>
+
+                    <p class="messages-subtitle">
+                        محادثاتك وإشعاراتك
+                    </p>
+
+                </div>
+
+
+                <div
+                    class="messages-icon"
+                    aria-hidden="true"
+                >
+                    💬
+                </div>
+
+            </header>
+
+
+            <!-- =====================================
+                 البحث
+                 ===================================== -->
+
+            <input
+                id="messageSearch"
+                class="messages-search"
+                type="search"
+                placeholder="ابحث في الرسائل..."
+                autocomplete="off"
+            >
+
+
+            <!-- =====================================
+                 قائمة الرسائل
+                 ===================================== -->
+
+            <section
+                id="messagesList"
+                class="messages-list"
+            >
+
+
+                <a
+                    href="#"
+                    class="message-card"
+                    data-message-name="WFESC"
+                >
+
+                    <div class="message-avatar">
+                        𝑾
+                    </div>
+
+
+                    <div class="message-content">
+
+                        <div class="message-top">
+
+                            <span class="message-name">
+                                WFESC
+                            </span>
+
+                            <span class="message-time">
+                                الآن
+                            </span>
+
+                        </div>
+
+
+                        <div class="message-preview">
+                            مرحبًا بك في نظام رسائل WFESC
+                        </div>
+
+                    </div>
+
+
+                    <span
+                        class="message-new"
+                        aria-label="رسالة جديدة"
+                    ></span>
+
+                </a>
+
+
+                <a
+                    href="#"
+                    class="message-card"
+                    data-message-name="الدعم"
+                >
+
+                    <div class="message-avatar">
+                        🛠️
+                    </div>
+
+
+                    <div class="message-content">
+
+                        <div class="message-top">
+
+                            <span class="message-name">
+                                دعم WFESC
+                            </span>
+
+                            <span class="message-time">
+                                اليوم
+                            </span>
+
+                        </div>
+
+
+                        <div class="message-preview">
+                            يمكنك التواصل مع فريق الدعم من هنا
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+                <a
+                    href="#"
+                    class="message-card"
+                    data-message-name="الإشعارات"
+                >
+
+                    <div class="message-avatar">
+                        🔔
+                    </div>
+
+
+                    <div class="message-content">
+
+                        <div class="message-top">
+
+                            <span class="message-name">
+                                الإشعارات
+                            </span>
+
+                            <span class="message-time">
+                                اليوم
+                            </span>
+
+                        </div>
+
+
+                        <div class="message-preview">
+                            لا توجد إشعارات جديدة حاليًا
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+            </section>
+
+
+            <!-- =====================================
+                 حالة عدم وجود نتائج
+                 ===================================== -->
+
+            <div
+                id="messagesEmpty"
+                class="messages-empty"
+            >
+
+                <div class="messages-empty-icon">
+                    🔎
+                </div>
+
+                <div class="messages-empty-title">
+                    لم يتم العثور على رسالة
+                </div>
+
+                <div class="messages-empty-text">
+                    جرّب البحث باسم مختلف.
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        /*
+         * =========================================
+         * البحث داخل الرسائل
+         * =========================================
+         */
+
+        const messageSearch =
+            document.getElementById(
+                "messageSearch"
+            );
+
+
+        const messageCards =
+            document.querySelectorAll(
+                ".message-card"
+            );
+
+
+        const messagesEmpty =
+            document.getElementById(
+                "messagesEmpty"
+            );
+
+
+        if (messageSearch) {
+
+            messageSearch.addEventListener(
+                "input",
+                function () {
+
+                    const search =
+                        this.value
+                            .trim()
+                            .toLowerCase();
+
+
+                    let visibleCount = 0;
+
+
+                    messageCards.forEach(
+                        function (card) {
+
+                            const name =
+                                (
+                                    card.dataset.messageName ||
+                                    ""
+                                ).toLowerCase();
+
+
+                            const text =
+                                card.textContent
+                                    .toLowerCase();
+
+
+                            const matches =
+                                !search ||
+                                name.includes(search) ||
+                                text.includes(search);
+
+
+                            if (matches) {
+
+                                card.style.display =
+                                    "flex";
+
+                                visibleCount++;
+
+                            } else {
+
+                                card.style.display =
+                                    "none";
+
+                            }
+
+                        }
+                    );
+
+
+                    if (messagesEmpty) {
+
+                        messagesEmpty.style.display =
+                            visibleCount === 0
+                                ? "block"
+                                : "none";
+
+                    }
+
+                }
+            );
+
+        }
+
+    </script>
+
+
+</body>
+
+  </html>
