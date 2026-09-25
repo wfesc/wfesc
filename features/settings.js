@@ -628,48 +628,75 @@
 
     document.head.appendChild(style);
 
+/* =====================================================
+   إنشاء زر الإعدادات
+   ===================================================== */
 
-    /* =====================================================
-       إنشاء زر الإعدادات
-       ===================================================== */
+function createSettingsButton(){
 
-    function createSettingsButton(){
-
-        if (
-            document.getElementById(
-                "wfesc-settings-button"
-            )
-        ){
-            return;
-        }
-
-        const button =
-            document.createElement("button");
-
-        button.id =
-            "wfesc-settings-button";
-
-        button.type =
-            "button";
-
-        button.setAttribute(
-            "aria-label",
-            "الإعدادات"
-        );
-
-        button.innerHTML =
-            "⚙️";
-
-        button.addEventListener(
-            "click",
-            openSettings
-        );
-
-        document.body.appendChild(button);
-
+    if (
+        document.getElementById(
+            "wfesc-settings-button"
+        )
+    ){
+        return;
     }
 
+    const button =
+        document.createElement("button");
 
+    button.id =
+        "wfesc-settings-button";
+
+    button.type =
+        "button";
+
+    button.setAttribute(
+        "aria-label",
+        "الإعدادات"
+    );
+
+    button.innerHTML =
+        "⚙️";
+
+    button.addEventListener(
+        "click",
+        openSettings
+    );
+
+    /* وضع الزر أعلى اليمين */
+    button.style.position = "fixed";
+    button.style.top = "18px";
+    button.style.right = "18px";
+    button.style.left = "auto";
+
+    button.style.width = "46px";
+    button.style.height = "46px";
+
+    button.style.borderRadius = "14px";
+    button.style.border =
+        "1px solid rgba(255,255,255,.12)";
+
+    button.style.background =
+        "rgba(15,15,15,.92)";
+
+    button.style.color = "#fff";
+    button.style.fontSize = "21px";
+
+    button.style.display = "flex";
+    button.style.alignItems = "center";
+    button.style.justifyContent = "center";
+
+    button.style.cursor = "pointer";
+
+    button.style.zIndex = "2147483647";
+
+    button.style.backdropFilter = "blur(14px)";
+    button.style.webkitBackdropFilter = "blur(14px)";
+
+    document.body.appendChild(button);
+
+}
     /* =====================================================
        إنشاء اللوحة
        ===================================================== */
