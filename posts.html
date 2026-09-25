@@ -2402,4 +2402,978 @@ async function createComment(comment,allComments,postId){
                 </div>
 
                 <div class="comment-time">
+                        ${formatDate(reply.created_at)}
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="comment-text">
+                ${esc(reply.content)}
+            </div>
+
+        `;
+
+
+        repliesBox.appendChild(
+            replyElement
+        );
+
+    }
+
+
+    return wrapper;
+
+}
+
+
+/* =====================================================
+   SEND COMMENT
+===================================================== */
+
+async function sendComment(postId,article){
+
+    if(!requireLogin())
+        return;
+
+
+    const input =
+        article.querySelector(
+            ".comment-input"
+        );
+
+
+    const text =
+        input.value.trim();
+
+
+    if(!text){
+
+        showToast(
+            "اكتب تعليق أولاً."
+        );
+
+        return;
+
+    }
+
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .from("comments")
+        .insert({
+
+            post_id:postId,
+
+            user_id:currentUser.id,
+
+            content:text
+
+        });
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    input.value = "";
+
+    await loadComments(
+        postId,
+        article
+    );
+
+
+    loadPosts();
+
+}
+
+
+/* =====================================================
+   COMMENT REACTION
+===================================================== */
+
+async function reactComment(commentId,type){
+
+    if(!requireLogin())
+        return;
+
+
+    const {
+        data
+    } =
+    await supabaseClient
+        .from("comment_reactions")
+        .select("id,reaction")
+        .eq("comment_id",commentId)
+        .eq("user_id",currentUser.id)
+        .maybeSingle();
+
+
+    if(data){
+
+        if(data.reaction === type){
+
+            await supabaseClient
+                .from("comment_reactions")
+                .delete()
+                .eq("id",data.id);
+
+        }else{
+
+            await supabaseClient
+                .from("comment_reactions")
+                .update({
+
+                    reaction:type
+
+                })
+                .eq("id",data.id);
+
+        }
+
+    }else{
+
+        await supabaseClient
+            .from("comment_reactions")
+            .insert({
+
+                comment_id:commentId,
+
+                user_id:currentUser.id,
+
+                reaction:type
+
+            });
+
+    }
+
+
+    showToast(
+        type === "like"
+            ? "تم تسجيل إعجابك."
+            : "تم تسجيل عدم إعجابك."
+    );
+
+}
+
+
+/* =====================================================
+   DELETE POST
+===================================================== */
+
+async function deletePost(postId){
+
+    if(!requireLogin())
+        return;
+
+
+    if(
+        !confirm(
+            "هل تريد حذف هذا المنشور نهائياً؟"
+        )
+    )
+        return;
+
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .from("posts")
+        .delete()
+        .eq("id",postId)
+        .eq("user_id",currentUser.id);
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    showToast(
+        "تم حذف المنشور."
+    );
+
+
+    loadPosts();
+
+}
+
+
+/* =====================================================
+   PUBLISH
+===================================================== */
+
+document
+    .getElementById("publish-button")
+    .addEventListener(
+        "click",
+        function(){
+
+            if(!requireLogin())
+                return;
+
+            showModal(
+                "publish-modal"
+            );
+
+        }
+    );
+
+
+document
+    .getElementById("publish-submit")
+    .addEventListener(
+        "click",
+        publishPost
+    );
+
+
+async function publishPost(){
+
+    if(!requireLogin())
+        return;
+
+
+    const title =
+        document
+            .getElementById("post-title-input")
+            .value
+            .trim();
+
+
+    const content =
+        document
+            .getElementById("post-content-input")
+            .value
+            .trim();
+
+
+    const file =
+        document
+            .getElementById("post-media-input")
+            .files[0];
+
+
+    if(!title && !content && !file){
+
+        showToast(
+            "أضف محتوى للمنشور أولاً."
+        );
+
+        return;
+
+    }
+
+
+    let mediaUrl = null;
+    let mediaType = null;
+
+
+    if(file){
+
+        const extension =
+            file.name
+                .split(".")
+                .pop()
+                .toLowerCase();
+
+
+        const path =
+            currentUser.id +
+            "/" +
+            Date.now() +
+            "." +
+            extension;
+
+
+        const {
+            error
+        } =
+        await supabaseClient
+            .storage
+            .from("post-media")
+            .upload(
+                path,
+                file,
+                {
+                    upsert:false
+                }
+            );
+
+
+        if(error){
+
+            showToast(
+                "تعذر رفع الملف: " +
+                error.message
+            );
+
+            return;
+
+        }
+
+
+        const {
+            data
+        } =
+        supabaseClient
+            .storage
+            .from("post-media")
+            .getPublicUrl(path);
+
+
+        mediaUrl =
+            data.publicUrl;
+
+
+        mediaType =
+            file.type.startsWith("video/")
+                ? "video"
+                : "image";
+
+    }
+
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .from("posts")
+        .insert({
+
+            user_id:currentUser.id,
+
+            title:title || "منشور WFESC",
+
+            content:content,
+
+            media_url:mediaUrl,
+
+            media_type:mediaType
+
+        });
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    document
+        .getElementById("post-title-input")
+        .value = "";
+
+
+    document
+        .getElementById("post-content-input")
+        .value = "";
+
+
+    document
+        .getElementById("post-media-input")
+        .value = "";
+
+
+    closeModal(
+        "publish-modal"
+    );
+
+
+    showToast(
+        "تم نشر المنشور بنجاح."
+    );
+
+
+    loadPosts();
+
+}
+
+
+/* =====================================================
+   SETTINGS
+===================================================== */
+
+document
+    .getElementById("settings-button")
+    .addEventListener(
+        "click",
+        function(){
+
+            if(!currentUser){
+
+                openAuth();
+
+                return;
+
+            }
+
+
+            const profile =
+                profilesCache[currentUser.id];
+
+
+            document
+                .getElementById("settings-user")
+                .textContent =
+                    profile?.username ||
+                    currentUser.email;
+
+
+            showModal(
+                "settings-modal"
+            );
+
+        }
+    );
+
+
+document
+    .getElementById("logout-button")
+    .addEventListener(
+        "click",
+        async function(){
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+            currentUser = null;
+
+            closeModal(
+                "settings-modal"
+            );
+
+            renderUserState();
+
+            loadPosts();
+
+            showToast(
+                "تم تسجيل الخروج."
+            );
+
+        }
+    );
+
+
+/* =====================================================
+   PROFILE
+===================================================== */
+
+async function openProfile(userId){
+
+    const profile =
+        await getProfile(userId);
+
+
+    const {
+        count:followers
+    } =
+    await supabaseClient
+        .from("follows")
+        .select("id",{count:"exact",head:true})
+        .eq("following_id",userId);
+
+
+    const {
+        count:following
+    } =
+    await supabaseClient
+        .from("follows")
+        .select("id",{count:"exact",head:true})
+        .eq("follower_id",userId);
+
+
+    const {
+        data:posts
+    } =
+    await supabaseClient
+        .from("posts")
+        .select("id")
+        .eq("user_id",userId);
+
+
+    let totalLikes = 0;
+
+
+    for(const post of posts || []){
+
+        const {
+            count
+        } =
+        await supabaseClient
+            .from("likes")
+            .select("id",{count:"exact",head:true})
+            .eq("post_id",post.id);
+
+
+        totalLikes += count || 0;
+
+    }
+
+
+    let followButton = "";
+
+
+    if(currentUser && currentUser.id !== userId){
+
+        const {
+            data:follow
+        } =
+        await supabaseClient
+            .from("follows")
+            .select("id")
+            .eq("follower_id",currentUser.id)
+            .eq("following_id",userId)
+            .maybeSingle();
+
+
+        followButton = `
+
+            <button
+                class="primary-btn"
+                onclick="toggleFollow('${esc(userId)}')">
+
+                ${follow ? "إلغاء المتابعة" : "متابعة"}
+
+            </button>
+
+        `;
+
+    }
+
+
+    document
+        .getElementById("profile-content")
+        .innerHTML = `
+
+            <img
+                class="profile-big-avatar"
+                src="${esc(profileAvatar(profile))}">
+
+            <div class="profile-name">
+                ${esc(profile?.username || "مستخدم")}
+            </div>
+
+            <div class="profile-bio">
+                ${esc(profile?.bio || "لا توجد نبذة")}
+            </div>
+
+            <div class="profile-stats">
+
+                <div class="stat">
+                    <strong>${followers || 0}</strong>
+                    <span>متابعون</span>
+                </div>
+
+                <div class="stat">
+                    <strong>${following || 0}</strong>
+                    <span>يتابع</span>
+                </div>
+
+                <div class="stat">
+                    <strong>${totalLikes}</strong>
+                    <span>الإعجابات</span>
+                </div>
+
+            </div>
+
+            <div class="profile-actions">
+
+                ${followButton}
+
+            </div>
+
+        `;
+
+
+    showModal(
+        "profile-modal"
+    );
+
+}
+
+
+function openMyProfile(){
+
+    closeModal(
+        "settings-modal"
+    );
+
+
+    if(currentUser)
+        openProfile(
+            currentUser.id
+        );
+
+}
+
+
+/* =====================================================
+   FOLLOW
+===================================================== */
+
+async function toggleFollow(userId){
+
+    if(!requireLogin())
+        return;
+
+
+    const {
+        data
+    } =
+    await supabaseClient
+        .from("follows")
+        .select("id")
+        .eq("follower_id",currentUser.id)
+        .eq("following_id",userId)
+        .maybeSingle();
+
+
+    if(data){
+
+        await supabaseClient
+            .from("follows")
+            .delete()
+            .eq("id",data.id);
+
+    }else{
+
+        await supabaseClient
+            .from("follows")
+            .insert({
+
+                follower_id:currentUser.id,
+
+                following_id:userId
+
+            });
+
+    }
+
+
+    openProfile(userId);
+
+}
+
+
+/* =====================================================
+   EDIT PROFILE
+===================================================== */
+
+async function openEditProfile(){
+
+    if(!requireLogin())
+        return;
+
+
+    closeModal(
+        "settings-modal"
+    );
+
+
+    const profile =
+        profilesCache[currentUser.id];
+
+
+    document
+        .getElementById("edit-username")
+        .value =
+            profile?.username || "";
+
+
+    document
+        .getElementById("edit-bio")
+        .value =
+            profile?.bio || "";
+
+
+    showModal(
+        "edit-profile-modal"
+    );
+
+}
+
+
+async function saveProfile(){
+
+    const username =
+        document
+            .getElementById("edit-username")
+            .value
+            .trim();
+
+
+    const bio =
+        document
+            .getElementById("edit-bio")
+            .value
+            .trim();
+
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .from("profiles")
+        .update({
+
+            username:username,
+
+            bio:bio
+
+        })
+        .eq("id",currentUser.id);
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    await loadCurrentProfile();
+
+    closeModal(
+        "edit-profile-modal"
+    );
+
+    renderUserState();
+
+    showToast(
+        "تم تحديث الملف الشخصي."
+    );
+
+}
+
+
+/* =====================================================
+   AVATAR
+===================================================== */
+
+function openAvatarPicker(){
+
+    if(!requireLogin())
+        return;
+
+
+    closeModal(
+        "settings-modal"
+    );
+
+
+    showModal(
+        "avatar-modal"
+    );
+
+}
+
+
+async function uploadAvatar(){
+
+    const file =
+        document
+            .getElementById("avatar-input")
+            .files[0];
+
+
+    if(!file)
+        return;
+
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+
+    const path =
+        currentUser.id +
+        "/" +
+        Date.now() +
+        "." +
+        extension;
+
+
+    const {
+        error
+    } =
+    await supabaseClient
+        .storage
+        .from("avatars")
+        .upload(
+            path,
+            file,
+            {
+                upsert:false
+            }
+        );
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    const {
+        data
+    } =
+    supabaseClient
+        .storage
+        .from("avatars")
+        .getPublicUrl(path);
+
+
+    const {
+        error:updateError
+    } =
+    await supabaseClient
+        .from("profiles")
+        .update({
+
+            avatar_url:data.publicUrl
+
+        })
+        .eq("id",currentUser.id);
+
+
+    if(updateError){
+
+        showToast(
+            updateError.message
+        );
+
+        return;
+
+    }
+
+
+    await loadCurrentProfile();
+
+    closeModal(
+        "avatar-modal"
+    );
+
+    showToast(
+        "تم تغيير صورة الحساب."
+    );
+
+    loadPosts();
+
+}
+
+
+/* =====================================================
+   PASSWORD
+===================================================== */
+
+function openPasswordChange(){
+
+    closeModal(
+        "settings-modal"
+    );
+
+    showModal(
+        "password-modal"
+    );
+
+}
+
+
+async function changePassword(){
+
+    const password =
+        document
+            .getElementById("new-password")
+            .value;
+
+
+    if(password.length < 6){
+
+        showToast(
+            "كلمة المرور يجب أن تكون 6 أحرف على الأقل."
+        );
+
+        return;
+
+    }
+
+
+    const {
+        error
+    } =
+    await supabaseClient.auth.updateUser({
+
+        password:password
+
+    });
+
+
+    if(error){
+
+        showToast(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    document
+        .getElementById("new-password")
+        .value = "";
+
+
+    closeModal(
+        "password-modal"
+    );
+
+
+    showToast(
+        "تم تغيير كلمة المرور."
+    );
+
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+    
   
