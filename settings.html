@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>الإعدادات - WFESC</title>
+
+    <script src="navigation-features/navigation-loader.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: #050505;
+            color: #eee;
+            font-family: Arial, Tahoma, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 100px;
+            transition:
+                background 0.35s ease,
+                color 0.35s ease;
+        }
+
+        button,
+        input {
+            font-family: inherit;
+        }
+
+        .settings-page {
+            width: min(100%, 760px);
+            margin: auto;
+            padding: 25px 16px 40px;
+        }
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        .settings-header {
+            margin-bottom: 25px;
+        }
+
+        .settings-header h1 {
+            font-size: 30px;
+            margin-bottom: 7px;
+        }
+
+        .settings-header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* =========================
+           SECTION
+        ========================= */
+
+        .settings-section {
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: #888;
+            margin: 0 8px 9px;
+        }
+
+        .settings-card {
+            background: #111;
+            border: 1px solid #242424;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+            transition:
+                background 0.35s ease,
+                border-color 0.35s ease,
+                box-shadow 0.35s ease;
+        }
+
+        /* =========================
+           ROW
+        ========================= */
+
+        .setting-row {
+            min-height: 72px;
+            padding: 14px 17px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 1px solid #222;
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-icon {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 13px;
+            background: #1b1b1b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .setting-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .setting-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .setting-description {
+            color: #888;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* =========================
+           SWITCH
+        ========================= */
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 27px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            display: none;
+        }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: #333;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.25s ease;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            width: 21px;
+            height: 21px;
+            top: 3px;
+            right: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.25s ease;
+        }
+
+        .switch input:checked + .slider {
+            background: #fff;
+        }
+
+        .switch input:checked + .slider::before {
+            transform: translateX(-21px);
+            background: #050505;
+        }
+
+        /* =========================
+           THEME BUTTONS
+        ========================= */
+
+        .theme-buttons {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .theme-button {
+            flex: 1;
+            border: 1px solid #292929;
+            background: #171717;
+            color: #ddd;
+            border-radius: 14px;
+            padding: 13px 10px;
+            cursor: pointer;
+            transition: 0.25s ease;
+        }
+
+        .theme-button:hover {
+            background: #222;
+        }
+
+        .theme-button.active {
+            background: #eee;
+            color: #050505;
+            border-color: #eee;
+        }
+
+        .theme-icon {
+            display: block;
+            font-size: 21px;
+            margin-bottom: 6px;
+        }
+
+        .theme-text {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* =========================
+           ACCOUNT
+        ========================= */
+
+        .account-buttons {
+            padding: 15px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .account-button {
+            width: 100%;
+            min-height: 52px;
+            border: 1px solid #292929;
+            background: #171717;
+            color: #eee;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.25s ease;
+        }
+
+        .account-button:hover {
+            background: #222;
+        }
+
+        .account-button.primary {
+            background: #eee;
+            color: #050505;
+            border-color: #eee;
+        }
+
+        .account-button.primary:hover {
+            background: #fff;
+        }
+
+        .account-button.forgot {
+            color: #aaa;
+            font-size: 13px;
+            font-weight: normal;
+        }
+
+        /* =========================
+           STATUS
+        ========================= */
+
+        .settings-status {
+            position: fixed;
+            left: 50%;
+            bottom: 92px;
+            transform: translate(-50%, 20px);
+            background: #eee;
+            color: #050505;
+            padding: 11px 17px;
+            border-radius: 12px;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s ease;
+            z-index: 10000;
+            white-space: nowrap;
+        }
+
+        .settings-status.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        /* =========================
+           MODAL
+        ========================= */
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: 0.25s ease;
+            z-index: 20000;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            width: min(100%, 430px);
+            background: #111;
+            border: 1px solid #292929;
+            border-radius: 22px;
+            padding: 22px;
+            transform: translateY(20px) scale(0.97);
+            transition: 0.25s ease;
+        }
+
+        .modal.show .modal-box {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 21px;
+        }
+
+        .close-modal {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 50%;
+            background: #222;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 13px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 48px;
+            border: 1px solid #292929;
+            border-radius: 13px;
+            outline: none;
+            background: #191919;
+            color: #fff;
+            padding: 0 14px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            border-color: #555;
+        }
+
+        .modal-action {
+            width: 100%;
+            height: 50px;
+            margin-top: 6px;
+            border: none;
+            border-radius: 13px;
+            background: #eee;
+            color: #050505;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-note {
+            text-align: center;
+            color: #777;
+            font-size: 12px;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
+        /* =========================
+           LIGHT MODE
+        ========================= */
+
+        body.light-mode {
+            background: #f3f3f3;
+            color: #111;
+        }
+
+        body.light-mode .settings-header p {
+            color: #666;
+        }
+
+        body.light-mode .section-title {
+            color: #666;
+        }
+
+        body.light-mode .settings-card {
+            background: #fff;
+            border-color: #ddd;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+        }
+
+        body.light-mode .setting-row {
+            border-color: #e8e8e8;
+        }
+
+        body.light-mode .setting-icon {
+            background: #f0f0f0;
+        }
+
+        body.light-mode .setting-description {
+            color: #777;
+        }
+
+        body.light-mode .theme-button,
+        body.light-mode .account-button {
+            background: #f5f5f5;
+            color: #111;
+            border-color: #ddd;
+        }
+
+        body.light-mode .theme-button:hover,
+        body.light-mode .account-button:hover {
+            background: #e9e9e9;
+        }
+
+        body.light-mode .theme-button.active {
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        body.light-mode .account-button.primary {
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        body.light-mode .modal-box {
+            background: #fff;
+            color: #111;
+            border-color: #ddd;
+        }
+
+        body.light-mode .close-modal {
+            background: #eee;
+            color: #111;
+        }
+
+        body.light-mode .form-input {
+            background: #f5f5f5;
+            color: #111;
+            border-color: #ddd;
+        }
+
+        body.light-mode .form-group label {
+            color: #666;
+        }
+
+        /* =========================
+           NO ANIMATION
+        ========================= */
+
+        html.wfesc-no-animation *,
+        html.wfesc-no-animation *::before,
+        html.wfesc-no-animation *::after {
+            animation-duration: 0s !important;
+            animation-delay: 0s !important;
+            transition-duration: 0s !important;
+            scroll-behavior: auto !important;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 500px) {
+
+            .settings-page {
+                padding: 20px 12px 35px;
+            }
+
+            .settings-header h1 {
+                font-size: 26px;
+            }
+
+            .setting-row {
+                padding: 13px;
+            }
+
+            .setting-name {
+                font-size: 15px;
+            }
+
+            .theme-buttons {
+                gap: 7px;
+                padding: 12px;
+            }
+
+            .theme-button {
+                padding: 11px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="settings-page">
+
+        <header class="settings-header">
+            <h1>الإعدادات</h1>
+            <p>تحكم بطريقة استخدام WFESC ومظهر الموقع</p>
+        </header>
+
+
+        <!-- =========================
+             المظهر
+        ========================= -->
+
+        <section class="settings-section">
+
+            <div class="section-title">
+                المظهر
+            </div>
+
+            <div class="settings-card">
+
+                <div class="setting-row">
+
+                    <div class="setting-icon">
+                        ✨
+                    </div>
+
+                    <div class="setting-info">
+                        <div class="setting-name">
+                            الأنميشن المعزز
+                        </div>
+
+                        <div class="setting-description">
+                            تشغيل الانتقالات والحركات بشكل سلس بين صفحات الموقع
+                        </div>
+                    </div>
+
+                    <label class="switch">
+                        <input
+                            type="checkbox"
+                            id="animationToggle"
+                        >
+
+                        <span class="slider"></span>
+                    </label>
+
+                </div>
+
+
+                <div class="setting-row">
+
+                    <div class="setting-icon">
+                        🎨
+                    </div>
+
+                    <div class="setting-info">
+
+                        <div class="setting-name">
+                            مظهر الموقع
+                        </div>
+
+                        <div class="setting-description">
+                            اختر الوضع المناسب لك
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="theme-buttons">
+
+                    <button
+                        class="theme-button"
+                        id="darkThemeButton"
+                        type="button"
+                    >
+                        <span class="theme-icon">🌙</span>
+                        <span class="theme-text">مظلم</span>
+                    </button>
+
+
+                    <button
+                        class="theme-button"
+                        id="lightThemeButton"
+                        type="button"
+                    >
+                        <span class="theme-icon">☀️</span>
+                        <span class="theme-text">عادي</span>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             الحساب
+        ========================= -->
+
+        <section class="settings-section">
+
+            <div class="section-title">
+                الحساب
+            </div>
+
+            <div class="settings-card">
+
+                <div class="account-buttons">
+
+                    <button
+                        class="account-button primary"
+                        id="createAccountButton"
+                        type="button"
+                    >
+                        إنشاء حساب
+                    </button>
+
+
+                    <button
+                        class="account-button"
+                        id="loginButton"
+                        type="button"
+                    >
+                        لدي حساب — تسجيل الدخول
+                    </button>
+
+
+                    <button
+                        class="account-button forgot"
+                        id="forgotPasswordButton"
+                        type="button"
+                    >
+                        نسيت كلمة المرور؟
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             معلومات
+        ========================= -->
+
+        <section class="settings-section">
+
+            <div class="section-title">
+                حول الموقع
+            </div>
+
+            <div class="settings-card">
+
+                <div class="setting-row">
+
+                    <div class="setting-icon">
+                        𝑾
+                    </div>
+
+                    <div class="setting-info">
+
+                        <div class="setting-name">
+                            WFESC
+                        </div>
+
+                        <div class="setting-description">
+                            المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         STATUS
+    ========================= -->
+
+    <div
+        class="settings-status"
+        id="settingsStatus"
+    ></div>
+
+
+    <!-- =========================
+         ACCOUNT MODAL
+    ========================= -->
+
+    <div
+        class="modal"
+        id="accountModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2 id="modalTitle">
+                    إنشاء حساب
+                </h2>
+
+                <button
+                    class="close-modal"
+                    id="closeModal"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="accountForm">
+
+                <div class="form-group">
+
+                    <label for="accountEmail">
+                        البريد الإلكتروني
+                    </label>
+
+                    <input
+                        class="form-input"
+                        id="accountEmail"
+                        type="email"
+                        placeholder="example@email.com"
+                        required
+                    >
+
+                </div>
+
+
+                <div
+                    class="form-group"
+                    id="passwordGroup"
+                >
+
+                    <label for="accountPassword">
+                        كلمة المرور
+                    </label>
+
+                    <input
+                        class="form-input"
+                        id="accountPassword"
+                        type="password"
+                        placeholder="كلمة المرور"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    class="modal-action"
+                    type="submit"
+                >
+                    متابعة
+                </button>
+
+            </form>
+
+
+            <div class="modal-note">
+                الحسابات تحتاج ربطًا بقاعدة بيانات أو خدمة مصادقة حتى تعمل فعليًا.
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /* =========================
+           العناصر
+        ========================= */
+
+        const animationToggle =
+            document.getElementById("animationToggle");
+
+        const darkThemeButton =
+            document.getElementById("darkThemeButton");
+
+        const lightThemeButton =
+            document.getElementById("lightThemeButton");
+
+        const settingsStatus =
+            document.getElementById("settingsStatus");
+
+        const accountModal =
+            document.getElementById("accountModal");
+
+        const modalTitle =
+            document.getElementById("modalTitle");
+
+        const accountForm =
+            document.getElementById("accountForm");
+
+        const accountEmail =
+            document.getElementById("accountEmail");
+
+        const accountPassword =
+            document.getElementById("accountPassword");
+
+        const closeModal =
+            document.getElementById("closeModal");
+
+        const createAccountButton =
+            document.getElementById("createAccountButton");
+
+        const loginButton =
+            document.getElementById("loginButton");
+
+        const forgotPasswordButton =
+            document.getElementById("forgotPasswordButton");
+
+
+        /* =========================
+           الإشعار
+        ========================= */
+
+        let statusTimer;
+
+        function showStatus(message) {
+
+            settingsStatus.textContent = message;
+
+            settingsStatus.classList.add("show");
+
+            clearTimeout(statusTimer);
+
+            statusTimer = setTimeout(() => {
+
+                settingsStatus.classList.remove("show");
+
+            }, 1800);
+
+        }
+
+
+        /* =========================
+           الأنميشن
+        ========================= */
+
+        function applyAnimationSetting(enabled) {
+
+            if (enabled) {
+
+                document.documentElement
+                    .classList.remove("wfesc-no-animation");
+
+            } else {
+
+                document.documentElement
+                    .classList.add("wfesc-no-animation");
+
+            }
+
+            localStorage.setItem(
+                "wfescEnhancedAnimation",
+                enabled ? "on" : "off"
+            );
+        }
+
+
+        const savedAnimation =
+            localStorage.getItem("wfescEnhancedAnimation");
+
+
+        if (savedAnimation === null) {
+
+            animationToggle.checked = true;
+
+            applyAnimationSetting(true);
+
+        } else {
+
+            const enabled =
+                savedAnimation === "on";
+
+            animationToggle.checked = enabled;
+
+            applyAnimationSetting(enabled);
+
+        }
+
+
+        animationToggle.addEventListener(
+            "change",
+            function () {
+
+                applyAnimationSetting(
+                    this.checked
+                );
+
+                showStatus(
+                    this.checked
+                        ? "تم تشغيل الأنميشن المعزز"
+                        : "تم إيقاف الأنميشن المعزز"
+                );
+
+            }
+        );
+
+
+        /* =========================
+           الوضع
+        ========================= */
+
+        function applyTheme(theme) {
+
+            if (theme === "light") {
+
+                document.body.classList.add(
+                    "light-mode"
+                );
+
+                lightThemeButton.classList.add(
+                    "active"
+                );
+
+                darkThemeButton.classList.remove(
+                    "active"
+                );
+
+            } else {
+
+                document.body.classList.remove(
+                    "light-mode"
+                );
+
+                darkThemeButton.classList.add(
+                    "active"
+                );
+
+                lightThemeButton.classList.remove(
+                    "active"
+                );
+
+            }
+
+            localStorage.setItem(
+                "wfescTheme",
+                theme
+            );
+        }
+
+
+        const savedTheme =
+            localStorage.getItem("wfescTheme") ||
+            "dark";
+
+
+        applyTheme(savedTheme);
+
+
+        darkThemeButton.addEventListener(
+            "click",
+            function () {
+
+                applyTheme("dark");
+
+                showStatus("تم تفعيل الوضع المظلم");
+
+            }
+        );
+
+
+        lightThemeButton.addEventListener(
+            "click",
+            function () {
+
+                applyTheme("light");
+
+                showStatus("تم تفعيل الوضع العادي");
+
+            }
+        );
+
+
+        /* =========================
+           الحساب
+        ========================= */
+
+        let accountMode = "register";
+
+
+        function openAccountModal(mode) {
+
+            accountMode = mode;
+
+            accountModal.classList.add("show");
+
+            accountForm.reset();
+
+            if (mode === "register") {
+
+                modalTitle.textContent =
+                    "إنشاء حساب";
+
+                accountPassword.required = true;
+
+            } else {
+
+                modalTitle.textContent =
+                    "تسجيل الدخول";
+
+                accountPassword.required = true;
+
+            }
+
+            setTimeout(() => {
+
+                accountEmail.focus();
+
+            }, 100);
+
+        }
+
+
+        createAccountButton.addEventListener(
+            "click",
+            function () {
+
+                openAccountModal("register");
+
+            }
+        );
+
+
+        loginButton.addEventListener(
+            "click",
+            function () {
+
+                openAccountModal("login");
+
+            }
+        );
+
+
+        forgotPasswordButton.addEventListener(
+            "click",
+            function () {
+
+                showStatus(
+                    "سيتم إضافة استرجاع كلمة المرور عند ربط الحسابات"
+                );
+
+            }
+        );
+
+
+        closeModal.addEventListener(
+            "click",
+            function () {
+
+                accountModal.classList.remove("show");
+
+            }
+        );
+
+
+        accountModal.addEventListener(
+            "click",
+            function (event) {
+
+                if (event.target === accountModal) {
+
+                    accountModal.classList.remove(
+                        "show"
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =========================
+           نموذج الحساب
+        ========================= */
+
+        accountForm.addEventListener(
+            "submit",
+            function (event) {
+
+                event.preventDefault();
+
+                const email =
+                    accountEmail.value.trim();
+
+                if (!email) {
+
+                    return;
+
+                }
+
+                if (accountMode === "register") {
+
+                    showStatus(
+                        "تم إدخال بيانات إنشاء الحساب"
+                    );
+
+                } else {
+
+                    showStatus(
+                        "تم إدخال بيانات تسجيل الدخول"
+                    );
+
+                }
+
+                accountModal.classList.remove(
+                    "show"
+                );
+
+            }
+        );
+
+
+        /* =========================
+           ESC لإغلاق النافذة
+        ========================= */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Escape") {
+
+                    accountModal.classList.remove(
+                        "show"
+                    );
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
+        
