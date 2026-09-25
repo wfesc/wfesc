@@ -2695,16 +2695,13 @@ async function sendComment(postId,article){
     if(!requireLogin())
         return;
 
-
     const input =
         article.querySelector(
             ".comment-input"
         );
 
-
     const text =
         input.value.trim();
-
 
     if(!text){
 
@@ -2715,7 +2712,6 @@ async function sendComment(postId,article){
         return;
 
     }
-
 
     const {
         error
@@ -2728,10 +2724,11 @@ async function sendComment(postId,article){
 
             user_id:currentUser.id,
 
-            content:text
+            content:text,
+
+            parent_id:null
 
         });
-
 
     if(error){
 
@@ -2739,34 +2736,33 @@ async function sendComment(postId,article){
             error.message
         );
 
+        console.error(error);
+
         return;
 
     }
 
-
     input.value = "";
-
 
     await loadComments(
         postId,
         article
     );
 
-
     const commentButton =
         article.querySelector(
             ".comment-button"
         );
 
-
     const count =
-        commentButton.querySelector("span");
-
+        commentButton.querySelector(
+            "span"
+        );
 
     count.textContent =
         Number(count.textContent) + 1;
 
-}
+        }
     
 /* =====================================================
    COMMENT REACTION
