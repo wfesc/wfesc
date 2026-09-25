@@ -1593,27 +1593,25 @@
 
     async function start() {
 
-        if (ACCOUNT_STATE.initialized) {
-            return;
-        }
+    if (ACCOUNT_STATE.initialized) {
+        return;
+    }
 
+    ACCOUNT_STATE.initialized = true;
 
-        ACCOUNT_STATE.initialized =
-            true;
+    await waitForSettings();
 
+    createSettingsAccount();
 
-        createSettingsAccount();
+    createAccountUI();
 
-        createAccountUI();
+    await refreshSession();
 
-        await refreshSession();
+    listenAuthChanges();
 
-        listenAuthChanges();
-
-
-        console.log(
-            "[WFESC ACCOUNT] Account system loaded."
-        );
+    console.log(
+        "[WFESC ACCOUNT] Account system loaded."
+    );
 
     }
 
