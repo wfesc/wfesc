@@ -1,1 +1,505 @@
+/* =========================================================
+   WFESC NAVIGATION SYSTEM
+   navigation-style.css
+   ========================================================= */
 
+
+/* =========================================================
+   أساسيات النظام
+   ========================================================= */
+
+html.wfesc-loading,
+html.wfesc-loading body {
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   شاشة التحميل
+   ========================================================= */
+
+.wfesc-page-loader {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(30, 30, 30, 0.98),
+            rgba(3, 3, 3, 0.99)
+        );
+
+    opacity: 1;
+    visibility: visible;
+
+    transition:
+        opacity 0.35s ease,
+        visibility 0.35s ease;
+}
+
+
+/* عند انتهاء التحميل */
+
+.wfesc-page-loader.wfesc-loader-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+
+/* صندوق التحميل */
+
+.wfesc-loader-box {
+    width: min(90%, 330px);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 30px 20px;
+
+    border-radius: 22px;
+
+    background:
+        rgba(15, 15, 15, 0.92);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    box-shadow:
+        0 20px 70px rgba(0, 0, 0, 0.65);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+
+/* =========================================================
+   شعار WFESC داخل التحميل
+   ========================================================= */
+
+.wfesc-loader-logo {
+
+    font-family:
+        Arial,
+        Tahoma,
+        sans-serif;
+
+    font-size: 30px;
+    font-weight: 800;
+
+    letter-spacing: 3px;
+
+    color: #ffffff;
+
+    margin-bottom: 18px;
+
+    text-shadow:
+        0 0 15px rgba(255, 255, 255, 0.15);
+}
+
+
+/* =========================================================
+   دائرة التحميل
+   ========================================================= */
+
+.wfesc-loader-spinner {
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 50%;
+
+    border:
+        3px solid rgba(255, 255, 255, 0.12);
+
+    border-top-color: #ffffff;
+
+    animation:
+        wfesc-spin 0.85s linear infinite;
+
+    margin-bottom: 18px;
+}
+
+
+@keyframes wfesc-spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   نص التحميل
+   ========================================================= */
+
+.wfesc-loader-text {
+
+    color: #ffffff;
+
+    font-family:
+        Arial,
+        Tahoma,
+        sans-serif;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    opacity: 0.9;
+
+    margin-bottom: 7px;
+}
+
+
+.wfesc-loader-subtext {
+
+    color: #999999;
+
+    font-family:
+        Arial,
+        Tahoma,
+        sans-serif;
+
+    font-size: 12px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   شريط الخيارات السفلي
+   ========================================================= */
+
+.wfesc-navigation {
+
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+
+    z-index: 99990;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
+
+    direction: rtl;
+
+    background:
+        rgba(8, 8, 8, 0.96);
+
+    border-top:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    box-shadow:
+        0 -10px 35px rgba(0, 0, 0, 0.35);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    padding:
+        7px 8px
+        calc(7px + env(safe-area-inset-bottom));
+
+    opacity: 1;
+    visibility: visible;
+
+    transform: translateY(0);
+
+    transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease,
+        transform 0.3s ease;
+}
+
+
+/* =========================================================
+   إخفاء الخيارات أثناء التحميل
+   ========================================================= */
+
+html.wfesc-loading .wfesc-navigation {
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transform:
+        translateY(20px);
+}
+
+
+/* =========================================================
+   زر التنقل
+   ========================================================= */
+
+.wfesc-navigation-item {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    min-height: 58px;
+
+    padding:
+        5px 3px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #8e8e8e;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    border-radius: 13px;
+
+    font-family:
+        Arial,
+        Tahoma,
+        sans-serif;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* =========================================================
+   أيقونة الزر
+   ========================================================= */
+
+.wfesc-navigation-icon {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+
+    font-size: 21px;
+
+    line-height: 1;
+
+    transition:
+        transform 0.2s ease;
+}
+
+
+/* =========================================================
+   اسم الزر
+   ========================================================= */
+
+.wfesc-navigation-title {
+
+    display: block;
+
+    max-width: 100%;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+    font-size: 10px;
+
+    line-height: 1.2;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   الحالة النشطة
+   ========================================================= */
+
+.wfesc-navigation-item.active {
+
+    color: #ffffff;
+
+    background:
+        rgba(255, 255, 255, 0.07);
+}
+
+
+.wfesc-navigation-item.active
+.wfesc-navigation-icon {
+
+    transform:
+        translateY(-1px)
+        scale(1.08);
+}
+
+
+/* =========================================================
+   تأثير الضغط
+   ========================================================= */
+
+.wfesc-navigation-item:active {
+
+    transform:
+        scale(0.94);
+}
+
+
+/* =========================================================
+   مساحة أمان أسفل الموقع
+   ========================================================= */
+
+body.wfesc-navigation-active {
+
+    padding-bottom:
+        82px;
+}
+
+
+/* =========================================================
+   الهواتف
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .wfesc-navigation {
+
+        padding-left: 4px;
+        padding-right: 4px;
+
+        padding-top: 5px;
+
+        padding-bottom:
+            calc(
+                5px +
+                env(safe-area-inset-bottom)
+            );
+    }
+
+
+    .wfesc-navigation-item {
+
+        min-height: 55px;
+
+        border-radius: 11px;
+    }
+
+
+    .wfesc-navigation-icon {
+
+        width: 26px;
+        height: 26px;
+
+        font-size: 20px;
+    }
+
+
+    .wfesc-navigation-title {
+
+        font-size: 9px;
+    }
+
+
+    .wfesc-loader-box {
+
+        width: calc(100% - 40px);
+
+        padding: 27px 18px;
+    }
+
+
+    .wfesc-loader-logo {
+
+        font-size: 27px;
+    }
+
+}
+
+
+/* =========================================================
+   الهواتف الصغيرة جداً
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+    .wfesc-navigation {
+
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+
+    .wfesc-navigation-item {
+
+        min-height: 53px;
+
+        padding-left: 1px;
+        padding-right: 1px;
+    }
+
+
+    .wfesc-navigation-icon {
+
+        font-size: 18px;
+    }
+
+
+    .wfesc-navigation-title {
+
+        font-size: 8px;
+    }
+
+}
+
+
+/* =========================================================
+   تقليل الحركة إذا كان الجهاز يفضل ذلك
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .wfesc-page-loader,
+    .wfesc-navigation,
+    .wfesc-navigation-item,
+    .wfesc-navigation-icon {
+
+        transition: none;
+    }
+
+
+    .wfesc-loader-spinner {
+
+        animation: none;
+    }
+
+  }
