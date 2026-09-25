@@ -1,133 +1,177 @@
 /* =========================================================
    WFESC SOCIAL SYSTEM
    SOCIAL STYLE
-   تصميم النظام الاجتماعي
-   ========================================================= */
-
-
-/* =========================================================
-   المتغيرات الأساسية
+   ACCOUNT UI
    ========================================================= */
 
 :root {
-
-    --wfesc-social-bg: #080808;
-
-    --wfesc-social-card: #111111;
-
-    --wfesc-social-card-2: #161616;
-
-    --wfesc-social-border: rgba(255,255,255,0.10);
-
-    --wfesc-social-text: #ffffff;
-
-    --wfesc-social-muted: #999999;
-
-    --wfesc-social-accent: #ffffff;
-
-    --wfesc-social-danger: #ff4d4d;
-
-    --wfesc-social-radius: 14px;
-
-    --wfesc-social-transition:
-        220ms ease;
-
+    --wfesc-bg: #080808;
+    --wfesc-card: #111111;
+    --wfesc-card-2: #171717;
+    --wfesc-border: rgba(255,255,255,.10);
+    --wfesc-text: #ffffff;
+    --wfesc-muted: #999999;
+    --wfesc-success: #55d98b;
+    --wfesc-error: #ff6262;
+    --wfesc-radius: 18px;
 }
 
 
 /* =========================================================
-   واجهة الحساب العامة
+   منع تمرير الصفحة عند فتح النافذة
+   ========================================================= */
+
+body.wfesc-account-lock-scroll {
+    overflow: hidden !important;
+}
+
+
+/* =========================================================
+   النافذة
    ========================================================= */
 
 .wfesc-social-account {
-
     position: fixed;
-
     inset: 0;
-
-    z-index: 99999;
+    z-index: 999999;
 
     display: none;
-
     align-items: center;
-
     justify-content: center;
 
-    padding: 20px;
+    padding: 18px;
 
-    background:
-        rgba(0,0,0,0.78);
+    background: rgba(0,0,0,.78);
 
-    backdrop-filter:
-        blur(8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 
-    -webkit-backdrop-filter:
-        blur(8px);
-
+    opacity: 0;
 }
 
 
 /* =========================================================
-   عند فتح الواجهة
+   فتح النافذة
    ========================================================= */
 
 .wfesc-social-account.wfesc-social-open {
-
     display: flex;
 
+    animation:
+        wfescAccountOverlayIn
+        260ms ease forwards;
 }
 
 
 /* =========================================================
-   صندوق الحساب
+   الصندوق
    ========================================================= */
 
 .wfesc-social-account-box {
+    position: relative;
 
-    width: 100%;
+    width: min(100%, 430px);
+    max-height: calc(100vh - 36px);
 
-    max-width: 430px;
+    overflow-y: auto;
 
-    padding: 24px;
+    padding: 26px 22px 22px;
 
     background:
-        var(--wfesc-social-card);
+        linear-gradient(
+            145deg,
+            #151515,
+            #0d0d0d
+        );
 
     border:
         1px solid
-        var(--wfesc-social-border);
+        var(--wfesc-border);
 
     border-radius:
-        var(--wfesc-social-radius);
+        var(--wfesc-radius);
 
     color:
-        var(--wfesc-social-text);
+        var(--wfesc-text);
 
     box-shadow:
-        0 20px 60px
-        rgba(0,0,0,0.45);
+        0 25px 80px
+        rgba(0,0,0,.60);
+
+    transform:
+        translateY(18px)
+        scale(.96);
+
+    opacity: 0;
 
     animation:
-        wfescSocialAccountIn
-        220ms ease;
-
+        wfescAccountBoxIn
+        320ms
+        cubic-bezier(.2,.8,.2,1)
+        forwards;
 }
 
 
 /* =========================================================
-   عنوان الحساب
+   أي تغيير بين الصفحات
+   ========================================================= */
+
+.wfesc-social-account-box.wfesc-account-view-change {
+    animation:
+        wfescAccountChange
+        260ms
+        ease;
+}
+
+
+/* =========================================================
+   أيقونة الحساب
+   ========================================================= */
+
+.wfesc-account-header-icon {
+    width: 64px;
+    height: 64px;
+
+    margin:
+        0 auto 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.07);
+
+    border:
+        1px solid
+        rgba(255,255,255,.10);
+
+    font-size: 29px;
+
+    animation:
+        wfescAccountIcon
+        700ms
+        ease;
+}
+
+
+/* =========================================================
+   العنوان
    ========================================================= */
 
 .wfesc-social-account-title {
+    margin-bottom: 6px;
 
-    margin-bottom: 8px;
+    color:
+        var(--wfesc-text);
 
-    font-size: 24px;
-
-    font-weight: 700;
+    font-size: 25px;
+    font-weight: 800;
 
     text-align: center;
-
+    letter-spacing: .5px;
 }
 
 
@@ -136,29 +180,63 @@
    ========================================================= */
 
 .wfesc-social-account-description {
-
     margin-bottom: 22px;
 
     color:
-        var(--wfesc-social-muted);
+        var(--wfesc-muted);
 
-    font-size: 14px;
-
-    line-height: 1.6;
+    font-size: 13px;
 
     text-align: center;
-
 }
 
 
 /* =========================================================
-   مجموعات الحقول
+   رسالة الترحيب
    ========================================================= */
 
-.wfesc-social-field {
+.wfesc-account-welcome {
+    display: flex;
+    flex-direction: column;
 
-    margin-bottom: 14px;
+    margin-bottom: 18px;
 
+    text-align: center;
+
+    gap: 5px;
+}
+
+.wfesc-account-welcome strong {
+    font-size: 19px;
+    font-weight: 750;
+}
+
+.wfesc-account-welcome span {
+    color:
+        var(--wfesc-muted);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   الصفحات
+   ========================================================= */
+
+.wfesc-account-view {
+    display: none;
+
+    opacity: 0;
+}
+
+.wfesc-account-view-active {
+    display: block;
+
+    animation:
+        wfescViewIn
+        260ms
+        ease
+        forwards;
 }
 
 
@@ -166,49 +244,142 @@
    الحقول
    ========================================================= */
 
+.wfesc-social-field {
+    margin-bottom: 15px;
+}
+
+.wfesc-social-field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color:
+        #dddddd;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   الإدخال
+   ========================================================= */
+
 .wfesc-social-field input {
-
     width: 100%;
-
-    min-height: 48px;
+    height: 49px;
 
     padding:
         0 14px;
 
     border:
         1px solid
-        var(--wfesc-social-border);
+        var(--wfesc-border);
 
-    border-radius:
-        10px;
+    border-radius: 11px;
 
     outline: none;
 
     background:
-        var(--wfesc-social-card-2);
+        var(--wfesc-card-2);
 
     color:
-        var(--wfesc-social-text);
+        var(--wfesc-text);
 
-    font-size: 15px;
+    font-size: 14px;
+
+    direction: ltr;
 
     transition:
-        border-color
-        var(--wfesc-social-transition),
-        background
-        var(--wfesc-social-transition);
+        border-color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+}
 
+.wfesc-social-field input::placeholder {
+    color:
+        #666666;
+}
+
+.wfesc-social-field input:focus {
+    border-color:
+        rgba(255,255,255,.35);
+
+    background:
+        #1c1c1c;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(255,255,255,.04);
+
+    transform:
+        translateY(-1px);
 }
 
 
-.wfesc-social-field input:focus {
+/* =========================================================
+   كلمة المرور + العين
+   ========================================================= */
 
-    border-color:
-        rgba(255,255,255,0.35);
+.wfesc-password-wrap {
+    position: relative;
+}
+
+.wfesc-password-wrap input {
+    padding-right: 52px;
+}
+
+.wfesc-password-eye {
+    position: absolute;
+
+    top: 50%;
+    right: 8px;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transform:
+        translateY(-50%);
+
+    border: none;
+    border-radius: 9px;
 
     background:
-        #191919;
+        rgba(255,255,255,.06);
 
+    color:
+        #ffffff;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.wfesc-password-eye:hover {
+    background:
+        rgba(255,255,255,.12);
+}
+
+.wfesc-password-eye:active {
+    transform:
+        translateY(-50%)
+        scale(.90);
+}
+
+.wfesc-password-eye.wfesc-eye-animation {
+    animation:
+        wfescEyePop
+        280ms
+        ease;
 }
 
 
@@ -217,64 +388,69 @@
    ========================================================= */
 
 .wfesc-social-button {
-
     width: 100%;
+    min-height: 49px;
 
-    min-height: 48px;
+    margin-top: 3px;
 
     border: none;
+    border-radius: 11px;
 
-    border-radius: 10px;
+    background:
+        #ffffff;
+
+    color:
+        #050505;
+
+    font-size: 14px;
+    font-weight: 750;
 
     cursor: pointer;
 
-    background:
-        var(--wfesc-social-accent);
-
-    color: #000000;
-
-    font-size: 15px;
-
-    font-weight: 700;
-
     transition:
-        transform
-        var(--wfesc-social-transition),
-        opacity
-        var(--wfesc-social-transition);
-
+        transform .18s ease,
+        opacity .18s ease,
+        box-shadow .18s ease;
 }
-
 
 .wfesc-social-button:hover {
+    opacity: .92;
 
-    opacity: 0.9;
-
+    box-shadow:
+        0 8px 25px
+        rgba(255,255,255,.08);
 }
 
-
 .wfesc-social-button:active {
-
     transform:
-        scale(0.98);
+        scale(.975);
+}
 
+.wfesc-social-button:disabled {
+    cursor:
+        wait;
+
+    opacity:
+        .65;
 }
 
 
 /* =========================================================
-   زر ثانوي
+   الزر الثانوي
    ========================================================= */
 
 .wfesc-social-button-secondary {
-
-    margin-top: 10px;
+    margin-top: 0;
 
     background:
         #202020;
 
     color:
-        var(--wfesc-social-text);
+        #ffffff;
 
+    border:
+        1px solid
+        rgba(255,255,255,.08);
 }
 
 
@@ -283,68 +459,134 @@
    ========================================================= */
 
 .wfesc-social-link {
-
     display: block;
+
+    width: 100%;
 
     margin-top: 14px;
 
+    padding: 5px;
+
+    border: none;
+    background: transparent;
+
     color:
-        var(--wfesc-social-muted);
+        #a9a9a9;
 
     font-size: 13px;
 
     text-align: center;
 
-    text-decoration: none;
-
     cursor: pointer;
 
     transition:
-        color
-        var(--wfesc-social-transition);
-
+        color .2s ease,
+        transform .2s ease;
 }
 
-
 .wfesc-social-link:hover {
-
     color:
-        var(--wfesc-social-text);
+        #ffffff;
 
+    transform:
+        translateY(-1px);
 }
 
 
 /* =========================================================
-   رسالة الحالة
+   الفاصل
    ========================================================= */
 
-.wfesc-social-message {
+.wfesc-account-divider {
+    display: flex;
+    align-items: center;
 
-    display: none;
+    gap: 12px;
 
-    margin-bottom: 14px;
+    margin:
+        19px 0;
+}
 
-    padding: 11px 12px;
+.wfesc-account-divider::before,
+.wfesc-account-divider::after {
+    content: "";
 
-    border-radius: 9px;
+    flex: 1;
+
+    height: 1px;
 
     background:
-        rgba(255,255,255,0.06);
+        rgba(255,255,255,.08);
+}
 
+.wfesc-account-divider span {
     color:
-        var(--wfesc-social-text);
+        #666666;
 
-    font-size: 13px;
-
-    line-height: 1.5;
-
+    font-size: 12px;
 }
 
 
+/* =========================================================
+   الرسائل
+   ========================================================= */
+
+.wfesc-social-message {
+    display: none;
+
+    margin-bottom: 15px;
+
+    padding:
+        12px 13px;
+
+    border-radius: 11px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    border:
+        1px solid
+        rgba(255,255,255,.08);
+
+    color:
+        #eeeeee;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+    text-align: center;
+
+    animation:
+        wfescMessageIn
+        250ms
+        ease;
+}
+
 .wfesc-social-message.wfesc-social-show {
-
     display: block;
+}
 
+.wfesc-message-success {
+    color:
+        var(--wfesc-success);
+
+    border-color:
+        rgba(85,217,139,.20);
+
+    background:
+        rgba(85,217,139,.06);
+}
+
+.wfesc-message-error {
+    color:
+        var(--wfesc-error);
+
+    border-color:
+        rgba(255,98,98,.20);
+
+    background:
+        rgba(255,98,98,.06);
 }
 
 
@@ -353,58 +595,274 @@
    ========================================================= */
 
 .wfesc-social-close {
-
     position: absolute;
 
-    top: 12px;
-
-    right: 12px;
+    top: 13px;
+    right: 13px;
 
     width: 36px;
-
     height: 36px;
 
-    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
+    border: none;
     border-radius: 50%;
 
     background:
-        rgba(255,255,255,0.08);
+        rgba(255,255,255,.07);
 
     color:
         #ffffff;
 
     cursor: pointer;
 
-    font-size: 18px;
+    font-size: 22px;
+    line-height: 1;
 
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.wfesc-social-close:hover {
+    background:
+        rgba(255,255,255,.13);
+
+    transform:
+        rotate(90deg);
 }
 
 
 /* =========================================================
-   الرسوم
+   التحميل
    ========================================================= */
 
-@keyframes wfescSocialAccountIn {
+.wfesc-social-loading {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+}
+
+.wfesc-social-spinner {
+    width: 17px;
+    height: 17px;
+
+    border:
+        2px solid
+        rgba(0,0,0,.25);
+
+    border-top-color:
+        #000000;
+
+    border-radius: 50%;
+
+    animation:
+        wfescSpinner
+        .7s
+        linear
+        infinite;
+}
+
+
+/* =========================================================
+   الحساب تم إنشاؤه / البريد أرسل
+   ========================================================= */
+
+.wfesc-email-sent {
+    animation:
+        wfescEmailSent
+        .5s
+        ease;
+}
+
+
+/* =========================================================
+   Scrollbar
+   ========================================================= */
+
+.wfesc-social-account-box::-webkit-scrollbar {
+    width: 5px;
+}
+
+.wfesc-social-account-box::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.wfesc-social-account-box::-webkit-scrollbar-thumb {
+    background:
+        rgba(255,255,255,.14);
+
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   Animation
+   ========================================================= */
+
+@keyframes wfescAccountOverlayIn {
 
     from {
-
         opacity: 0;
-
-        transform:
-            translateY(12px)
-            scale(0.98);
-
     }
 
     to {
+        opacity: 1;
+    }
 
+}
+
+
+@keyframes wfescAccountBoxIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(25px)
+            scale(.94);
+    }
+
+    to {
         opacity: 1;
 
         transform:
             translateY(0)
             scale(1);
+    }
 
+}
+
+
+@keyframes wfescAccountChange {
+
+    0% {
+        opacity: .55;
+        transform: scale(.985);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+}
+
+
+@keyframes wfescViewIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+
+}
+
+
+@keyframes wfescAccountIcon {
+
+    0% {
+        opacity: 0;
+        transform:
+            scale(.65)
+            rotate(-12deg);
+    }
+
+    65% {
+        transform:
+            scale(1.08)
+            rotate(3deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform:
+            scale(1)
+            rotate(0);
+    }
+
+}
+
+
+@keyframes wfescEyePop {
+
+    0% {
+        transform:
+            translateY(-50%)
+            scale(1);
+    }
+
+    50% {
+        transform:
+            translateY(-50%)
+            scale(1.22)
+            rotate(-5deg);
+    }
+
+    100% {
+        transform:
+            translateY(-50%)
+            scale(1);
+    }
+
+}
+
+
+@keyframes wfescMessageIn {
+
+    from {
+        opacity: 0;
+        transform:
+            translateY(-6px)
+            scale(.98);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+@keyframes wfescSpinner {
+
+    to {
+        transform:
+            rotate(360deg);
+    }
+
+}
+
+
+@keyframes wfescEmailSent {
+
+    0% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(.96);
+    }
+
+    100% {
+        transform: scale(1);
     }
 
 }
@@ -417,23 +875,25 @@
 @media (max-width: 480px) {
 
     .wfesc-social-account {
-
-        padding: 12px;
-
+        padding: 10px;
     }
-
 
     .wfesc-social-account-box {
+        max-height:
+            calc(100vh - 20px);
 
-        padding: 20px;
-
+        padding:
+            24px 18px 19px;
     }
 
-
     .wfesc-social-account-title {
+        font-size: 23px;
+    }
 
-        font-size: 21px;
-
+    .wfesc-account-header-icon {
+        width: 58px;
+        height: 58px;
+        font-size: 26px;
     }
 
 }
@@ -445,9 +905,7 @@
 
 /*
    جميع التعديلات البصرية الخاصة
-   بالنظام الاجتماعي توضع هنا.
+   بنظام الحسابات توضع هنا.
 
-   لا نعدل ملفات الموقع الأصلية
-   من أجل التصميم.
-
+   لا نعدل index.html من أجل التصميم.
 */
