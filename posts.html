@@ -2181,10 +2181,32 @@ async function reactPost(postId,type,article){
         return;
 
 
+    const button =
+        article.querySelector(
+            type === "like"
+                ? ".like-button"
+                : ".dislike-button"
+        );
+
+
+    const buttons = {
+        like: article.querySelector(".like-button"),
+        dislike: article.querySelector(".dislike-button")
+    };
+
+
+    const likeCount =
+        buttons.like.querySelector("span");
+
+    const dislikeCount =
+        buttons.dislike.querySelector("span");
+
+
     if(type === "like"){
 
         const {
-            data
+            data,
+            error
         } =
         await supabaseClient
             .from("likes")
@@ -2194,15 +2216,43 @@ async function reactPost(postId,type,article){
             .maybeSingle();
 
 
+        if(error){
+            showToast(error.message);
+            return;
+        }
+
+
         if(data){
 
+            const {
+                error:deleteError
+            } =
             await supabaseClient
                 .from("likes")
                 .delete()
                 .eq("id",data.id);
 
+
+            if(deleteError){
+                showToast(deleteError.message);
+                return;
+            }
+
+
+            likeCount.textContent =
+                Math.max(
+                    0,
+                    Number(likeCount.textContent) - 1
+                );
+
+
+            button.classList.remove("active");
+
         }else{
 
+            const {
+                error:deleteDislikeError
+            } =
             await supabaseClient
                 .from("dislikes")
                 .delete()
@@ -2210,6 +2260,15 @@ async function reactPost(postId,type,article){
                 .eq("user_id",currentUser.id);
 
 
+            if(deleteDislikeError){
+                showToast(deleteDislikeError.message);
+                return;
+            }
+
+
+            const {
+                error:insertError
+            } =
             await supabaseClient
                 .from("likes")
                 .insert({
@@ -2220,12 +2279,43 @@ async function reactPost(postId,type,article){
 
                 });
 
+
+            if(insertError){
+                showToast(insertError.message);
+                return;
+            }
+
+
+            likeCount.textContent =
+                Number(likeCount.textContent) + 1;
+
+
+            button.classList.add("active");
+
+
+            const wasDisliked =
+                buttons.dislike.classList.contains("active");
+
+
+            if(wasDisliked){
+
+                dislikeCount.textContent =
+                    Math.max(
+                        0,
+                        Number(dislikeCount.textContent) - 1
+                    );
+
+                buttons.dislike.classList.remove("active");
+
+            }
+
         }
 
     }else{
 
         const {
-            data
+            data,
+            error
         } =
         await supabaseClient
             .from("dislikes")
@@ -2235,15 +2325,43 @@ async function reactPost(postId,type,article){
             .maybeSingle();
 
 
+        if(error){
+            showToast(error.message);
+            return;
+        }
+
+
         if(data){
 
+            const {
+                error:deleteError
+            } =
             await supabaseClient
                 .from("dislikes")
                 .delete()
                 .eq("id",data.id);
 
+
+            if(deleteError){
+                showToast(deleteError.message);
+                return;
+            }
+
+
+            dislikeCount.textContent =
+                Math.max(
+                    0,
+                    Number(dislikeCount.textContent) - 1
+                );
+
+
+            button.classList.remove("active");
+
         }else{
 
+            const {
+                error:deleteLikeError
+            } =
             await supabaseClient
                 .from("likes")
                 .delete()
@@ -2251,6 +2369,15 @@ async function reactPost(postId,type,article){
                 .eq("user_id",currentUser.id);
 
 
+            if(deleteLikeError){
+                showToast(deleteLikeError.message);
+                return;
+            }
+
+
+            const {
+                error:insertError
+            } =
             await supabaseClient
                 .from("dislikes")
                 .insert({
@@ -2261,15 +2388,41 @@ async function reactPost(postId,type,article){
 
                 });
 
+
+            if(insertError){
+                showToast(insertError.message);
+                return;
+            }
+
+
+            dislikeCount.textContent =
+                Number(dislikeCount.textContent) + 1;
+
+
+            button.classList.add("active");
+
+
+            const wasLiked =
+                buttons.like.classList.contains("active");
+
+
+            if(wasLiked){
+
+                likeCount.textContent =
+                    Math.max(
+                        0,
+                        Number(likeCount.textContent) - 1
+                    );
+
+                buttons.like.classList.remove("active");
+
+            }
+
         }
 
     }
 
-
-    loadPosts();
-
 }
-
 
 /* =====================================================
    COMMENTS
@@ -2534,17 +2687,28 @@ async function sendComment(postId,article){
 
     input.value = "";
 
+
     await loadComments(
         postId,
         article
     );
 
 
-    loadPosts();
+    const commentButton =
+        article.querySelector(
+            ".comment-button"
+        );
+
+
+    const count =
+        commentButton.querySelector("span");
+
+
+    count.textContent =
+        Number(count.textContent) + 1;
 
 }
-
-
+    
 /* =====================================================
    COMMENT REACTION
 ===================================================== */
