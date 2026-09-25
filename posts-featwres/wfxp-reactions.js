@@ -1,7 +1,7 @@
 /* =========================================================
    WFESC POSTS EXTENSION
    WFXP REACTIONS ENGINE
-   تحسين تفاعل الإعجاب وعدم الإعجاب
+   نظام الإعجابات وعدم الإعجاب المحفوظ في Supabase
    ========================================================= */
 
 (() => {
@@ -19,16 +19,211 @@
 
         animationDuration: 280,
 
-        scale: 1.18,
-
-        enableAnimation: true,
-
-        enableInstantFeedback: true
+        enableAnimation: true
 
     };
 
 
-    function WFXP_animateButton(button) {
+    /* =====================================================
+       تحديث عدد الإعجابات من Supabase
+       ===================================================== */
+
+    async function WFXP_refreshReactionCount(
+        commentId,
+        likeButton,
+        dislikeButton
+    ) {
+
+        if (!commentId) {
+            return;
+        }
+
+        if (
+            typeof supabaseClient ===
+            "undefined"
+        ) {
+            return;
+        }
+
+
+        try {
+
+            const likes =
+                await supabaseClient
+                    .from("comment_likes")
+                    .select(
+                        "id",
+                        {
+                            count: "exact",
+                            head: true
+                        }
+                    )
+                    .eq(
+                        "comment_id",
+                        commentId
+                    );
+
+
+            const dislikes =
+                await supabaseClient
+                    .from("comment_dislikes")
+                    .select(
+                        "id",
+                        {
+                            count: "exact",
+                            head: true
+                        }
+                    )
+                    .eq(
+                        "comment_id",
+                        commentId
+                    );
+
+
+            if (
+                likes.error
+            ) {
+
+                console.error(
+                    "[WFXP] Likes count error:",
+                    likes.error
+                );
+
+            }
+
+
+            if (
+                dislikes.error
+            ) {
+
+                console.error(
+                    "[WFXP] Dislikes count error:",
+                    dislikes.error
+                );
+
+            }
+
+
+            if (
+                likeButton
+            ) {
+
+                const span =
+                    likeButton.querySelector(
+                        "span"
+                    );
+
+                if (span) {
+
+                    span.textContent =
+                        likes.count || 0;
+
+                }
+
+            }
+
+
+            if (
+                dislikeButton
+            ) {
+
+                const span =
+                    dislikeButton.querySelector(
+                        "span"
+                    );
+
+                if (span) {
+
+                    span.textContent =
+                        dislikes.count || 0;
+
+                }
+
+            }
+
+
+            /*
+             * معرفة هل المستخدم الحالي
+             * عامل Like أو Dislike
+             */
+
+            if (
+                typeof currentUser !==
+                "undefined" &&
+                currentUser
+            ) {
+
+
+                const myLike =
+                    await supabaseClient
+                        .from("comment_likes")
+                        .select("id")
+                        .eq(
+                            "comment_id",
+                            commentId
+                        )
+                        .eq(
+                            "user_id",
+                            currentUser.id
+                        )
+                        .maybeSingle();
+
+
+                const myDislike =
+                    await supabaseClient
+                        .from("comment_dislikes")
+                        .select("id")
+                        .eq(
+                            "comment_id",
+                            commentId
+                        )
+                        .eq(
+                            "user_id",
+                            currentUser.id
+                        )
+                        .maybeSingle();
+
+
+                if (likeButton) {
+
+                    likeButton.classList.toggle(
+                        "active",
+                        !!myLike.data
+                    );
+
+                }
+
+
+                if (dislikeButton) {
+
+                    dislikeButton.classList.toggle(
+                        "active",
+                        !!myDislike.data
+                    );
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "[WFXP] Reaction refresh error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       أنميشن القلب
+       ===================================================== */
+
+    function WFXP_animateButton(
+        button
+    ) {
 
         if (!button) {
             return;
@@ -41,11 +236,14 @@
             return;
         }
 
+
         button.classList.remove(
             "wfxp-reaction-pop"
         );
 
+
         void button.offsetWidth;
+
 
         button.classList.add(
             "wfxp-reaction-pop"
@@ -67,7 +265,11 @@
     }
 
 
-    function WFXP_updateVisualState(
+    /* =====================================================
+       تجهيز أزرار التفاعل
+       ===================================================== */
+
+    function WFXP_prepareReactionButton(
         button
     ) {
 
@@ -75,48 +277,18 @@
             return;
         }
 
-        const isActive =
-            button.classList.contains(
-                "active"
-            );
-
-        if (isActive) {
-
-            button.classList.add(
-                "wfxp-reaction-active"
-            );
-
-        } else {
-
-            button.classList.remove(
-                "wfxp-reaction-active"
-            );
-
-        }
-
-    }
-
-
-    function WFXP_prepareButton(
-        button
-    ) {
-
-        if (!button) {
-            return;
-        }
 
         if (
-            button.dataset.wfxpReactionReady ===
+            button.dataset
+                .wfxpReactionReady ===
             "true"
         ) {
-            WFXP_updateVisualState(
-                button
-            );
-
             return;
         }
 
-        button.dataset.wfxpReactionReady =
+
+        button.dataset
+            .wfxpReactionReady =
             "true";
 
 
@@ -130,32 +302,64 @@
 
 
                 /*
-                 * ننتظر لحظة قصيرة حتى ينفذ
-                 * النظام الأصلي reactComment()
-                 * ويحدث حالة active.
+                 * نترك reactComment()
+                 * الأصلي ينفذ أولاً.
+                 *
+                 * بعدها نعيد قراءة العدد
+                 * الحقيقي من Supabase.
                  */
 
                 setTimeout(
                     () => {
 
-                        WFXP_updateVisualState(
-                            button
+                        const wrapper =
+                            button.closest(
+                                ".comment"
+                            );
+
+                        if (!wrapper) {
+                            return;
+                        }
+
+
+                        const commentId =
+                            wrapper.dataset.id;
+
+                        if (!commentId) {
+                            return;
+                        }
+
+
+                        const likeButton =
+                            wrapper.querySelector(
+                                ".comment-like"
+                            );
+
+                        const dislikeButton =
+                            wrapper.querySelector(
+                                ".comment-dislike"
+                            );
+
+
+                        WFXP_refreshReactionCount(
+                            commentId,
+                            likeButton,
+                            dislikeButton
                         );
 
                     },
-                    40
+                    250
                 );
 
             }
         );
 
-
-        WFXP_updateVisualState(
-            button
-        );
-
     }
 
+
+    /* =====================================================
+       تجهيز جميع التعليقات
+       ===================================================== */
 
     function WFXP_prepareReactionButtons(
         root
@@ -175,7 +379,7 @@
         buttons.forEach(
             button => {
 
-                WFXP_prepareButton(
+                WFXP_prepareReactionButton(
                     button
                 );
 
@@ -185,7 +389,65 @@
     }
 
 
-    function WFXP_observeReactionButtons(
+    /* =====================================================
+       تحديث جميع أعداد التفاعلات
+       ===================================================== */
+
+    async function WFXP_refreshAllCounts(
+        root
+    ) {
+
+        if (!root) {
+            return;
+        }
+
+
+        const comments =
+            root.querySelectorAll(
+                ".comment"
+            );
+
+
+        for (
+            const comment
+            of comments
+        ) {
+
+            const commentId =
+                comment.dataset.id;
+
+            if (!commentId) {
+                continue;
+            }
+
+
+            const likeButton =
+                comment.querySelector(
+                    ".comment-like"
+                );
+
+            const dislikeButton =
+                comment.querySelector(
+                    ".comment-dislike"
+                );
+
+
+            await WFXP_refreshReactionCount(
+                commentId,
+                likeButton,
+                dislikeButton
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       مراقبة التعليقات الجديدة
+       ===================================================== */
+
+    function WFXP_observeReactions(
         list
     ) {
 
@@ -193,14 +455,18 @@
             return;
         }
 
+
         if (
-            list.dataset.wfxpReactionObserver ===
+            list.dataset
+                .wfxpReactionObserver ===
             "true"
         ) {
             return;
         }
 
-        list.dataset.wfxpReactionObserver =
+
+        list.dataset
+            .wfxpReactionObserver =
             "true";
 
 
@@ -220,16 +486,16 @@
             list,
             {
                 childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: [
-                    "class"
-                ]
+                subtree: true
             }
         );
 
     }
 
+
+    /* =====================================================
+       تشغيل النظام
+       ===================================================== */
 
     function WFXP_startReactionsEngine() {
 
@@ -246,7 +512,13 @@
                     list
                 );
 
-                WFXP_observeReactionButtons(
+
+                WFXP_refreshAllCounts(
+                    list
+                );
+
+
+                WFXP_observeReactions(
                     list
                 );
 
@@ -260,6 +532,10 @@
 
     }
 
+
+    /* =====================================================
+       بدء التشغيل
+       ===================================================== */
 
     if (
         document.readyState ===
@@ -278,10 +554,17 @@
     }
 
 
+    /* =====================================================
+       واجهة النظام
+       ===================================================== */
+
     window.WFXP_REACTIONS = {
 
         refresh:
             WFXP_startReactionsEngine,
+
+        refreshCounts:
+            WFXP_refreshAllCounts,
 
         animate:
             WFXP_animateButton
