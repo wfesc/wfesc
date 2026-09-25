@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#050505"
+    >
+
+    <title>الملف الشخصي | WFESC</title>
+
+
+    <!-- نظام تنقل WFESC -->
+
+    <script src="navigation-features/navigation-loader.js"></script>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+
+        body {
+
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #171717 0%,
+                    #080808 45%,
+                    #030303 100%
+                );
+
+            color: #ffffff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            padding-bottom: 100px;
+        }
+
+
+        /* =========================================
+           الصفحة
+           ========================================= */
+
+        .profile-page {
+
+            width: 100%;
+
+            min-height: 100vh;
+
+            padding:
+                25px 14px 115px;
+
+        }
+
+
+        .profile-container {
+
+            width: 100%;
+
+            max-width: 700px;
+
+            margin: 0 auto;
+
+        }
+
+
+        /* =========================================
+           بطاقة الملف الشخصي
+           ========================================= */
+
+        .profile-card {
+
+            width: 100%;
+
+            overflow: hidden;
+
+            border-radius: 24px;
+
+            background:
+                rgba(255,255,255,0.045);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.075);
+
+            box-shadow:
+                0 20px 70px
+                rgba(0,0,0,0.35);
+
+        }
+
+
+        /* =========================================
+           الغلاف
+           ========================================= */
+
+        .profile-cover {
+
+            position: relative;
+
+            height: 145px;
+
+            background:
+                radial-gradient(
+                    circle at 50% 20%,
+                    #333333 0%,
+                    #151515 40%,
+                    #070707 100%
+                );
+
+            overflow: hidden;
+
+        }
+
+
+        .profile-cover::before {
+
+            content: "";
+
+            position: absolute;
+
+            width: 220px;
+
+            height: 220px;
+
+            top: -120px;
+
+            right: -50px;
+
+            border-radius: 50%;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+        }
+
+
+        .profile-cover::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 180px;
+
+            height: 180px;
+
+            bottom: -120px;
+
+            left: -50px;
+
+            border-radius: 50%;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.06);
+
+        }
+
+
+        /* =========================================
+           محتوى الملف
+           ========================================= */
+
+        .profile-content {
+
+            position: relative;
+
+            padding:
+                0 18px 22px;
+
+        }
+
+
+        /* =========================================
+           الصورة
+           ========================================= */
+
+        .profile-avatar {
+
+            width: 105px;
+
+            height: 105px;
+
+            margin-top: -52px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            position: relative;
+
+            z-index: 2;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #2c2c2c,
+                    #090909
+                );
+
+            border:
+                4px solid
+                #0a0a0a;
+
+            box-shadow:
+                0 10px 35px
+                rgba(0,0,0,0.5);
+
+            font-size: 36px;
+
+            font-weight: 800;
+
+            color: #ffffff;
+
+        }
+
+
+        /* =========================================
+           الاسم
+           ========================================= */
+
+        .profile-name-row {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            margin-top: 13px;
+
+        }
+
+
+        .profile-name {
+
+            font-size: 25px;
+
+            font-weight: 800;
+
+        }
+
+
+        .profile-verified {
+
+            width: 19px;
+
+            height: 19px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background: #ffffff;
+
+            color: #050505;
+
+            font-size: 11px;
+
+            font-weight: 900;
+
+        }
+
+
+        .profile-username {
+
+            color: #888888;
+
+            font-size: 13px;
+
+            margin-top: 4px;
+
+            direction: ltr;
+
+            text-align: right;
+
+        }
+
+
+        /* =========================================
+           الوصف
+           ========================================= */
+
+        .profile-bio {
+
+            color: #b0b0b0;
+
+            font-size: 13px;
+
+            line-height: 1.8;
+
+            margin-top: 14px;
+
+        }
+
+
+        /* =========================================
+           الإحصائيات
+           ========================================= */
+
+        .profile-stats {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 8px;
+
+            margin-top: 20px;
+
+        }
+
+
+        .profile-stat {
+
+            text-align: center;
+
+            padding:
+                13px 7px;
+
+            border-radius: 15px;
+
+            background:
+                rgba(255,255,255,0.04);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.05);
+
+        }
+
+
+        .profile-stat-number {
+
+            display: block;
+
+            color: #ffffff;
+
+            font-size: 17px;
+
+            font-weight: 800;
+
+        }
+
+
+        .profile-stat-label {
+
+            display: block;
+
+            color: #777777;
+
+            font-size: 10px;
+
+            margin-top: 4px;
+
+        }
+
+
+        /* =========================================
+           أزرار الملف
+           ========================================= */
+
+        .profile-actions {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 9px;
+
+            margin-top: 15px;
+
+        }
+
+
+        .profile-action {
+
+            height: 46px;
+
+            border-radius: 13px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.09);
+
+            background:
+                rgba(255,255,255,0.055);
+
+            color: #ffffff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.2s ease,
+                background 0.2s ease;
+
+        }
+
+
+        .profile-action:hover {
+
+            background:
+                rgba(255,255,255,0.09);
+
+        }
+
+
+        .profile-action:active {
+
+            transform:
+                scale(0.97);
+
+        }
+
+
+        /* =========================================
+           معلومات الحساب
+           ========================================= */
+
+        .profile-info {
+
+            margin-top: 12px;
+
+            padding:
+                17px;
+
+            border-radius: 18px;
+
+            background:
+                rgba(255,255,255,0.035);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.06);
+
+        }
+
+
+        .profile-info-title {
+
+            font-size: 14px;
+
+            font-weight: 800;
+
+            margin-bottom: 13px;
+
+        }
+
+
+        .profile-info-row {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding:
+                11px 0;
+
+            border-bottom:
+                1px solid
+                rgba(255,255,255,0.05);
+
+        }
+
+
+        .profile-info-row:last-child {
+
+            border-bottom: 0;
+
+            padding-bottom: 0;
+
+        }
+
+
+        .profile-info-label {
+
+            color: #777777;
+
+            font-size: 12px;
+
+        }
+
+
+        .profile-info-value {
+
+            color: #dddddd;
+
+            font-size: 12px;
+
+            text-align: left;
+
+        }
+
+
+        /* =========================================
+           نافذة تعديل الملف
+           ========================================= */
+
+        .profile-modal {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 99995;
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            background:
+                rgba(0,0,0,0.72);
+
+            backdrop-filter: blur(8px);
+
+            -webkit-backdrop-filter: blur(8px);
+
+        }
+
+
+        .profile-modal.show {
+
+            display: flex;
+
+        }
+
+
+        .profile-modal-box {
+
+            width: 100%;
+
+            max-width: 430px;
+
+            border-radius: 22px;
+
+            padding: 21px;
+
+            background:
+                #111111;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.09);
+
+            box-shadow:
+                0 25px 80px
+                rgba(0,0,0,0.6);
+
+        }
+
+
+        .profile-modal-title {
+
+            font-size: 19px;
+
+            font-weight: 800;
+
+            margin-bottom: 17px;
+
+        }
+
+
+        .profile-input {
+
+            width: 100%;
+
+            height: 47px;
+
+            margin-bottom: 10px;
+
+            padding:
+                0 14px;
+
+            border-radius: 13px;
+
+            outline: none;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background:
+                rgba(255,255,255,0.05);
+
+            color: #ffffff;
+
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+
+        }
+
+
+        .profile-input:focus {
+
+            border-color:
+                rgba(255,255,255,0.22);
+
+        }
+
+
+        .profile-modal-actions {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 8px;
+
+            margin-top: 7px;
+
+        }
+
+
+        .profile-modal-button {
+
+            height: 44px;
+
+            border-radius: 12px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background:
+                rgba(255,255,255,0.06);
+
+            color: #ffffff;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        /* =========================================
+           الموبايل
+           ========================================= */
+
+        @media (max-width: 600px) {
+
+            .profile-page {
+
+                padding:
+                    18px 11px 110px;
+
+            }
+
+
+            .profile-cover {
+
+                height: 125px;
+
+            }
+
+
+            .profile-avatar {
+
+                width: 92px;
+
+                height: 92px;
+
+                margin-top: -46px;
+
+            }
+
+
+            .profile-name {
+
+                font-size: 23px;
+
+            }
+
+
+            .profile-stats {
+
+                gap: 6px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <main class="profile-page">
+
+        <div class="profile-container">
+
+
+            <section class="profile-card">
+
+
+                <!-- الغلاف -->
+
+                <div class="profile-cover"></div>
+
+
+                <div class="profile-content">
+
+
+                    <!-- الصورة -->
+
+                    <div class="profile-avatar">
+                        W
+                    </div>
+
+
+                    <!-- الاسم -->
+
+                    <div class="profile-name-row">
+
+                        <h1
+                            id="profileName"
+                            class="profile-name"
+                        >
+                            WFESC
+                        </h1>
+
+                        <span
+                            class="profile-verified"
+                            title="حساب رسمي"
+                        >
+                            ✓
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="profileUsername"
+                        class="profile-username"
+                    >
+                        @wfesc
+                    </div>
+
+
+                    <!-- الوصف -->
+
+                    <p
+                        id="profileBio"
+                        class="profile-bio"
+                    >
+                        المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
+                        <br>
+                        تاريخ العراق وإنجازاته ومشاريعه وممتلكاته ونوادره.
+                    </p>
+
+
+                    <!-- الإحصائيات -->
+
+                    <div class="profile-stats">
+
+                        <div class="profile-stat">
+
+                            <span
+                                id="postsCount"
+                                class="profile-stat-number"
+                            >
+                                0
+                            </span>
+
+                            <span class="profile-stat-label">
+                                المنشورات
+                            </span>
+
+                        </div>
+
+
+                        <div class="profile-stat">
+
+                            <span
+                                id="followersCount"
+                                class="profile-stat-number"
+                            >
+                                0
+                            </span>
+
+                            <span class="profile-stat-label">
+                                المتابعون
+                            </span>
+
+                        </div>
+
+
+                        <div class="profile-stat">
+
+                            <span
+                                id="followingCount"
+                                class="profile-stat-number"
+                            >
+                                0
+                            </span>
+
+                            <span class="profile-stat-label">
+                                المتابَعون
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- الأزرار -->
+
+                    <div class="profile-actions">
+
+                        <button
+                            id="editProfileButton"
+                            class="profile-action"
+                            type="button"
+                        >
+                            ✏️ تعديل الملف
+                        </button>
+
+
+                        <button
+                            id="shareProfileButton"
+                            class="profile-action"
+                            type="button"
+                        >
+                            🔗 مشاركة الملف
+                        </button>
+
+                    </div>
+
+
+                    <!-- معلومات الحساب -->
+
+                    <section class="profile-info">
+
+                        <div class="profile-info-title">
+                            معلومات الحساب
+                        </div>
+
+
+                        <div class="profile-info-row">
+
+                            <span class="profile-info-label">
+                                اسم المستخدم
+                            </span>
+
+                            <span
+                                id="infoUsername"
+                                class="profile-info-value"
+                            >
+                                @wfesc
+                            </span>
+
+                        </div>
+
+
+                        <div class="profile-info-row">
+
+                            <span class="profile-info-label">
+                                الحساب
+                            </span>
+
+                            <span class="profile-info-value">
+                                WFESC
+                            </span>
+
+                        </div>
+
+
+                        <div class="profile-info-row">
+
+                            <span class="profile-info-label">
+                                الحالة
+                            </span>
+
+                            <span class="profile-info-value">
+                                نشط
+                            </span>
+
+                        </div>
+
+                    </section>
+
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================================
+         نافذة تعديل الملف
+         ========================================= -->
+
+    <div
+        id="profileModal"
+        class="profile-modal"
+    >
+
+        <div class="profile-modal-box">
+
+            <div class="profile-modal-title">
+                تعديل الملف الشخصي
+            </div>
+
+
+            <input
+                id="editName"
+                class="profile-input"
+                type="text"
+                placeholder="اسم الحساب"
+                maxlength="40"
+            >
+
+
+            <input
+                id="editUsername"
+                class="profile-input"
+                type="text"
+                placeholder="اسم المستخدم"
+                maxlength="40"
+            >
+
+
+            <textarea
+                id="editBio"
+                class="profile-input"
+                rows="4"
+                placeholder="نبذة عن الحساب"
+                maxlength="250"
+                style="
+                    height:100px;
+                    padding-top:13px;
+                    resize:none;
+                "
+            ></textarea>
+
+
+            <div class="profile-modal-actions">
+
+                <button
+                    id="saveProfile"
+                    class="profile-modal-button"
+                    type="button"
+                >
+                    حفظ
+                </button>
+
+
+                <button
+                    id="closeProfileModal"
+                    class="profile-modal-button"
+                    type="button"
+                >
+                    إلغاء
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /*
+         * =========================================
+         * عناصر الملف الشخصي
+         * =========================================
+         */
+
+        const profileName =
+            document.getElementById(
+                "profileName"
+            );
+
+
+        const profileUsername =
+            document.getElementById(
+                "profileUsername"
+            );
+
+
+        const profileBio =
+            document.getElementById(
+                "profileBio"
+            );
+
+
+        const infoUsername =
+            document.getElementById(
+                "infoUsername"
+            );
+
+
+        const profileModal =
+            document.getElementById(
+                "profileModal"
+            );
+
+
+        const editName =
+            document.getElementById(
+                "editName"
+            );
+
+
+        const editUsername =
+            document.getElementById(
+                "editUsername"
+            );
+
+
+        const editBio =
+            document.getElementById(
+                "editBio"
+            );
+
+
+        /*
+         * =========================================
+         * فتح نافذة التعديل
+         * =========================================
+         */
+
+        document
+            .getElementById(
+                "editProfileButton"
+            )
+            .addEventListener(
+                "click",
+                function () {
+
+                    editName.value =
+                        profileName.textContent.trim();
+
+
+                    editUsername.value =
+                        profileUsername.textContent.trim()
+                            .replace("@", "");
+
+
+                    editBio.value =
+                        profileBio.innerText.trim();
+
+
+                    profileModal.classList.add(
+                        "show"
+                    );
+
+                }
+            );
+
+
+        /*
+         * =========================================
+         * إغلاق النافذة
+         * =========================================
+         */
+
+        document
+            .getElementById(
+                "closeProfileModal"
+            )
+            .addEventListener(
+                "click",
+                function () {
+
+                    profileModal.classList.remove(
+                        "show"
+                    );
+
+                }
+            );
+
+
+        /*
+         * إغلاق بالضغط خارج الصندوق
+         * =========================================
+         */
+
+        profileModal.addEventListener(
+            "click",
+            function (event) {
+
+                if (
+                    event.target ===
+                    profileModal
+                ) {
+
+                    profileModal.classList.remove(
+                        "show"
+                    );
+
+                }
+
+            }
+        );
+
+
+        /*
+         * =========================================
+         * حفظ التعديل
+         * =========================================
+         */
+
+        document
+            .getElementById(
+                "saveProfile"
+            )
+            .addEventListener(
+                "click",
+                function () {
+
+                    const newName =
+                        editName.value.trim();
+
+
+                    const newUsername =
+                        editUsername.value
+                            .trim()
+                            .replace(/^@+/, "");
+
+
+                    const newBio =
+                        editBio.value.trim();
+
+
+                    if (newName) {
+
+                        profileName.textContent =
+                            newName;
+
+                    }
+
+
+                    if (newUsername) {
+
+                        profileUsername.textContent =
+                            "@" + newUsername;
+
+                        infoUsername.textContent =
+                            "@" + newUsername;
+
+                    }
+
+
+                    if (newBio) {
+
+                        profileBio.innerText =
+                            newBio;
+
+                    }
+
+
+                    /*
+                     * حفظ محلي على الجهاز
+                     */
+
+                    localStorage.setItem(
+                        "wfesc_profile_name",
+                        profileName.textContent
+                    );
+
+
+                    localStorage.setItem(
+                        "wfesc_profile_username",
+                        profileUsername.textContent
+                    );
+
+
+                    localStorage.setItem(
+                        "wfesc_profile_bio",
+                        profileBio.innerText
+                    );
+
+
+                    profileModal.classList.remove(
+                        "show"
+                    );
+
+                }
+            );
+
+
+        /*
+         * =========================================
+         * استرجاع بيانات الملف
+         * =========================================
+         */
+
+        const savedName =
+            localStorage.getItem(
+                "wfesc_profile_name"
+            );
+
+
+        const savedUsername =
+            localStorage.getItem(
+                "wfesc_profile_username"
+            );
+
+
+        const savedBio =
+            localStorage.getItem(
+                "wfesc_profile_bio"
+            );
+
+
+        if (savedName) {
+
+            profileName.textContent =
+                savedName;
+
+        }
+
+
+        if (savedUsername) {
+
+            profileUsername.textContent =
+                savedUsername;
+
+            infoUsername.textContent =
+                savedUsername;
+
+        }
+
+
+        if (savedBio) {
+
+            profileBio.innerText =
+                savedBio;
+
+        }
+
+
+        /*
+         * =========================================
+         * مشاركة الملف
+         * =========================================
+         */
+
+        document
+            .getElementById(
+                "shareProfileButton"
+            )
+            .addEventListener(
+                "click",
+                async function () {
+
+                    const shareData = {
+
+                        title:
+                            "WFESC",
+
+                        text:
+                            "الملف الشخصي لـ WFESC",
+
+                        url:
+                            window.location.href
+
+                    };
+
+
+                    try {
+
+                        if (
+                            navigator.share
+                        ) {
+
+                            await navigator.share(
+                                shareData
+                            );
+
+                        } else {
+
+                            await navigator.clipboard.writeText(
+                                window.location.href
+                            );
+
+                            alert(
+                                "تم نسخ رابط الملف الشخصي."
+                            );
+
+                        }
+
+                    } catch (error) {
+
+                        /*
+                         * إلغاء المشاركة
+                         * لا يحتاج رسالة خطأ
+                         */
+
+                    }
+
+                }
+            );
+
+    </script>
+
+
+</body>
+
+</html>
