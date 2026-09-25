@@ -2175,7 +2175,8 @@ async function getPostCounts(postId){
    POST REACTION
 ===================================================== */
 
-async function reactPost(postId,type,article){
+
+    async function reactPost(postId,type,article){
 
     if(!requireLogin())
         return;
@@ -2217,7 +2218,11 @@ async function reactPost(postId,type,article){
 
 
         if(error){
-            showToast(error.message);
+
+            showToast(
+                error.message
+            );
+
             return;
         }
 
@@ -2234,7 +2239,11 @@ async function reactPost(postId,type,article){
 
 
             if(deleteError){
-                showToast(deleteError.message);
+
+                showToast(
+                    deleteError.message
+                );
+
                 return;
             }
 
@@ -2246,7 +2255,9 @@ async function reactPost(postId,type,article){
                 );
 
 
-            button.classList.remove("active");
+            button.classList.remove(
+                "active"
+            );
 
         }else{
 
@@ -2254,14 +2265,18 @@ async function reactPost(postId,type,article){
                 error:deleteDislikeError
             } =
             await supabaseClient
-                .from("dislikes")
+                .from("dislikes_test")
                 .delete()
                 .eq("post_id",postId)
                 .eq("user_id",currentUser.id);
 
 
             if(deleteDislikeError){
-                showToast(deleteDislikeError.message);
+
+                showToast(
+                    deleteDislikeError.message
+                );
+
                 return;
             }
 
@@ -2281,20 +2296,30 @@ async function reactPost(postId,type,article){
 
 
             if(insertError){
-                showToast(insertError.message);
+
+                showToast(
+                    insertError.message
+                );
+
                 return;
             }
 
 
             likeCount.textContent =
-                Number(likeCount.textContent) + 1;
+                Number(
+                    likeCount.textContent
+                ) + 1;
 
 
-            button.classList.add("active");
+            button.classList.add(
+                "active"
+            );
 
 
             const wasDisliked =
-                buttons.dislike.classList.contains("active");
+                buttons.dislike.classList.contains(
+                    "active"
+                );
 
 
             if(wasDisliked){
@@ -2302,10 +2327,14 @@ async function reactPost(postId,type,article){
                 dislikeCount.textContent =
                     Math.max(
                         0,
-                        Number(dislikeCount.textContent) - 1
+                        Number(
+                            dislikeCount.textContent
+                        ) - 1
                     );
 
-                buttons.dislike.classList.remove("active");
+                buttons.dislike.classList.remove(
+                    "active"
+                );
 
             }
 
@@ -2318,7 +2347,7 @@ async function reactPost(postId,type,article){
             error
         } =
         await supabaseClient
-            .from("dislikes")
+            .from("dislikes_test")
             .select("id")
             .eq("post_id",postId)
             .eq("user_id",currentUser.id)
@@ -2326,7 +2355,11 @@ async function reactPost(postId,type,article){
 
 
         if(error){
-            showToast(error.message);
+
+            showToast(
+                error.message
+            );
+
             return;
         }
 
@@ -2337,13 +2370,17 @@ async function reactPost(postId,type,article){
                 error:deleteError
             } =
             await supabaseClient
-                .from("dislikes")
+                .from("dislikes_test")
                 .delete()
                 .eq("id",data.id);
 
 
             if(deleteError){
-                showToast(deleteError.message);
+
+                showToast(
+                    deleteError.message
+                );
+
                 return;
             }
 
@@ -2351,11 +2388,15 @@ async function reactPost(postId,type,article){
             dislikeCount.textContent =
                 Math.max(
                     0,
-                    Number(dislikeCount.textContent) - 1
+                    Number(
+                        dislikeCount.textContent
+                    ) - 1
                 );
 
 
-            button.classList.remove("active");
+            button.classList.remove(
+                "active"
+            );
 
         }else{
 
@@ -2370,7 +2411,11 @@ async function reactPost(postId,type,article){
 
 
             if(deleteLikeError){
-                showToast(deleteLikeError.message);
+
+                showToast(
+                    deleteLikeError.message
+                );
+
                 return;
             }
 
@@ -2379,7 +2424,7 @@ async function reactPost(postId,type,article){
                 error:insertError
             } =
             await supabaseClient
-                .from("dislikes")
+                .from("dislikes_test")
                 .insert({
 
                     post_id:postId,
@@ -2390,20 +2435,30 @@ async function reactPost(postId,type,article){
 
 
             if(insertError){
-                showToast(insertError.message);
+
+                showToast(
+                    insertError.message
+                );
+
                 return;
             }
 
 
             dislikeCount.textContent =
-                Number(dislikeCount.textContent) + 1;
+                Number(
+                    dislikeCount.textContent
+                ) + 1;
 
 
-            button.classList.add("active");
+            button.classList.add(
+                "active"
+            );
 
 
             const wasLiked =
-                buttons.like.classList.contains("active");
+                buttons.like.classList.contains(
+                    "active"
+                );
 
 
             if(wasLiked){
@@ -2411,10 +2466,14 @@ async function reactPost(postId,type,article){
                 likeCount.textContent =
                     Math.max(
                         0,
-                        Number(likeCount.textContent) - 1
+                        Number(
+                            likeCount.textContent
+                        ) - 1
                     );
 
-                buttons.like.classList.remove("active");
+                buttons.like.classList.remove(
+                    "active"
+                );
 
             }
 
@@ -2422,7 +2481,7 @@ async function reactPost(postId,type,article){
 
     }
 
-}
+    }
 
 /* =====================================================
    COMMENTS
