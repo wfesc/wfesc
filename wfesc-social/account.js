@@ -1590,7 +1590,38 @@
     /* =====================================================
        تشغيل النظام
        ===================================================== */
+function waitForSettings() {
 
+    return new Promise((resolve) => {
+
+        if (document.getElementById("wfesc-settings-panel")) {
+            resolve();
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+
+            if (document.getElementById("wfesc-settings-panel")) {
+
+                observer.disconnect();
+
+                resolve();
+            }
+
+        });
+
+        observer.observe(
+            document.body,
+            {
+                childList: true,
+                subtree: true
+            }
+        );
+
+    });
+
+}
+   
     async function start() {
 
     if (ACCOUNT_STATE.initialized) {
