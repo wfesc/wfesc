@@ -223,6 +223,175 @@
 
     /*
      * ============================================================
+     * ERROR TYPE CHECKS
+     * ============================================================
+     */
+
+    function isUsernameTakenError(error) {
+
+        if (!error) {
+            return false;
+        }
+
+        const code =
+            safeText(
+                error.code
+            ).toLowerCase();
+
+        const message =
+            safeText(
+                error.message ||
+                error.error_description ||
+                error.msg ||
+                ""
+            ).toLowerCase();
+
+        /*
+         * الخطأ القادم من settings-auth.js
+         */
+
+        if (
+            message.includes(
+                "اسم المستخدم مأخوذ مسبقًا"
+            )
+        ) {
+            return true;
+        }
+
+        /*
+         * PostgreSQL unique violation
+         * الخاصة بعمود username.
+         */
+
+        if (
+            code === "23505" &&
+            message.includes("username")
+        ) {
+            return true;
+        }
+
+        if (
+            message.includes(
+                "username already exists"
+            )
+        ) {
+            return true;
+        }
+
+        if (
+            message.includes(
+                "duplicate username"
+            )
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function isExistingEmailError(error) {
+
+        if (!error) {
+            return false;
+        }
+
+        const code =
+            safeText(
+                error.code
+            ).toLowerCase();
+
+        const message =
+            safeText(
+                error.message ||
+                error.error_description ||
+                error.msg ||
+                ""
+            ).toLowerCase();
+
+        if (
+            code === "existing_email"
+        ) {
+            return true;
+        }
+
+        if (
+            message.includes(
+                "أنت تملك حساب بالفعل"
+            )
+        ) {
+            return true;
+        }
+
+        if (
+            message.includes(
+                "already registered"
+            ) ||
+            message.includes(
+                "user already registered"
+            ) ||
+            message.includes(
+                "email already"
+            ) ||
+            message.includes(
+                "email_exists"
+            )
+        ) {
+            return true;
+        }
+
+        /*
+         * لا نعتبر duplicate key وحده بريدًا موجودًا،
+         * لأن 23505 قد يكون خاصًا باسم المستخدم.
+         */
+
+        if (
+            code === "23505" &&
+            message.includes("email")
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function isWrongPasswordError(error) {
+
+        if (!error) {
+            return false;
+        }
+
+        const message =
+            safeText(
+                error.message ||
+                error.error_description ||
+                error.msg ||
+                ""
+            ).toLowerCase();
+
+        return (
+            message.includes(
+                "invalid login credentials"
+            ) ||
+            message.includes(
+                "invalid credentials"
+            ) ||
+            message.includes(
+                "wrong password"
+            ) ||
+            message.includes(
+                "invalid password"
+            ) ||
+            message.includes(
+                "كلمة المرور خطأ"
+            ) ||
+            message.includes(
+                "كلمة المرور غير صحيحة"
+            )
+        );
+    }
+
+    /*
+     * ============================================================
      * ERROR NORMALIZATION
      * ============================================================
      */
@@ -237,6 +406,24 @@
             typeof error === "string"
         ) {
             return error;
+        }
+
+        if (
+            isUsernameTakenError(error)
+        ) {
+            return "اسم المستخدم مأخوذ مسبقًا";
+        }
+
+        if (
+            isExistingEmailError(error)
+        ) {
+            return "أنت تملك حساب بالفعل";
+        }
+
+        if (
+            isWrongPasswordError(error)
+        ) {
+            return "كلمة المرور خطأ.";
         }
 
         const raw =
@@ -287,16 +474,10 @@
                 "email already"
             ) ||
             text.includes(
-                "already exists"
-            ) ||
-            text.includes(
-                "duplicate key"
-            ) ||
-            text.includes(
                 "email_exists"
             )
         ) {
-            return "يوجد حساب بهذا البريد، قم بتسجيل الدخول.";
+            return "أنت تملك حساب بالفعل";
         }
 
         if (
@@ -682,12 +863,6 @@
                 position: relative;
             }
 
-            /*
-             * ====================================================
-             * LIQUID GLASS
-             * ====================================================
-             */
-
             .wfesc-liquid-glass-enabled
             .wfesc-auth-glass {
 
@@ -762,10 +937,6 @@
                     saturate(150%);
             }
 
-            /*
-             * لمعة زجاج خفيفة جدًا.
-             */
-
             .wfesc-liquid-glass-enabled
             .wfesc-auth-glass::before {
 
@@ -796,12 +967,6 @@
                 position: relative;
                 overflow: hidden;
             }
-
-            /*
-             * ====================================================
-             * TABS
-             * ====================================================
-             */
 
             .wfesc-auth-tabs {
 
@@ -856,12 +1021,6 @@
                     scale(.98);
             }
 
-            /*
-             * ====================================================
-             * PANELS
-             * ====================================================
-             */
-
             .wfesc-auth-panel {
                 display: none;
             }
@@ -874,12 +1033,6 @@
                     wfescAuthPanelIn
                     .32s ease both;
             }
-
-            /*
-             * ====================================================
-             * FORM
-             * ====================================================
-             */
 
             .wfesc-auth-form-group {
                 margin-bottom: 13px;
@@ -1010,12 +1163,6 @@
                 color: #aaa;
             }
 
-            /*
-             * ====================================================
-             * BUTTONS
-             * ====================================================
-             */
-
             .wfesc-auth-button {
 
                 width: 100%;
@@ -1083,12 +1230,6 @@
 
                 font-size: 12px;
             }
-
-            /*
-             * ====================================================
-             * ACCOUNT
-             * ====================================================
-             */
 
             .wfesc-auth-account {
                 width: 100%;
@@ -1293,12 +1434,6 @@
                 color: #df7777;
             }
 
-            /*
-             * ====================================================
-             * VERIFICATION
-             * ====================================================
-             */
-
             .wfesc-auth-verification {
 
                 display: none;
@@ -1335,12 +1470,6 @@
                     infinite alternate;
             }
 
-            /*
-             * ====================================================
-             * LOADING
-             * ====================================================
-             */
-
             .wfesc-auth-loading {
 
                 display: none;
@@ -1363,24 +1492,12 @@
                     .25s ease both;
             }
 
-            /*
-             * ====================================================
-             * SHAKE
-             * ====================================================
-             */
-
             .wfesc-auth-shake {
 
                 animation:
                     wfescAuthShake
                     .4s ease;
             }
-
-            /*
-             * ====================================================
-             * DELETE MODALS
-             * ====================================================
-             */
 
             .wfesc-delete-warning {
 
@@ -1517,12 +1634,6 @@
 
                 cursor: pointer;
             }
-
-            /*
-             * ====================================================
-             * ANIMATIONS
-             * ====================================================
-             */
 
             @keyframes wfescAuthPanelIn {
 
@@ -3014,11 +3125,6 @@
             "";
     }
 
-    /*
-     * لا يوجد WFESC كقيمة افتراضية
-     * للحساب القادم من تسجيل دخول فاشل.
-     */
-
     function getDisplayName(
         user,
         profile
@@ -3063,11 +3169,6 @@
             return;
         }
 
-        /*
-         * أهم حماية:
-         * أي قيمة ليست User حقيقي = خروج.
-         */
-
         if (
             !isRealUser(user)
         ) {
@@ -3102,10 +3203,6 @@
 
         const email =
             user.email || "";
-
-        /*
-         * لا نعرض قيمًا وهمية.
-         */
 
         E.loggedName.textContent =
             name || "حساب WFESC";
@@ -3183,11 +3280,6 @@
             return;
         }
 
-        /*
-         * هذه فقط لاستعادة جلسة موجودة مسبقًا.
-         * لا علاقة لها بمحاولة تسجيل الدخول.
-         */
-
         try {
 
             const auth =
@@ -3219,11 +3311,6 @@
                     currentProfile =
                         result?.profile ||
                         null;
-
-                    /*
-                     * إذا لم يكن Profile موجودًا،
-                     * لا ننشئ Profile وهمي.
-                     */
 
                     if (
                         !currentProfile &&
@@ -3338,11 +3425,6 @@
 
         } finally {
 
-            /*
-             * لا نعرض شاشة WFESC أو Logo.
-             * فقط نخفي نص التحقق.
-             */
-
             if (E.loading) {
 
                 E.loading.classList.remove(
@@ -3419,11 +3501,6 @@
             return;
         }
 
-        /*
-         * مهم:
-         * لا نعرض شعار ولا Profile ولا واجهة حساب.
-         */
-
         setButtonLoading(
             E.loginSubmit,
             true,
@@ -3439,18 +3516,19 @@
                 );
 
             /*
-             * استخراج User حقيقي فقط.
+             * إذا رجع settings-auth.js
+             * خطأ داخل result.error فلا نعتبر العملية نجاحًا.
              */
+
+            if (
+                result?.error
+            ) {
+
+                throw result.error;
+            }
 
             const user =
                 extractUser(result);
-
-            /*
-             * إذا لم يوجد user.id:
-             * لا تسجيل دخول.
-             * لا Profile.
-             * لا WFESC.
-             */
 
             if (
                 !isRealUser(user)
@@ -3466,11 +3544,6 @@
 
             currentProfile =
                 null;
-
-            /*
-             * جلب Profile الحقيقي فقط
-             * بعد نجاح Auth.
-             */
 
             if (
                 typeof auth.fetchProfile ===
@@ -3495,10 +3568,6 @@
                         null;
                 }
             }
-
-            /*
-             * هنا فقط يظهر الحساب.
-             */
 
             renderAccount(
                 currentUser,
@@ -3530,11 +3599,6 @@
                     error
                 );
 
-            /*
-             * لا نعرض الحساب أبدًا
-             * عند الخطأ.
-             */
-
             currentUser = null;
             currentProfile = null;
 
@@ -3545,22 +3609,36 @@
              * تبقى موجودة + اهتزاز.
              */
 
-            setMessage(
-                E.loginMessage,
-                message,
-                "error"
-            );
+            if (
+                isWrongPasswordError(error) ||
+                message === "كلمة المرور خطأ."
+            ) {
 
-            fieldError(
-                E.loginPassword,
-                E.loginPasswordError,
-                message
-            );
+                setMessage(
+                    E.loginMessage,
+                    "كلمة المرور خطأ.",
+                    "error"
+                );
 
-            showStatus(
-                message,
-                "error"
-            );
+                fieldError(
+                    E.loginPassword,
+                    E.loginPasswordError,
+                    "كلمة المرور خطأ."
+                );
+
+            } else {
+
+                setMessage(
+                    E.loginMessage,
+                    message,
+                    "error"
+                );
+
+                showStatus(
+                    message,
+                    "error"
+                );
+            }
 
         } finally {
 
@@ -3708,6 +3786,49 @@
 
         try {
 
+            /*
+             * ====================================================
+             * فحص اسم المستخدم قبل إنشاء Auth User
+             * ====================================================
+             */
+
+            if (
+                typeof auth.usernameExists ===
+                "function"
+            ) {
+
+                const usernameCheck =
+                    await auth.usernameExists(
+                        username
+                    );
+
+                if (
+                    usernameCheck?.error
+                ) {
+
+                    throw usernameCheck.error;
+                }
+
+                if (
+                    usernameCheck?.exists
+                ) {
+
+                    const usernameError =
+                        new Error(
+                            "اسم المستخدم مأخوذ مسبقًا"
+                        );
+
+                    usernameError.code =
+                        "username_taken";
+
+                    throw usernameError;
+                }
+            }
+
+            /*
+             * إنشاء الحساب.
+             */
+
             const result =
                 await auth.signUp(
                     name,
@@ -3715,6 +3836,25 @@
                     password,
                     username
                 );
+
+            /*
+             * مهم جدًا:
+             * settings-auth.js قد يرجع {error}
+             * بدل throw.
+             */
+
+            if (
+                result?.error
+            ) {
+
+                throw result.error;
+            }
+
+            /*
+             * حماية إضافية:
+             * إذا رجع خطأ أو بيانات غير صحيحة
+             * لا نعتبر التسجيل ناجحًا.
+             */
 
             const user =
                 extractUser(result);
@@ -3765,6 +3905,11 @@
                 return;
             }
 
+            /*
+             * إذا لم يكن البريد موثقًا:
+             * نبقى في التسجيل ونظهر رسالة التحقق.
+             */
+
             showVerificationMessage();
 
             setMessage(
@@ -3780,30 +3925,83 @@
                 error
             );
 
-            const message =
-                getErrorMessage(
-                    error
-                );
+            /*
+             * ====================================================
+             * اسم المستخدم مأخوذ
+             * ====================================================
+             */
 
             if (
-                message ===
-                "يوجد حساب بهذا البريد، قم بتسجيل الدخول."
+                isUsernameTakenError(error)
+            ) {
+
+                E.registerUsername.value =
+                    username;
+
+                fieldError(
+                    E.registerUsername,
+                    E.registerUsernameError,
+                    "اسم المستخدم مأخوذ مسبقًا"
+                );
+
+                setMessage(
+                    E.registerMessage,
+                    "اسم المستخدم مأخوذ مسبقًا",
+                    "error"
+                );
+
+                showStatus(
+                    "اسم المستخدم مأخوذ مسبقًا",
+                    "error"
+                );
+
+                return;
+            }
+
+            /*
+             * ====================================================
+             * البريد مستخدم مسبقًا
+             * ====================================================
+             */
+
+            if (
+                isExistingEmailError(error)
             ) {
 
                 fieldError(
                     E.registerEmail,
                     E.registerEmailError,
-                    message
+                    "هذا البريد الإلكتروني مستخدم مسبقًا، يرجى تسجيل الدخول."
                 );
-
-            } else {
 
                 setMessage(
                     E.registerMessage,
-                    message,
+                    "أنت تملك حساب بالفعل",
                     "error"
                 );
+
+                showStatus(
+                    "أنت تملك حساب بالفعل",
+                    "error"
+                );
+
+                /*
+                 * نبقى في صفحة التسجيل ولا نسجل الدخول.
+                 */
+
+                return;
             }
+
+            const message =
+                getErrorMessage(
+                    error
+                );
+
+            setMessage(
+                E.registerMessage,
+                message,
+                "error"
+            );
 
             showStatus(
                 message,
@@ -4560,11 +4758,6 @@
                 const profile =
                     detail.profile ||
                     null;
-
-                /*
-                 * حتى أحداث AuthChanged:
-                 * لا تعرض أي حساب غير حقيقي.
-                 */
 
                 if (
                     isRealUser(user)
