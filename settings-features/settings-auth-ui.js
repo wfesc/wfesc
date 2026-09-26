@@ -2747,3 +2747,649 @@
            LOGOUT
            ================================================= */
        
+
+        async function handleLogout() {
+
+            if (actionLoading) {
+                return;
+            }
+
+
+            actionLoading =
+                true;
+
+
+            const logout =
+                document.getElementById(
+                    "wfescLogout"
+                );
+
+
+            if (logout) {
+
+                logout.disabled =
+                    true;
+
+                logout.classList.add(
+                    "wfesc-button-loading"
+                );
+
+                logout.innerHTML = `
+                    <span class="wfesc-button-spinner"></span>
+                    <span>
+                        جاري تسجيل الخروج...
+                    </span>
+                `;
+
+            }
+
+
+            try {
+
+                const result =
+                    await AUTH.signOut();
+
+
+                if (
+                    result?.error
+                ) {
+
+                    throw result.error;
+
+                }
+
+
+                await sleep(500);
+
+
+                createAccountInterface(
+                    true
+                );
+
+
+                showStatus(
+                    "تم تسجيل الخروج بنجاح.",
+                    "success",
+                    4000
+                );
+
+            }
+
+            catch (error) {
+
+                actionLoading =
+                    false;
+
+                showStatus(
+                    getAuthErrorMessage(
+                        error
+                    ),
+                    "error",
+                    6000
+                );
+
+
+                await renderAccount(
+                    true
+                );
+
+            }
+
+            finally {
+
+                actionLoading =
+                    false;
+
+            }
+        }
+
+
+        /* =================================================
+           PROFILE UPDATED
+           ================================================= */
+
+        async function refreshAccount() {
+
+            if (!authReady) {
+                pendingAuthRender = true;
+                return;
+            }
+
+
+            const user =
+                AUTH.getUser?.();
+
+
+            if (user) {
+
+                await renderAccount(
+                    true
+                );
+
+            } else {
+
+                createAccountInterface(
+                    true
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           EVENTS
+           ================================================= */
+
+        window.addEventListener(
+            "WFESCAuthChanged",
+            async event => {
+
+                if (!authReady) {
+
+                    pendingAuthRender =
+                        true;
+
+                    return;
+                }
+
+
+                const user =
+                    event?.detail?.user ||
+                    AUTH.getUser?.();
+
+
+                if (user) {
+
+                    await renderAccount(
+                        true
+                    );
+
+                } else {
+
+                    createAccountInterface(
+                        true
+                    );
+
+                }
+
+            }
+        );
+
+
+        window.addEventListener(
+            "WFESCProfileUpdated",
+            async () => {
+
+                await refreshAccount();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "WFESCEmailVerified",
+            async () => {
+
+                if (
+                    isPasswordRecoveryUrl()
+                ) {
+                    return;
+                }
+
+                await showVerifiedMessage();
+
+            }
+        );
+
+
+        /* =================================================
+           INITIALIZATION
+           ================================================= */
+
+        async function start() {
+
+            showAccountLoading(
+                "جاري التحقق من الحساب..."
+            );
+
+
+            createModal();
+
+
+            try {
+
+                await AUTH.restoreSession();
+
+            } catch (_) {}
+
+
+            authReady =
+                true;
+
+
+            /*
+             * Password recovery has priority over
+             * normal account rendering.
+             */
+
+            if (
+                isPasswordRecoveryUrl()
+            ) {
+
+                await sleep(250);
+
+                await showResetPasswordScreen();
+
+                return;
+            }
+
+
+            const user =
+                AUTH.getUser?.();
+
+
+            if (user) {
+
+                await renderAccount(
+                    false
+                );
+
+            } else {
+
+                createAccountInterface(
+                    false
+                );
+
+            }
+
+
+            if (
+                pendingAuthRender
+            ) {
+
+                pendingAuthRender =
+                    false;
+
+                const currentUser =
+                    AUTH.getUser?.();
+
+                if (currentUser) {
+
+                    await renderAccount(
+                        false
+                    );
+
+                }
+
+            }
+        }
+
+
+        start();
+
+
+        /* =================================================
+           PUBLIC OPEN MODAL
+           ================================================= */
+
+        window.WFESCOpenAccountModal =
+            function (mode) {
+
+                openModal(
+                    mode || "login"
+                );
+
+            };
+
+
+        /* =================================================
+           INJECT CSS
+           ================================================= */
+
+        function injectStyles() {
+
+            if (
+                document.getElementById(
+                    "wfesc-auth-ui-styles"
+                )
+            ) {
+                return;
+            }
+
+
+            const style =
+                document.createElement(
+                    "style"
+                );
+
+            style.id =
+                "wfesc-auth-ui-styles";
+
+
+            style.textContent = `
+
+                /* =========================================
+                   GENERAL VIEW ANIMATION
+                   ========================================= */
+
+                .wfesc-auth-view,
+                .wfesc-account-view,
+                .wfesc-special-view,
+                .wfesc-reset-view {
+
+                    opacity: 0;
+
+                    transform:
+                        translateY(10px)
+                        scale(.985);
+
+                    transition:
+                        opacity .32s ease,
+                        transform .32s ease;
+
+                }
+
+
+                .wfesc-auth-view.wfesc-view-visible,
+                .wfesc-account-view.wfesc-view-visible,
+                .wfesc-special-view.wfesc-view-visible,
+                .wfesc-reset-view.wfesc-view-visible {
+
+                    opacity: 1;
+
+                    transform:
+                        translateY(0)
+                        scale(1);
+
+                }
+
+
+                /* =========================================
+                   ACCOUNT LOADING
+                   ========================================= */
+
+                .wfesc-account-loading {
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    gap: 13px;
+
+                    min-height: 125px;
+
+                    opacity: .95;
+
+                    animation:
+                        wfescLoadingAppear
+                        .35s ease;
+
+                }
+
+
+                .wfesc-loading-spinner {
+
+                    width: 27px;
+
+                    height: 27px;
+
+                    border:
+                        3px solid
+                        rgba(255,255,255,.12);
+
+                    border-top-color:
+                        currentColor;
+
+                    border-radius: 50%;
+
+                    animation:
+                        wfescSpin
+                        .75s linear infinite;
+
+                }
+
+
+                .wfesc-loading-text {
+
+                    font-size: 14px;
+
+                    opacity: .72;
+
+                }
+
+
+                /* =========================================
+                   MODAL
+                   ========================================= */
+
+                .wfesc-auth-modal {
+
+                    opacity: 0;
+
+                    transition:
+                        opacity .22s ease;
+
+                }
+
+
+                .wfesc-auth-modal.show {
+
+                    opacity: 1;
+
+                }
+
+
+                .wfesc-auth-modal-box {
+
+                    opacity: 0;
+
+                    transform:
+                        translateY(12px)
+                        scale(.97);
+
+                    transition:
+                        opacity .25s ease,
+                        transform .25s ease;
+
+                }
+
+
+                .wfesc-auth-modal.show
+                .wfesc-auth-modal-box {
+
+                    opacity: 1;
+
+                    transform:
+                        translateY(0)
+                        scale(1);
+
+                }
+
+
+                .wfesc-auth-modal.wfesc-modal-closing {
+
+                    opacity: 0;
+
+                }
+
+
+                .wfesc-auth-modal.wfesc-modal-closing
+                .wfesc-auth-modal-box {
+
+                    opacity: 0;
+
+                    transform:
+                        translateY(10px)
+                        scale(.97);
+
+                }
+
+
+                /* =========================================
+                   ERROR ANIMATION
+                   ========================================= */
+
+                .wfesc-modal-error {
+
+                    animation:
+                        wfescModalShake
+                        .42s ease;
+
+                }
+
+
+                .wfesc-error-shake {
+
+                    animation:
+                        wfescFieldShake
+                        .42s ease;
+
+                }
+
+
+                .wfesc-input-message {
+
+                    display: block;
+
+                    opacity: 0;
+
+                    max-height: 0;
+
+                    overflow: hidden;
+
+                    transition:
+                        opacity .2s ease,
+                        max-height .2s ease;
+
+                }
+
+
+                .wfesc-input-message.show {
+
+                    opacity: 1;
+
+                    max-height: 50px;
+
+                }
+
+
+                /* =========================================
+                   PASSWORD
+                   ========================================= */
+
+                .wfesc-password-wrap {
+
+                    position: relative;
+
+                }
+
+
+                .wfesc-password-container {
+
+                    position: relative;
+
+                }
+
+
+                .wfesc-password-container input {
+
+                    padding-left: 52px !important;
+
+                }
+
+
+                .wfesc-password-eye {
+
+                    position: absolute;
+
+                    left: 7px;
+
+                    top: 50%;
+
+                    transform:
+                        translateY(-50%);
+
+                    width: 36px;
+
+                    height: 36px;
+
+                    padding: 0;
+
+                    border: 0;
+
+                    background: transparent;
+
+                    display: none;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    cursor: pointer;
+
+                    font-size: 19px;
+
+                    z-index: 4;
+
+                }
+
+
+                .wfesc-password-eye:hover {
+
+                    transform:
+                        translateY(-50%)
+                        scale(1.08);
+
+                }
+
+
+                /* =========================================
+                   LOADING BUTTON
+                   ========================================= */
+
+                .wfesc-button-loading {
+
+                    pointer-events: none;
+
+                    opacity: .86;
+
+                    display: inline-flex !important;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    gap: 8px;
+
+                }
+
+
+                .wfesc-button-spinner {
+
+                    width: 15px;
+
+                    height: 15px;
+
+                    border:
+                        2px solid
+                        rgba(255,255,255,.28);
+
+                    border-top-color:
+                        currentColor;
+
+                    border-radius: 50%;
+
+                    animation:
+                        wfescSpin
+                        .65s linear infinite;
+
+                }
+
+
+                /* =========================================
+                   SPECIAL VIEWS
+                   ========================================= */
