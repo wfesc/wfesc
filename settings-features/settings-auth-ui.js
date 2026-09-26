@@ -6,6 +6,8 @@
 
 (function () {
 
+    alert("AUTH UI اشتغل");
+
     "use strict";
 
     if (window.WFESCSettingsAuthUI) {
