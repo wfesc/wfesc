@@ -26,12 +26,12 @@
         "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
     const SUPABASE_KEY =
-        "sb_publishable_5b7pTBiGY2D6vDLRsWgVzA_X926lBeM";
+        "sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
 
 
     /* =====================================================
        AUTH CONFIG
-    ===================================================== */
+       ===================================================== */
 
     const AUTH_CONFIG = {
 
