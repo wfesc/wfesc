@@ -1,9 +1,3 @@
-
-/*
- * WFESC Settings Auth UI
- * Complete UI controller for settings.html
- */
-
 (function () {
     "use strict";
 
@@ -13,1763 +7,1631 @@
 
     window.WFESCSettingsAuthUI = true;
 
+    /*
+     * ============================================================
+     * WFESC SETTINGS AUTH UI
+     * واجهة الحساب داخل صفحة الإعدادات
+     * ============================================================
+     */
+
     const CONFIG =
         window.WFESCSettingsAuthConfig || {};
 
-    const PASSWORD_MIN = 6;
-    const PASSWORD_MAX = 16;
-
-    const USERNAME_MIN =
-        Number(
-            CONFIG.username &&
-            CONFIG.username.minLength
-        ) || 3;
-
-    const USERNAME_MAX =
-        Number(
-            CONFIG.username &&
-            CONFIG.username.maxLength
-        ) || 9;
+    const AUTH =
+        window.WFESCSettingsAuth || null;
 
     const SETTINGS_URL =
         "https://wfesc.github.io/wfesc/settings.html";
 
-    let busy = false;
-    let verificationTimer = null;
+    const USERNAME_MIN =
+        Number(CONFIG.username?.minLength || 3);
 
-    /* =========================================
-       ROOT
-    ========================================= */
+    const USERNAME_MAX =
+        Number(CONFIG.username?.maxLength || 9);
 
-    function getRoot() {
+    const PASSWORD_MIN = 6;
+    const PASSWORD_MAX = 16;
 
-        return (
-            document.querySelector(
-                "[data-wfesc-auth]"
-            ) ||
-            document.querySelector(
-                "#wfesc-auth"
-            ) ||
-            document.querySelector(
-                "#wfesc-settings-auth-root"
-            )
-        );
+    let root = null;
+    let currentUser = null;
+    let currentProfile = null;
+    let initialized = false;
 
+    /*
+     * ============================================================
+     * HELPERS
+     * ============================================================
+     */
+
+    function qs(selector) {
+        return root
+            ? root.querySelector(selector)
+            : null;
     }
 
-    function ensureRoot() {
-
-        let root = getRoot();
-
-        if (!root) {
-
-            root =
-                document.createElement("div");
-
-            root.id =
-                "wfesc-settings-auth-root";
-
-            document.body.appendChild(
-                root
-            );
-
-        }
-
-        return root;
-
+    function qsa(selector) {
+        return root
+            ? Array.from(root.querySelectorAll(selector))
+            : [];
     }
-
-    /* =========================================
-   BUILD UI
-========================================= */
-
-function buildUI() {
-
-    const root = ensureRoot();
-
-    if (
-        root.querySelector(
-            "#wfesc-auth-main"
-        ) ||
-        root.querySelector(
-            "#wfesc-login-form"
-        )
-    ) {
-        return;
-    }
-
-    root.innerHTML = `
-        <div class="wfesc-auth-shell">
-
-            <div class="wfesc-auth-header">
-                <div class="wfesc-auth-logo">
-                    WFESC
-                </div>
-
-                <h1>حساب WFESC</h1>
-
-                <p>
-                    سجّل دخولك أو أنشئ حسابًا جديدًا
-                </p>
-            </div>
-
-            <div
-                id="wfesc-loading"
-                class="wfesc-loading"
-                style="display:none;"
-            >
-                جاري التحميل...
-            </div>
-
-            <div
-                id="wfesc-email-verification"
-                class="wfesc-verification"
-                style="display:none;"
-            ></div>
-
-            <div
-                id="wfesc-auth-status"
-                class="wfesc-status"
-                style="display:none;"
-            ></div>
-
-            <div id="wfesc-auth-main">
-
-                <div class="wfesc-tabs">
-
-                    <button
-                        type="button"
-                        id="wfesc-login-tab"
-                        class="wfesc-tab active"
-                    >
-                        تسجيل الدخول
-                    </button>
-
-                    <button
-                        type="button"
-                        id="wfesc-register-tab"
-                        class="wfesc-tab"
-                    >
-                        إنشاء حساب
-                    </button>
-
-                </div>
-
-                <!-- LOGIN -->
-
-                <form
-                    id="wfesc-login-form"
-                    class="wfesc-form"
-                >
-
-                    <label>
-                        البريد الإلكتروني
-                    </label>
-
-                    <input
-                        id="wfesc-login-email"
-                        type="email"
-                        autocomplete="email"
-                        placeholder="البريد الإلكتروني"
-                    >
-
-                    <div
-                        id="wfesc-login-email-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <label>
-                        كلمة المرور
-                    </label>
-
-                    <div class="wfesc-password-box">
-
-                        <input
-                            id="wfesc-login-password"
-                            type="password"
-                            autocomplete="current-password"
-                            placeholder="كلمة المرور"
-                        >
-
-                        <button
-                            type="button"
-                            id="wfesc-login-password-toggle"
-                            class="wfesc-eye"
-                        >🙉</button>
-
-                    </div>
-
-                    <div
-                        id="wfesc-login-password-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <button
-                        type="submit"
-                        id="wfesc-login-submit"
-                        class="wfesc-primary-button"
-                    >
-                        تسجيل الدخول
-                    </button>
-
-                    <button
-                        type="button"
-                        id="wfesc-forgot-password"
-                        class="wfesc-link-button"
-                    >
-                        نسيت كلمة المرور؟
-                    </button>
-
-                </form>
-
-
-                <!-- REGISTER -->
-
-                <form
-                    id="wfesc-register-form"
-                    class="wfesc-form"
-                    style="display:none;"
-                >
-
-                    <label>
-                        الاسم
-                    </label>
-
-                    <input
-                        id="wfesc-register-name"
-                        type="text"
-                        autocomplete="name"
-                        placeholder="اسمك"
-                    >
-
-                    <div
-                        id="wfesc-register-name-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <label>
-                        اسم المستخدم
-                    </label>
-
-                    <input
-                        id="wfesc-register-username"
-                        type="text"
-                        maxlength="${USERNAME_MAX}"
-                        autocomplete="username"
-                        placeholder="مثال: ali12"
-                    >
-
-                    <small class="wfesc-hint">
-                        ${USERNAME_MIN} إلى ${USERNAME_MAX}
-                        أحرف أو أرقام إنجليزية فقط
-                    </small>
-
-                    <div
-                        id="wfesc-register-username-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <label>
-                        البريد الإلكتروني
-                    </label>
-
-                    <input
-                        id="wfesc-register-email"
-                        type="email"
-                        autocomplete="email"
-                        placeholder="البريد الإلكتروني"
-                    >
-
-                    <div
-                        id="wfesc-register-email-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <label>
-                        كلمة المرور
-                    </label>
-
-                    <div class="wfesc-password-box">
-
-                        <input
-                            id="wfesc-register-password"
-                            type="password"
-                            autocomplete="new-password"
-                            placeholder="6 إلى 16 خانة"
-                        >
-
-                        <button
-                            type="button"
-                            id="wfesc-register-password-toggle"
-                            class="wfesc-eye"
-                        >🙉</button>
-
-                    </div>
-
-                    <div
-                        id="wfesc-register-password-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <label>
-                        تأكيد كلمة المرور
-                    </label>
-
-                    <div class="wfesc-password-box">
-
-                        <input
-                            id="wfesc-register-confirm"
-                            type="password"
-                            autocomplete="new-password"
-                            placeholder="أعد كتابة كلمة المرور"
-                        >
-
-                        <button
-                            type="button"
-                            id="wfesc-register-confirm-toggle"
-                            class="wfesc-eye"
-                        >🙉</button>
-
-                    </div>
-
-                    <div
-                        id="wfesc-register-confirm-error"
-                        class="wfesc-field-error"
-                    ></div>
-
-
-                    <button
-                        type="submit"
-                        id="wfesc-register-submit"
-                        class="wfesc-primary-button"
-                    >
-                        إنشاء الحساب
-                    </button>
-
-                </form>
-
-            </div>
-
-
-            <!-- RECOVERY EMAIL -->
-
-            <div
-                id="wfesc-recovery-card"
-                style="display:none;"
-            >
-
-                <h2>إعادة تعيين كلمة المرور</h2>
-
-                <p>
-                    أدخل بريدك الإلكتروني لإرسال رابط إعادة التعيين.
-                </p>
-
-                <input
-                    id="wfesc-recovery-email"
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                >
-
-                <div
-                    id="wfesc-recovery-email-error"
-                    class="wfesc-field-error"
-                ></div>
-
-                <button
-                    type="button"
-                    id="wfesc-recovery-submit"
-                    class="wfesc-primary-button"
-                >
-                    إرسال الرابط
-                </button>
-
-                <button
-                    type="button"
-                    id="wfesc-recovery-back"
-                    class="wfesc-link-button"
-                >
-                    العودة لتسجيل الدخول
-                </button>
-
-            </div>
-
-
-            <!-- RECOVERY PASSWORD -->
-
-            <div
-                id="wfesc-recovery-password-card"
-                style="display:none;"
-            >
-
-                <h2>كلمة مرور جديدة</h2>
-
-                <div class="wfesc-password-box">
-
-                    <input
-                        id="wfesc-recovery-password"
-                        type="password"
-                        placeholder="كلمة المرور الجديدة"
-                    >
-
-                    <button
-                        type="button"
-                        id="wfesc-recovery-password-toggle"
-                        class="wfesc-eye"
-                    >🙉</button>
-
-                </div>
-
-                <div
-                    id="wfesc-recovery-password-error"
-                    class="wfesc-field-error"
-                ></div>
-
-
-                <div class="wfesc-password-box">
-
-                    <input
-                        id="wfesc-recovery-confirm"
-                        type="password"
-                        placeholder="تأكيد كلمة المرور"
-                    >
-
-                    <button
-                        type="button"
-                        id="wfesc-recovery-confirm-toggle"
-                        class="wfesc-eye"
-                    >🙉</button>
-
-                </div>
-
-                <div
-                    id="wfesc-recovery-confirm-error"
-                    class="wfesc-field-error"
-                ></div>
-
-
-                <button
-                    type="button"
-                    id="wfesc-recovery-password-submit"
-                    class="wfesc-primary-button"
-                >
-                    تغيير كلمة المرور
-                </button>
-
-            </div>
-
-
-            <!-- ACCOUNT -->
-
-            <div
-                id="wfesc-account-card"
-                style="display:none;"
-            >
-
-                <div class="wfesc-account-avatar">
-                    WF
-                </div>
-
-                <h2 id="wfesc-account-name">
-                    WFESC
-                </h2>
-
-                <div
-                    id="wfesc-account-username"
-                    class="wfesc-account-username"
-                ></div>
-
-                <span
-                    id="wfesc-account-verified"
-                    style="display:none;"
-                >✓</span>
-
-                <div
-                    id="wfesc-account-email"
-                    class="wfesc-account-email"
-                ></div>
-
-                <div
-                    id="wfesc-account-status-text"
-                ></div>
-
-                <button
-                    type="button"
-                    id="wfesc-profile-button"
-                    class="wfesc-primary-button"
-                >
-                    إدارة الحساب
-                </button>
-
-                <button
-                    type="button"
-                    id="wfesc-change-password-button"
-                    class="wfesc-secondary-button"
-                >
-                    تغيير كلمة المرور
-                </button>
-
-                <button
-                    type="button"
-                    id="wfesc-logout-button"
-                    class="wfesc-secondary-button"
-                >
-                    تسجيل الخروج
-                </button>
-
-                <button
-                    type="button"
-                    id="wfesc-delete-button"
-                    class="wfesc-danger-button"
-                >
-                    حذف الحساب
-                </button>
-
-            </div>
-
-        </div>
-    `;
-}
-    
-    /* =========================================
-       ELEMENTS
-    ========================================= */
-
-    function getElements() {
-
-        const q = function (id) {
-            return document.getElementById(id);
-        };
-
-        return {
-
-            root:
-                q(
-                    "wfesc-settings-auth-root"
-                ) ||
-                getRoot(),
-
-            loginTab:
-                q("wfesc-login-tab"),
-
-            registerTab:
-                q("wfesc-register-tab"),
-
-            loginForm:
-                q("wfesc-login-form"),
-
-            registerForm:
-                q("wfesc-register-form"),
-
-            loginEmail:
-                q("wfesc-login-email"),
-
-            loginEmailError:
-                q("wfesc-login-email-error"),
-
-            loginPassword:
-                q("wfesc-login-password"),
-
-            loginPasswordError:
-                q("wfesc-login-password-error"),
-
-            loginPasswordToggle:
-                q(
-                    "wfesc-login-password-toggle"
-                ),
-
-            loginSubmit:
-                q("wfesc-login-submit"),
-
-            forgotPassword:
-                q("wfesc-forgot-password"),
-
-            registerName:
-                q("wfesc-register-name"),
-
-            registerNameError:
-                q(
-                    "wfesc-register-name-error"
-                ),
-
-            registerUsername:
-                q(
-                    "wfesc-register-username"
-                ),
-
-            registerUsernameError:
-                q(
-                    "wfesc-register-username-error"
-                ),
-
-            registerEmail:
-                q("wfesc-register-email"),
-
-            registerEmailError:
-                q(
-                    "wfesc-register-email-error"
-                ),
-
-            registerPassword:
-                q(
-                    "wfesc-register-password"
-                ),
-
-            registerPasswordError:
-                q(
-                    "wfesc-register-password-error"
-                ),
-
-            registerPasswordToggle:
-                q(
-                    "wfesc-register-password-toggle"
-                ),
-
-            registerConfirm:
-                q("wfesc-register-confirm"),
-
-            registerConfirmError:
-                q(
-                    "wfesc-register-confirm-error"
-                ),
-
-            registerConfirmToggle:
-                q(
-                    "wfesc-register-confirm-toggle"
-                ),
-
-            registerSubmit:
-                q("wfesc-register-submit"),
-
-            recoveryCard:
-                q("wfesc-recovery-card"),
-
-            recoveryEmail:
-                q("wfesc-recovery-email"),
-
-            recoveryEmailError:
-                q(
-                    "wfesc-recovery-email-error"
-                ),
-
-            recoverySubmit:
-                q("wfesc-recovery-submit"),
-
-            recoveryBack:
-                q("wfesc-recovery-back"),
-
-            recoveryPasswordCard:
-                q(
-                    "wfesc-recovery-password-card"
-                ),
-
-            recoveryPassword:
-                q(
-                    "wfesc-recovery-password"
-                ),
-
-            recoveryPasswordToggle:
-                q(
-                    "wfesc-recovery-password-toggle"
-                ),
-
-            recoveryPasswordError:
-                q(
-                    "wfesc-recovery-password-error"
-                ),
-
-            recoveryConfirm:
-                q(
-                    "wfesc-recovery-confirm"
-                ),
-
-            recoveryConfirmToggle:
-                q(
-                    "wfesc-recovery-confirm-toggle"
-                ),
-
-            recoveryConfirmError:
-                q(
-                    "wfesc-recovery-confirm-error"
-                ),
-
-            recoveryPasswordSubmit:
-                q(
-                    "wfesc-recovery-password-submit"
-                ),
-
-            accountCard:
-                q("wfesc-account-card"),
-
-            accountAvatar:
-                q("wfesc-account-avatar"),
-
-            accountName:
-                q("wfesc-account-name"),
-
-            accountVerified:
-                q(
-                    "wfesc-account-verified"
-                ),
-
-            accountUsername:
-                q(
-                    "wfesc-account-username"
-                ),
-
-            accountEmail:
-                q(
-                    "wfesc-account-email"
-                ),
-
-            profileButton:
-                q("wfesc-profile-button"),
-
-            changePasswordButton:
-                q(
-                    "wfesc-change-password-button"
-                ),
-
-            logoutButton:
-                q("wfesc-logout-button"),
-
-            deleteButton:
-                q("wfesc-delete-button"),
-
-            accountStatusText:
-                q(
-                    "wfesc-account-status-text"
-                ),
-
-            status:
-                q("wfesc-auth-status"),
-
-            verification:
-                q(
-                    "wfesc-email-verification"
-                ),
-
-            loading:
-                q("wfesc-loading")
-
-        };
-
-    }
-
-    /* =========================================
-       AUTH ACCESS
-    ========================================= */
 
     function getAuth() {
+        return window.WFESCSettingsAuth || AUTH;
+    }
+
+    function safeText(value) {
+        return String(value ?? "");
+    }
+
+    function sanitizeUsername(value) {
+        return safeText(value)
+            .replace(/[^A-Za-z0-9]/g, "")
+            .slice(0, USERNAME_MAX);
+    }
+
+    function validUsername(value) {
+        return new RegExp(
+            "^[A-Za-z0-9]{" +
+            USERNAME_MIN +
+            "," +
+            USERNAME_MAX +
+            "}$"
+        ).test(value);
+    }
+
+    function validEmail(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(safeText(value).trim());
+    }
+
+    function validPassword(value) {
+        return (
+            typeof value === "string" &&
+            value.length >= PASSWORD_MIN &&
+            value.length <= PASSWORD_MAX
+        );
+    }
+
+    function getErrorMessage(error) {
+        if (!error) {
+            return "حدث خطأ غير معروف.";
+        }
+
+        if (typeof error === "string") {
+            return error;
+        }
 
         return (
-            window.WFESCSettingsAuth ||
-            null
+            error.message ||
+            error.error_description ||
+            error.msg ||
+            "حدث خطأ غير معروف."
         );
-
     }
 
-    async function getCurrentUser() {
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
-            return null;
-        }
-
-        if (
-            typeof auth.getCurrentUser ===
-            "function"
-        ) {
-
-            return await auth.getCurrentUser();
-
-        }
-
-        if (
-            typeof auth.getUser ===
-            "function"
-        ) {
-
-            return await auth.getUser();
-
-        }
-
-        if (
-            typeof auth.restoreSession ===
-            "function"
-        ) {
-
-            const result =
-                await auth.restoreSession();
-
-            if (
-                result &&
-                result.user
-            ) {
-
-                return result.user;
-
-            }
-
-        }
-
-        return null;
-
-    }
-
-    async function getCurrentProfile(
-        user
-    ) {
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
-            return null;
-        }
-
-        if (
-            typeof auth.getCurrentProfile ===
-            "function"
-        ) {
-
-            return await auth.getCurrentProfile(
-                user
-            );
-
-        }
-
-        if (
-            typeof auth.getProfile ===
-            "function"
-        ) {
-
-            return await auth.getProfile(
-                user
-            );
-
-        }
-
-        return null;
-
-    }
-
-    /* =========================================
-       HELPERS
-    ========================================= */
-
-    function sanitizeUsername(
-        value
-    ) {
-
-        return String(
-            value || ""
-        )
-            .replace(
-                /[^A-Za-z0-9]/g,
-                ""
-            )
-            .slice(
-                0,
-                USERNAME_MAX
-            );
-
-    }
-
-    function displayUsername(
-        value
-    ) {
-
-        const clean =
-            sanitizeUsername(value);
-
-        return clean
-            ? "@" + clean
-            : "";
-
-    }
-
-    function escapeHTML(
-        value
-    ) {
-
-        return String(
-            value == null
-                ? ""
-                : value
-        )
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-
-    }
-
-    function validateEmail(
-        email
-    ) {
-
-        const value =
-            String(
-                email || ""
-            ).trim();
-
-        if (!value) {
-
-            return {
-                valid: false,
-                message:
-                    "يرجى إدخال بريدك الإلكتروني."
-            };
-
-        }
-
-        if (
-            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
-                .test(value)
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "يرجى إدخال بريد إلكتروني صحيح."
-            };
-
-        }
-
-        return {
-            valid: true,
-            value: value
-        };
-
-    }
-
-    function validateUsername(
-        username
-    ) {
-
-        const value =
-            sanitizeUsername(
-                username
-            );
-
-        if (
-            value.length <
-            USERNAME_MIN
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "اسم المستخدم يجب أن يتكون من " +
-                    USERNAME_MIN +
-                    " إلى " +
-                    USERNAME_MAX +
-                    " أحرف أو أرقام."
-            };
-
-        }
-
-        return {
-            valid: true,
-            value: value
-        };
-
-    }
-
-    function validatePassword(
-        password
-    ) {
-
-        const value =
-            String(
-                password || ""
-            );
-
-        if (
-            value.length <
-            PASSWORD_MIN
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "كلمة المرور يجب أن تكون من 6 إلى 16 خانة."
-            };
-
-        }
-
-        if (
-            value.length >
-            PASSWORD_MAX
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "كلمة المرور يجب ألا تتجاوز 16 خانة."
-            };
-
-        }
-
-        return {
-            valid: true,
-            value: value
-        };
-
-    }
-
-    /* =========================================
-       ERRORS
-    ========================================= */
-
-    function setFieldError(
-        input,
-        errorElement,
-        message
-    ) {
-
-        if (input) {
-
-            input.classList.add(
-                "wfesc-input-error"
-            );
-
-            input.setAttribute(
-                "aria-invalid",
-                "true"
-            );
-
-        }
-
-        if (errorElement) {
-
-            errorElement.textContent =
-                message || "";
-
-            errorElement.style.display =
-                message
-                    ? "block"
-                    : "none";
-
-        }
-
-    }
-
-    function clearFieldError(
-        input,
-        errorElement
-    ) {
-
-        if (input) {
-
-            input.classList.remove(
-                "wfesc-input-error"
-            );
-
-            input.removeAttribute(
-                "aria-invalid"
-            );
-
-        }
-
-        if (errorElement) {
-
-            errorElement.textContent =
-                "";
-
-            errorElement.style.display =
-                "none";
-
-        }
-
-    }
-
-    function clearAllErrors() {
-
-        const e =
-            getElements();
-
-        clearFieldError(
-            e.loginEmail,
-            e.loginEmailError
-        );
-
-        clearFieldError(
-            e.loginPassword,
-            e.loginPasswordError
-        );
-
-        clearFieldError(
-            e.registerName,
-            e.registerNameError
-        );
-
-        clearFieldError(
-            e.registerUsername,
-            e.registerUsernameError
-        );
-
-        clearFieldError(
-            e.registerEmail,
-            e.registerEmailError
-        );
-
-        clearFieldError(
-            e.registerPassword,
-            e.registerPasswordError
-        );
-
-        clearFieldError(
-            e.registerConfirm,
-            e.registerConfirmError
-        );
-
-        clearFieldError(
-            e.recoveryEmail,
-            e.recoveryEmailError
-        );
-
-        clearFieldError(
-            e.recoveryPassword,
-            e.recoveryPasswordError
-        );
-
-        clearFieldError(
-            e.recoveryConfirm,
-            e.recoveryConfirmError
-        );
-
-    }
-
-    function shake(
-        element
-    ) {
-
-        if (!element) {
-            return;
-        }
+    function shake(element) {
+        if (!element) return;
 
         element.classList.remove(
-            "wfesc-shake"
+            "wfesc-auth-shake"
         );
 
         void element.offsetWidth;
 
         element.classList.add(
-            "wfesc-shake"
+            "wfesc-auth-shake"
         );
 
-        setTimeout(
-            function () {
-
-                element.classList.remove(
-                    "wfesc-shake"
-                );
-
-            },
-            500
-        );
-
+        setTimeout(function () {
+            element.classList.remove(
+                "wfesc-auth-shake"
+            );
+        }, 450);
     }
 
-    /* =========================================
-       STATUS
-    ========================================= */
+    function shakeMany(elements) {
+        elements.forEach(shake);
+    }
 
-    function showStatus(
-        message,
-        type
-    ) {
+    function setMessage(element, text, type) {
+        if (!element) return;
 
-        const e =
-            getElements();
+        element.textContent = text || "";
 
-        if (!e.status) {
-            return;
-        }
-
-        e.status.textContent =
-            message || "";
-
-        e.status.className =
-            "wfesc-status " +
+        element.className =
+            "wfesc-auth-message " +
             (type || "");
-
-        e.status.style.display =
-            message
-                ? "block"
-                : "none";
-
     }
 
-    function hideStatus() {
+    function clearMessage(element) {
+        if (!element) return;
 
-        const e =
-            getElements();
+        element.textContent = "";
+        element.className =
+            "wfesc-auth-message";
+    }
 
-        if (!e.status) {
+    function setButtonLoading(button, loading, text) {
+        if (!button) return;
+
+        if (loading) {
+            if (!button.dataset.originalText) {
+                button.dataset.originalText =
+                    button.textContent;
+            }
+
+            button.disabled = true;
+            button.textContent =
+                text || "جارٍ التنفيذ...";
+        } else {
+            button.disabled = false;
+
+            button.textContent =
+                button.dataset.originalText ||
+                button.textContent;
+
+            delete button.dataset.originalText;
+        }
+    }
+
+    function showStatus(text, type) {
+        let status =
+            document.getElementById(
+                "wfesc-auth-status"
+            );
+
+        if (!status) {
+            status = document.createElement("div");
+
+            status.id =
+                "wfesc-auth-status";
+
+            status.className =
+                "settings-status";
+
+            document.body.appendChild(status);
+        }
+
+        status.textContent = text || "";
+
+        status.classList.remove(
+            "show",
+            "error",
+            "success"
+        );
+
+        if (type) {
+            status.classList.add(type);
+        }
+
+        void status.offsetWidth;
+
+        status.classList.add("show");
+
+        clearTimeout(
+            status._wfescTimer
+        );
+
+        status._wfescTimer =
+            setTimeout(function () {
+                status.classList.remove(
+                    "show"
+                );
+            }, 4500);
+    }
+
+    function closeAllModals() {
+        qsa(".modal").forEach(function (modal) {
+            modal.classList.remove("show");
+        });
+    }
+
+    /*
+     * ============================================================
+     * CSS
+     * ============================================================
+     */
+
+    function injectCSS() {
+        if (
+            document.getElementById(
+                "wfesc-settings-auth-ui-css"
+            )
+        ) {
             return;
         }
 
-        e.status.textContent =
-            "";
+        const style =
+            document.createElement("style");
 
-        e.status.style.display =
-            "none";
+        style.id =
+            "wfesc-settings-auth-ui-css";
 
-        e.status.className =
-            "wfesc-status";
+        style.textContent = `
+            #settingsAccountApp {
+                width: 100%;
+            }
 
-    }
+            .wfesc-auth-shell {
+                width: 100%;
+            }
 
-    /* =========================================
-       LOADING
-    ========================================= */
+            .wfesc-auth-tabs {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin-bottom: 15px;
+            }
 
-    function setLoading(
-        value
-    ) {
+            .wfesc-auth-tab {
+                min-height: 45px;
+                border: 1px solid #292929;
+                border-radius: 13px;
+                background: #171717;
+                color: #999;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                transition: .2s;
+            }
 
-        busy =
-            Boolean(value);
+            .wfesc-auth-tab.active {
+                background: #eee;
+                color: #050505;
+                border-color: #eee;
+            }
 
-        const e =
-            getElements();
+            .wfesc-auth-panel {
+                display: none;
+            }
 
-        if (e.loading) {
+            .wfesc-auth-panel.active {
+                display: block;
+            }
 
-            e.loading.style.display =
-                busy
-                    ? "flex"
-                    : "none";
+            .wfesc-auth-form-group {
+                margin-bottom: 13px;
+            }
 
-        }
+            .wfesc-auth-form-group label {
+                display: block;
+                color: #aaa;
+                font-size: 12px;
+                margin-bottom: 7px;
+            }
 
-        [
-            e.loginSubmit,
-            e.registerSubmit,
-            e.recoverySubmit,
-            e.recoveryPasswordSubmit
-        ].forEach(
-            function (button) {
+            .wfesc-auth-input-wrap {
+                position: relative;
+            }
 
-                if (button) {
+            .wfesc-auth-input {
+                width: 100%;
+                height: 47px;
+                border-radius: 13px;
+                border: 1px solid #292929;
+                outline: none;
+                background: #181818;
+                color: #fff;
+                padding: 0 13px;
+                font-size: 14px;
+                transition: .2s;
+            }
 
-                    button.disabled =
-                        busy;
+            .wfesc-auth-input:focus {
+                border-color: #777;
+            }
 
+            .wfesc-auth-input.error {
+                border-color: #a84b4b;
+            }
+
+            .wfesc-auth-password-toggle {
+                position: absolute;
+                left: 3px;
+                top: 3px;
+                width: 40px;
+                height: 40px;
+                border: 0;
+                background: transparent;
+                color: #aaa;
+                cursor: pointer;
+                font-size: 17px;
+            }
+
+            .wfesc-auth-error {
+                min-height: 17px;
+                color: #df7777;
+                font-size: 11px;
+                margin-top: 5px;
+                line-height: 1.4;
+            }
+
+            .wfesc-auth-message {
+                min-height: 20px;
+                text-align: center;
+                color: #888;
+                font-size: 12px;
+                line-height: 1.6;
+                margin-top: 10px;
+            }
+
+            .wfesc-auth-message.error {
+                color: #df7777;
+            }
+
+            .wfesc-auth-message.success {
+                color: #aaa;
+            }
+
+            .wfesc-auth-button {
+                width: 100%;
+                min-height: 50px;
+                border-radius: 13px;
+                border: 1px solid #292929;
+                background: #171717;
+                color: #eee;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                transition: .2s;
+                margin-top: 5px;
+            }
+
+            .wfesc-auth-button.primary {
+                background: #eee;
+                color: #050505;
+                border-color: #eee;
+            }
+
+            .wfesc-auth-button:disabled {
+                opacity: .55;
+                cursor: wait;
+            }
+
+            .wfesc-auth-link {
+                width: 100%;
+                min-height: 42px;
+                border: 0;
+                background: transparent;
+                color: #888;
+                cursor: pointer;
+                font-size: 12px;
+            }
+
+            .wfesc-auth-account {
+                padding: 2px 0;
+            }
+
+            .wfesc-auth-profile {
+                display: flex;
+                align-items: center;
+                gap: 13px;
+                margin-bottom: 15px;
+            }
+
+            .wfesc-auth-avatar-wrap {
+                width: 62px;
+                height: 62px;
+                min-width: 62px;
+                border-radius: 50%;
+                overflow: hidden;
+                border: 1px solid #303030;
+                background: #1b1b1b;
+            }
+
+            .wfesc-auth-avatar {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: none;
+            }
+
+            .wfesc-auth-avatar-fallback {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #eee;
+                font-size: 23px;
+                font-weight: bold;
+            }
+
+            .wfesc-auth-account-info {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .wfesc-auth-account-name {
+                font-size: 17px;
+                font-weight: bold;
+                margin-bottom: 4px;
+            }
+
+            .wfesc-auth-account-username {
+                color: #aaa;
+                font-size: 12px;
+                direction: ltr;
+                text-align: right;
+            }
+
+            .wfesc-auth-account-email {
+                color: #777;
+                font-size: 11px;
+                margin-top: 4px;
+                direction: ltr;
+                text-align: right;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .wfesc-auth-verified {
+                color: #aaa;
+                font-size: 10px;
+                margin-top: 5px;
+            }
+
+            .wfesc-auth-action {
+                width: 100%;
+                min-height: 58px;
+                padding: 10px 14px;
+                border: 1px solid #292929;
+                border-radius: 13px;
+                background: #171717;
+                color: #eee;
+                text-align: right;
+                cursor: pointer;
+                margin-top: 8px;
+            }
+
+            .wfesc-auth-action strong {
+                display: block;
+                font-size: 13px;
+            }
+
+            .wfesc-auth-action span {
+                display: block;
+                color: #777;
+                font-size: 10px;
+                margin-top: 4px;
+            }
+
+            .wfesc-auth-action.danger {
+                color: #df7777;
+            }
+
+            .wfesc-auth-verification {
+                display: none;
+                padding: 12px;
+                margin-bottom: 13px;
+                border: 1px solid #303030;
+                border-radius: 13px;
+                background: #171717;
+                color: #aaa;
+                text-align: center;
+                font-size: 11px;
+                line-height: 1.7;
+                animation: wfescVerificationPulse 1s infinite;
+            }
+
+            .wfesc-auth-verification.show {
+                display: block;
+            }
+
+            @keyframes wfescVerificationPulse {
+                0%,100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: .45;
+                }
+            }
+
+            .wfesc-auth-loading {
+                display: none;
+                padding: 14px;
+                text-align: center;
+                color: #888;
+                font-size: 12px;
+            }
+
+            .wfesc-auth-loading.show {
+                display: block;
+            }
+
+            .wfesc-auth-shake {
+                animation: wfescAuthShake .4s ease;
+            }
+
+            @keyframes wfescAuthShake {
+                0%,100% {
+                    transform: translateX(0);
+                }
+                20% {
+                    transform: translateX(6px);
+                }
+                40% {
+                    transform: translateX(-6px);
+                }
+                60% {
+                    transform: translateX(4px);
+                }
+                80% {
+                    transform: translateX(-3px);
+                }
+            }
+
+            .wfesc-auth-debug {
+                margin-top: 12px;
+                padding: 10px;
+                border-radius: 10px;
+                background: #0d0d0d;
+                border: 1px solid #242424;
+                color: #666;
+                font-size: 9px;
+                line-height: 1.5;
+                direction: ltr;
+                text-align: left;
+                word-break: break-word;
+            }
+
+            .wfesc-auth-modal-note {
+                text-align: center;
+                color: #777;
+                font-size: 11px;
+                line-height: 1.6;
+                margin-top: 9px;
+            }
+
+            @media (max-width: 500px) {
+                .wfesc-auth-tabs {
+                    gap: 6px;
                 }
 
+                .wfesc-auth-input {
+                    height: 49px;
+                }
             }
-        );
+        `;
 
+        document.head.appendChild(style);
     }
 
-    /* =========================================
-       MODES
-    ========================================= */
+    /*
+     * ============================================================
+     * BUILD UI
+     * ============================================================
+     */
 
-    function setMode(
-        mode
-    ) {
-
-        const e =
-            getElements();
-
-        const login =
-            mode === "login";
-
-        if (e.loginTab) {
-
-            e.loginTab.classList.toggle(
-                "active",
-                login
+    function ensureRoot() {
+        root =
+            document.getElementById(
+                "settingsAccountApp"
             );
 
-        }
-
-        if (e.registerTab) {
-
-            e.registerTab.classList.toggle(
-                "active",
-                !login
+        if (!root) {
+            console.error(
+                "WFESC: #settingsAccountApp غير موجود."
             );
 
+            return false;
         }
 
-        if (e.loginForm) {
-
-            e.loginForm.style.display =
-                login
-                    ? "block"
-                    : "none";
-
-        }
-
-        if (e.registerForm) {
-
-            e.registerForm.style.display =
-                login
-                    ? "none"
-                    : "block";
-
-        }
-
-        if (e.recoveryCard) {
-
-            e.recoveryCard.style.display =
-                "none";
-
-        }
-
-        if (
-            e.recoveryPasswordCard
-        ) {
-
-            e.recoveryPasswordCard.style.display =
-                "none";
-
-        }
-
-        hideStatus();
-        clearAllErrors();
-
+        return true;
     }
 
-    function showRecoveryEmail() {
+    function buildUI() {
+        if (!root) return;
 
-        const e =
-            getElements();
+        root.innerHTML = `
+            <div class="wfesc-auth-shell">
 
-        if (e.loginForm) {
-            e.loginForm.style.display =
-                "none";
-        }
+                <div
+                    id="wfesc-auth-loading"
+                    class="wfesc-auth-loading"
+                >
+                    جارٍ التحقق من الحساب...
+                </div>
 
-        if (e.registerForm) {
-            e.registerForm.style.display =
-                "none";
-        }
+                <div
+                    id="wfesc-email-verification"
+                    class="wfesc-auth-verification"
+                ></div>
 
-        if (e.recoveryCard) {
-            e.recoveryCard.style.display =
-                "block";
-        }
+                <div
+                    id="wfesc-auth-guest"
+                    class="wfesc-auth-account"
+                >
 
-        if (
-            e.recoveryPasswordCard
-        ) {
-            e.recoveryPasswordCard.style.display =
-                "none";
-        }
+                    <div class="wfesc-auth-tabs">
 
-        hideStatus();
-        clearAllErrors();
+                        <button
+                            type="button"
+                            class="wfesc-auth-tab active"
+                            data-auth-mode="login"
+                        >
+                            لدي حساب
+                        </button>
 
-        if (e.recoveryEmail) {
-            e.recoveryEmail.focus();
-        }
+                        <button
+                            type="button"
+                            class="wfesc-auth-tab"
+                            data-auth-mode="register"
+                        >
+                            إنشاء حساب
+                        </button>
 
+                    </div>
+
+                    <!-- LOGIN -->
+
+                    <div
+                        id="wfesc-login-panel"
+                        class="wfesc-auth-panel active"
+                    >
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                البريد الإلكتروني
+                            </label>
+
+                            <input
+                                id="wfesc-login-email"
+                                class="wfesc-auth-input"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="name@example.com"
+                            >
+
+                            <div
+                                id="wfesc-login-email-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                كلمة المرور
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-login-password"
+                                    class="wfesc-auth-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="current-password"
+                                    placeholder="6 إلى 16 خانة"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-login-password"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                            <div
+                                id="wfesc-login-password-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <button
+                            id="wfesc-login-submit"
+                            type="button"
+                            class="wfesc-auth-button primary"
+                        >
+                            تسجيل الدخول
+                        </button>
+
+                        <button
+                            id="wfesc-login-forgot"
+                            type="button"
+                            class="wfesc-auth-link"
+                        >
+                            نسيت كلمة المرور؟
+                        </button>
+
+                        <div
+                            id="wfesc-login-message"
+                            class="wfesc-auth-message"
+                        ></div>
+
+                    </div>
+
+                    <!-- REGISTER -->
+
+                    <div
+                        id="wfesc-register-panel"
+                        class="wfesc-auth-panel"
+                    >
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                الاسم
+                            </label>
+
+                            <input
+                                id="wfesc-register-name"
+                                class="wfesc-auth-input"
+                                type="text"
+                                autocomplete="name"
+                                placeholder="اسمك"
+                            >
+
+                            <div
+                                id="wfesc-register-name-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                اسم المستخدم
+                            </label>
+
+                            <input
+                                id="wfesc-register-username"
+                                class="wfesc-auth-input"
+                                type="text"
+                                maxlength="${USERNAME_MAX}"
+                                autocomplete="username"
+                                spellcheck="false"
+                                dir="ltr"
+                                placeholder="ali12"
+                            >
+
+                            <div
+                                id="wfesc-register-username-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                البريد الإلكتروني
+                            </label>
+
+                            <input
+                                id="wfesc-register-email"
+                                class="wfesc-auth-input"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="name@example.com"
+                            >
+
+                            <div
+                                id="wfesc-register-email-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                كلمة المرور
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-register-password"
+                                    class="wfesc-auth-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="new-password"
+                                    placeholder="6 إلى 16 خانة"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-register-password"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                            <div
+                                id="wfesc-register-password-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <div class="wfesc-auth-form-group">
+                            <label>
+                                تأكيد كلمة المرور
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-register-confirm"
+                                    class="wfesc-auth-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="new-password"
+                                    placeholder="أعد كتابة كلمة المرور"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-register-confirm"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                            <div
+                                id="wfesc-register-confirm-error"
+                                class="wfesc-auth-error"
+                            ></div>
+                        </div>
+
+                        <button
+                            id="wfesc-register-submit"
+                            type="button"
+                            class="wfesc-auth-button primary"
+                        >
+                            إنشاء الحساب
+                        </button>
+
+                        <div
+                            id="wfesc-register-message"
+                            class="wfesc-auth-message"
+                        ></div>
+
+                    </div>
+
+                    <!-- FORGOT -->
+
+                    <div
+                        id="wfesc-forgot-panel"
+                        class="wfesc-auth-panel"
+                    >
+
+                        <div class="wfesc-auth-form-group">
+
+                            <label>
+                                البريد الإلكتروني
+                            </label>
+
+                            <input
+                                id="wfesc-forgot-email"
+                                class="wfesc-auth-input"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="name@example.com"
+                            >
+
+                            <div
+                                id="wfesc-forgot-email-error"
+                                class="wfesc-auth-error"
+                            ></div>
+
+                        </div>
+
+                        <button
+                            id="wfesc-forgot-submit"
+                            type="button"
+                            class="wfesc-auth-button primary"
+                        >
+                            إرسال رابط الاستعادة
+                        </button>
+
+                        <button
+                            id="wfesc-forgot-back"
+                            type="button"
+                            class="wfesc-auth-link"
+                        >
+                            العودة لتسجيل الدخول
+                        </button>
+
+                        <div
+                            id="wfesc-forgot-message"
+                            class="wfesc-auth-message"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <!-- LOGGED -->
+
+                <div
+                    id="wfesc-logged-account"
+                    class="wfesc-auth-account"
+                    style="display:none;"
+                >
+
+                    <div class="wfesc-auth-profile">
+
+                        <div class="wfesc-auth-avatar-wrap">
+
+                            <img
+                                id="wfesc-logged-avatar"
+                                class="wfesc-auth-avatar"
+                                alt="صورة الحساب"
+                            >
+
+                            <div
+                                id="wfesc-logged-avatar-fallback"
+                                class="wfesc-auth-avatar-fallback"
+                            >
+                                W
+                            </div>
+
+                        </div>
+
+                        <div class="wfesc-auth-account-info">
+
+                            <div
+                                id="wfesc-logged-name"
+                                class="wfesc-auth-account-name"
+                            >
+                                WFESC
+                            </div>
+
+                            <div
+                                id="wfesc-logged-username"
+                                class="wfesc-auth-account-username"
+                            >
+                                @WFESC
+                            </div>
+
+                            <div
+                                id="wfesc-logged-email"
+                                class="wfesc-auth-account-email"
+                            ></div>
+
+                            <div
+                                id="wfesc-logged-verified"
+                                class="wfesc-auth-verified"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        id="wfesc-profile-button"
+                        type="button"
+                        class="wfesc-auth-action"
+                    >
+                        <strong>
+                            👤 الملف الشخصي
+                        </strong>
+                        <span>
+                            تعديل اسم المستخدم والصورة والنبذة
+                        </span>
+                    </button>
+
+                    <button
+                        id="wfesc-change-password-button"
+                        type="button"
+                        class="wfesc-auth-action"
+                    >
+                        <strong>
+                            🔐 تغيير كلمة المرور
+                        </strong>
+                        <span>
+                            تحديث كلمة مرور الحساب
+                        </span>
+                    </button>
+
+                    <button
+                        id="wfesc-logout-button"
+                        type="button"
+                        class="wfesc-auth-action"
+                    >
+                        <strong>
+                            ↪ تسجيل الخروج
+                        </strong>
+                        <span>
+                            الخروج من الحساب الحالي
+                        </span>
+                    </button>
+
+                    <button
+                        id="wfesc-delete-button"
+                        type="button"
+                        class="wfesc-auth-action danger"
+                    >
+                        <strong>
+                            🗑️ حذف الحساب
+                        </strong>
+                        <span>
+                            حذف الحساب نهائيًا
+                        </span>
+                    </button>
+
+                </div>
+
+                <!-- CHANGE PASSWORD MODAL -->
+
+                <div
+                    id="wfesc-change-password-modal"
+                    class="modal"
+                >
+
+                    <div class="modal-box">
+
+                        <div class="modal-header">
+
+                            <h3>
+                                تغيير كلمة المرور
+                            </h3>
+
+                            <button
+                                type="button"
+                                class="close-modal"
+                                data-close-modal
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+                                كلمة المرور الجديدة
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-new-password"
+                                    class="form-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="new-password"
+                                    placeholder="6 إلى 16 خانة"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-new-password"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+                                تأكيد كلمة المرور
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-new-password-confirm"
+                                    class="form-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="new-password"
+                                    placeholder="أعد كتابة كلمة المرور"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-new-password-confirm"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="wfesc-change-password-message"
+                            class="wfesc-auth-message"
+                        ></div>
+
+                        <button
+                            id="wfesc-change-password-submit"
+                            type="button"
+                            class="modal-action"
+                        >
+                            حفظ كلمة المرور
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- RECOVERY PASSWORD MODAL -->
+
+                <div
+                    id="wfesc-recovery-modal"
+                    class="modal"
+                >
+
+                    <div class="modal-box">
+
+                        <div class="modal-header">
+
+                            <h3>
+                                إعادة تعيين كلمة المرور
+                            </h3>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+                                كلمة المرور الجديدة
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-recovery-password"
+                                    class="form-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="new-password"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-recovery-password"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>
+                                تأكيد كلمة المرور
+                            </label>
+
+                            <div class="wfesc-auth-input-wrap">
+
+                                <input
+                                    id="wfesc-recovery-confirm"
+                                    class="form-input"
+                                    type="password"
+                                    maxlength="16"
+                                    autocomplete="new-password"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="wfesc-auth-password-toggle"
+                                    data-password-toggle="wfesc-recovery-confirm"
+                                >
+                                    🙉
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="wfesc-recovery-message"
+                            class="wfesc-auth-message"
+                        ></div>
+
+                        <button
+                            id="wfesc-recovery-submit"
+                            type="button"
+                            class="modal-action"
+                        >
+                            حفظ كلمة المرور
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
     }
 
-    function showRecoveryPassword() {
+    /*
+     * ============================================================
+     * ELEMENTS
+     * ============================================================
+     */
 
-        const e =
-            getElements();
+    function getElements() {
+        return {
+            loading:
+                qs("#wfesc-auth-loading"),
 
-        if (e.loginForm) {
-            e.loginForm.style.display =
-                "none";
-        }
+            verification:
+                qs("#wfesc-email-verification"),
 
-        if (e.registerForm) {
-            e.registerForm.style.display =
-                "none";
-        }
+            guest:
+                qs("#wfesc-auth-guest"),
 
-        if (e.recoveryCard) {
-            e.recoveryCard.style.display =
-                "none";
-        }
+            logged:
+                qs("#wfesc-logged-account"),
 
-        if (
-            e.recoveryPasswordCard
-        ) {
+            loginPanel:
+                qs("#wfesc-login-panel"),
 
-            e.recoveryPasswordCard.style.display =
-                "block";
+            registerPanel:
+                qs("#wfesc-register-panel"),
 
-        }
+            forgotPanel:
+                qs("#wfesc-forgot-panel"),
 
-        hideStatus();
-        clearAllErrors();
+            tabs:
+                qsa("[data-auth-mode]"),
 
-        if (
-            e.recoveryPassword
-        ) {
+            loginEmail:
+                qs("#wfesc-login-email"),
 
-            e.recoveryPassword.focus();
+            loginEmailError:
+                qs("#wfesc-login-email-error"),
 
-        }
+            loginPassword:
+                qs("#wfesc-login-password"),
 
+            loginPasswordError:
+                qs("#wfesc-login-password-error"),
+
+            loginSubmit:
+                qs("#wfesc-login-submit"),
+
+            loginForgot:
+                qs("#wfesc-login-forgot"),
+
+            loginMessage:
+                qs("#wfesc-login-message"),
+
+            registerName:
+                qs("#wfesc-register-name"),
+
+            registerNameError:
+                qs("#wfesc-register-name-error"),
+
+            registerUsername:
+                qs("#wfesc-register-username"),
+
+            registerUsernameError:
+                qs("#wfesc-register-username-error"),
+
+            registerEmail:
+                qs("#wfesc-register-email"),
+
+            registerEmailError:
+                qs("#wfesc-register-email-error"),
+
+            registerPassword:
+                qs("#wfesc-register-password"),
+
+            registerPasswordError:
+                qs("#wfesc-register-password-error"),
+
+            registerConfirm:
+                qs("#wfesc-register-confirm"),
+
+            registerConfirmError:
+                qs("#wfesc-register-confirm-error"),
+
+            registerSubmit:
+                qs("#wfesc-register-submit"),
+
+            registerMessage:
+                qs("#wfesc-register-message"),
+
+            forgotEmail:
+                qs("#wfesc-forgot-email"),
+
+            forgotEmailError:
+                qs("#wfesc-forgot-email-error"),
+
+            forgotSubmit:
+                qs("#wfesc-forgot-submit"),
+
+            forgotBack:
+                qs("#wfesc-forgot-back"),
+
+            forgotMessage:
+                qs("#wfesc-forgot-message"),
+
+            loggedAvatar:
+                qs("#wfesc-logged-avatar"),
+
+            loggedAvatarFallback:
+                qs("#wfesc-logged-avatar-fallback"),
+
+            loggedName:
+                qs("#wfesc-logged-name"),
+
+            loggedUsername:
+                qs("#wfesc-logged-username"),
+
+            loggedEmail:
+                qs("#wfesc-logged-email"),
+
+            loggedVerified:
+                qs("#wfesc-logged-verified"),
+
+            profileButton:
+                qs("#wfesc-profile-button"),
+
+            changePasswordButton:
+                qs("#wfesc-change-password-button"),
+
+            logoutButton:
+                qs("#wfesc-logout-button"),
+
+            deleteButton:
+                qs("#wfesc-delete-button"),
+
+            changePasswordModal:
+                qs("#wfesc-change-password-modal"),
+
+            newPassword:
+                qs("#wfesc-new-password"),
+
+            newPasswordConfirm:
+                qs("#wfesc-new-password-confirm"),
+
+            changePasswordSubmit:
+                qs("#wfesc-change-password-submit"),
+
+            changePasswordMessage:
+                qs("#wfesc-change-password-message"),
+
+            recoveryModal:
+                qs("#wfesc-recovery-modal"),
+
+            recoveryPassword:
+                qs("#wfesc-recovery-password"),
+
+            recoveryConfirm:
+                qs("#wfesc-recovery-confirm"),
+
+            recoverySubmit:
+                qs("#wfesc-recovery-submit"),
+
+            recoveryMessage:
+                qs("#wfesc-recovery-message")
+        };
     }
 
-    /* =========================================
-       VERIFICATION MESSAGE
-    ========================================= */
+    let E = null;
 
-    function showVerificationMessage(
-        email
-    ) {
+    /*
+     * ============================================================
+     * MODE
+     * ============================================================
+     */
 
-        const e =
-            getElements();
+    function setMode(mode) {
+        if (!E) return;
 
-        if (!e.verification) {
+        E.loginPanel.classList.remove("active");
+        E.registerPanel.classList.remove("active");
+        E.forgotPanel.classList.remove("active");
+
+        E.tabs.forEach(function (tab) {
+            tab.classList.remove("active");
+        });
+
+        if (mode === "register") {
+            E.registerPanel.classList.add("active");
+
+            const tab =
+                qs('[data-auth-mode="register"]');
+
+            if (tab) {
+                tab.classList.add("active");
+            }
+
             return;
         }
 
-        e.verification.innerHTML =
-            "<strong>تحقق من بريدك الإلكتروني</strong>" +
-            "<br>" +
-            "تم إرسال رابط التحقق إلى " +
-            "<b>" +
-            escapeHTML(
-                email ||
-                "بريدك الإلكتروني"
-            ) +
-            "</b>." +
-            "<br>" +
-            "إذا لم تجده، افحص الرسائل غير المرغوب فيها أو Spam.";
-
-        e.verification.style.display =
-            "block";
-
-        e.verification.classList.remove(
-            "wfesc-verification-blink"
-        );
-
-        void e.verification.offsetWidth;
-
-        e.verification.classList.add(
-            "wfesc-verification-blink"
-        );
-
-        if (verificationTimer) {
-
-            clearTimeout(
-                verificationTimer
-            );
-
+        if (mode === "forgot") {
+            E.forgotPanel.classList.add("active");
+            return;
         }
 
-        verificationTimer =
-            setTimeout(
-                function () {
+        E.loginPanel.classList.add("active");
 
-                    e.verification.style.display =
-                        "none";
+        const tab =
+            qs('[data-auth-mode="login"]');
 
-                },
-                5000
-            );
-
+        if (tab) {
+            tab.classList.add("active");
+        }
     }
 
-    function hideVerificationMessage() {
+    /*
+     * ============================================================
+     * PASSWORD TOGGLE
+     * ============================================================
+     */
 
-        const e =
-            getElements();
+    function bindPasswordToggles() {
+        qsa("[data-password-toggle]")
+            .forEach(function (button) {
 
-        if (e.verification) {
+                button.addEventListener(
+                    "click",
+                    function () {
 
-            e.verification.style.display =
-                "none";
+                        const id =
+                            button.getAttribute(
+                                "data-password-toggle"
+                            );
 
-        }
+                        const input =
+                            document.getElementById(id);
 
-        if (verificationTimer) {
+                        if (!input) return;
 
-            clearTimeout(
-                verificationTimer
-            );
-
-            verificationTimer =
-                null;
-
-        }
-
+                        if (
+                            input.type ===
+                            "password"
+                        ) {
+                            input.type = "text";
+                            button.textContent = "🙈";
+                        } else {
+                            input.type = "password";
+                            button.textContent = "🙉";
+                        }
+                    }
+                );
+            });
     }
-    /* =========================================
-       ERROR MESSAGE
-    ========================================= */
 
-    function getAuthErrorMessage(
-        error,
-        fallback
-    ) {
+    /*
+     * ============================================================
+     * ERROR UI
+     * ============================================================
+     */
 
-        const raw =
-            String(
-                error &&
-                error.message
-                    ? error.message
-                    : error || ""
-            ).toLowerCase();
-
-        if (
-            raw.includes(
-                "invalid login credentials"
-            ) ||
-            raw.includes(
-                "invalid credentials"
-            ) ||
-            raw.includes(
-                "invalid password"
-            )
-        ) {
-
-            return (
-                CONFIG.messages &&
-                CONFIG.messages.wrongPassword
-            ) ||
-            "كلمة المرور غير صحيحة.";
-
+    function fieldError(input, errorElement, text) {
+        if (input) {
+            input.classList.add("error");
+            shake(input);
         }
 
-        if (
-            raw.includes(
-                "email not confirmed"
-            ) ||
-            raw.includes(
-                "email_not_confirmed"
-            )
-        ) {
+        if (errorElement) {
+            errorElement.textContent =
+                text || "";
+        }
+    }
 
-            return (
-                "يجب تأكيد بريدك الإلكتروني أولًا."
-            );
-
+    function clearFieldError(input, errorElement) {
+        if (input) {
+            input.classList.remove("error");
         }
 
-        if (
-            raw.includes(
-                "already registered"
-            ) ||
-            raw.includes(
-                "user already registered"
-            ) ||
-            raw.includes(
-                "already exists"
-            )
-        ) {
-
-            return (
-                CONFIG.messages &&
-                CONFIG.messages.alreadyRegistered
-            ) ||
-            "أنت مسجل بالفعل، تابع من صفحة لدي حساب.";
-
+        if (errorElement) {
+            errorElement.textContent = "";
         }
+    }
 
-        if (
-            raw.includes(
-                "weak password"
-            ) ||
-            raw.includes(
-                "password should be"
-            )
-        ) {
+    function clearLoginErrors() {
+        clearFieldError(
+            E.loginEmail,
+            E.loginEmailError
+        );
 
-            return (
-                "كلمة المرور يجب أن تكون من 6 إلى 16 خانة."
-            );
+        clearFieldError(
+            E.loginPassword,
+            E.loginPasswordError
+        );
 
-        }
+        clearMessage(E.loginMessage);
+    }
 
+    function clearRegisterErrors() {
+        clearFieldError(
+            E.registerName,
+            E.registerNameError
+        );
+
+        clearFieldError(
+            E.registerUsername,
+            E.registerUsernameError
+        );
+
+        clearFieldError(
+            E.registerEmail,
+            E.registerEmailError
+        );
+
+        clearFieldError(
+            E.registerPassword,
+            E.registerPasswordError
+        );
+
+        clearFieldError(
+            E.registerConfirm,
+            E.registerConfirmError
+        );
+
+        clearMessage(E.registerMessage);
+    }
+
+    /*
+     * ============================================================
+     * SESSION DISPLAY
+     * ============================================================
+     */
+
+    function showGuest() {
+        if (!E) return;
+
+        E.guest.style.display = "";
+        E.logged.style.display = "none";
+    }
+
+    function showLoggedIn() {
+        if (!E) return;
+
+        E.guest.style.display = "none";
+        E.logged.style.display = "";
+    }
+
+    function getDisplayName(user, profile) {
         return (
-            fallback ||
-            "حدث خطأ. حاول مرة أخرى."
+            profile?.full_name ||
+            profile?.name ||
+            user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            profile?.username ||
+            user?.email?.split("@")[0] ||
+            "WFESC"
         );
-
     }
 
-    /* =========================================
-       ACCOUNT DATA
-    ========================================= */
+    function getUsername(user, profile) {
+        const username =
+            profile?.username ||
+            user?.user_metadata?.username ||
+            user?.email?.split("@")[0] ||
+            "WFESC";
 
-    function getName(
-        user,
-        profile
-    ) {
-
-        const metadata =
-            user &&
-            user.user_metadata
-                ? user.user_metadata
-                : {};
-
-        return (
-            profile &&
-            (
-                profile.full_name ||
-                profile.name
-            )
-        ) ||
-        metadata.full_name ||
-        metadata.name ||
-        metadata.fullName ||
-        "WFESC";
-
+        return sanitizeUsername(username);
     }
 
-    function getUsername(
-        user,
-        profile
-    ) {
-
-        const metadata =
-            user &&
-            user.user_metadata
-                ? user.user_metadata
-                : {};
-
-        return sanitizeUsername(
-            (
-                profile &&
-                profile.username
-            ) ||
-            metadata.username ||
-            (
-                user &&
-                user.email
-                    ? user.email.split("@")[0]
-                    : "WFESC"
-            )
-        );
-
-    }
-
-    function getAvatar(
-        user,
-        profile
-    ) {
-
-        const metadata =
-            user &&
-            user.user_metadata
-                ? user.user_metadata
-                : {};
-
-        return (
-            profile &&
-            (
-                profile.avatar_url ||
-                profile.avatar
-            )
-        ) ||
-        metadata.avatar_url ||
-        metadata.avatar ||
-        "";
-
-    }
-
-    /* =========================================
-       RENDER ACCOUNT
-    ========================================= */
-
-    function renderAccount(
-        user,
-        profile
-    ) {
-
-        const e =
-            getElements();
+    function renderAccount(user, profile) {
+        if (!E) return;
 
         if (!user) {
+            currentUser = null;
+            currentProfile = null;
 
-            if (e.accountCard) {
-
-                e.accountCard.style.display =
-                    "none";
-
-            }
-
-            if (e.loginTab) {
-                e.loginTab.style.display =
-                    "";
-            }
-
-            if (e.registerTab) {
-                e.registerTab.style.display =
-                    "";
-            }
-
+            showGuest();
             return;
-
         }
 
-        if (e.accountCard) {
+        currentUser = user;
+        currentProfile = profile || {};
 
-            e.accountCard.style.display =
-                "block";
-
-        }
-
-        if (e.loginTab) {
-
-            e.loginTab.style.display =
-                "none";
-
-        }
-
-        if (e.registerTab) {
-
-            e.registerTab.style.display =
-                "none";
-
-        }
-
-        if (e.loginForm) {
-
-            e.loginForm.style.display =
-                "none";
-
-        }
-
-        if (e.registerForm) {
-
-            e.registerForm.style.display =
-                "none";
-
-        }
+        showLoggedIn();
 
         const name =
-            getName(
+            getDisplayName(
                 user,
                 profile
             );
@@ -1780,801 +1642,469 @@ function buildUI() {
                 profile
             );
 
+        const email =
+            user.email || "";
+
+        E.loggedName.textContent =
+            name;
+
+        E.loggedUsername.textContent =
+            "@" + username;
+
+        E.loggedEmail.textContent =
+            email;
+
+        if (
+            user.email_confirmed_at ||
+            user.confirmed_at
+        ) {
+            E.loggedVerified.textContent =
+                "✓ البريد الإلكتروني موثق";
+        } else {
+            E.loggedVerified.textContent =
+                "البريد الإلكتروني غير موثق";
+        }
+
         const avatar =
-            getAvatar(
-                user,
-                profile
-            );
+            profile?.avatar_url ||
+            user?.user_metadata?.avatar_url ||
+            "";
 
-        const verified =
-            Boolean(
-                profile &&
-                profile.verified === true
-            );
+        if (avatar) {
+            E.loggedAvatar.src = avatar;
+            E.loggedAvatar.style.display =
+                "block";
 
-        if (e.accountName) {
+            E.loggedAvatarFallback.style.display =
+                "none";
+        } else {
+            E.loggedAvatar.removeAttribute("src");
 
-            e.accountName.textContent =
-                name;
+            E.loggedAvatar.style.display =
+                "none";
 
+            E.loggedAvatarFallback.style.display =
+                "flex";
+
+            E.loggedAvatarFallback.textContent =
+                safeText(name)
+                    .trim()
+                    .charAt(0)
+                    .toUpperCase() ||
+                "W";
         }
+    }
 
-        if (e.accountUsername) {
+    /*
+     * ============================================================
+     * RESTORE SESSION
+     * ============================================================
+     */
 
-            e.accountUsername.textContent =
-                displayUsername(
-                    username
+    async function restoreSession() {
+        if (!E) return;
+
+        E.loading.classList.add("show");
+
+        try {
+            const auth = getAuth();
+
+            if (!auth) {
+                throw new Error(
+                    "WFESCSettingsAuth غير موجود. تأكد من تحميل settings-auth.js قبل settings-auth-ui.js."
                 );
-
-        }
-
-        if (e.accountEmail) {
-
-            e.accountEmail.textContent =
-                user.email || "";
-
-        }
-
-        if (e.accountVerified) {
-
-            e.accountVerified.style.display =
-                verified
-                    ? "inline-flex"
-                    : "none";
-
-        }
-
-        if (e.accountAvatar) {
-
-            if (avatar) {
-
-                e.accountAvatar.innerHTML =
-                    '<img src="' +
-                    escapeHTML(
-                        avatar
-                    ) +
-                    '" alt="صورة الحساب">';
-
-            } else {
-
-                e.accountAvatar.textContent =
-                    String(
-                        name || "W"
-                    )
-                        .trim()
-                        .charAt(0)
-                        .toUpperCase() ||
-                    "W";
-
             }
 
-        }
+            if (
+                typeof auth.restoreSession ===
+                "function"
+            ) {
+                const result =
+                    await auth.restoreSession();
 
-    }
+                if (result?.user) {
+                    currentUser =
+                        result.user;
 
-    /* =========================================
-       PASSWORD TOGGLE
-    ========================================= */
-    
-function bindPasswordToggle(
-        button,
-        input
-    ) {
+                    currentProfile =
+                        result.profile || null;
 
-        if (
-            !button ||
-            !input
-        ) {
-            return;
-        }
+                    renderAccount(
+                        currentUser,
+                        currentProfile
+                    );
+                } else {
+                    renderAccount(null, null);
+                }
 
-        button.addEventListener(
-            "click",
-            function () {
-
-                const hidden =
-                    input.type ===
-                    "password";
-
-                input.type =
-                    hidden
-                        ? "text"
-                        : "password";
-
-                button.textContent =
-                    hidden
-                        ? "🙈"
-                        : "🙉";
-
+                return;
             }
-        );
 
-    }
+            if (
+                typeof auth.getSession ===
+                "function"
+            ) {
+                const result =
+                    await auth.getSession();
 
-    /* =========================================
-       INPUT CLEANUP
-    ========================================= */
+                const session =
+                    result?.data?.session ||
+                    result?.session ||
+                    result;
 
-    function bindInputCleanup() {
+                const user =
+                    session?.user ||
+                    null;
 
-        const e =
-            getElements();
+                if (user) {
+                    currentUser = user;
 
-        if (
-            e.registerUsername
-        ) {
+                    if (
+                        typeof auth.fetchProfile ===
+                        "function"
+                    ) {
+                        currentProfile =
+                            await auth.fetchProfile(
+                                user.id
+                            );
+                    }
 
-            e.registerUsername.addEventListener(
-                "input",
-                function () {
-
-                    e.registerUsername.value =
-                        sanitizeUsername(
-                            e.registerUsername.value
-                        );
-
-                    clearFieldError(
-                        e.registerUsername,
-                        e.registerUsernameError
+                    renderAccount(
+                        currentUser,
+                        currentProfile
                     );
-
+                } else {
+                    renderAccount(null, null);
                 }
+
+                return;
+            }
+
+            throw new Error(
+                "دالة restoreSession أو getSession غير موجودة في settings-auth.js."
             );
 
-        }
-
-        if (
-            e.registerName
-        ) {
-
-            e.registerName.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.registerName,
-                        e.registerNameError
-                    );
-
-                }
+        } catch (error) {
+            console.error(
+                "WFESC Auth restore error:",
+                error
             );
 
-        }
-
-        if (
-            e.registerEmail
-        ) {
-
-            e.registerEmail.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.registerEmail,
-                        e.registerEmailError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.registerPassword
-        ) {
-
-            e.registerPassword.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.registerPassword,
-                        e.registerPasswordError
-                    );
-
-                    clearFieldError(
-                        e.registerConfirm,
-                        e.registerConfirmError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.registerConfirm
-        ) {
-
-            e.registerConfirm.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.registerConfirm,
-                        e.registerConfirmError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.loginEmail
-        ) {
-
-            e.loginEmail.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.loginEmail,
-                        e.loginEmailError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.loginPassword
-        ) {
-
-            e.loginPassword.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.loginPassword,
-                        e.loginPasswordError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.recoveryEmail
-        ) {
-
-            e.recoveryEmail.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.recoveryEmail,
-                        e.recoveryEmailError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.recoveryPassword
-        ) {
-
-            e.recoveryPassword.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.recoveryPassword,
-                        e.recoveryPasswordError
-                    );
-
-                }
-            );
-
-        }
-
-        if (
-            e.recoveryConfirm
-        ) {
-
-            e.recoveryConfirm.addEventListener(
-                "input",
-                function () {
-
-                    clearFieldError(
-                        e.recoveryConfirm,
-                        e.recoveryConfirmError
-                    );
-
-                }
-            );
-
-        }
-
-    }
-
-    /* =========================================
-       LOGIN
-    ========================================= */
-
-    async function handleLogin(
-        event
-    ) {
-
-        event.preventDefault();
-
-        if (busy) {
-            return;
-        }
-
-        const e =
-            getElements();
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
+            renderAccount(null, null);
 
             showStatus(
-                "نظام الحساب غير متوفر حاليًا.",
+                "تعذر استعادة جلسة الحساب.",
                 "error"
             );
 
-            return;
+            showDebugError(error);
 
+        } finally {
+            E.loading.classList.remove(
+                "show"
+            );
         }
+    }
 
-        clearAllErrors();
+    /*
+     * ============================================================
+     * LOGIN
+     * ============================================================
+     */
+
+    async function login() {
+        clearLoginErrors();
 
         const email =
-            validateEmail(
-                e.loginEmail &&
-                e.loginEmail.value
-            );
-
-        if (!email.valid) {
-
-            setFieldError(
-                e.loginEmail,
-                e.loginEmailError,
-                email.message
-            );
-
-            shake(
-                e.loginEmail
-            );
-
-            return;
-
-        }
+            E.loginEmail.value.trim();
 
         const password =
-            validatePassword(
-                e.loginPassword &&
-                e.loginPassword.value
-            );
+            E.loginPassword.value;
 
-        if (!password.valid) {
-
-            setFieldError(
-                e.loginPassword,
-                e.loginPasswordError,
-                password.message
-            );
-
-            shake(
-                e.loginPassword
+        if (!validEmail(email)) {
+            fieldError(
+                E.loginEmail,
+                E.loginEmailError,
+                "يرجى إدخال بريد إلكتروني صحيح."
             );
 
             return;
-
         }
 
+        if (!validPassword(password)) {
+            fieldError(
+                E.loginPassword,
+                E.loginPasswordError,
+                "كلمة المرور يجب أن تكون من 6 إلى 16 خانة."
+            );
+
+            return;
+        }
+
+        const auth = getAuth();
+
         if (
+            !auth ||
             typeof auth.signIn !==
             "function"
         ) {
+            const error =
+                new Error(
+                    "دالة signIn غير موجودة في settings-auth.js."
+                );
 
-            showStatus(
-                "وظيفة تسجيل الدخول غير متوفرة.",
+            setMessage(
+                E.loginMessage,
+                getErrorMessage(error),
                 "error"
             );
 
-            return;
+            showDebugError(error);
 
+            return;
         }
 
-        setLoading(true);
+        setButtonLoading(
+            E.loginSubmit,
+            true,
+            "جارٍ تسجيل الدخول..."
+        );
 
         try {
-
             const result =
                 await auth.signIn(
-                    email.value,
-                    password.value
+                    email,
+                    password
                 );
-
-            if (
-                result &&
-                result.error
-            ) {
-
-                throw result.error;
-
-            }
 
             const user =
-                result &&
-                result.user
-                    ? result.user
-                    : await getCurrentUser();
+                result?.user ||
+                result?.data?.user ||
+                result;
 
             if (!user) {
-
                 throw new Error(
-                    "تعذر استعادة الحساب."
+                    "تم تنفيذ تسجيل الدخول لكن لم يتم استلام بيانات المستخدم."
                 );
-
             }
 
-            const profile =
-                await getCurrentProfile(
-                    user
-                );
+            currentUser = user;
+
+            if (
+                typeof auth.fetchProfile ===
+                "function"
+            ) {
+                currentProfile =
+                    await auth.fetchProfile(
+                        user.id
+                    );
+            }
 
             renderAccount(
-                user,
-                profile
+                currentUser,
+                currentProfile
             );
 
             showStatus(
-                (
-                    CONFIG.messages &&
-                    CONFIG.messages.loginSuccess
-                ) ||
                 "تم تسجيل الدخول بنجاح.",
                 "success"
             );
 
-            document.dispatchEvent(
-                new CustomEvent(
-                    "WFESCLoginSuccess",
-                    {
-                        detail: {
-                            user: user,
-                            profile: profile
-                        }
-                    }
-                )
-            );
-
-            document.dispatchEvent(
-                new CustomEvent(
-                    "WFESCAuthChanged",
-                    {
-                        detail: {
-                            user: user,
-                            profile: profile,
-                            loggedIn: true
-                        }
-                    }
-                )
-            );
+            E.loginPassword.value = "";
 
         } catch (error) {
-
             console.error(
                 "WFESC login error:",
                 error
             );
 
-            const raw =
-                String(
-                    error &&
-                    error.message
-                        ? error.message
-                        : error || ""
-                ).toLowerCase();
-
             const message =
-                getAuthErrorMessage(
-                    error,
-                    "تعذر تسجيل الدخول. حاول مرة أخرى."
-                );
+                getErrorMessage(error);
 
-            if (
-                raw.includes(
-                    "invalid login credentials"
-                ) ||
-                raw.includes(
-                    "invalid credentials"
-                ) ||
-                raw.includes(
-                    "invalid password"
-                )
-            ) {
-
-                setFieldError(
-                    e.loginPassword,
-                    e.loginPasswordError,
-                    message
-                );
-
-                shake(
-                    e.loginPassword
-                );
-
-            } else if (
-                raw.includes(
-                    "email not confirmed"
-                )
-            ) {
-
-                showStatus(
-                    "يجب تأكيد بريدك الإلكتروني أولًا.",
-                    "error"
-                );
-
-                shake(
-                    e.loginEmail
-                );
-
-            } else {
-
-                showStatus(
-                    message,
-                    "error"
-                );
-
-            }
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    }
-
-    /* =========================================
-       REGISTER
-    ========================================= */
-
-    async function handleRegister(
-        event
-    ) {
-
-        event.preventDefault();
-
-        if (busy) {
-            return;
-        }
-
-        const e =
-            getElements();
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
-
-            showStatus(
-                "نظام الحساب غير متوفر حاليًا.",
+            setMessage(
+                E.loginMessage,
+                message,
                 "error"
             );
 
-            return;
+            shake(E.loginPassword);
 
+            showStatus(
+                message,
+                "error"
+            );
+
+            showDebugError(error);
+
+        } finally {
+            setButtonLoading(
+                E.loginSubmit,
+                false
+            );
         }
+    }
 
-        clearAllErrors();
+    /*
+     * ============================================================
+     * REGISTER
+     * ============================================================
+     */
+
+    async function register() {
+        clearRegisterErrors();
 
         const name =
-            String(
-                e.registerName &&
-                e.registerName.value ||
-                ""
-            ).trim();
-
-        if (!name) {
-
-            setFieldError(
-                e.registerName,
-                e.registerNameError,
-                "يرجى إدخال اسمك."
-            );
-
-            shake(
-                e.registerName
-            );
-
-            return;
-
-        }
+            E.registerName.value.trim();
 
         const username =
-            validateUsername(
-                e.registerUsername &&
-                e.registerUsername.value
+            sanitizeUsername(
+                E.registerUsername.value
             );
-
-        if (!username.valid) {
-
-            setFieldError(
-                e.registerUsername,
-                e.registerUsernameError,
-                username.message
-            );
-
-            shake(
-                e.registerUsername
-            );
-
-            return;
-
-        }
 
         const email =
-            validateEmail(
-                e.registerEmail &&
-                e.registerEmail.value
-            );
-
-        if (!email.valid) {
-
-            setFieldError(
-                e.registerEmail,
-                e.registerEmailError,
-                email.message
-            );
-
-            shake(
-                e.registerEmail
-            );
-
-            return;
-
-        }
+            E.registerEmail.value.trim();
 
         const password =
-            validatePassword(
-                e.registerPassword &&
-                e.registerPassword.value
-            );
-
-        if (!password.valid) {
-
-            setFieldError(
-                e.registerPassword,
-                e.registerPasswordError,
-                password.message
-            );
-
-            shake(
-                e.registerPassword
-            );
-
-            return;
-
-        }
+            E.registerPassword.value;
 
         const confirm =
-            String(
-                e.registerConfirm &&
-                e.registerConfirm.value ||
-                ""
+            E.registerConfirm.value;
+
+        E.registerUsername.value =
+            username;
+
+        let valid = true;
+
+        if (name.length < 2) {
+            fieldError(
+                E.registerName,
+                E.registerNameError,
+                "يرجى إدخال الاسم."
             );
 
-        if (
-            confirm !==
-            password.value
-        ) {
-
-            const message =
-                "كلمتا المرور غير متطابقتين.";
-
-            setFieldError(
-                e.registerPassword,
-                e.registerPasswordError,
-                message
-            );
-
-            setFieldError(
-                e.registerConfirm,
-                e.registerConfirmError,
-                message
-            );
-
-            shake(
-                e.registerPassword
-            );
-
-            shake(
-                e.registerConfirm
-            );
-
-            return;
-
+            valid = false;
         }
 
+        if (!validUsername(username)) {
+            fieldError(
+                E.registerUsername,
+                E.registerUsernameError,
+                "اسم المستخدم يجب أن يتكون من 3 إلى 9 أحرف إنجليزية أو أرقام."
+            );
+
+            valid = false;
+        }
+
+        if (!validEmail(email)) {
+            fieldError(
+                E.registerEmail,
+                E.registerEmailError,
+                "يرجى إدخال بريد إلكتروني صحيح."
+            );
+
+            valid = false;
+        }
+
+        if (!validPassword(password)) {
+            fieldError(
+                E.registerPassword,
+                E.registerPasswordError,
+                "كلمة المرور يجب أن تكون من 6 إلى 16 خانة."
+            );
+
+            valid = false;
+        }
+
+        if (password !== confirm) {
+            fieldError(
+                E.registerPassword,
+                E.registerPasswordError,
+                "كلمتا المرور غير متطابقتين."
+            );
+
+            fieldError(
+                E.registerConfirm,
+                E.registerConfirmError,
+                "كلمتا المرور غير متطابقتين."
+            );
+
+            shakeMany([
+                E.registerPassword,
+                E.registerConfirm
+            ]);
+
+            valid = false;
+        }
+
+        if (!valid) {
+            return;
+        }
+
+        const auth = getAuth();
+
         if (
+            !auth ||
             typeof auth.signUp !==
             "function"
         ) {
+            const error =
+                new Error(
+                    "دالة signUp غير موجودة في settings-auth.js."
+                );
 
-            showStatus(
-                "وظيفة إنشاء الحساب غير متوفرة.",
+            setMessage(
+                E.registerMessage,
+                getErrorMessage(error),
                 "error"
             );
 
-            return;
+            showDebugError(error);
 
+            return;
         }
 
-        setLoading(true);
+        setButtonLoading(
+            E.registerSubmit,
+            true,
+            "جارٍ إنشاء الحساب..."
+        );
 
         try {
-
-            let result;
-
-            /*
-             * API الأساسي:
-             * signUp(name, email, password, username)
-             */
-
-            result =
+            const result =
                 await auth.signUp(
                     name,
-                    email.value,
-                    password.value,
-                    username.value
+                    email,
+                    password,
+                    username
                 );
 
-            if (
-                result &&
-                result.error
-            ) {
-
-                throw result.error;
-
-            }
-
             const user =
-                result &&
-                result.user
-                    ? result.user
-                    : (
-                        result &&
-                        result.data &&
-                        result.data.user
-                            ? result.data.user
-                            : null
-                    );
-
-            const session =
-                result &&
-                result.session
-                    ? result.session
-                    : (
-                        result &&
-                        result.data &&
-                        result.data.session
-                            ? result.data.session
-                            : null
-                    );
+                result?.user ||
+                result?.data?.user ||
+                null;
 
             if (
                 user &&
-                session
+                (
+                    user.email_confirmed_at ||
+                    user.confirmed_at
+                )
             ) {
+                currentUser = user;
 
-                const profile =
-                    await getCurrentProfile(
-                        user
-                    );
+                if (
+                    typeof auth.fetchProfile ===
+                    "function"
+                ) {
+                    currentProfile =
+                        await auth.fetchProfile(
+                            user.id
+                        );
+                }
 
                 renderAccount(
-                    user,
-                    profile
+                    currentUser,
+                    currentProfile
                 );
 
                 showStatus(
@@ -2582,707 +2112,575 @@ function bindPasswordToggle(
                     "success"
                 );
 
-                document.dispatchEvent(
-                    new CustomEvent(
-                        "WFESCAccountCreated",
-                        {
-                            detail: {
-                                user: user,
-                                profile: profile,
-                                loggedIn: true
-                            }
-                        }
-                    )
-                );
-
-                document.dispatchEvent(
-                    new CustomEvent(
-                        "WFESCAuthChanged",
-                        {
-                            detail: {
-                                user: user,
-                                profile: profile,
-                                loggedIn: true
-                            }
-                        }
-                    )
-                );
-
-            } else {
-
-                showVerificationMessage(
-                    email.value
-                );
-
-                showStatus(
-                    "تم إنشاء الحساب. تحقق من بريدك الإلكتروني.",
-                    "success"
-                );
-
-                document.dispatchEvent(
-                    new CustomEvent(
-                        "WFESCAccountCreated",
-                        {
-                            detail: {
-                                user: user,
-                                email: email.value,
-                                loggedIn: false
-                            }
-                        }
-                    )
-                );
-
+                return;
             }
 
-        } catch (error) {
+            showVerificationMessage();
 
-            console.error(
-                "WFESC register error:",
-                error
-            );
-
-            const raw =
-                String(
-                    error &&
-                    error.message
-                        ? error.message
-                        : error || ""
-                ).toLowerCase();
-
-            const message =
-                getAuthErrorMessage(
-                    error,
-                    "تعذر إنشاء الحساب. حاول مرة أخرى."
-                );
-
-            if (
-                raw.includes(
-                    "already registered"
-                ) ||
-                raw.includes(
-                    "user already registered"
-                ) ||
-                raw.includes(
-                    "already exists"
-                )
-            ) {
-
-                setFieldError(
-                    e.registerEmail,
-                    e.registerEmailError,
-                    (
-                        CONFIG.messages &&
-                        CONFIG.messages.alreadyRegistered
-                    ) ||
-                    "أنت مسجل بالفعل، تابع من صفحة لدي حساب."
-                );
-
-                shake(
-                    e.registerEmail
-                );
-
-            } else {
-
-                showStatus(
-                    message,
-                    "error"
-                );
-
-            }
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    }
-
-    /* =========================================
-       FORGOT PASSWORD
-    ========================================= */
-    function handleForgotPassword(
-        event
-    ) {
-
-        event.preventDefault();
-
-        showRecoveryEmail();
-
-    }
-
-    async function handleRecoverySubmit(
-        event
-    ) {
-
-        event.preventDefault();
-
-        if (busy) {
-            return;
-        }
-
-        const e =
-            getElements();
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
-            return;
-        }
-
-        clearFieldError(
-            e.recoveryEmail,
-            e.recoveryEmailError
-        );
-
-        const email =
-            validateEmail(
-                e.recoveryEmail &&
-                e.recoveryEmail.value
-            );
-
-        if (!email.valid) {
-
-            setFieldError(
-                e.recoveryEmail,
-                e.recoveryEmailError,
-                email.message
-            );
-
-            shake(
-                e.recoveryEmail
-            );
-
-            return;
-
-        }
-
-        if (
-            typeof auth.resetPassword !==
-            "function"
-        ) {
-
-            showStatus(
-                "وظيفة استعادة كلمة المرور غير متوفرة.",
-                "error"
-            );
-
-            return;
-
-        }
-
-        setLoading(true);
-
-        try {
-
-            const result =
-                await auth.resetPassword(
-                    email.value,
-                    SETTINGS_URL
-                );
-
-            if (
-                result &&
-                result.error
-            ) {
-
-                throw result.error;
-
-            }
-
-            showStatus(
-                (
-                    CONFIG.messages &&
-                    CONFIG.messages.resetSent
-                ) ||
-                "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+            setMessage(
+                E.registerMessage,
+                "تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو مجلد الرسائل غير المرغوب فيها.",
                 "success"
             );
 
         } catch (error) {
+            console.error(
+                "WFESC registration error:",
+                error
+            );
 
+            const message =
+                getErrorMessage(error);
+
+            setMessage(
+                E.registerMessage,
+                message,
+                "error"
+            );
+
+            showStatus(
+                message,
+                "error"
+            );
+
+            showDebugError(error);
+
+        } finally {
+            setButtonLoading(
+                E.registerSubmit,
+                false
+            );
+        }
+    }
+
+    /*
+     * ============================================================
+     * EMAIL VERIFICATION
+     * ============================================================
+     */
+
+    let verificationTimer = null;
+
+    function showVerificationMessage() {
+        if (!E) return;
+
+        E.verification.textContent =
+            "✓ تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو الرسائل غير المرغوب فيها. ستختفي هذه الرسالة تلقائيًا.";
+
+        E.verification.classList.add(
+            "show"
+        );
+
+        clearTimeout(
+            verificationTimer
+        );
+
+        verificationTimer =
+            setTimeout(function () {
+                E.verification.classList.remove(
+                    "show"
+                );
+            }, 5000);
+    }
+
+    /*
+     * ============================================================
+     * PASSWORD RESET
+     * ============================================================
+     */
+
+    async function sendReset() {
+        clearFieldError(
+            E.forgotEmail,
+            E.forgotEmailError
+        );
+
+        clearMessage(
+            E.forgotMessage
+        );
+
+        const email =
+            E.forgotEmail.value.trim();
+
+        if (!validEmail(email)) {
+            fieldError(
+                E.forgotEmail,
+                E.forgotEmailError,
+                "يرجى إدخال بريد إلكتروني صحيح."
+            );
+
+            return;
+        }
+
+        const auth = getAuth();
+
+        if (
+            !auth ||
+            typeof auth.resetPassword !==
+            "function"
+        ) {
+            const error =
+                new Error(
+                    "دالة resetPassword غير موجودة في settings-auth.js."
+                );
+
+            setMessage(
+                E.forgotMessage,
+                getErrorMessage(error),
+                "error"
+            );
+
+            showDebugError(error);
+
+            return;
+        }
+
+        setButtonLoading(
+            E.forgotSubmit,
+            true,
+            "جارٍ الإرسال..."
+        );
+
+        try {
+            await auth.resetPassword(
+                email
+            );
+
+            setMessage(
+                E.forgotMessage,
+                "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+                "success"
+            );
+
+            showStatus(
+                "تم إرسال رابط إعادة التعيين.",
+                "success"
+            );
+
+        } catch (error) {
             console.error(
                 "WFESC reset error:",
                 error
             );
 
-            showStatus(
-                getAuthErrorMessage(
-                    error,
-                    (
-                        CONFIG.messages &&
-                        CONFIG.messages.resetError
-                    ) ||
-                    "تعذر إرسال رابط إعادة تعيين كلمة المرور."
-                ),
-                "error"
-            );
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    }
-
-    /* =========================================
-       NEW PASSWORD
-    ========================================= */
-
-    async function handleRecoveryPasswordSubmit(
-        event
-    ) {
-
-        event.preventDefault();
-
-        if (busy) {
-            return;
-        }
-
-        const e =
-            getElements();
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
-            return;
-        }
-
-        const password =
-            validatePassword(
-                e.recoveryPassword &&
-                e.recoveryPassword.value
-            );
-
-        clearFieldError(
-            e.recoveryPassword,
-            e.recoveryPasswordError
-        );
-
-        clearFieldError(
-            e.recoveryConfirm,
-            e.recoveryConfirmError
-        );
-
-        if (!password.valid) {
-
-            setFieldError(
-                e.recoveryPassword,
-                e.recoveryPasswordError,
-                password.message
-            );
-
-            shake(
-                e.recoveryPassword
-            );
-
-            return;
-
-        }
-
-        const confirm =
-            String(
-                e.recoveryConfirm &&
-                e.recoveryConfirm.value ||
-                ""
-            );
-
-        if (
-            confirm !==
-            password.value
-        ) {
-
             const message =
-                "كلمتا المرور غير متطابقتين.";
+                getErrorMessage(error);
 
-            setFieldError(
-                e.recoveryPassword,
-                e.recoveryPasswordError,
-                message
-            );
-
-            setFieldError(
-                e.recoveryConfirm,
-                e.recoveryConfirmError,
-                message
-            );
-
-            shake(
-                e.recoveryPassword
-            );
-
-            shake(
-                e.recoveryConfirm
-            );
-
-            return;
-
-        }
-
-        if (
-            typeof auth.updatePassword !==
-            "function"
-        ) {
-
-            showStatus(
-                "وظيفة تغيير كلمة المرور غير متوفرة.",
+            setMessage(
+                E.forgotMessage,
+                message,
                 "error"
             );
 
-            return;
-
-        }
-
-        setLoading(true);
-
-        try {
-
-            const result =
-                await auth.updatePassword(
-                    password.value
-                );
-
-            if (
-                result &&
-                result.error
-            ) {
-
-                throw result.error;
-
-            }
-
             showStatus(
-                "تم تغيير كلمة المرور بنجاح. سيتم تسجيل الخروج.",
-                "success"
-            );
-
-            setTimeout(
-                async function () {
-
-                    if (
-                        typeof auth.signOut ===
-                        "function"
-                    ) {
-
-                        try {
-
-                            await auth.signOut();
-
-                        } catch (error) {
-
-                            console.error(
-                                error
-                            );
-
-                        }
-
-                    }
-
-                    setMode(
-                        "login"
-                    );
-
-                    document.dispatchEvent(
-                        new CustomEvent(
-                            "WFESCAuthChanged",
-                            {
-                                detail: {
-                                    user: null,
-                                    profile: null,
-                                    loggedIn: false
-                                }
-                            }
-                        )
-                    );
-
-                },
-                1200
-            );
-
-        } catch (error) {
-
-            console.error(
-                "WFESC password update error:",
-                error
-            );
-
-            showStatus(
-                getAuthErrorMessage(
-                    error,
-                    "تعذر تغيير كلمة المرور."
-                ),
+                message,
                 "error"
             );
+
+            showDebugError(error);
 
         } finally {
-
-            setLoading(false);
-
+            setButtonLoading(
+                E.forgotSubmit,
+                false
+            );
         }
-
     }
 
-    /* =========================================
-       CHANGE PASSWORD
-    ========================================= */
-    
-async function handleChangePassword() {
+    /*
+     * ============================================================
+     * CHANGE PASSWORD
+     * ============================================================
+     */
 
-        const auth =
-            getAuth();
+    function openChangePassword() {
+        E.newPassword.value = "";
+        E.newPasswordConfirm.value = "";
 
-        if (!auth) {
-            return;
-        }
+        clearMessage(
+            E.changePasswordMessage
+        );
+
+        E.changePasswordModal.classList.add(
+            "show"
+        );
+    }
+
+    function closeChangePassword() {
+        E.changePasswordModal.classList.remove(
+            "show"
+        );
+    }
+
+    async function changePassword() {
+        clearMessage(
+            E.changePasswordMessage
+        );
 
         const password =
-            window.prompt(
-                "اكتب كلمة المرور الجديدة (6 إلى 16 خانة):"
-            );
+            E.newPassword.value;
 
-        if (password === null) {
-            return;
-        }
+        const confirm =
+            E.newPasswordConfirm.value;
 
-        const validation =
-            validatePassword(
-                password
-            );
-
-        if (!validation.valid) {
-
-            showStatus(
-                validation.message,
+        if (!validPassword(password)) {
+            setMessage(
+                E.changePasswordMessage,
+                "كلمة المرور يجب أن تكون من 6 إلى 16 خانة.",
                 "error"
             );
 
-            return;
+            shake(E.newPassword);
 
-        }
-
-        const confirm =
-            window.prompt(
-                "أعد كتابة كلمة المرور:"
-            );
-
-        if (confirm === null) {
             return;
         }
 
-        if (
-            confirm !==
-            validation.value
-        ) {
-
-            showStatus(
+        if (password !== confirm) {
+            setMessage(
+                E.changePasswordMessage,
                 "كلمتا المرور غير متطابقتين.",
                 "error"
             );
 
-            return;
+            shakeMany([
+                E.newPassword,
+                E.newPasswordConfirm
+            ]);
 
+            return;
         }
 
+        const auth = getAuth();
+
         if (
+            !auth ||
             typeof auth.updatePassword !==
             "function"
         ) {
+            const error =
+                new Error(
+                    "دالة updatePassword غير موجودة في settings-auth.js."
+                );
 
-            showStatus(
-                "وظيفة تغيير كلمة المرور غير متوفرة.",
+            setMessage(
+                E.changePasswordMessage,
+                getErrorMessage(error),
                 "error"
             );
 
-            return;
+            showDebugError(error);
 
+            return;
         }
 
-        setLoading(true);
+        setButtonLoading(
+            E.changePasswordSubmit,
+            true,
+            "جارٍ الحفظ..."
+        );
 
         try {
+            await auth.updatePassword(
+                password
+            );
 
-            const result =
-                await auth.updatePassword(
-                    validation.value
-                );
-
-            if (
-                result &&
-                result.error
-            ) {
-
-                throw result.error;
-
-            }
+            setMessage(
+                E.changePasswordMessage,
+                "تم تغيير كلمة المرور بنجاح.",
+                "success"
+            );
 
             showStatus(
                 "تم تغيير كلمة المرور بنجاح.",
                 "success"
             );
 
-        } catch (error) {
+            setTimeout(
+                closeChangePassword,
+                900
+            );
 
+        } catch (error) {
             console.error(
                 "WFESC change password error:",
                 error
             );
 
-            showStatus(
-                getAuthErrorMessage(
-                    error,
-                    "تعذر تغيير كلمة المرور."
-                ),
+            const message =
+                getErrorMessage(error);
+
+            setMessage(
+                E.changePasswordMessage,
+                message,
                 "error"
             );
 
+            showStatus(
+                message,
+                "error"
+            );
+
+            showDebugError(error);
+
         } finally {
-
-            setLoading(false);
-
+            setButtonLoading(
+                E.changePasswordSubmit,
+                false
+            );
         }
-
     }
 
-    /* =========================================
-       LOGOUT
-    ========================================= */
+    /*
+     * ============================================================
+     * RECOVERY PASSWORD
+     * ============================================================
+     */
 
-    async function handleLogout() {
+    async function recoveryPassword() {
+        clearMessage(
+            E.recoveryMessage
+        );
 
-        const auth =
-            getAuth();
+        const password =
+            E.recoveryPassword.value;
 
-        if (!auth) {
+        const confirm =
+            E.recoveryConfirm.value;
+
+        if (!validPassword(password)) {
+            setMessage(
+                E.recoveryMessage,
+                "كلمة المرور يجب أن تكون من 6 إلى 16 خانة.",
+                "error"
+            );
+
+            shake(E.recoveryPassword);
+
             return;
         }
 
-        setLoading(true);
+        if (password !== confirm) {
+            setMessage(
+                E.recoveryMessage,
+                "كلمتا المرور غير متطابقتين.",
+                "error"
+            );
+
+            shakeMany([
+                E.recoveryPassword,
+                E.recoveryConfirm
+            ]);
+
+            return;
+        }
+
+        const auth = getAuth();
+
+        if (
+            !auth ||
+            typeof auth.updatePassword !==
+            "function"
+        ) {
+            const error =
+                new Error(
+                    "دالة updatePassword غير موجودة في settings-auth.js."
+                );
+
+            setMessage(
+                E.recoveryMessage,
+                getErrorMessage(error),
+                "error"
+            );
+
+            showDebugError(error);
+
+            return;
+        }
+
+        setButtonLoading(
+            E.recoverySubmit,
+            true,
+            "جارٍ الحفظ..."
+        );
 
         try {
+            await auth.updatePassword(
+                password
+            );
 
-            if (
-                typeof auth.signOut ===
-                "function"
-            ) {
+            setMessage(
+                E.recoveryMessage,
+                "تم تغيير كلمة المرور بنجاح. يمكنك تسجيل الدخول الآن.",
+                "success"
+            );
 
-                const result =
-                    await auth.signOut();
+            showStatus(
+                "تم تغيير كلمة المرور.",
+                "success"
+            );
 
-                if (
-                    result &&
-                    result.error
-                ) {
+            setTimeout(
+                function () {
+                    E.recoveryModal.classList.remove(
+                        "show"
+                    );
 
-                    throw result.error;
+                    if (
+                        typeof auth.signOut ===
+                        "function"
+                    ) {
+                        auth.signOut()
+                            .catch(function () {});
+                    }
 
-                }
+                    renderAccount(
+                        null,
+                        null
+                    );
 
-            }
+                    setMode("login");
+                },
+                1000
+            );
+
+        } catch (error) {
+            console.error(
+                "WFESC recovery password error:",
+                error
+            );
+
+            const message =
+                getErrorMessage(error);
+
+            setMessage(
+                E.recoveryMessage,
+                message,
+                "error"
+            );
+
+            showStatus(
+                message,
+                "error"
+            );
+
+            showDebugError(error);
+
+        } finally {
+            setButtonLoading(
+                E.recoverySubmit,
+                false
+            );
+        }
+    }
+
+    /*
+     * ============================================================
+     * LOGOUT
+     * ============================================================
+     */
+
+    async function logout() {
+        const auth = getAuth();
+
+        if (
+            !auth ||
+            typeof auth.signOut !==
+            "function"
+        ) {
+            const error =
+                new Error(
+                    "دالة signOut غير موجودة في settings-auth.js."
+                );
+
+            showStatus(
+                getErrorMessage(error),
+                "error"
+            );
+
+            showDebugError(error);
+
+            return;
+        }
+
+        try {
+            await auth.signOut();
+
+            currentUser = null;
+            currentProfile = null;
 
             renderAccount(
                 null,
                 null
             );
 
+            setMode("login");
+
             showStatus(
-                "تم تسجيل الخروج.",
+                "تم تسجيل الخروج بنجاح.",
                 "success"
             );
 
-            document.dispatchEvent(
-                new CustomEvent(
-                    "WFESCAuthChanged",
-                    {
-                        detail: {
-                            user: null,
-                            profile: null,
-                            loggedIn: false
-                        }
-                    }
-                )
-            );
-
         } catch (error) {
-
             console.error(
                 "WFESC logout error:",
                 error
             );
 
+            const message =
+                getErrorMessage(error);
+
             showStatus(
-                "تعذر تسجيل الخروج.",
+                message,
                 "error"
             );
 
-        } finally {
-
-            setLoading(false);
-
+            showDebugError(error);
         }
-
     }
 
-    /* =========================================
-       DELETE ACCOUNT
-    ========================================= */
+    /*
+     * ============================================================
+     * DELETE ACCOUNT
+     * ============================================================
+     */
 
-    async function handleDeleteAccount() {
+    async function deleteAccount() {
+        const confirmed =
+            window.confirm(
+                "هل أنت متأكد من حذف حسابك؟ هذا الإجراء نهائي."
+            );
 
-        const auth =
-            getAuth();
-
-        if (!auth) {
+        if (!confirmed) {
             return;
         }
 
-        if (
-            !window.confirm(
-                "هل أنت متأكد من حذف حسابك نهائيًا؟"
-            )
-        ) {
-            return;
-        }
+        const auth = getAuth();
 
         if (
-            !window.confirm(
-                "هذا الإجراء نهائي. هل تريد المتابعة؟"
-            )
-        ) {
-            return;
-        }
-
-        if (
+            !auth ||
             typeof auth.deleteAccount !==
             "function"
         ) {
+            const error =
+                new Error(
+                    "دالة deleteAccount غير موجودة في settings-auth.js."
+                );
 
             showStatus(
-                "حذف الحساب غير متوفر حاليًا.",
+                getErrorMessage(error),
                 "error"
             );
 
-            return;
+            showDebugError(error);
 
+            return;
         }
 
-        setLoading(true);
-
         try {
+            await auth.deleteAccount();
 
-            const result =
-                await auth.deleteAccount();
-
-            if (
-                result &&
-                result.error
-            ) {
-
-                throw result.error;
-
-            }
+            currentUser = null;
+            currentProfile = null;
 
             renderAccount(
                 null,
@@ -3294,1043 +2692,492 @@ async function handleChangePassword() {
                 "success"
             );
 
-            document.dispatchEvent(
-                new CustomEvent(
-                    "WFESCAuthChanged",
-                    {
-                        detail: {
-                            user: null,
-                            profile: null,
-                            loggedIn: false
-                        }
-                    }
-                )
-            );
-
         } catch (error) {
-
             console.error(
                 "WFESC delete account error:",
                 error
             );
 
+            const message =
+                getErrorMessage(error);
+
             showStatus(
-                getAuthErrorMessage(
-                    error,
-                    "تعذر حذف الحساب. حذف auth.users يحتاج إلى إجراء آمن على الخادم."
-                ),
+                message,
                 "error"
             );
 
-        } finally {
-
-            setLoading(false);
-
+            showDebugError(error);
         }
-
     }
 
-    /* =========================================
-       EVENTS
-    ========================================= */
+    /*
+     * ============================================================
+     * PROFILE
+     * ============================================================
+     */
 
-    function bindEvents() {
-
-        const e =
-            getElements();
-
-        if (e.loginTab) {
-
-            e.loginTab.addEventListener(
-                "click",
-                function () {
-                    setMode("login");
-                }
-            );
-
-        }
-
-        if (e.registerTab) {
-
-            e.registerTab.addEventListener(
-                "click",
-                function () {
-                    setMode("register");
-                }
-            );
-
-        }
-
-        if (e.loginForm) {
-
-            e.loginForm.addEventListener(
-                "submit",
-                handleLogin
-            );
-
-        }
-
-        if (e.registerForm) {
-
-            e.registerForm.addEventListener(
-                "submit",
-                handleRegister
-            );
-
-        }
-
-        if (e.forgotPassword) {
-
-            e.forgotPassword.addEventListener(
-                "click",
-                handleForgotPassword
-            );
-
-        }
-
-        if (e.recoverySubmit) {
-
-            e.recoverySubmit.addEventListener(
-                "click",
-                handleRecoverySubmit
-            );
-
-        }
-
-        if (e.recoveryBack) {
-
-            e.recoveryBack.addEventListener(
-                "click",
-                function () {
-                    setMode("login");
-                }
-            );
-
-        }
-
-        if (
-            e.recoveryPasswordSubmit
-        ) {
-
-            e.recoveryPasswordSubmit.addEventListener(
-                "click",
-                handleRecoveryPasswordSubmit
-            );
-
-        }
-
-        if (e.profileButton) {
-
-            e.profileButton.addEventListener(
-                "click",
-                function () {
-
-                    window.location.href =
-                        "profile.html";
-
-                }
-            );
-
-        }
-
-        if (
-            e.changePasswordButton
-        ) {
-
-            e.changePasswordButton.addEventListener(
-                "click",
-                handleChangePassword
-            );
-
-        }
-
-        if (e.logoutButton) {
-
-            e.logoutButton.addEventListener(
-                "click",
-                handleLogout
-            );
-
-        }
-
-        if (e.deleteButton) {
-
-            e.deleteButton.addEventListener(
-                "click",
-                handleDeleteAccount
-            );
-
-        }
-
-        bindPasswordToggle(
-            e.loginPasswordToggle,
-            e.loginPassword
-        );
-
-        bindPasswordToggle(
-            e.registerPasswordToggle,
-            e.registerPassword
-        );
-
-        bindPasswordToggle(
-            e.registerConfirmToggle,
-            e.registerConfirm
-        );
-
-        bindPasswordToggle(
-            e.recoveryPasswordToggle,
-            e.recoveryPassword
-        );
-
-        bindPasswordToggle(
-            e.recoveryConfirmToggle,
-            e.recoveryConfirm
-        );
-
-        bindInputCleanup();
-
+    function openProfile() {
+        window.location.href =
+            "profile.html";
     }
 
-    /* =========================================
-       AUTH EVENTS
-    ========================================= */
- function bindAuthEvents() {
+    /*
+     * ============================================================
+     * RECOVERY URL
+     * ============================================================
+     */
 
-        document.addEventListener(
-            "WFESCEmailVerified",
-            async function (event) {
+    async function handleRecoveryURL() {
+        const url =
+            window.location.href;
 
-                hideVerificationMessage();
+        const search =
+            window.location.search;
 
-                const user =
-                    event &&
-                    event.detail &&
-                    event.detail.user
-                        ? event.detail.user
-                        : await getCurrentUser();
+        const hash =
+            window.location.hash;
 
-                const profile =
-                    user
-                        ? await getCurrentProfile(
-                            user
-                        )
-                        : null;
+        const isRecovery =
+            /type=recovery/i.test(
+                search + hash
+            ) ||
+            /access_token=/i.test(
+                search + hash
+            ) ||
+            /refresh_token=/i.test(
+                search + hash
+            );
 
-                if (user) {
+        if (!isRecovery) {
+            return;
+        }
 
-                    renderAccount(
-                        user,
-                        profile
-                    );
+        const auth = getAuth();
 
-                }
+        try {
+            if (
+                auth &&
+                typeof auth.restoreSession ===
+                "function"
+            ) {
+                await auth.restoreSession();
+            }
 
-                showStatus(
-                    "تم تأكيد بريدك الإلكتروني بنجاح.",
-                    "success"
+            E.recoveryModal.classList.add(
+                "show"
+            );
+
+        } catch (error) {
+            console.error(
+                "WFESC recovery URL error:",
+                error
+            );
+
+            showStatus(
+                getErrorMessage(error),
+                "error"
+            );
+
+            showDebugError(error);
+        }
+    }
+
+    /*
+     * ============================================================
+     * DEBUG ERROR
+     * ============================================================
+     */
+
+    function showDebugError(error) {
+        let debug =
+            qs(".wfesc-auth-debug");
+
+        if (!debug) {
+            debug =
+                document.createElement(
+                    "div"
                 );
 
+            debug.className =
+                "wfesc-auth-debug";
+
+            if (root) {
+                root.appendChild(debug);
             }
-        );
+        }
 
-        document.addEventListener(
-            "WFESCProfileChanged",
-            async function () {
+        debug.textContent =
+            "WFESC ERROR: " +
+            getErrorMessage(error);
+    }
 
-                const user =
-                    await getCurrentUser();
+    /*
+     * ============================================================
+     * AUTH EVENTS
+     * ============================================================
+     */
 
-                if (!user) {
-                    return;
-                }
-
-                const profile =
-                    await getCurrentProfile(
-                        user
-                    );
-
-                renderAccount(
-                    user,
-                    profile
-                );
-
-            }
-        );
-
-        document.addEventListener(
+    function bindAuthEvents() {
+        window.addEventListener(
             "WFESCAuthChanged",
             function (event) {
 
                 const detail =
-                    event &&
-                    event.detail
-                        ? event.detail
-                        : {};
+                    event.detail || {};
 
-                renderAccount(
-                    detail.user || null,
-                    detail.profile || null
-                );
-
-            }
-        );
-
-    }
-
-    /* =========================================
-       RECOVERY URL
-    ========================================= */
-
-    function handleRecoveryURL() {
-
-        const search =
-            String(
-                window.location.search ||
-                ""
-            ).toLowerCase();
-
-        const hash =
-            String(
-                window.location.hash ||
-                ""
-            ).toLowerCase();
-
-        const combined =
-            search +
-            "&" +
-            hash;
-
-        if (
-            combined.includes(
-                "type=recovery"
-            )
-        ) {
-
-            showRecoveryPassword();
-
-        }
-
-    }
-
-    /* =========================================
-       RESTORE SESSION
-    ========================================= */
-
-    async function restoreSession() {
-
-        const auth =
-            getAuth();
-
-        if (!auth) {
-            return;
-        }
-
-        try {
-
-            let result = null;
-
-            if (
-                typeof auth.restoreSession ===
-                "function"
-            ) {
-
-                result =
-                    await auth.restoreSession();
-
-            }
-
-            const user =
-                result &&
-                result.user
-                    ? result.user
-                    : await getCurrentUser();
-
-            if (user) {
+                const user =
+                    detail.user ||
+                    null;
 
                 const profile =
-                    result &&
-                    result.profile
-                        ? result.profile
-                        : await getCurrentProfile(
-                            user
-                        );
+                    detail.profile ||
+                    null;
 
                 renderAccount(
                     user,
                     profile
                 );
+            }
+        );
 
-            } else {
+        window.addEventListener(
+            "WFESCEmailVerified",
+            function () {
+                showVerificationMessage();
 
-                renderAccount(
-                    null,
-                    null
+                showStatus(
+                    "تم التحقق من البريد الإلكتروني.",
+                    "success"
+                );
+
+                restoreSession();
+            }
+        );
+    }
+
+    /*
+     * ============================================================
+     * EVENTS
+     * ============================================================
+     */
+
+    function bindEvents() {
+        E.tabs.forEach(function (tab) {
+
+            tab.addEventListener(
+                "click",
+                function () {
+
+                    const mode =
+                        tab.getAttribute(
+                            "data-auth-mode"
+                        );
+
+                    if (mode === "register") {
+                        setMode("register");
+                        clearLoginErrors();
+                    } else {
+                        setMode("login");
+                        clearRegisterErrors();
+                    }
+                }
+            );
+        });
+
+        E.loginSubmit.addEventListener(
+            "click",
+            login
+        );
+
+        E.registerSubmit.addEventListener(
+            "click",
+            register
+        );
+
+        E.loginForgot.addEventListener(
+            "click",
+            function () {
+
+                const email =
+                    E.loginEmail.value.trim();
+
+                E.forgotEmail.value =
+                    email;
+
+                setMode("forgot");
+
+            }
+        );
+
+        E.forgotBack.addEventListener(
+            "click",
+            function () {
+                setMode("login");
+            }
+        );
+
+        E.forgotSubmit.addEventListener(
+            "click",
+            sendReset
+        );
+
+        E.profileButton.addEventListener(
+            "click",
+            openProfile
+        );
+
+        E.changePasswordButton.addEventListener(
+            "click",
+            openChangePassword
+        );
+
+        E.changePasswordSubmit.addEventListener(
+            "click",
+            changePassword
+        );
+
+        E.logoutButton.addEventListener(
+            "click",
+            logout
+        );
+
+        E.deleteButton.addEventListener(
+            "click",
+            deleteAccount
+        );
+
+        E.recoverySubmit.addEventListener(
+            "click",
+            recoveryPassword
+        );
+
+        qsa("[data-close-modal]")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    closeAllModals
+                );
+
+            });
+
+        [E.changePasswordModal, E.recoveryModal]
+            .forEach(function (modal) {
+
+                if (!modal) return;
+
+                modal.addEventListener(
+                    "click",
+                    function (event) {
+
+                        if (
+                            event.target ===
+                            modal
+                        ) {
+                            modal.classList.remove(
+                                "show"
+                            );
+                        }
+
+                    }
+                );
+
+            });
+
+        E.registerUsername.addEventListener(
+            "input",
+            function () {
+
+                const clean =
+                    sanitizeUsername(
+                        E.registerUsername.value
+                    );
+
+                E.registerUsername.value =
+                    clean;
+
+            }
+        );
+
+        E.registerPassword.addEventListener(
+            "input",
+            function () {
+
+                if (
+                    E.registerConfirm.value &&
+                    E.registerPassword.value ===
+                    E.registerConfirm.value
+                ) {
+                    clearFieldError(
+                        E.registerPassword,
+                        E.registerPasswordError
+                    );
+
+                    clearFieldError(
+                        E.registerConfirm,
+                        E.registerConfirmError
+                    );
+                }
+
+            }
+        );
+
+        E.registerConfirm.addEventListener(
+            "input",
+            function () {
+
+                if (
+                    E.registerPassword.value ===
+                    E.registerConfirm.value
+                ) {
+                    clearFieldError(
+                        E.registerPassword,
+                        E.registerPasswordError
+                    );
+
+                    clearFieldError(
+                        E.registerConfirm,
+                        E.registerConfirmError
+                    );
+                }
+
+            }
+        );
+
+        E.loginPassword.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Enter") {
+                    login();
+                }
+
+            }
+        );
+
+        E.loginEmail.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Enter") {
+                    login();
+                }
+
+            }
+        );
+
+        E.registerConfirm.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Enter") {
+                    register();
+                }
+
+            }
+        );
+
+        /*
+         * منع prompt الخاص بالمتصفح.
+         */
+
+        window.addEventListener(
+            "error",
+            function (event) {
+
+                if (
+                    event &&
+                    event.error
+                ) {
+                    console.error(
+                        "WFESC global error:",
+                        event.error
+                    );
+
+                    showDebugError(
+                        event.error
+                    );
+                }
+
+            }
+        );
+
+        window.addEventListener(
+            "unhandledrejection",
+            function (event) {
+
+                const reason =
+                    event.reason ||
+                    new Error(
+                        "Unhandled Promise Rejection"
+                    );
+
+                console.error(
+                    "WFESC promise error:",
+                    reason
+                );
+
+                showDebugError(
+                    reason
                 );
 
             }
-
-        } catch (error) {
-
-            console.error(
-                "WFESC restore session error:",
-                error
-            );
-
-        }
-
+        );
     }
 
-    /* =========================================
-       CSS
-    ========================================= */
+    /*
+     * ============================================================
+     * INIT
+     * ============================================================
+     */
 
-    function injectCSS() {
-
-        if (
-            document.getElementById(
-                "wfesc-settings-auth-ui-style"
-            )
-        ) {
+    async function init() {
+        if (initialized) {
             return;
         }
 
-        const style =
-            document.createElement(
-                "style"
-            );
+        initialized = true;
 
-        style.id =
-            "wfesc-settings-auth-ui-style";
+        if (!ensureRoot()) {
+            return;
+        }
 
-        style.textContent = `
-
-#wfesc-settings-auth-root,
-[data-wfesc-auth],
-#wfesc-auth {
-
-    width: 100%;
-    color: #eee;
-    font-family:
-        Arial,
-        Tahoma,
-        sans-serif;
-
-}
-
-.wfesc-auth-shell {
-
-    width: 100%;
-    max-width: 620px;
-    margin: 20px auto;
-
-}
-
-.wfesc-auth-card {
-
-    background: #090909;
-    border: 1px solid #242424;
-    border-radius: 18px;
-    padding: 20px;
-    box-shadow:
-        0 12px 40px
-        rgba(0,0,0,.28);
-
-}
-
-.wfesc-auth-header {
-
-    text-align: center;
-    margin-bottom: 20px;
-
-}
-
-.wfesc-auth-title {
-
-    font-size: 27px;
-    font-weight: 800;
-    margin-bottom: 8px;
-
-}
-
-.wfesc-auth-subtitle {
-
-    color: #999;
-    font-size: 14px;
-    line-height: 1.8;
-
-}
-
-.wfesc-tabs {
-
-    display: grid;
-    grid-template-columns:
-        1fr 1fr;
-    gap: 8px;
-    margin-bottom: 18px;
-
-}
-
-.wfesc-tab {
-
-    min-height: 46px;
-    border: 1px solid #292929;
-    border-radius: 12px;
-    background: #111;
-    color: #aaa;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 700;
-
-}
-
-.wfesc-tab.active {
-
-    background: #eee;
-    color: #050505;
-    border-color: #eee;
-
-}
-
-.wfesc-field {
-
-    margin-bottom: 15px;
-
-}
-
-.wfesc-field label {
-
-    display: block;
-    margin-bottom: 7px;
-    color: #ddd;
-    font-size: 14px;
-    font-weight: 700;
-
-}
-
-.wfesc-input-wrap {
-
-    position: relative;
-
-}
-
-.wfesc-input {
-
-    width: 100%;
-    min-height: 48px;
-    border: 1px solid #292929;
-    border-radius: 12px;
-    background: #111;
-    color: #fff;
-    outline: none;
-    padding: 12px 14px;
-    font-size: 16px;
-
-}
-
-.wfesc-input.password-input {
-
-    padding-left: 50px;
-
-}
-
-.wfesc-input:focus {
-
-    border-color: #777;
-
-}
-
-.wfesc-input-error {
-
-    border-color: #d84b4b !important;
-
-    box-shadow:
-        0 0 0 2px
-        rgba(216,75,75,.12);
-
-}
-
-.wfesc-field-error {
-
-    display: none;
-    color: #ff7777;
-    font-size: 12px;
-    line-height: 1.7;
-    margin-top: 6px;
-
-}
-
-.wfesc-password-toggle {
-
-    position: absolute;
-    left: 6px;
-    top: 50%;
-    transform:
-        translateY(-50%);
-    width: 40px;
-    height: 40px;
-    border: 0;
-    background: transparent;
-    color: #ddd;
-    cursor: pointer;
-    border-radius: 10px;
-    font-size: 18px;
-
-}
-
-.wfesc-password-toggle:hover {
-
-    background: #1c1c1c;
-
-}
-
-.wfesc-hint {
-
-    color: #777;
-    font-size: 12px;
-    line-height: 1.7;
-    margin-top: 5px;
-
-}
-
-.wfesc-submit {
-
-    width: 100%;
-    min-height: 50px;
-    border: 0;
-    border-radius: 13px;
-    background: #eee;
-    color: #050505;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 800;
-    margin-top: 5px;
-
-}
-
-.wfesc-submit:disabled {
-
-    opacity: .55;
-    cursor: not-allowed;
-
-}
-
-.wfesc-link {
-
-    display: inline-block;
-    border: 0;
-    background: transparent;
-    color: #aaa;
-    cursor: pointer;
-    padding: 8px 0;
-    font-size: 13px;
-
-}
-
-.wfesc-link:hover {
-
-    color: #fff;
-
-}
-
-.wfesc-status {
-
-    display: none;
-    margin-top: 14px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #303030;
-    background: #111;
-    color: #ddd;
-    line-height: 1.8;
-    font-size: 13px;
-
-}
-
-.wfesc-status.success {
-
-    border-color: #316d48;
-    color: #a9efbf;
-    background: #0c1911;
-
-}
-
-.wfesc-status.error {
-
-    border-color: #713b3b;
-    color: #ffadad;
-    background: #1b0d0d;
-
-}
-
-.wfesc-verification {
-
-    display: none;
-    margin-top: 14px;
-    padding: 14px;
-    border-radius: 13px;
-    border: 1px solid #356b4b;
-    background: #0c1b12;
-    color: #b9f3ca;
-    line-height: 1.8;
-    font-size: 13px;
-
-}
-
-.wfesc-verification-blink {
-
-    animation:
-        wfescVerificationBlink
-        .75s
-        ease-in-out
-        3;
-
-}
-
-@keyframes wfescVerificationBlink {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: .28;
-    }
-
-}
-
-.wfesc-section {
-
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid #222;
-
-}
-
-.wfesc-section-title {
-
-    font-weight: 800;
-    margin-bottom: 10px;
-
-}
-
-.wfesc-account-card {
-
-    display: none;
-
-}
-
-.wfesc-account-head {
-
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    padding-bottom: 16px;
-
-}
-
-.wfesc-account-avatar {
-
-    width: 62px;
-    height: 62px;
-    flex: 0 0 62px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #191919;
-    border: 1px solid #303030;
-    font-size: 22px;
-    font-weight: 800;
-
-}
-
-.wfesc-account-avatar img {
-
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-
-}
-
-.wfesc-account-name-row {
-
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-
-}
-
-.wfesc-account-name {
-
-    font-size: 18px;
-    font-weight: 800;
-
-}
-
-.wfesc-account-verified {
-
-    display: none;
-    width: 20px;
-    height: 20px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #25b45b;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 900;
-
-}
-
-.wfesc-account-username {
-
-    color: #aaa;
-    font-size: 13px;
-    margin-top: 3px;
-
-}
-
-.wfesc-account-email {
-
-    color: #777;
-    font-size: 12px;
-    margin-top: 3px;
-    word-break: break-word;
-
-}
-
-.wfesc-account-actions {
-
-    display: grid;
-    gap: 9px;
-
-}
-
-.wfesc-account-action {
-
-    width: 100%;
-    min-height: 58px;
-    border: 1px solid #252525;
-    border-radius: 13px;
-    background: #101010;
-    color: #eee;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    text-align: right;
-    padding: 11px 13px;
-
-}
-
-.wfesc-account-action:hover {
-
-    background: #161616;
-    border-color: #3a3a3a;
-
-}
-
-.wfesc-account-action-main {
-
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-
-}
-
-.wfesc-account-action-title {
-
-    font-size: 14px;
-    font-weight: 800;
-
-}
-
-.wfesc-account-action-description {
-
-    color: #777;
-    font-size: 11px;
-
-}
-
-.wfesc-account-action-icon {
-
-    font-size: 19px;
-
-}
-
-.wfesc-loading {
-
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    margin-top: 13px;
-    color: #aaa;
-    font-size: 13px;
-
-}
-
-.wfesc-spinner {
-
-    width: 17px;
-    height: 17px;
-    border: 2px solid #333;
-    border-top-color: #eee;
-    border-radius: 50%;
-
-    animation:
-        wfescSpin
-        .8s
-        linear
-        infinite;
-
-}
-
-@keyframes wfescSpin {
-
-    to {
-        transform: rotate(360deg);
-    }
-
-}
-
-.wfesc-shake {
-
-    animation:
-        wfescShake
-        .45s
-        ease-in-out;
-
-}
-
-@keyframes wfescShake {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    20% {
-        transform: translateX(-7px);
-    }
-
-    40% {
-        transform: translateX(7px);
-    }
-
-    60% {
-        transform: translateX(-5px);
-    }
-
-    80% {
-        transform: translateX(5px);
-    }
-
-}
-
-.wfesc-recovery-card,
-.wfesc-recovery-password-card {
-
-    display: none;
-
-}
-
-@media (max-width: 480px) {
-
-    .wfesc-auth-card {
-
-        padding: 15px;
-        border-radius: 15px;
-
-    }
-
-    .wfesc-auth-title {
-
-        font-size: 23px;
-
-    }
-
-}
-
-`;
-
-        document.head.appendChild(
-            style
-        );
-
-    }
-
- 
-    /* =========================================
-       INITIALIZE
-    ========================================= */
-
-    function init() {
-
-        ensureRoot();
+        injectCSS();
 
         buildUI();
 
-        injectCSS();
+        E = getElements();
+
+        bindPasswordToggles();
 
         bindEvents();
 
         bindAuthEvents();
 
-        handleRecoveryURL();
-
         setMode("login");
 
-        restoreSession();
+        await handleRecoveryURL();
 
+        await restoreSession();
     }
+
+    /*
+     * ============================================================
+     * START
+     * ============================================================
+     */
 
     if (
         document.readyState ===
         "loading"
     ) {
-
         document.addEventListener(
             "DOMContentLoaded",
             init,
-            {
-                once: true
-            }
+            { once: true }
         );
-
     } else {
-
         init();
-
-                }
-    /* =========================================
-       PUBLIC API
-    ========================================= */
-
-    window.WFESCSettingsAuthUIAPI = {
-
-        setMode:
-            setMode,
-
-        restoreSession:
-            restoreSession,
-
-        renderAccount:
-            renderAccount,
-
-        showRecoveryEmail:
-            showRecoveryEmail,
-
-        showRecoveryPassword:
-            showRecoveryPassword,
-
-        showVerificationMessage:
-            showVerificationMessage
-
-    };
+    }
 
 })();
