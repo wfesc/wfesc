@@ -762,3 +762,833 @@
            ================================================= */
 
    
+        function openModal(mode) {
+
+            if (!modal) {
+                createModal();
+            }
+
+            clearForm();
+            clearStatus();
+
+            setMode(mode);
+
+            modal.classList.remove(
+                "wfesc-modal-closing"
+            );
+
+            modal.classList.add(
+                "show"
+            );
+
+            requestAnimationFrame(() => {
+
+                modal.classList.add(
+                    "wfesc-modal-ready"
+                );
+
+            });
+        }
+
+
+        async function closeModal(
+            animate = true
+        ) {
+
+            if (!modal) {
+                return;
+            }
+
+            if (
+                !modal.classList.contains("show")
+            ) {
+                return;
+            }
+
+
+            if (animate) {
+
+                modal.classList.add(
+                    "wfesc-modal-closing"
+                );
+
+                await sleep(220);
+
+            }
+
+
+            modal.classList.remove(
+                "show",
+                "wfesc-modal-ready",
+                "wfesc-modal-closing"
+            );
+
+            actionLoading = false;
+        }
+
+
+        /* =================================================
+           CLEAR FORM
+           ================================================= */
+
+        function clearForm() {
+
+            actionLoading = false;
+
+            if (usernameInput) {
+                usernameInput.value = "";
+            }
+
+            if (emailInput) {
+                emailInput.value = "";
+            }
+
+            if (passwordInput) {
+                passwordInput.value = "";
+            }
+
+            if (confirmPasswordInput) {
+                confirmPasswordInput.value = "";
+            }
+
+            clearInputMessages();
+            updatePasswordEyes();
+        }
+
+
+        function clearInputMessages() {
+
+            document
+                .querySelectorAll(
+                    ".wfesc-input-message"
+                )
+                .forEach(element => {
+
+                    element.textContent = "";
+                    element.classList.remove(
+                        "show"
+                    );
+
+                });
+
+
+            document
+                .querySelectorAll(
+                    ".wfesc-input-group"
+                )
+                .forEach(element => {
+
+                    element.classList.remove(
+                        "wfesc-input-error"
+                    );
+
+                });
+        }
+
+
+        /* =================================================
+           MODES
+           ================================================= */
+
+        function setMode(mode) {
+
+            currentMode =
+                mode;
+
+
+            if (!modalTitle) {
+                return;
+            }
+
+
+            usernameGroup.style.display =
+                "none";
+
+            passwordGroup.style.display =
+                "none";
+
+            confirmPasswordGroup.style.display =
+                "none";
+
+            emailInput.autocomplete =
+                "email";
+
+
+            if (mode === "register") {
+
+                modalTitle.textContent =
+                    "إنشاء حساب";
+
+                usernameGroup.style.display =
+                    "";
+
+                passwordGroup.style.display =
+                    "";
+
+                confirmPasswordGroup.style.display =
+                    "";
+
+                modalAction.textContent =
+                    "إنشاء الحساب";
+
+                modalNote.textContent =
+                    "بعد إنشاء الحساب سيصلك رابط لتأكيد بريدك الإلكتروني.";
+
+                passwordInput.autocomplete =
+                    "new-password";
+
+                confirmPasswordInput.autocomplete =
+                    "new-password";
+
+            }
+
+
+            else if (mode === "login") {
+
+                modalTitle.textContent =
+                    "تسجيل الدخول";
+
+                passwordGroup.style.display =
+                    "";
+
+                modalAction.textContent =
+                    "تسجيل الدخول";
+
+                modalNote.textContent =
+                    "";
+
+                passwordInput.autocomplete =
+                    "current-password";
+
+            }
+
+
+            else if (mode === "forgot") {
+
+                modalTitle.textContent =
+                    "إعادة تعيين كلمة المرور";
+
+                modalAction.textContent =
+                    "إرسال رابط الاستعادة";
+
+                modalNote.textContent =
+                    "سنرسل رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.";
+
+            }
+
+
+            updatePasswordEyes();
+        }
+
+
+        /* =================================================
+           USERNAME
+           ================================================= */
+       
+        function setupUsernameInput() {
+
+            if (!usernameInput) {
+                return;
+            }
+
+
+            usernameInput.maxLength =
+                usernameMax;
+
+
+            usernameInput.addEventListener(
+                "input",
+                () => {
+
+                    usernameInput.value =
+                        usernameInput.value
+                            .replace(
+                                /[^A-Za-z]/g,
+                                ""
+                            )
+                            .slice(
+                                0,
+                                usernameMax
+                            );
+
+                    clearFieldError(
+                        usernameGroup
+                    );
+
+                }
+            );
+
+
+            usernameInput.addEventListener(
+                "blur",
+                () => {
+
+                    if (
+                        currentMode !==
+                        "register"
+                    ) {
+                        return;
+                    }
+
+                    const value =
+                        usernameInput.value.trim();
+
+                    if (
+                        value.length > 0 &&
+                        value.length < usernameMin
+                    ) {
+
+                        setFieldError(
+                            usernameGroup,
+                            "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+        function validateUsername() {
+
+            if (
+                currentMode !==
+                "register"
+            ) {
+                return true;
+            }
+
+
+            const value =
+                usernameInput.value.trim();
+
+
+            if (
+                value.length <
+                usernameMin
+            ) {
+
+                setFieldError(
+                    usernameGroup,
+                    "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
+                );
+
+                return false;
+            }
+
+
+            if (
+                value.length >
+                usernameMax
+            ) {
+
+                setFieldError(
+                    usernameGroup,
+                    "اسم المستخدم يجب ألا يتجاوز 9 أحرف."
+                );
+
+                return false;
+            }
+
+
+            if (
+                !/^[A-Za-z]+$/.test(value)
+            ) {
+
+                setFieldError(
+                    usernameGroup,
+                    "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط."
+                );
+
+                return false;
+            }
+
+
+            return true;
+        }
+
+
+        /* =================================================
+           PASSWORD
+           ================================================= */
+
+        function limitPasswordInput(
+            input
+        ) {
+
+            if (!input) {
+                return;
+            }
+
+            input.maxLength =
+                passwordMax;
+
+            input.value =
+                input.value.slice(
+                    0,
+                    passwordMax
+                );
+        }
+
+
+        function setupPasswordInputs() {
+
+            [
+                passwordInput,
+                confirmPasswordInput
+            ]
+                .forEach(input => {
+
+                    if (!input) {
+                        return;
+                    }
+
+
+                    input.maxLength =
+                        passwordMax;
+
+
+                    input.addEventListener(
+                        "input",
+                        () => {
+
+                            limitPasswordInput(
+                                input
+                            );
+
+                            if (
+                                input ===
+                                passwordInput
+                            ) {
+
+                                clearFieldError(
+                                    passwordGroup
+                                );
+
+                            } else {
+
+                                clearFieldError(
+                                    confirmPasswordGroup
+                                );
+
+                            }
+
+                            if (
+                                confirmPasswordInput
+                            ) {
+
+                                if (
+                                    confirmPasswordInput
+                                        .value.length > 0
+                                ) {
+
+                                    validatePasswordMatch(
+                                        false
+                                    );
+
+                                }
+
+                            }
+
+                            updatePasswordEyes();
+
+                        }
+                    );
+
+                });
+        }
+
+
+        function validatePassword() {
+
+            if (
+                currentMode ===
+                "forgot"
+            ) {
+                return true;
+            }
+
+
+            if (
+                currentMode ===
+                "login"
+            ) {
+                if (
+                    passwordInput.value.length <
+                    passwordMin
+                ) {
+
+                    setFieldError(
+                        passwordGroup,
+                        "كلمة المرور غير صحيحة."
+                    );
+
+                    return false;
+                }
+
+                return true;
+            }
+
+
+            const password =
+                passwordInput.value;
+
+
+            if (
+                password.length <
+                passwordMin
+            ) {
+
+                setFieldError(
+                    passwordGroup,
+                    "كلمة المرور يجب أن تكون 6 أحرف على الأقل."
+                );
+
+                return false;
+            }
+
+
+            if (
+                password.length >
+                passwordMax
+            ) {
+
+                setFieldError(
+                    passwordGroup,
+                    "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
+                );
+
+                return false;
+            }
+
+
+            return true;
+        }
+
+
+        function validatePasswordMatch(
+            showMessage = true
+        ) {
+
+            if (
+                currentMode !==
+                "register"
+            ) {
+                return true;
+            }
+
+
+            const password =
+                passwordInput.value;
+
+            const confirm =
+                confirmPasswordInput.value;
+
+
+            if (
+                password !==
+                confirm
+            ) {
+
+                if (showMessage) {
+
+                    setFieldError(
+                        confirmPasswordGroup,
+                        "كلمة المرور غير متطابقة."
+                    );
+
+                }
+
+                return false;
+            }
+
+
+            return true;
+        }
+
+
+        /* =================================================
+           PASSWORD EYES
+           ================================================= */
+
+        function createPasswordEye(
+            input
+        ) {
+
+            if (!input) {
+                return;
+            }
+
+
+            const wrapper =
+                input.parentElement;
+
+
+            if (!wrapper) {
+                return;
+            }
+
+
+            if (
+                wrapper.querySelector(
+                    ".wfesc-password-eye"
+                )
+            ) {
+                return;
+            }
+
+
+            wrapper.classList.add(
+                "wfesc-password-container"
+            );
+
+
+            const eye =
+                document.createElement(
+                    "button"
+                );
+
+            eye.type =
+                "button";
+
+            eye.className =
+                "wfesc-password-eye";
+
+            eye.textContent =
+                "🙉";
+
+            eye.setAttribute(
+                "aria-label",
+                "إظهار كلمة المرور"
+            );
+
+
+            eye.addEventListener(
+                "click",
+                () => {
+
+                    const hidden =
+                        input.type ===
+                        "password";
+
+
+                    input.type =
+                        hidden
+                            ? "text"
+                            : "password";
+
+
+                    eye.textContent =
+                        hidden
+                            ? "🙈"
+                            : "🙉";
+
+
+                    eye.setAttribute(
+                        "aria-label",
+                        hidden
+                            ? "إخفاء كلمة المرور"
+                            : "إظهار كلمة المرور"
+                    );
+
+                }
+            );
+
+
+            wrapper.appendChild(
+                eye
+            );
+        }
+
+
+        function setupPasswordEyes() {
+
+            createPasswordEye(
+                passwordInput
+            );
+
+            createPasswordEye(
+                confirmPasswordInput
+            );
+
+            updatePasswordEyes();
+        }
+
+
+        function updatePasswordEyes() {
+
+            [
+                passwordInput,
+                confirmPasswordInput
+            ]
+                .forEach(input => {
+
+                    if (!input) {
+                        return;
+                    }
+
+                    const wrapper =
+                        input.parentElement;
+
+                    const eye =
+                        wrapper?.querySelector(
+                            ".wfesc-password-eye"
+                        );
+
+                    if (!eye) {
+                        return;
+                    }
+
+                    eye.style.display =
+                        input.value.length > 0
+                            ? "flex"
+                            : "none";
+
+                });
+        }
+
+
+        /* =================================================
+           FIELD ERRORS
+           ================================================= */
+
+        function setFieldError(
+            group,
+            message
+        ) {
+
+            if (!group) {
+                return;
+            }
+
+
+            group.classList.add(
+                "wfesc-input-error"
+            );
+
+
+            const messageElement =
+                group.querySelector(
+                    ".wfesc-input-message"
+                );
+
+
+            if (messageElement) {
+
+                messageElement.textContent =
+                    message;
+
+                messageElement.classList.add(
+                    "show"
+                );
+
+            }
+
+
+            group.classList.remove(
+                "wfesc-error-shake"
+            );
+
+
+            void group.offsetWidth;
+
+
+            group.classList.add(
+                "wfesc-error-shake"
+            );
+
+
+            setTimeout(() => {
+
+                group.classList.remove(
+                    "wfesc-error-shake"
+                );
+
+            }, 420);
+        }
+
+
+        function clearFieldError(
+            group
+        ) {
+
+            if (!group) {
+                return;
+            }
+
+            group.classList.remove(
+                "wfesc-input-error"
+            );
+
+            const messageElement =
+                group.querySelector(
+                    ".wfesc-input-message"
+                );
+
+            if (messageElement) {
+
+                messageElement.textContent =
+                    "";
+
+                messageElement.classList.remove(
+                    "show"
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           LOADING BUTTON
+           ================================================= */
+
+        function setActionLoading(
+            loading,
+            text = "جاري..."
+        ) {
+
+            actionLoading =
+                loading;
+
+
+            if (!modalAction) {
+                return;
+            }
+
+
+            if (loading) {
+
+                modalAction.disabled =
+                    true;
+
+                modalAction.classList.add(
+                    "wfesc-button-loading"
+                );
+
+                modalAction.innerHTML = `
+                    <span class="wfesc-button-spinner"></span>
+                    <span>${escapeHtml(text)}</span>
+                `;
+
+            } else {
+
+                modalAction.disabled =
+                    false;
+
+                modalAction.classList.remove(
+                    "wfesc-button-loading"
+                );
+
+                setMode(
+                    currentMode
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           SUBMIT
+           ================================================= */
+           
