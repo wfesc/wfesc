@@ -7,8 +7,6 @@
 
     <title>الإعدادات - WFESC</title>
 
-    <script src="navigation-features/navigation-loader.js"></script>
-
     <style>
         * {
             box-sizing: border-box;
@@ -26,9 +24,10 @@
             font-family: Arial, Tahoma, sans-serif;
             min-height: 100vh;
             padding-bottom: 100px;
+
             transition:
-                background 0.35s ease,
-                color 0.35s ease;
+                background .35s ease,
+                color .35s ease;
         }
 
         button,
@@ -36,15 +35,15 @@
             font-family: inherit;
         }
 
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
         .settings-page {
             width: min(100%, 760px);
             margin: auto;
             padding: 25px 16px 40px;
         }
-
-        /* =========================
-           HEADER
-        ========================= */
 
         .settings-header {
             margin-bottom: 25px;
@@ -59,10 +58,6 @@
             color: #999;
             font-size: 14px;
         }
-
-        /* =========================
-           SECTION
-        ========================= */
 
         .settings-section {
             margin-bottom: 22px;
@@ -79,23 +74,24 @@
             border: 1px solid #242424;
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
-            transition:
-                background 0.35s ease,
-                border-color 0.35s ease,
-                box-shadow 0.35s ease;
-        }
 
-        /* =========================
-           ROW
-        ========================= */
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, .18);
+
+            transition:
+                background .35s ease,
+                border-color .35s ease,
+                box-shadow .35s ease;
+        }
 
         .setting-row {
             min-height: 72px;
             padding: 14px 17px;
+
             display: flex;
             align-items: center;
             gap: 14px;
+
             border-bottom: 1px solid #222;
         }
 
@@ -107,11 +103,14 @@
             width: 42px;
             height: 42px;
             min-width: 42px;
+
             border-radius: 13px;
             background: #1b1b1b;
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             font-size: 20px;
         }
 
@@ -132,9 +131,7 @@
             line-height: 1.5;
         }
 
-        /* =========================
-           SWITCH
-        ========================= */
+        /* SWITCH */
 
         .switch {
             position: relative;
@@ -150,22 +147,30 @@
         .slider {
             position: absolute;
             inset: 0;
+
             background: #333;
             border-radius: 30px;
+
             cursor: pointer;
-            transition: 0.25s ease;
+
+            transition: .25s ease;
         }
 
         .slider::before {
             content: "";
+
             position: absolute;
+
             width: 21px;
             height: 21px;
+
             top: 3px;
             right: 3px;
+
             background: #fff;
             border-radius: 50%;
-            transition: 0.25s ease;
+
+            transition: .25s ease;
         }
 
         .switch input:checked + .slider {
@@ -177,9 +182,7 @@
             background: #050505;
         }
 
-        /* =========================
-           THEME BUTTONS
-        ========================= */
+        /* THEMES */
 
         .theme-buttons {
             display: flex;
@@ -189,13 +192,17 @@
 
         .theme-button {
             flex: 1;
+
             border: 1px solid #292929;
             background: #171717;
             color: #ddd;
+
             border-radius: 14px;
             padding: 13px 10px;
+
             cursor: pointer;
-            transition: 0.25s ease;
+
+            transition: .25s ease;
         }
 
         .theme-button:hover {
@@ -219,12 +226,11 @@
             font-weight: bold;
         }
 
-        /* =========================
-           ACCOUNT
-        ========================= */
+        /* ACCOUNT */
 
         .account-buttons {
             padding: 15px;
+
             display: grid;
             gap: 10px;
         }
@@ -232,14 +238,19 @@
         .account-button {
             width: 100%;
             min-height: 52px;
+
             border: 1px solid #292929;
             background: #171717;
             color: #eee;
+
             border-radius: 14px;
+
             cursor: pointer;
+
             font-size: 15px;
             font-weight: bold;
-            transition: 0.25s ease;
+
+            transition: .25s ease;
         }
 
         .account-button:hover {
@@ -262,24 +273,31 @@
             font-weight: normal;
         }
 
-        /* =========================
-           STATUS
-        ========================= */
+        /* STATUS */
 
         .settings-status {
             position: fixed;
+
             left: 50%;
             bottom: 92px;
+
             transform: translate(-50%, 20px);
+
             background: #eee;
             color: #050505;
+
             padding: 11px 17px;
             border-radius: 12px;
+
             font-size: 13px;
+
             opacity: 0;
             pointer-events: none;
-            transition: 0.3s ease;
+
+            transition: .3s ease;
+
             z-index: 10000;
+
             white-space: nowrap;
         }
 
@@ -288,24 +306,29 @@
             transform: translate(-50%, 0);
         }
 
-        /* =========================
-           MODAL
-        ========================= */
+        /* MODAL */
 
         .modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.72);
+
+            background: rgba(0, 0, 0, .72);
+
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             padding: 20px;
+
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: 0.25s ease;
+
+            transition: .25s ease;
+
             z-index: 20000;
         }
 
@@ -317,22 +340,32 @@
 
         .modal-box {
             width: min(100%, 430px);
+
             background: #111;
+
             border: 1px solid #292929;
             border-radius: 22px;
+
             padding: 22px;
-            transform: translateY(20px) scale(0.97);
-            transition: 0.25s ease;
+
+            transform:
+                translateY(20px)
+                scale(.97);
+
+            transition: .25s ease;
         }
 
         .modal.show .modal-box {
-            transform: translateY(0) scale(1);
+            transform:
+                translateY(0)
+                scale(1);
         }
 
         .modal-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -344,10 +377,13 @@
         .close-modal {
             width: 36px;
             height: 36px;
+
             border: 0;
             border-radius: 50%;
+
             background: #222;
             color: #fff;
+
             font-size: 18px;
             cursor: pointer;
         }
@@ -358,7 +394,9 @@
 
         .form-group label {
             display: block;
+
             margin-bottom: 7px;
+
             color: #aaa;
             font-size: 13px;
         }
@@ -366,12 +404,17 @@
         .form-input {
             width: 100%;
             height: 48px;
+
             border: 1px solid #292929;
             border-radius: 13px;
+
             outline: none;
+
             background: #191919;
             color: #fff;
+
             padding: 0 14px;
+
             font-size: 14px;
         }
 
@@ -382,27 +425,34 @@
         .modal-action {
             width: 100%;
             height: 50px;
+
             margin-top: 6px;
+
             border: none;
             border-radius: 13px;
+
             background: #eee;
             color: #050505;
+
             font-size: 15px;
             font-weight: bold;
+
             cursor: pointer;
         }
 
         .modal-note {
             text-align: center;
+
             color: #777;
+
             font-size: 12px;
+
             margin-top: 12px;
+
             line-height: 1.6;
         }
 
-        /* =========================
-           LIGHT MODE
-        ========================= */
+        /* LIGHT MODE */
 
         html.wfesc-light-mode body {
             background: #f3f3f3;
@@ -420,7 +470,9 @@
         html.wfesc-light-mode .settings-card {
             background: #fff;
             border-color: #ddd;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, .07);
         }
 
         html.wfesc-light-mode .setting-row {
@@ -480,9 +532,18 @@
             color: #666;
         }
 
-        /* =========================
-           MOBILE
-        ========================= */
+        /* ANIMATION OFF */
+
+        html.wfesc-animation-off *,
+        html.wfesc-animation-off *::before,
+        html.wfesc-animation-off *::after {
+            animation-duration: 0s !important;
+            animation-delay: 0s !important;
+
+            transition-duration: 0s !important;
+
+            scroll-behavior: auto !important;
+        }
 
         @media (max-width: 500px) {
 
@@ -510,678 +571,1253 @@
             .theme-button {
                 padding: 11px 6px;
             }
+
         }
     </style>
 </head>
 
+
 <body>
 
-    <main class="settings-page">
+<main class="settings-page">
 
-        <header class="settings-header">
-            <h1>الإعدادات</h1>
-            <p>تحكم بطريقة استخدام WFESC ومظهر الموقع</p>
-        </header>
+    <header class="settings-header">
 
+        <h1>
+            الإعدادات
+        </h1>
 
-        <!-- =========================
-             المظهر
-        ========================= -->
+        <p>
+            تحكم بطريقة استخدام WFESC ومظهر الموقع
+        </p>
 
-        <section class="settings-section">
-
-            <div class="section-title">
-                المظهر
-            </div>
-
-            <div class="settings-card">
-
-                <div class="setting-row">
-
-                    <div class="setting-icon">
-                        ✨
-                    </div>
-
-                    <div class="setting-info">
-
-                        <div class="setting-name">
-                            الأنميشن المعزز
-                        </div>
-
-                        <div class="setting-description">
-                            تشغيل الانتقالات والحركات بشكل سلس بين صفحات الموقع
-                        </div>
-
-                    </div>
-
-                    <label class="switch">
-
-                        <input
-                            type="checkbox"
-                            id="animationToggle"
-                        >
-
-                        <span class="slider"></span>
-
-                    </label>
-
-                </div>
-
-
-                <div class="setting-row">
-
-                    <div class="setting-icon">
-                        🎨
-                    </div>
-
-                    <div class="setting-info">
-
-                        <div class="setting-name">
-                            مظهر الموقع
-                        </div>
-
-                        <div class="setting-description">
-                            اختر الوضع المناسب لك
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="theme-buttons">
-
-                    <button
-                        class="theme-button"
-                        id="darkThemeButton"
-                        type="button"
-                    >
-                        <span class="theme-icon">🌙</span>
-                        <span class="theme-text">مظلم</span>
-                    </button>
-
-
-                    <button
-                        class="theme-button"
-                        id="lightThemeButton"
-                        type="button"
-                    >
-                        <span class="theme-icon">☀️</span>
-                        <span class="theme-text">عادي</span>
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             الحساب
-        ========================= -->
-
-        <section class="settings-section">
-
-            <div class="section-title">
-                الحساب
-            </div>
-
-            <div class="settings-card">
-
-                <div class="account-buttons">
-
-                    <button
-                        class="account-button primary"
-                        id="createAccountButton"
-                        type="button"
-                    >
-                        إنشاء حساب
-                    </button>
-
-
-                    <button
-                        class="account-button"
-                        id="loginButton"
-                        type="button"
-                    >
-                        لدي حساب — تسجيل الدخول
-                    </button>
-
-
-                    <button
-                        class="account-button forgot"
-                        id="forgotPasswordButton"
-                        type="button"
-                    >
-                        نسيت كلمة المرور؟
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             معلومات
-        ========================= -->
-
-        <section class="settings-section">
-
-            <div class="section-title">
-                حول الموقع
-            </div>
-
-            <div class="settings-card">
-
-                <div class="setting-row">
-
-                    <div class="setting-icon">
-                        𝑾
-                    </div>
-
-                    <div class="setting-info">
-
-                        <div class="setting-name">
-                            WFESC
-                        </div>
-
-                        <div class="setting-description">
-                            المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
+    </header>
 
 
     <!-- =========================
-         STATUS
-    ========================= -->
+         المظهر
+    ========================== -->
 
-    <div
-        class="settings-status"
-        id="settingsStatus"
-    ></div>
+    <section class="settings-section">
+
+        <div class="section-title">
+            المظهر
+        </div>
 
 
-    <!-- =========================
-         ACCOUNT MODAL
-    ========================= -->
+        <div class="settings-card">
 
-    <div
-        class="modal"
-        id="accountModal"
-    >
+            <!-- ANIMATION -->
 
-        <div class="modal-box">
+            <div class="setting-row">
 
-            <div class="modal-header">
+                <div class="setting-icon">
+                    ✨
+                </div>
 
-                <h2 id="modalTitle">
-                    إنشاء حساب
-                </h2>
+
+                <div class="setting-info">
+
+                    <div class="setting-name">
+                        الأنميشن المعزز
+                    </div>
+
+                    <div class="setting-description">
+                        تشغيل الانتقالات والحركات بشكل سلس
+                    </div>
+
+                </div>
+
+
+                <label class="switch">
+
+                    <input
+                        type="checkbox"
+                        id="animationToggle"
+                    >
+
+                    <span class="slider"></span>
+
+                </label>
+
+            </div>
+
+
+            <!-- THEME -->
+
+            <div class="setting-row">
+
+                <div class="setting-icon">
+                    🎨
+                </div>
+
+
+                <div class="setting-info">
+
+                    <div class="setting-name">
+                        مظهر الموقع
+                    </div>
+
+                    <div class="setting-description">
+                        اختر الوضع المناسب لك
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="theme-buttons">
 
                 <button
-                    class="close-modal"
-                    id="closeModal"
+                    class="theme-button"
+                    id="darkThemeButton"
                     type="button"
                 >
-                    ×
+
+                    <span class="theme-icon">
+                        🌙
+                    </span>
+
+                    <span class="theme-text">
+                        مظلم
+                    </span>
+
                 </button>
-
-            </div>
-
-
-            <form id="accountForm">
-
-                <div class="form-group">
-
-                    <label for="accountEmail">
-                        البريد الإلكتروني
-                    </label>
-
-                    <input
-                        class="form-input"
-                        id="accountEmail"
-                        type="email"
-                        placeholder="example@email.com"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="accountPassword">
-                        كلمة المرور
-                    </label>
-
-                    <input
-                        class="form-input"
-                        id="accountPassword"
-                        type="password"
-                        placeholder="كلمة المرور"
-                        required
-                    >
-
-                </div>
 
 
                 <button
-                    class="modal-action"
-                    type="submit"
+                    class="theme-button"
+                    id="lightThemeButton"
+                    type="button"
                 >
-                    متابعة
+
+                    <span class="theme-icon">
+                        ☀️
+                    </span>
+
+                    <span class="theme-text">
+                        عادي
+                    </span>
+
                 </button>
 
-            </form>
-
-
-            <div class="modal-note">
-                الحسابات تحتاج ربطًا بقاعدة بيانات أو خدمة مصادقة حتى تعمل فعليًا.
             </div>
 
         </div>
 
+    </section>
+
+
+    <!-- =========================
+         الحساب
+         واجهة فقط حاليًا
+    ========================== -->
+
+    <section class="settings-section">
+
+        <div class="section-title">
+            الحساب
+        </div>
+
+
+        <div class="settings-card">
+
+            <div class="account-buttons">
+
+                <button
+                    class="account-button primary"
+                    id="createAccountButton"
+                    type="button"
+                >
+                    إنشاء حساب
+                </button>
+
+
+                <button
+                    class="account-button"
+                    id="loginButton"
+                    type="button"
+                >
+                    لدي حساب — تسجيل الدخول
+                </button>
+
+
+                <button
+                    class="account-button forgot"
+                    id="forgotPasswordButton"
+                    type="button"
+                >
+                    نسيت كلمة المرور؟
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         حول الموقع
+    ========================== -->
+
+    <section class="settings-section">
+
+        <div class="section-title">
+            حول الموقع
+        </div>
+
+
+        <div class="settings-card">
+
+            <div class="setting-row">
+
+                <div class="setting-icon">
+                    𝑾
+                </div>
+
+
+                <div class="setting-info">
+
+                    <div class="setting-name">
+                        WFESC
+                    </div>
+
+                    <div class="setting-description">
+                        المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- STATUS -->
+
+<div
+    class="settings-status"
+    id="settingsStatus"
+></div>
+
+
+<!-- ACCOUNT MODAL -->
+
+<div
+    class="modal"
+    id="accountModal"
+>
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h2 id="modalTitle">
+                إنشاء حساب
+            </h2>
+
+
+            <button
+                class="close-modal"
+                id="closeModal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="accountForm">
+
+            <div class="form-group">
+
+                <label for="accountUsername">
+                    اسم المستخدم
+                </label>
+
+                <input
+                    class="form-input"
+                    id="accountUsername"
+                    type="text"
+                    placeholder="اسم المستخدم"
+                    autocomplete="username"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="accountEmail">
+                    البريد الإلكتروني
+                </label>
+
+                <input
+                    class="form-input"
+                    id="accountEmail"
+                    type="email"
+                    placeholder="example@email.com"
+                    autocomplete="email"
+                    required
+                >
+
+            </div>
+
+
+            <div
+                class="form-group"
+                id="passwordGroup"
+            >
+
+                <label for="accountPassword">
+                    كلمة المرور
+                </label>
+
+                <input
+                    class="form-input"
+                    id="accountPassword"
+                    type="password"
+                    placeholder="كلمة المرور"
+                    autocomplete="new-password"
+                >
+
+            </div>
+
+
+            <div
+                class="form-group"
+                id="confirmPasswordGroup"
+            >
+
+                <label for="accountPasswordConfirm">
+                    تأكيد كلمة المرور
+                </label>
+
+                <input
+                    class="form-input"
+                    id="accountPasswordConfirm"
+                    type="password"
+                    placeholder="أعد كتابة كلمة المرور"
+                    autocomplete="new-password"
+                >
+
+            </div>
+
+
+            <button
+                class="modal-action"
+                id="modalAction"
+                type="submit"
+            >
+                متابعة
+            </button>
+
+        </form>
+
+
+        <div class="modal-note" id="modalNote">
+            سيتم تفعيل الحسابات وربطها بقاعدة البيانات لاحقًا.
+        </div>
+
     </div>
 
-
-    <script>
-
-        /* =========================
-           العناصر
-        ========================= */
-
-        const animationToggle =
-            document.getElementById("animationToggle");
-
-        const darkThemeButton =
-            document.getElementById("darkThemeButton");
-
-        const lightThemeButton =
-            document.getElementById("lightThemeButton");
-
-        const settingsStatus =
-            document.getElementById("settingsStatus");
-
-        const accountModal =
-            document.getElementById("accountModal");
-
-        const modalTitle =
-            document.getElementById("modalTitle");
-
-        const accountForm =
-            document.getElementById("accountForm");
-
-        const accountEmail =
-            document.getElementById("accountEmail");
-
-        const closeModal =
-            document.getElementById("closeModal");
-
-        const createAccountButton =
-            document.getElementById("createAccountButton");
-
-        const loginButton =
-            document.getElementById("loginButton");
-
-        const forgotPasswordButton =
-            document.getElementById("forgotPasswordButton");
+</div>
 
 
-        /* =========================
-           التأكد من المحرك المركزي
-        ========================= */
+<script>
 
-        function getGlobalSettings() {
+"use strict";
 
-            return window.WFESCGlobalSettings || null;
+
+/* =====================================================
+   WFESC GLOBAL SETTINGS
+
+   لا يوجد هنا أي اتصال بقاعدة البيانات.
+
+   هذه الإعدادات تحفظ محليًا:
+   wfesc_theme
+   wfesc_animation_enabled
+
+   ويمكن لـ posts.html قراءتها.
+===================================================== */
+
+    
+(function () {
+
+    const ANIMATION_KEY =
+        "wfesc_animation_enabled";
+
+
+    const THEME_KEY =
+        "wfesc_theme";
+
+
+    function readAnimation() {
+
+        const value =
+            localStorage.getItem(
+                ANIMATION_KEY
+            );
+
+
+        if (value === null) {
+
+            return true;
 
         }
 
 
-        /* =========================
-           الإشعار
-        ========================= */
+        return value === "true";
 
-        let statusTimer;
+    }
 
-        function showStatus(message) {
 
-            settingsStatus.textContent = message;
+    function readTheme() {
 
-            settingsStatus.classList.add("show");
+        const value =
+            localStorage.getItem(
+                THEME_KEY
+            );
 
-            clearTimeout(statusTimer);
 
-            statusTimer = setTimeout(
-                function () {
+        if (
+            value !== "light" &&
+            value !== "dark"
+        ) {
 
-                    settingsStatus.classList.remove(
-                        "show"
-                    );
+            return "dark";
 
-                },
-                1800
+        }
+
+
+        return value;
+
+    }
+
+
+    function applyTheme(theme) {
+
+        document.documentElement.classList.toggle(
+            "wfesc-light-mode",
+            theme === "light"
+        );
+
+    }
+
+
+    function applyAnimation(enabled) {
+
+        document.documentElement.classList.toggle(
+            "wfesc-animation-off",
+            !enabled
+        );
+
+    }
+
+
+    window.WFESCGlobalSettings = {
+
+        getAnimationEnabled: function () {
+
+            return readAnimation();
+
+        },
+
+
+        setAnimationEnabled: function (enabled) {
+
+            enabled = !!enabled;
+
+
+            localStorage.setItem(
+                ANIMATION_KEY,
+                enabled
+                    ? "true"
+                    : "false"
+            );
+
+
+            applyAnimation(
+                enabled
+            );
+
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:settings-changed",
+                    {
+                        detail: {
+                            type: "animation",
+                            value: enabled
+                        }
+                    }
+                )
+            );
+
+        },
+
+
+        getTheme: function () {
+
+            return readTheme();
+
+        },
+
+
+        setTheme: function (theme) {
+
+            if (
+                theme !== "light" &&
+                theme !== "dark"
+            ) {
+
+                theme = "dark";
+
+            }
+
+
+            localStorage.setItem(
+                THEME_KEY,
+                theme
+            );
+
+
+            applyTheme(
+                theme
+            );
+
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:settings-changed",
+                    {
+                        detail: {
+                            type: "theme",
+                            value: theme
+                        }
+                    }
+                )
+            );
+
+        },
+
+
+        apply: function () {
+
+            applyTheme(
+                readTheme()
+            );
+
+
+            applyAnimation(
+                readAnimation()
             );
 
         }
 
+    };
 
-        /* =========================
-           قراءة الإعدادات الحالية
-        ========================= */
 
-        function syncSettingsUI() {
+    window.WFESCGlobalSettings.apply();
 
-            const globalSettings =
-                getGlobalSettings();
+})();
 
-            if (!globalSettings) {
+
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const animationToggle =
+    document.getElementById(
+        "animationToggle"
+    );
+
+
+const darkThemeButton =
+    document.getElementById(
+        "darkThemeButton"
+    );
+
+
+const lightThemeButton =
+    document.getElementById(
+        "lightThemeButton"
+    );
+
+
+const settingsStatus =
+    document.getElementById(
+        "settingsStatus"
+    );
+
+
+const accountModal =
+    document.getElementById(
+        "accountModal"
+    );
+
+
+const modalTitle =
+    document.getElementById(
+        "modalTitle"
+    );
+
+
+const closeModal =
+    document.getElementById(
+        "closeModal"
+    );
+
+
+const accountForm =
+    document.getElementById(
+        "accountForm"
+    );
+
+
+const accountUsername =
+    document.getElementById(
+        "accountUsername"
+    );
+
+
+const accountEmail =
+    document.getElementById(
+        "accountEmail"
+    );
+
+
+const accountPassword =
+    document.getElementById(
+        "accountPassword"
+    );
+
+
+const accountPasswordConfirm =
+    document.getElementById(
+        "accountPasswordConfirm"
+    );
+
+
+const passwordGroup =
+    document.getElementById(
+        "passwordGroup"
+    );
+
+
+const confirmPasswordGroup =
+    document.getElementById(
+        "confirmPasswordGroup"
+    );
+
+
+const modalAction =
+    document.getElementById(
+        "modalAction"
+    );
+
+
+const modalNote =
+    document.getElementById(
+        "modalNote"
+    );
+
+
+let accountMode =
+    "register";
+
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+function showStatus(message) {
+
+    settingsStatus.textContent =
+        message;
+
+
+    settingsStatus.classList.add(
+        "show"
+    );
+
+
+    clearTimeout(
+        window.__wfescSettingsStatusTimer
+    );
+
+
+    window.__wfescSettingsStatusTimer =
+        setTimeout(
+            function () {
+
+                settingsStatus.classList.remove(
+                    "show"
+                );
+
+            },
+            2500
+        );
+
+}
+
+
+
+/* =====================================================
+   SETTINGS UI
+===================================================== */
+
+function updateSettingsUI() {
+
+    const animation =
+        WFESCGlobalSettings
+            .getAnimationEnabled();
+
+
+    const theme =
+        WFESCGlobalSettings
+            .getTheme();
+
+
+    animationToggle.checked =
+        animation;
+
+
+    darkThemeButton.classList.toggle(
+        "active",
+        theme === "dark"
+    );
+
+
+    lightThemeButton.classList.toggle(
+        "active",
+        theme === "light"
+    );
+
+}
+
+
+
+/* =====================================================
+   ANIMATION
+===================================================== */
+
+animationToggle.addEventListener(
+    "change",
+    function () {
+
+        WFESCGlobalSettings
+            .setAnimationEnabled(
+                animationToggle.checked
+            );
+
+
+        showStatus(
+            animationToggle.checked
+                ? "تم تشغيل الأنميشن"
+                : "تم إيقاف الأنميشن"
+        );
+
+    }
+);
+
+
+
+/* =====================================================
+   THEME
+===================================================== */
+
+darkThemeButton.addEventListener(
+    "click",
+    function () {
+
+        WFESCGlobalSettings
+            .setTheme(
+                "dark"
+            );
+
+
+        updateSettingsUI();
+
+
+        showStatus(
+            "تم تفعيل الوضع المظلم"
+        );
+
+    }
+);
+
+
+lightThemeButton.addEventListener(
+    "click",
+    function () {
+
+        WFESCGlobalSettings
+            .setTheme(
+                "light"
+            );
+
+
+        updateSettingsUI();
+
+
+        showStatus(
+            "تم تفعيل الوضع العادي"
+        );
+
+    }
+);
+
+
+
+/* =====================================================
+   OTHER TABS / PAGES
+===================================================== */
+
+window.addEventListener(
+    "wfesc:settings-changed",
+    function () {
+
+        updateSettingsUI();
+
+    }
+);
+
+
+window.addEventListener(
+    "storage",
+    function (event) {
+
+        if (
+            event.key ===
+                "wfesc_theme" ||
+
+            event.key ===
+                "wfesc_animation_enabled"
+        ) {
+
+            WFESCGlobalSettings.apply();
+
+            updateSettingsUI();
+
+        }
+
+    }
+);
+
+
+
+/* =====================================================
+   ACCOUNT MODAL
+===================================================== */
+
+function openAccountModal(mode) {
+
+    accountMode =
+        mode;
+
+
+    accountForm.reset();
+
+
+    if (mode === "register") {
+
+        modalTitle.textContent =
+            "إنشاء حساب";
+
+
+        accountUsername.parentElement.style.display =
+            "";
+
+
+        passwordGroup.style.display =
+            "";
+
+
+        confirmPasswordGroup.style.display =
+            "";
+
+
+        modalAction.textContent =
+            "إنشاء الحساب";
+
+
+        modalNote.textContent =
+            "واجهة إنشاء الحساب جاهزة. التفعيل وربط قاعدة البيانات سيكون لاحقًا.";
+
+    }
+
+
+    else if (mode === "login") {
+
+        modalTitle.textContent =
+            "تسجيل الدخول";
+
+
+        accountUsername.parentElement.style.display =
+            "none";
+
+
+        passwordGroup.style.display =
+            "";
+
+
+        confirmPasswordGroup.style.display =
+            "none";
+
+
+        modalAction.textContent =
+            "تسجيل الدخول";
+
+
+        modalNote.textContent =
+            "واجهة تسجيل الدخول جاهزة. التفعيل الفعلي سيكون لاحقًا.";
+
+    }
+
+
+    else if (mode === "forgot") {
+
+        modalTitle.textContent =
+            "استعادة الحساب";
+
+
+        accountUsername.parentElement.style.display =
+            "none";
+
+
+        passwordGroup.style.display =
+            "none";
+
+
+        confirmPasswordGroup.style.display =
+            "none";
+
+
+        modalAction.textContent =
+            "إرسال طلب الاستعادة";
+
+
+        modalNote.textContent =
+            "لاحقًا سيتم إرسال رابط أو رمز الاستعادة إلى البريد الإلكتروني.";
+
+    }
+
+
+    accountModal.classList.add(
+        "show"
+    );
+
+
+    setTimeout(
+        function () {
+
+            accountEmail.focus();
+
+        },
+        100
+    );
+
+}
+
+
+
+function closeAccountModal() {
+
+    accountModal.classList.remove(
+        "show"
+    );
+
+}
+
+
+
+/* =====================================================
+   ACCOUNT BUTTONS
+===================================================== */
+
+document
+    .getElementById(
+        "createAccountButton"
+    )
+    .addEventListener(
+        "click",
+        function () {
+
+            openAccountModal(
+                "register"
+            );
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "loginButton"
+    )
+    .addEventListener(
+        "click",
+        function () {
+
+            openAccountModal(
+                "login"
+            );
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "forgotPasswordButton"
+    )
+    .addEventListener(
+        "click",
+        function () {
+
+            openAccountModal(
+                "forgot"
+            );
+
+        }
+    );
+
+
+
+/* =====================================================
+   CLOSE MODAL
+===================================================== */
+
+closeModal.addEventListener(
+    "click",
+    closeAccountModal
+);
+
+
+accountModal.addEventListener(
+    "click",
+    function (event) {
+
+        if (
+            event.target ===
+            accountModal
+        ) {
+
+            closeAccountModal();
+
+        }
+
+    }
+);
+
+
+document.addEventListener(
+    "keydown",
+    function (event) {
+
+        if (
+            event.key ===
+            "Escape"
+        ) {
+
+            closeAccountModal();
+
+        }
+
+    }
+);
+
+
+
+/* =====================================================
+   ACCOUNT FORM
+===================================================== */
+
+accountForm.addEventListener(
+    "submit",
+    function (event) {
+
+        event.preventDefault();
+
+
+        const email =
+            accountEmail.value.trim();
+
+
+        if (!email) {
+
+            showStatus(
+                "أدخل البريد الإلكتروني"
+            );
+
+            return;
+
+        }
+
+
+        /* REGISTER */
+
+        if (
+            accountMode ===
+            "register"
+        ) {
+
+            const username =
+                accountUsername.value.trim();
+
+
+            const password =
+                accountPassword.value;
+
+
+            const confirmPassword =
+                accountPasswordConfirm.value;
+
+
+            if (!username) {
+
+                showStatus(
+                    "أدخل اسم المستخدم"
+                );
+
                 return;
+
             }
 
-            animationToggle.checked =
-                globalSettings.getAnimationEnabled();
 
-            const theme =
-                globalSettings.getTheme();
+            if (!password) {
 
-            darkThemeButton.classList.toggle(
-                "active",
-                theme === "dark"
+                showStatus(
+                    "أدخل كلمة المرور"
+                );
+
+                return;
+
+            }
+
+
+            if (
+                password.length < 6
+            ) {
+
+                showStatus(
+                    "كلمة المرور يجب أن تكون 6 أحرف أو أكثر"
+                );
+
+                return;
+
+            }
+
+
+            if (
+                password !==
+                confirmPassword
+            ) {
+
+                showStatus(
+                    "كلمتا المرور غير متطابقتين"
+                );
+
+                return;
+
+            }
+
+
+            showStatus(
+                "واجهة إنشاء الحساب جاهزة للتفعيل"
             );
 
-            lightThemeButton.classList.toggle(
-                "active",
-                theme === "light"
-            );
+
+            closeAccountModal();
+
+            return;
 
         }
 
 
-        syncSettingsUI();
+
+        /* LOGIN */
+
+        if (
+            accountMode ===
+            "login"
+        ) {
+
+            const password =
+                accountPassword.value;
 
 
-        /* =========================
-           الأنميشن العالمي
-        ========================= */
-
-        animationToggle.addEventListener(
-            "change",
-            function () {
-
-                const globalSettings =
-                    getGlobalSettings();
-
-                if (!globalSettings) {
-                    return;
-                }
-
-                globalSettings.setAnimationEnabled(
-                    this.checked
-                );
+            if (!password) {
 
                 showStatus(
-                    this.checked
-                        ? "تم تشغيل الأنميشن المعزز"
-                        : "تم إيقاف الأنميشن المعزز"
+                    "أدخل كلمة المرور"
                 );
 
-            }
-        );
-
-
-        /* =========================
-           الوضع المظلم
-        ========================= */
-
-        darkThemeButton.addEventListener(
-            "click",
-            function () {
-
-                const globalSettings =
-                    getGlobalSettings();
-
-                if (!globalSettings) {
-                    return;
-                }
-
-                globalSettings.setTheme(
-                    "dark"
-                );
-
-                syncSettingsUI();
-
-                showStatus(
-                    "تم تفعيل الوضع المظلم"
-                );
-
-            }
-        );
-
-
-        /* =========================
-           الوضع العادي
-        ========================= */
-
-        lightThemeButton.addEventListener(
-            "click",
-            function () {
-
-                const globalSettings =
-                    getGlobalSettings();
-
-                if (!globalSettings) {
-                    return;
-                }
-
-                globalSettings.setTheme(
-                    "light"
-                );
-
-                syncSettingsUI();
-
-                showStatus(
-                    "تم تفعيل الوضع العادي"
-                );
-
-            }
-        );
-
-
-        /* =========================
-           استقبال التحديثات
-        ========================= */
-
-        window.addEventListener(
-            "wfesc:settings-changed",
-            function () {
-
-                syncSettingsUI();
-
-            }
-        );
-
-
-        /* =========================
-           الحساب
-        ========================= */
-
-        let accountMode = "register";
-
-
-        function openAccountModal(mode) {
-
-            accountMode = mode;
-
-            accountModal.classList.add("show");
-
-            accountForm.reset();
-
-            if (mode === "register") {
-
-                modalTitle.textContent =
-                    "إنشاء حساب";
-
-            } else {
-
-                modalTitle.textContent =
-                    "تسجيل الدخول";
+                return;
 
             }
 
-            setTimeout(
-                function () {
 
-                    accountEmail.focus();
-
-                },
-                100
+            showStatus(
+                "واجهة تسجيل الدخول جاهزة للتفعيل"
             );
+
+
+            closeAccountModal();
+
+            return;
 
         }
 
 
-        createAccountButton.addEventListener(
-            "click",
-            function () {
 
-                openAccountModal(
-                    "register"
-                );
+        /* FORGOT PASSWORD */
 
-            }
-        );
+        if (
+            accountMode ===
+            "forgot"
+        ) {
 
-
-        loginButton.addEventListener(
-            "click",
-            function () {
-
-                openAccountModal(
-                    "login"
-                );
-
-            }
-        );
+            showStatus(
+                "واجهة استعادة الحساب جاهزة للتفعيل"
+            );
 
 
-        forgotPasswordButton.addEventListener(
-            "click",
-            function () {
+            closeAccountModal();
 
-                showStatus(
-                    "سيتم إضافة استرجاع كلمة المرور عند ربط الحسابات"
-                );
+            return;
 
-            }
-        );
+        }
+
+    }
+);
 
 
-        closeModal.addEventListener(
-            "click",
-            function () {
 
-                accountModal.classList.remove(
-                    "show"
-                );
+/* =====================================================
+   INITIALIZE
+===================================================== */
 
-            }
-        );
+updateSettingsUI();
+
+</script>
 
 
-        accountModal.addEventListener(
-            "click",
-            function (event) {
-
-                if (
-                    event.target === accountModal
-                ) {
-
-                    accountModal.classList.remove(
-                        "show"
-                    );
-
-                }
-
-            }
-        );
-
-
-        /* =========================
-           نموذج الحساب
-        ========================= */
-
-        accountForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                const email =
-                    accountEmail.value.trim();
-
-                if (!email) {
-                    return;
-                }
-
-                if (
-                    accountMode === "register"
-                ) {
-
-                    showStatus(
-                        "تم إدخال بيانات إنشاء الحساب"
-                    );
-
-                } else {
-
-                    showStatus(
-                        "تم إدخال بيانات تسجيل الدخول"
-                    );
-
-                }
-
-                accountModal.classList.remove(
-                    "show"
-                );
-
-            }
-        );
-
-
-        /* =========================
-           ESC
-        ========================= */
-
-        document.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Escape"
-                ) {
-
-                    accountModal.classList.remove(
-                        "show"
-                    );
-
-                }
-
-            }
-        );
-
-    </script>
+<!--
+    التنقل الحالي فقط.
+    لا يوجد Loader إضافي خاص بصفحة الإعدادات.
+-->
 <script src="./navigation/navigation-loader.js"></script>
+
 </body>
 </html>
