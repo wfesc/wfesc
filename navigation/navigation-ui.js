@@ -123,6 +123,7 @@
             if (
                 pageFile.toLowerCase() === currentPage
             ) {
+
                 item.classList.add(
                     "wfesc-navigation-active"
                 );
@@ -131,6 +132,7 @@
                     "aria-current",
                     "page"
                 );
+
             }
 
             const icon = document.createElement("span");
@@ -150,6 +152,11 @@
             item.appendChild(icon);
             item.appendChild(title);
 
+
+            /* =================================================
+               NAVIGATION CLICK
+               ================================================= */
+
             item.addEventListener(
                 "click",
                 function (event) {
@@ -161,26 +168,19 @@
                     if (
                         pageFile.toLowerCase() === currentPage
                     ) {
+
                         event.preventDefault();
                         return;
+
                     }
 
-                    event.preventDefault();
-
-                    showNavigationLoading();
-
-                    const delay =
-                        getConfig().loading &&
-                        getConfig().loading.navigationDelay
-                            ? getConfig().loading.navigationDelay
-                            : 350;
-
-                    setTimeout(function () {
-
-                        window.location.href =
-                            pageFile;
-
-                    }, delay);
+                    /*
+                     * لا توجد شاشة تحميل خاصة بالتنقل.
+                     *
+                     * نترك الصفحة الجديدة تنتقل مباشرة
+                     * حتى يظهر Loader الخاص بالصفحة نفسها
+                     * إذا كانت تحتوي عليه.
+                     */
 
                 }
             );
@@ -199,61 +199,6 @@
 
     }
 
-    function showNavigationLoading() {
-
-        let loader =
-            document.getElementById(
-                "wfesc-navigation-page-loader"
-            );
-
-        if (!loader) {
-
-            loader = document.createElement("div");
-
-            loader.id =
-                "wfesc-navigation-page-loader";
-
-            loader.className =
-                "wfesc-navigation-page-loader";
-
-            loader.innerHTML = `
-                <div class="wfesc-navigation-page-loader-box">
-
-                    <div class="wfesc-navigation-loader-logo">
-                        WFESC
-                    </div>
-
-                    <div class="wfesc-navigation-loader-spinner"></div>
-
-                    <div class="wfesc-navigation-loader-text">
-                        جاري الانتقال...
-                    </div>
-
-                </div>
-            `;
-
-            document.documentElement.appendChild(
-                loader
-            );
-
-        }
-
-        loader.classList.add(
-            "wfesc-navigation-page-loader-show"
-        );
-
-        const navigation =
-            document.getElementById(
-                "wfesc-navigation"
-            );
-
-        if (navigation) {
-            navigation.classList.add(
-                "wfesc-navigation-hide"
-            );
-        }
-
-    }
 
     function refreshActiveButton() {
 
@@ -302,6 +247,7 @@
 
     }
 
+
     function init() {
 
         if (document.body) {
@@ -313,6 +259,7 @@
         }
 
     }
+
 
     window.WFESCNavigationInit = init;
 
