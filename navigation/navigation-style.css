@@ -114,13 +114,14 @@
    ========================================================= */
 
 #wfesc-navigation {
-    position: fixed;
+    position: fixed !important;
 
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    top: auto !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
 
-    z-index: 99990;
+    z-index: 99990 !important;
 
     display: grid;
     grid-template-columns:
@@ -344,9 +345,14 @@
 
     #wfesc-navigation {
 
-        left: 7px;
-        right: 7px;
-        bottom: 7px;
+        position: fixed !important;
+
+        top: auto !important;
+        left: 7px !important;
+        right: 7px !important;
+        bottom: 7px !important;
+
+        z-index: 99990 !important;
 
         min-height: 62px;
 
@@ -392,9 +398,14 @@
 
     #wfesc-navigation {
 
-        left: 4px;
-        right: 4px;
-        bottom: 4px;
+        position: fixed !important;
+
+        top: auto !important;
+        left: 4px !important;
+        right: 4px !important;
+        bottom: 4px !important;
+
+        z-index: 99990 !important;
 
         padding: 4px;
 
@@ -483,11 +494,15 @@ html.wfesc-light-mode
 
     #wfesc-navigation {
 
+        position: fixed !important;
+
+        top: auto !important;
+
         bottom:
             calc(
                 7px +
                 env(safe-area-inset-bottom)
-            );
+            ) !important;
 
     }
 
@@ -495,11 +510,15 @@ html.wfesc-light-mode
 
         #wfesc-navigation {
 
+            position: fixed !important;
+
+            top: auto !important;
+
             bottom:
                 calc(
                     12px +
                     env(safe-area-inset-bottom)
-                );
+                ) !important;
 
         }
 
@@ -525,4 +544,4 @@ html.wfesc-light-mode
 
     }
 
-}
+   }
