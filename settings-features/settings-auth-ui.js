@@ -1398,3 +1398,486 @@
        PASSWORD TOGGLE
     ========================================= */
     
+function bindPasswordToggle(
+        button,
+        input
+    ) {
+
+        if (
+            !button ||
+            !input
+        ) {
+            return;
+        }
+
+        button.addEventListener(
+            "click",
+            function () {
+
+                const hidden =
+                    input.type ===
+                    "password";
+
+                input.type =
+                    hidden
+                        ? "text"
+                        : "password";
+
+                button.textContent =
+                    hidden
+                        ? "🙈"
+                        : "🙉";
+
+            }
+        );
+
+    }
+
+    /* =========================================
+       INPUT CLEANUP
+    ========================================= */
+
+    function bindInputCleanup() {
+
+        const e =
+            getElements();
+
+        if (
+            e.registerUsername
+        ) {
+
+            e.registerUsername.addEventListener(
+                "input",
+                function () {
+
+                    e.registerUsername.value =
+                        sanitizeUsername(
+                            e.registerUsername.value
+                        );
+
+                    clearFieldError(
+                        e.registerUsername,
+                        e.registerUsernameError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.registerName
+        ) {
+
+            e.registerName.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.registerName,
+                        e.registerNameError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.registerEmail
+        ) {
+
+            e.registerEmail.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.registerEmail,
+                        e.registerEmailError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.registerPassword
+        ) {
+
+            e.registerPassword.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.registerPassword,
+                        e.registerPasswordError
+                    );
+
+                    clearFieldError(
+                        e.registerConfirm,
+                        e.registerConfirmError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.registerConfirm
+        ) {
+
+            e.registerConfirm.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.registerConfirm,
+                        e.registerConfirmError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.loginEmail
+        ) {
+
+            e.loginEmail.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.loginEmail,
+                        e.loginEmailError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.loginPassword
+        ) {
+
+            e.loginPassword.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.loginPassword,
+                        e.loginPasswordError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.recoveryEmail
+        ) {
+
+            e.recoveryEmail.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.recoveryEmail,
+                        e.recoveryEmailError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.recoveryPassword
+        ) {
+
+            e.recoveryPassword.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.recoveryPassword,
+                        e.recoveryPasswordError
+                    );
+
+                }
+            );
+
+        }
+
+        if (
+            e.recoveryConfirm
+        ) {
+
+            e.recoveryConfirm.addEventListener(
+                "input",
+                function () {
+
+                    clearFieldError(
+                        e.recoveryConfirm,
+                        e.recoveryConfirmError
+                    );
+
+                }
+            );
+
+        }
+
+    }
+
+    /* =========================================
+       LOGIN
+    ========================================= */
+
+    async function handleLogin(
+        event
+    ) {
+
+        event.preventDefault();
+
+        if (busy) {
+            return;
+        }
+
+        const e =
+            getElements();
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+
+            showStatus(
+                "نظام الحساب غير متوفر حاليًا.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        clearAllErrors();
+
+        const email =
+            validateEmail(
+                e.loginEmail &&
+                e.loginEmail.value
+            );
+
+        if (!email.valid) {
+
+            setFieldError(
+                e.loginEmail,
+                e.loginEmailError,
+                email.message
+            );
+
+            shake(
+                e.loginEmail
+            );
+
+            return;
+
+        }
+
+        const password =
+            validatePassword(
+                e.loginPassword &&
+                e.loginPassword.value
+            );
+
+        if (!password.valid) {
+
+            setFieldError(
+                e.loginPassword,
+                e.loginPasswordError,
+                password.message
+            );
+
+            shake(
+                e.loginPassword
+            );
+
+            return;
+
+        }
+
+        if (
+            typeof auth.signIn !==
+            "function"
+        ) {
+
+            showStatus(
+                "وظيفة تسجيل الدخول غير متوفرة.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            const result =
+                await auth.signIn(
+                    email.value,
+                    password.value
+                );
+
+            if (
+                result &&
+                result.error
+            ) {
+
+                throw result.error;
+
+            }
+
+            const user =
+                result &&
+                result.user
+                    ? result.user
+                    : await getCurrentUser();
+
+            if (!user) {
+
+                throw new Error(
+                    "تعذر استعادة الحساب."
+                );
+
+            }
+
+            const profile =
+                await getCurrentProfile(
+                    user
+                );
+
+            renderAccount(
+                user,
+                profile
+            );
+
+            showStatus(
+                (
+                    CONFIG.messages &&
+                    CONFIG.messages.loginSuccess
+                ) ||
+                "تم تسجيل الدخول بنجاح.",
+                "success"
+            );
+
+            document.dispatchEvent(
+                new CustomEvent(
+                    "WFESCLoginSuccess",
+                    {
+                        detail: {
+                            user: user,
+                            profile: profile
+                        }
+                    }
+                )
+            );
+
+            document.dispatchEvent(
+                new CustomEvent(
+                    "WFESCAuthChanged",
+                    {
+                        detail: {
+                            user: user,
+                            profile: profile,
+                            loggedIn: true
+                        }
+                    }
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC login error:",
+                error
+            );
+
+            const raw =
+                String(
+                    error &&
+                    error.message
+                        ? error.message
+                        : error || ""
+                ).toLowerCase();
+
+            const message =
+                getAuthErrorMessage(
+                    error,
+                    "تعذر تسجيل الدخول. حاول مرة أخرى."
+                );
+
+            if (
+                raw.includes(
+                    "invalid login credentials"
+                ) ||
+                raw.includes(
+                    "invalid credentials"
+                ) ||
+                raw.includes(
+                    "invalid password"
+                )
+            ) {
+
+                setFieldError(
+                    e.loginPassword,
+                    e.loginPasswordError,
+                    message
+                );
+
+                shake(
+                    e.loginPassword
+                );
+
+            } else if (
+                raw.includes(
+                    "email not confirmed"
+                )
+            ) {
+
+                showStatus(
+                    "يجب تأكيد بريدك الإلكتروني أولًا.",
+                    "error"
+                );
+
+                shake(
+                    e.loginEmail
+                );
+
+            } else {
+
+                showStatus(
+                    message,
+                    "error"
+                );
+
+            }
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       REGISTER
+    ========================================= */
+        
