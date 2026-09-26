@@ -1725,3 +1725,755 @@
     ========================================= */
             
     
+    async function handleRegister(
+        event
+    ) {
+        event.preventDefault();
+
+        if (state.loading) {
+            return;
+        }
+
+        const username =
+            document.getElementById(
+                "wfesc-register-username"
+            );
+
+        const email =
+            document.getElementById(
+                "wfesc-register-email"
+            );
+
+        const password =
+            document.getElementById(
+                "wfesc-register-password"
+            );
+
+        const confirm =
+            document.getElementById(
+                "wfesc-register-confirm"
+            );
+
+        const button =
+            document.getElementById(
+                "wfesc-register-submit"
+            );
+
+        if (
+            !username ||
+            !email ||
+            !password ||
+            !confirm
+        ) {
+            return;
+        }
+
+        /*
+         * نسمح للمستخدم أن يكتب @xzz
+         * أيضًا، لكن نخزن xzz فقط.
+         */
+        const usernameValue =
+            cleanUsername(
+                username.value
+            );
+
+        const emailValue =
+            email.value.trim();
+
+        const passwordValue =
+            password.value;
+
+        const confirmValue =
+            confirm.value;
+
+        username.value =
+            usernameValue;
+
+        if (
+            usernameValue.length < 3 ||
+            usernameValue.length > 9
+        ) {
+            showStatus(
+                "اسم المستخدم يجب أن يكون من 3 إلى 9 أحرف إنجليزية.",
+                "error"
+            );
+
+            username.focus();
+            return;
+        }
+
+        if (
+            !/^[A-Za-z]+$/.test(
+                usernameValue
+            )
+        ) {
+            showStatus(
+                "اسم المستخدم يقبل الأحرف الإنجليزية فقط.",
+                "error"
+            );
+
+            username.focus();
+            return;
+        }
+
+        if (!emailValue) {
+            showStatus(
+                "يرجى إدخال البريد الإلكتروني.",
+                "error"
+            );
+
+            email.focus();
+            return;
+        }
+
+        if (
+            passwordValue.length < 6 ||
+            passwordValue.length > 16
+        ) {
+            showStatus(
+                "كلمة المرور يجب أن تكون من 6 إلى 16 حرفًا.",
+                "error"
+            );
+
+            password.focus();
+            return;
+        }
+
+        if (
+            passwordValue !==
+            confirmValue
+        ) {
+            showStatus(
+                "كلمتا المرور غير متطابقتين.",
+                "error"
+            );
+
+            confirm.focus();
+            return;
+        }
+
+        setLoading(
+            true,
+            button
+        );
+
+        try {
+            await AUTH.signUp(
+                emailValue,
+                passwordValue,
+                usernameValue
+            );
+
+            showStatus(
+                "تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو الرسائل غير المرغوب فيها.",
+                "success",
+                5000
+            );
+
+            const verifyBox =
+                document.getElementById(
+                    "wfesc-verify-box"
+                );
+
+            if (verifyBox) {
+                verifyBox.classList.add(
+                    "show"
+                );
+
+                setTimeout(
+                    function () {
+                        verifyBox.classList.remove(
+                            "show"
+                        );
+                    },
+                    5000
+                );
+            }
+
+            password.value = "";
+            confirm.value = "";
+
+        } catch (error) {
+            handleAuthError(
+                error
+            );
+        } finally {
+            setLoading(
+                false,
+                button
+            );
+        }
+    }
+
+    /* =========================================
+       إعادة كلمة المرور
+    ========================================= */
+
+    async function handleReset() {
+        if (state.loading) {
+            return;
+        }
+
+        const email =
+            document.getElementById(
+                "wfesc-recovery-email"
+            );
+
+        const button =
+            document.getElementById(
+                "wfesc-reset-submit"
+            );
+
+        if (!email) {
+            return;
+        }
+
+        const value =
+            email.value.trim();
+
+        if (!value) {
+            showStatus(
+                "يرجى إدخال البريد الإلكتروني.",
+                "error"
+            );
+
+            email.focus();
+            return;
+        }
+
+        setLoading(
+            true,
+            button
+        );
+
+        try {
+            await AUTH.resetPassword(
+                value
+            );
+
+            showStatus(
+                "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+                "success",
+                5000
+            );
+
+        } catch (error) {
+            handleAuthError(
+                error
+            );
+        } finally {
+            setLoading(
+                false,
+                button
+            );
+        }
+    }
+
+    /* =========================================
+       أخطاء Supabase
+    ========================================= */
+
+    function handleAuthError(
+        error
+    ) {
+        console.error(
+            "WFESC Auth UI:",
+            error
+        );
+
+        const message =
+            String(
+                error &&
+                error.message
+                    ? error.message
+                    : ""
+            ).toLowerCase();
+
+        if (
+            message.includes(
+                "invalid login credentials"
+            )
+        ) {
+            showStatus(
+                "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+                "error"
+            );
+            return;
+        }
+
+        if (
+            message.includes(
+                "email not confirmed"
+            )
+        ) {
+            showStatus(
+                "يرجى تأكيد بريدك الإلكتروني أولاً.",
+                "error"
+            );
+            return;
+        }
+
+        if (
+            message.includes(
+                "user already registered"
+            )
+        ) {
+            showStatus(
+                "هذا البريد الإلكتروني مسجل بالفعل.",
+                "error"
+            );
+            return;
+        }
+
+        if (
+            message.includes(
+                "password should be at least"
+            )
+        ) {
+            showStatus(
+                "كلمة المرور يجب أن تكون 6 أحرف على الأقل.",
+                "error"
+            );
+            return;
+        }
+
+        if (
+            message.includes(
+                "rate limit"
+            )
+        ) {
+            showStatus(
+                "تم تجاوز عدد المحاولات. حاول مرة أخرى لاحقًا.",
+                "error"
+            );
+            return;
+        }
+
+        showStatus(
+            error &&
+            error.message
+                ? error.message
+                : "حدث خطأ غير متوقع.",
+            "error"
+        );
+    }
+
+    /* =========================================
+       تسجيل الخروج
+    ========================================= */
+
+    async function handleLogout() {
+        if (state.loading) {
+            return;
+        }
+
+        try {
+            await AUTH.signOut();
+
+            showStatus(
+                "تم تسجيل الخروج.",
+                "success",
+                2500
+            );
+
+            setMode("login");
+            updateUI();
+
+        } catch (error) {
+            handleAuthError(
+                error
+            );
+        }
+    }
+
+    /* =========================================
+       حذف الحساب
+    ========================================= */
+
+    async function handleDelete() {
+        const confirmed =
+            window.confirm(
+                "هل أنت متأكد من حذف حسابك؟"
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            await AUTH.deleteAccount();
+
+        } catch (error) {
+            handleAuthError(
+                error
+            );
+        }
+    }
+
+    /* =========================================
+       إدارة الحساب
+    ========================================= */
+
+    function openProfile() {
+        window.location.href =
+            "profile.html";
+    }
+
+    function openPasswordChange() {
+        const newPassword =
+            window.prompt(
+                "أدخل كلمة المرور الجديدة (6 إلى 16 حرفًا):"
+            );
+
+        if (
+            newPassword === null
+        ) {
+            return;
+        }
+
+        if (
+            newPassword.length < 6 ||
+            newPassword.length > 16
+        ) {
+            showStatus(
+                "كلمة المرور يجب أن تكون من 6 إلى 16 حرفًا.",
+                "error"
+            );
+            return;
+        }
+
+        const confirmation =
+            window.prompt(
+                "أعد كتابة كلمة المرور الجديدة:"
+            );
+
+        if (
+            confirmation === null
+        ) {
+            return;
+        }
+
+        if (
+            newPassword !==
+            confirmation
+        ) {
+            showStatus(
+                "كلمتا المرور غير متطابقتين.",
+                "error"
+            );
+            return;
+        }
+
+        AUTH.updatePassword(
+            newPassword
+        )
+            .then(
+                function () {
+                    showStatus(
+                        "تم تغيير كلمة المرور بنجاح.",
+                        "success",
+                        4000
+                    );
+                }
+            )
+            .catch(
+                function (error) {
+                    handleAuthError(
+                        error
+                    );
+                }
+            );
+    }
+
+    /* =========================================
+       الأحداث
+    ========================================= */
+
+    function bindEvents() {
+        const tabs =
+            document.querySelectorAll(
+                ".wfesc-auth-tab"
+            );
+
+        tabs.forEach(
+            function (tab) {
+                tab.addEventListener(
+                    "click",
+                    function () {
+                        setMode(
+                            tab.dataset.authTab
+                        );
+                    }
+                );
+            }
+        );
+
+        const loginForm =
+            document.getElementById(
+                "wfesc-login-form"
+            );
+
+        if (loginForm) {
+            loginForm.addEventListener(
+                "submit",
+                handleLogin
+            );
+        }
+
+        const registerForm =
+            document.getElementById(
+                "wfesc-register-form"
+            );
+
+        if (registerForm) {
+            registerForm.addEventListener(
+                "submit",
+                handleRegister
+            );
+        }
+
+        const forgot =
+            document.getElementById(
+                "wfesc-forgot-button"
+            );
+
+        if (forgot) {
+            forgot.addEventListener(
+                "click",
+                function () {
+                    setMode(
+                        "recovery"
+                    );
+
+                    const loginEmail =
+                        document.getElementById(
+                            "wfesc-login-email"
+                        );
+
+                    const recoveryEmail =
+                        document.getElementById(
+                            "wfesc-recovery-email"
+                        );
+
+                    if (
+                        loginEmail &&
+                        recoveryEmail &&
+                        loginEmail.value
+                    ) {
+                        recoveryEmail.value =
+                            loginEmail.value;
+                    }
+                }
+            );
+        }
+
+        const backLogin =
+            document.getElementById(
+                "wfesc-back-login"
+            );
+
+        if (backLogin) {
+            backLogin.addEventListener(
+                "click",
+                function () {
+                    setMode(
+                        "login"
+                    );
+                }
+            );
+        }
+
+        const reset =
+            document.getElementById(
+                "wfesc-reset-submit"
+            );
+
+        if (reset) {
+            reset.addEventListener(
+                "click",
+                handleReset
+            );
+        }
+
+        const passwordButtons =
+            document.querySelectorAll(
+                "[data-password-toggle]"
+            );
+
+        passwordButtons.forEach(
+            function (button) {
+                button.addEventListener(
+                    "click",
+                    function () {
+                        togglePassword(
+                            button.dataset
+                                .passwordToggle
+                        );
+                    }
+                );
+            }
+        );
+
+        const username =
+            document.getElementById(
+                "wfesc-register-username"
+            );
+
+        if (username) {
+            username.addEventListener(
+                "input",
+                function () {
+                    const cleaned =
+                        cleanUsername(
+                            username.value
+                        );
+
+                    username.value =
+                        cleaned;
+                }
+            );
+        }
+
+        const logout =
+            document.getElementById(
+                "wfesc-logout-button"
+            );
+
+        if (logout) {
+            logout.addEventListener(
+                "click",
+                handleLogout
+            );
+        }
+
+        const profile =
+            document.getElementById(
+                "wfesc-profile-button"
+            );
+
+        if (profile) {
+            profile.addEventListener(
+                "click",
+                openProfile
+            );
+        }
+
+        const password =
+            document.getElementById(
+                "wfesc-password-button"
+            );
+
+        if (password) {
+            password.addEventListener(
+                "click",
+                openPasswordChange
+            );
+        }
+
+        const deleteButton =
+            document.getElementById(
+                "wfesc-delete-button"
+            );
+
+        if (deleteButton) {
+            deleteButton.addEventListener(
+                "click",
+                handleDelete
+            );
+        }
+
+        /*
+         * تغيير البروفايل من profile.html
+         * ينعكس هنا مباشرة.
+         */
+        window.addEventListener(
+            "WFESCProfileChanged",
+            function () {
+                updateUI();
+            }
+        );
+
+        /*
+         * تسجيل الدخول / الخروج.
+         */
+        window.addEventListener(
+            "WFESCAuthChanged",
+            function () {
+                updateUI();
+            }
+        );
+
+        window.addEventListener(
+            "WFESCLoginSuccess",
+            function () {
+                updateUI();
+            }
+        );
+
+        window.addEventListener(
+            "WFESCAccountCreated",
+            function () {
+                updateUI();
+            }
+        );
+
+        /*
+         * رجوع من رابط تأكيد البريد.
+         */
+        window.addEventListener(
+            "WFESCEmailVerified",
+            function () {
+                showStatus(
+                    "تم تأكيد بريدك الإلكتروني بنجاح.",
+                    "success",
+                    5000
+                );
+
+                updateUI();
+            }
+        );
+    }
+
+    /* =========================================
+       بدء الواجهة
+    ========================================= */
+
+    async function init() {
+        buildUI();
+
+        if (
+            typeof AUTH.restoreSession ===
+            "function"
+        ) {
+            try {
+                await AUTH.restoreSession();
+            } catch (error) {
+                console.warn(
+                    "WFESC restoreSession:",
+                    error
+                );
+            }
+        }
+
+        updateUI();
+    }
+
+    /*
+     * ننتظر تحميل DOM.
+     */
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+        document.addEventListener(
+            "DOMContentLoaded",
+            init,
+            {
+                once: true
+            }
+        );
+    } else {
+        init();
+    }
+
+})();
