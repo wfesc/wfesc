@@ -55,11 +55,8 @@
 
     const supabaseClient =
         window.supabase.createClient(
-
             CONFIG.supabaseUrl,
-
             CONFIG.supabaseKey
-
         );
 
 
@@ -80,6 +77,15 @@
 
     const SETTINGS_URL =
         "https://wfesc.github.io/wfesc/settings.html";
+
+
+    /* =====================================================
+       حدود كلمة المرور
+    ===================================================== */
+
+    const PASSWORD_MIN = 6;
+
+    const PASSWORD_MAX = 16;
 
 
     /* =====================================================
@@ -142,6 +148,83 @@
 
 
     /* =====================================================
+       التحقق من كلمة المرور
+    ===================================================== */
+
+    function validatePassword(password) {
+
+        password =
+            String(
+                password || ""
+            );
+
+
+        if (!password) {
+
+            return {
+
+                valid: false,
+
+                error:
+                    new Error(
+                        "يرجى إدخال كلمة المرور."
+                    )
+
+            };
+
+        }
+
+
+        if (
+            password.length <
+            PASSWORD_MIN
+        ) {
+
+            return {
+
+                valid: false,
+
+                error:
+                    new Error(
+                        "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
+                    )
+
+            };
+
+        }
+
+
+        if (
+            password.length >
+            PASSWORD_MAX
+        ) {
+
+            return {
+
+                valid: false,
+
+                error:
+                    new Error(
+                        "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
+                    )
+
+            };
+
+        }
+
+
+        return {
+
+            valid: true,
+
+            error: null
+
+        };
+
+    }
+
+
+    /* =====================================================
        حدود اسم المستخدم
     ===================================================== */
 
@@ -184,7 +267,9 @@
     function validateUsername(username) {
 
         username =
-            String(username || "").trim();
+            String(
+                username || ""
+            ).trim();
 
 
         const limits =
@@ -243,10 +328,6 @@
         }
 
 
-        /*
-         * أحرف إنجليزية فقط
-         */
-
         if (!/^[A-Za-z]+$/.test(username)) {
 
             return {
@@ -276,15 +357,14 @@
 
     /* =====================================================
        تنظيف اسم المستخدم
-       
-       يستخدم فقط عند إنشاء اسم افتراضي
-       للحسابات القديمة أو الحالات الخاصة.
     ===================================================== */
 
     function sanitizeUsername(username) {
 
         username =
-            String(username || "");
+            String(
+                username || ""
+            );
 
 
         username =
@@ -299,11 +379,10 @@
 
 
         username =
-            username
-                .slice(
-                    0,
-                    limits.max
-                );
+            username.slice(
+                0,
+                limits.max
+            );
 
 
         if (
@@ -338,11 +417,6 @@
         }
 
 
-        /*
-         * أولاً نحاول أخذ username
-         * المخزن في user_metadata
-         */
-
         if (
             user.user_metadata &&
             user.user_metadata.username
@@ -368,11 +442,6 @@
 
         }
 
-
-        /*
-         * إذا لم يوجد نأخذ الجزء
-         * الموجود قبل @ من البريد.
-         */
 
         if (user.email) {
 
@@ -845,32 +914,20 @@
            Password
         ========================= */
 
-        if (!password) {
+        const passwordValidation =
+            validatePassword(
+                password
+            );
+
+
+        if (!passwordValidation.valid) {
 
             return {
 
                 data: null,
 
                 error:
-                    new Error(
-                        "يرجى إدخال كلمة المرور."
-                    )
-
-            };
-
-        }
-
-
-        if (password.length < 6) {
-
-            return {
-
-                data: null,
-
-                error:
-                    new Error(
-                        "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
-                    )
+                    passwordValidation.error
 
             };
 
@@ -903,10 +960,6 @@
                                 username
 
                         },
-
-                        /*
-                         * رابط تأكيد البريد
-                         */
 
                         emailRedirectTo:
                             SETTINGS_URL
@@ -963,11 +1016,6 @@
             result.data.session || null;
 
 
-        /*
-         * إذا كانت Session موجودة
-         * ننشئ Profile مباشرة.
-         */
-
         if (
             currentUser &&
             currentSession
@@ -1020,7 +1068,6 @@
        تسجيل الدخول
     ===================================================== */
 
-   
     async function signIn(
         email,
         password
@@ -1070,16 +1117,20 @@
         }
 
 
-        if (!password) {
+        const passwordValidation =
+            validatePassword(
+                password
+            );
+
+
+        if (!passwordValidation.valid) {
 
             return {
 
                 data: null,
 
                 error:
-                    new Error(
-                        "يرجى إدخال كلمة المرور."
-                    )
+                    passwordValidation.error
 
             };
 
@@ -1124,6 +1175,11 @@
         }
 
 
+       
+        /* =================================================
+           كلمة المرور خاطئة / فشل تسجيل الدخول
+        ================================================= */
+
         if (result.error) {
 
             console.error(
@@ -1132,12 +1188,49 @@
             );
 
 
+            let message =
+                "تعذر تسجيل الدخول.";
+
+
+            const errorCode =
+                String(
+                    result.error.code ||
+                    ""
+                ).toLowerCase();
+
+
+            const errorMessage =
+                String(
+                    result.error.message ||
+                    ""
+                ).toLowerCase();
+
+
+            if (
+                errorCode ===
+                    "invalid_credentials" ||
+                errorMessage.includes(
+                    "invalid login credentials"
+                ) ||
+                errorMessage.includes(
+                    "invalid credentials"
+                )
+            ) {
+
+                message =
+                    "كلمة المرور غير صحيحة.";
+
+            }
+
+
             return {
 
                 data: null,
 
                 error:
-                    result.error
+                    new Error(
+                        message
+                    )
 
             };
 
@@ -1154,18 +1247,20 @@
 
         if (currentUser) {
 
-            ensureProfile(
-                currentUser
-            ).catch(
-                function (error) {
+            try {
 
-                    console.warn(
-                        "WFESC Auth: مشكلة profile بعد تسجيل الدخول:",
-                        error
-                    );
+                await ensureProfile(
+                    currentUser
+                );
 
-                }
-            );
+            } catch (error) {
+
+                console.warn(
+                    "WFESC Auth: مشكلة profile بعد تسجيل الدخول:",
+                    error
+                );
+
+            }
 
         }
 
@@ -1191,6 +1286,132 @@
                 }
             )
         );
+
+
+        return {
+
+            data:
+                result.data,
+
+            error:
+                null
+
+        };
+
+    }
+
+
+    /* =====================================================
+       تغيير كلمة المرور
+    ===================================================== */
+
+    async function updatePassword(
+        newPassword
+    ) {
+
+        if (!currentUser) {
+
+            return {
+
+                data: null,
+
+                error:
+                    new Error(
+                        "يجب تسجيل الدخول أولاً."
+                    )
+
+            };
+
+        }
+
+
+        newPassword =
+            String(
+                newPassword || ""
+            );
+
+
+        const validation =
+            validatePassword(
+                newPassword
+            );
+
+
+        if (!validation.valid) {
+
+            return {
+
+                data: null,
+
+                error:
+                    validation.error
+
+            };
+
+        }
+
+
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .auth
+                    .updateUser({
+
+                        password:
+                            newPassword
+
+                    });
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: خطأ أثناء تغيير كلمة المرور:",
+                error
+            );
+
+
+            return {
+
+                data: null,
+
+                error:
+                    error
+
+            };
+
+        }
+
+
+        if (result.error) {
+
+            console.error(
+                "WFESC Auth: فشل تغيير كلمة المرور:",
+                result.error
+            );
+
+
+            return {
+
+                data: null,
+
+                error:
+                    result.error
+
+            };
+
+        }
+
+
+        if (result.data.user) {
+
+            currentUser =
+                result.data.user;
+
+        }
 
 
         return {
@@ -1250,10 +1471,6 @@
         }
 
 
-        const redirectUrl =
-            SETTINGS_URL;
-
-
         let result;
 
 
@@ -1267,7 +1484,7 @@
                         {
 
                             redirectTo:
-                                redirectUrl
+                                SETTINGS_URL
 
                         }
                     );
@@ -1314,10 +1531,52 @@
 
         return {
 
-            data: true,
+            data:
+                true,
 
             error:
                 null
+
+        };
+
+    }
+
+
+    /* =====================================================
+       حذف الحساب
+       
+       ملاحظة أمنية:
+       لا يتم وضع Service Role Key داخل الموقع.
+       الحذف الكامل من auth.users يحتاج Edge Function
+       أو جهة Server-side آمنة في Supabase.
+    ===================================================== */
+
+    async function deleteAccount() {
+
+        if (!currentUser) {
+
+            return {
+
+                data: null,
+
+                error:
+                    new Error(
+                        "يجب تسجيل الدخول أولاً."
+                    )
+
+            };
+
+        }
+
+
+        return {
+
+            data: null,
+
+            error:
+                new Error(
+                    "حذف الحساب الكامل يحتاج إلى إعداد آمن في Supabase."
+                )
 
         };
 
@@ -1521,10 +1780,9 @@
         }
 
 
-        /*
-         * معرفة إذا كان المستخدم عاد
-         * من رابط تأكيد البريد الإلكتروني.
-         */
+        /* =================================================
+           معرفة العودة من رابط تأكيد البريد
+        ================================================= */
 
         const currentUrl =
             window.location.href;
@@ -1639,11 +1897,6 @@
                 }
 
 
-                /*
-                 * لا ننفذ عمليات Supabase
-                 * مباشرة داخل callback.
-                 */
-
                 setTimeout(
                     async function () {
 
@@ -1667,10 +1920,9 @@
                         }
 
 
-                        /*
-                         * إذا تم تأكيد البريد
-                         * وأعاد Supabase Session
-                         */
+                        /* =================================
+                           تأكيد البريد
+                        ================================= */
 
                         if (
                             currentUser &&
@@ -1813,8 +2065,14 @@
         signIn:
             signIn,
 
+        updatePassword:
+            updatePassword,
+
         resetPassword:
             resetPassword,
+
+        deleteAccount:
+            deleteAccount,
 
         signOut:
             signOut,
@@ -1845,5 +2103,4 @@
         );
 
 
-})();
- 
+})(); 
