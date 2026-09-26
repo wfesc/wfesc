@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>WFESC Supabase Test</title>
+<title>WFESC - Supabase Key Test</title>
 
 <style>
 *{
@@ -19,59 +18,47 @@ body{
     padding:20px;
 }
 
-.container{
+.box{
     max-width:600px;
-    margin:40px auto;
+    margin:50px auto;
+    background:#111;
+    border:1px solid #292929;
+    border-radius:16px;
+    padding:25px;
 }
 
 h1{
     text-align:center;
-    margin-bottom:25px;
-}
-
-.card{
-    background:#111;
-    border:1px solid #292929;
-    border-radius:15px;
-    padding:20px;
-    margin-bottom:15px;
-}
-
-label{
-    display:block;
-    margin-bottom:7px;
-}
-
-input{
-    width:100%;
-    padding:13px;
-    margin-bottom:15px;
-    border-radius:10px;
-    border:1px solid #333;
-    background:#080808;
-    color:#fff;
-    outline:none;
-}
-
-button{
-    width:100%;
-    padding:13px;
-    border:0;
-    border-radius:10px;
-    background:#fff;
-    color:#000;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:5px;
+    margin-top:0;
 }
 
 .status{
+    padding:16px;
+    border-radius:12px;
+    background:#080808;
+    border:1px solid #292929;
     white-space:pre-wrap;
     line-height:1.8;
     word-break:break-word;
 }
 
-.success{
+button{
+    width:100%;
+    margin-top:15px;
+    padding:14px;
+    border:0;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+    background:#fff;
+    color:#000;
+}
+
+button:disabled{
+    opacity:.5;
+}
+
+.ok{
     color:#5cff8d;
 }
 
@@ -87,357 +74,166 @@ button{
 
 <body>
 
-<div class="container">
+<div class="box">
 
     <h1>WFESC Supabase Test</h1>
 
-    <div class="card">
-        <div id="connectionStatus" class="status info">
-            جاري فحص الاتصال...
-        </div>
+    <div id="status" class="status info">
+        جاري تجهيز الاختبار...
     </div>
 
-    <div class="card">
-
-        <label for="email">البريد الإلكتروني</label>
-
-        <input
-            id="email"
-            type="email"
-            autocomplete="email"
-            placeholder="example@email.com"
-        >
-
-        <label for="password">كلمة المرور</label>
-
-        <input
-            id="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="كلمة المرور"
-        >
-
-        <button id="loginButton" type="button">
-            اختبار تسجيل الدخول
-        </button>
-
-    </div>
-
-    <div class="card">
-
-        <div id="result" class="status info">
-            لم يتم إجراء اختبار تسجيل الدخول بعد.
-        </div>
-
-    </div>
+    <button id="testButton" type="button">
+        اختبار Publishable Key
+    </button>
 
 </div>
 
-
-<!-- =====================================================
-     SUPABASE
-===================================================== -->
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-
-<!-- =====================================================
-     WFESC AUTH CONFIG
-===================================================== -->
-
-<script src="./settings-features/settings-auth-config.js"></script>
-
-
 <script>
-
 "use strict";
 
-const connectionStatus =
-    document.getElementById("connectionStatus");
+/* =====================================================
+   بيانات مشروع WFESC
+===================================================== */
 
-const resultBox =
-    document.getElementById("result");
+const SUPABASE_URL =
+    "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
-const loginButton =
-    document.getElementById("loginButton");
+const SUPABASE_KEY =
+    "sb_publishable_5b7pTBiGY2D6vDLRsWgVzA_X926lBeM";
+
+
+const statusBox =
+    document.getElementById("status");
+
+const testButton =
+    document.getElementById("testButton");
 
 
 /* =====================================================
-   التأكد من تحميل WFESC CONFIG
+   فحص المكتبة
 ===================================================== */
 
-if (!window.WFESCSettingsAuthConfig) {
+if (!window.supabase) {
 
-    connectionStatus.className =
-        "status error";
+    statusBox.className = "status error";
 
-    connectionStatus.textContent =
-        "❌ فشل تحميل WFESCSettingsAuthConfig\n\n" +
-        "تأكد من أن الملف موجود هنا:\n" +
-        "settings-features/settings-auth-config.js";
+    statusBox.textContent =
+        "❌ مكتبة Supabase لم يتم تحميلها.";
 
 } else {
 
-    connectionStatus.className =
-        "status success";
-
-    connectionStatus.textContent =
-        "✓ تم تحميل WFESCSettingsAuthConfig\n\n" +
-        "✓ Supabase URL موجود\n" +
-        "✓ Publishable Key موجود";
-
-
-    /* =================================================
-       إنشاء اتصال Supabase
-    ================================================= */
-
-    const CONFIG =
-        window.WFESCSettingsAuthConfig;
-
-    if (!window.supabase) {
-
-        connectionStatus.className =
-            "status error";
-
-        connectionStatus.textContent +=
-            "\n\n❌ مكتبة Supabase غير محملة.";
-
-    } else {
-
-        const supabaseClient =
-            window.supabase.createClient(
-                CONFIG.supabaseUrl,
-                CONFIG.supabaseKey
-            );
-
-
-        /* =============================================
-           اختبار الاتصال بجدول profiles
-        ============================================= */
-
-        async function testConnection(){
-
-            try {
-
-                const response =
-                    await supabaseClient
-                    .from(CONFIG.profilesTable)
-                    .select("id")
-                    .limit(1);
-
-                if (response.error) {
-
-                    connectionStatus.className =
-                        "status error";
-
-                    connectionStatus.textContent +=
-                        "\n\n❌ اتصال Supabase فشل\n" +
-                        response.error.message;
-
-                    return;
-
-                }
-
-                connectionStatus.className =
-                    "status success";
-
-                connectionStatus.textContent +=
-                    "\n\n✓ الاتصال بـ Supabase يعمل\n" +
-                    "✓ جدول profiles قابل للوصول";
-
-            } catch(error){
-
-                connectionStatus.className =
-                    "status error";
-
-                connectionStatus.textContent +=
-                    "\n\n❌ خطأ:\n" +
-                    error.message;
-
-            }
-
-        }
-
-
-        /* =============================================
-           تسجيل الدخول
-        ============================================= */
-
-        loginButton.addEventListener(
-            "click",
-            async function(){
-
-                const email =
-                    document
-                    .getElementById("email")
-                    .value
-                    .trim();
-
-                const password =
-                    document
-                    .getElementById("password")
-                    .value;
-
-
-                if (!email) {
-
-                    resultBox.className =
-                        "status error";
-
-                    resultBox.textContent =
-                        "❌ أدخل البريد الإلكتروني.";
-
-                    return;
-
-                }
-
-
-                if (!password) {
-
-                    resultBox.className =
-                        "status error";
-
-                    resultBox.textContent =
-                        "❌ أدخل كلمة المرور.";
-
-                    return;
-
-                }
-
-
-                loginButton.disabled = true;
-
-                loginButton.textContent =
-                    "جاري تسجيل الدخول...";
-
-
-                resultBox.className =
-                    "status info";
-
-                resultBox.textContent =
-                    "جاري الاتصال بـ Supabase...";
-
-
-                try {
-
-                    const response =
-                        await supabaseClient.auth
-                        .signInWithPassword({
-
-                            email: email,
-
-                            password: password
-
-                        });
-
-
-                    if (response.error) {
-
-                        resultBox.className =
-                            "status error";
-
-                        resultBox.textContent =
-                            "❌ فشل تسجيل الدخول\n\n" +
-                            response.error.message;
-
-                        return;
-
-                    }
-
-
-                    const user =
-                        response.data.user;
-
-                    const session =
-                        response.data.session;
-
-
-                    /* =================================
-                       قراءة Profile
-                    ================================= */
-
-                    let profileText =
-                        "لم يتم العثور على profile.";
-
-                    const profileResponse =
-                        await supabaseClient
-                        .from(CONFIG.profilesTable)
-                        .select("*")
-                        .eq("id", user.id)
-                        .maybeSingle();
-
-
-                    if (profileResponse.error) {
-
-                        profileText =
-                            "خطأ بقراءة profile:\n" +
-                            profileResponse.error.message;
-
-                    } else if (
-                        profileResponse.data
-                    ) {
-
-                        profileText =
-                            JSON.stringify(
-                                profileResponse.data,
-                                null,
-                                2
-                            );
-
-                    }
-
-
-                    resultBox.className =
-                        "status success";
-
-                    resultBox.textContent =
-                        "✓ تم تسجيل الدخول بنجاح\n\n" +
-
-                        "User ID:\n" +
-                        user.id +
-
-                        "\n\nالبريد:\n" +
-                        (user.email || "غير موجود") +
-
-                        "\n\nSession:\n" +
-                        (session ? "✓ موجودة" : "❌ غير موجودة") +
-
-                        "\n\nProfile:\n" +
-                        profileText;
-
-
-                } catch(error){
-
-                    resultBox.className =
-                        "status error";
-
-                    resultBox.textContent =
-                        "❌ خطأ غير متوقع\n\n" +
-                        error.message;
-
-                } finally {
-
-                    loginButton.disabled = false;
-
-                    loginButton.textContent =
-                        "اختبار تسجيل الدخول";
-
-                }
-
-            }
-        );
-
-
-        /* =============================================
-           تشغيل اختبار الاتصال
-        ============================================= */
-
-        testConnection();
-
-    }
+    statusBox.className = "status ok";
+
+    statusBox.textContent =
+        "✓ مكتبة Supabase تم تحميلها\n\n" +
+        "✓ رابط المشروع موجود\n" +
+        "✓ Publishable Key موجود\n\n" +
+        "اضغط زر الاختبار.";
 
 }
 
+
+/* =====================================================
+   اختبار المفتاح
+===================================================== */
+
+testButton.addEventListener("click", async function(){
+
+    testButton.disabled = true;
+
+    statusBox.className = "status info";
+
+    statusBox.textContent =
+        "جاري اختبار Publishable Key...";
+
+    try {
+
+        const client =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_KEY
+            );
+
+
+        /* ---------------------------------------------
+           اختبار الاتصال بـ Auth
+        --------------------------------------------- */
+
+        const authResult =
+            await client.auth.getSession();
+
+
+        if (authResult.error) {
+
+            statusBox.className =
+                "status error";
+
+            statusBox.textContent =
+                "❌ فشل اختبار Supabase\n\n" +
+                authResult.error.message;
+
+            return;
+        }
+
+
+        /* ---------------------------------------------
+           اختبار الوصول إلى profiles
+        --------------------------------------------- */
+
+        const dbResult =
+            await client
+            .from("profiles")
+            .select("id")
+            .limit(1);
+
+
+        if (dbResult.error) {
+
+            statusBox.className =
+                "status error";
+
+            statusBox.textContent =
+                "⚠️ المفتاح وصل إلى Supabase\n\n" +
+                "لكن اختبار جدول profiles فشل:\n\n" +
+                dbResult.error.message;
+
+            return;
+        }
+
+
+        /* ---------------------------------------------
+           نجاح كامل
+        --------------------------------------------- */
+
+        statusBox.className =
+            "status ok";
+
+        statusBox.textContent =
+            "✅ Publishable Key يعمل بنجاح\n\n" +
+            "✓ Supabase URL صحيح\n" +
+            "✓ Publishable Key مقبول\n" +
+            "✓ Auth يعمل\n" +
+            "✓ جدول profiles قابل للوصول\n\n" +
+            "المفتاح المستخدم هو Publishable فقط.";
+
+    } catch(error){
+
+        statusBox.className =
+            "status error";
+
+        statusBox.textContent =
+            "❌ حدث خطأ أثناء الاختبار\n\n" +
+            error.message;
+
+    } finally {
+
+        testButton.disabled = false;
+
+    }
+
+});
 </script>
 
 </body>
