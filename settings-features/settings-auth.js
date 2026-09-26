@@ -50,7 +50,7 @@
 
 
     /* =====================================================
-       إنشاء اتصال Supabase
+       اتصال Supabase
     ===================================================== */
 
     const supabaseClient =
@@ -65,9 +65,7 @@
     ===================================================== */
 
     let currentUser = null;
-
     let currentSession = null;
-
     let currentProfile = null;
 
 
@@ -84,51 +82,74 @@
     ===================================================== */
 
     const PASSWORD_MIN = 6;
-
     const PASSWORD_MAX = 16;
 
 
     /* =====================================================
-       GETTERS
+       أدوات عامة
     ===================================================== */
 
     function getClient() {
-
         return supabaseClient;
-
     }
 
 
     function getUser() {
-
         return currentUser;
-
     }
 
 
     function getSession() {
-
         return currentSession;
-
     }
 
 
     function getProfile() {
-
         return currentProfile;
-
     }
 
 
     function getCurrentUserId() {
 
-        if (!currentUser) {
+        return currentUser
+            ? currentUser.id || null
+            : null;
 
-            return null;
+    }
 
-        }
 
-        return currentUser.id || null;
+    function dispatchAuthChanged(eventName) {
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "WFESCAuthChanged",
+                {
+                    detail: {
+                        user: currentUser,
+                        session: currentSession,
+                        event: eventName
+                    }
+                }
+            )
+        );
+
+    }
+
+
+    function dispatchEmailVerified() {
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "WFESCEmailVerified",
+                {
+                    detail: {
+                        user: currentUser,
+                        session: currentSession,
+                        profile: currentProfile
+                    }
+                }
+            )
+        );
 
     }
 
@@ -148,84 +169,64 @@
 
 
     /* =====================================================
-       التحقق من كلمة المرور
+       كلمة المرور
     ===================================================== */
 
     function validatePassword(password) {
 
         password =
-            String(
-                password || ""
-            );
+            String(password || "");
 
 
         if (!password) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
                         "يرجى إدخال كلمة المرور."
                     )
-
             };
 
         }
 
 
-        if (
-            password.length <
-            PASSWORD_MIN
-        ) {
+        if (password.length < PASSWORD_MIN) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
                         "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
                     )
-
             };
 
         }
 
 
-        if (
-            password.length >
-            PASSWORD_MAX
-        ) {
+        if (password.length > PASSWORD_MAX) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
                         "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
                     )
-
             };
 
         }
 
 
         return {
-
             valid: true,
-
             error: null
-
         };
 
     }
 
 
     /* =====================================================
-       حدود اسم المستخدم
+       اسم المستخدم
     ===================================================== */
 
     function getUsernameLimits() {
@@ -251,25 +252,10 @@
     }
 
 
-    /* =====================================================
-       التحقق من اسم المستخدم
-       
-       الشروط:
-       - 3 أحرف أو أكثر
-       - بحد أقصى 9 أحرف
-       - أحرف إنجليزية فقط
-       - بدون مسافات
-       - بدون أرقام
-       - بدون فواصل
-       - بدون رموز
-    ===================================================== */
-
     function validateUsername(username) {
 
         username =
-            String(
-                username || ""
-            ).trim();
+            String(username || "").trim();
 
 
         const limits =
@@ -283,14 +269,11 @@
         if (!username) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
                         "يرجى إدخال اسم المستخدم."
                     )
-
             };
 
         }
@@ -299,14 +282,11 @@
         if (length < limits.min) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
                         "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
                     )
-
             };
 
         }
@@ -315,14 +295,11 @@
         if (length > limits.max) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
                         "اسم المستخدم يجب ألا يتجاوز 9 أحرف."
                     )
-
             };
 
         }
@@ -331,40 +308,28 @@
         if (!/^[A-Za-z]+$/.test(username)) {
 
             return {
-
                 valid: false,
-
                 error:
                     new Error(
-                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط، بدون مسافات أو فواصل أو رموز."
+                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط، بدون مسافات أو أرقام أو رموز."
                     )
-
             };
 
         }
 
 
         return {
-
             valid: true,
-
             error: null
-
         };
 
     }
 
 
-    /* =====================================================
-       تنظيف اسم المستخدم
-    ===================================================== */
-
     function sanitizeUsername(username) {
 
         username =
-            String(
-                username || ""
-            );
+            String(username || "");
 
 
         username =
@@ -378,31 +343,13 @@
             getUsernameLimits();
 
 
-        username =
-            username.slice(
-                0,
-                limits.max
-            );
-
-
-        if (
-            username.length >=
-            limits.min
-        ) {
-
-            return username;
-
-        }
-
-
-        return "WFESC";
+        return username.slice(
+            0,
+            limits.max
+        );
 
     }
 
-
-    /* =====================================================
-       اسم افتراضي
-    ===================================================== */
 
     function getDefaultUsername(user) {
 
@@ -411,9 +358,7 @@
 
 
         if (!user) {
-
             return "WFESC";
-
         }
 
 
@@ -428,13 +373,11 @@
                 ).trim();
 
 
-            const validation =
+            if (
                 validateUsername(
                     metadataUsername
-                );
-
-
-            if (validation.valid) {
+                ).valid
+            ) {
 
                 return metadataUsername;
 
@@ -446,11 +389,8 @@
         if (user.email) {
 
             const emailName =
-                String(
-                    user.email
-                )
-                .split("@")[0]
-                .trim();
+                String(user.email)
+                    .split("@")[0];
 
 
             const cleaned =
@@ -477,7 +417,7 @@
 
 
     /* =====================================================
-       جلب Profile
+       Profile
     ===================================================== */
 
     async function fetchProfile(userId) {
@@ -485,7 +425,6 @@
         if (!userId) {
 
             currentProfile = null;
-
             return null;
 
         }
@@ -511,7 +450,6 @@
                 result.error
             );
 
-
             return null;
 
         }
@@ -526,16 +464,11 @@
     }
 
 
-    /* =====================================================
-       إنشاء Profile إذا لم يكن موجودًا
-    ===================================================== */
-
     async function ensureProfile(user) {
 
         if (!user) {
 
             currentProfile = null;
-
             return null;
 
         }
@@ -549,19 +482,9 @@
 
         if (existingProfile) {
 
-            currentProfile =
-                existingProfile;
-
-
             return existingProfile;
 
         }
-
-
-        const username =
-            getDefaultUsername(
-                user
-            );
 
 
         const profileData = {
@@ -570,7 +493,7 @@
                 user.id,
 
             username:
-                username,
+                getDefaultUsername(user),
 
             avatar_url:
                 null,
@@ -600,9 +523,7 @@
                 result.error
             );
 
-
             currentProfile = null;
-
 
             return null;
 
@@ -627,14 +548,11 @@
         if (!currentUser) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يجب تسجيل الدخول أولاً."
                     )
-
             };
 
         }
@@ -646,14 +564,11 @@
         ) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "بيانات التحديث غير صحيحة."
                     )
-
             };
 
         }
@@ -661,10 +576,6 @@
 
         const allowedUpdates = {};
 
-
-        /* =========================
-           Username
-        ========================= */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -688,12 +599,9 @@
             if (!validation.valid) {
 
                 return {
-
                     data: null,
-
                     error:
                         validation.error
-
                 };
 
             }
@@ -704,10 +612,6 @@
 
         }
 
-
-        /* =========================
-           Avatar
-        ========================= */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -721,10 +625,6 @@
 
         }
 
-
-        /* =========================
-           Bio
-        ========================= */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -746,13 +646,8 @@
         ) {
 
             return {
-
-                data:
-                    currentProfile,
-
-                error:
-                    null
-
+                data: currentProfile,
+                error: null
             };
 
         }
@@ -781,14 +676,9 @@
                 result.error
             );
 
-
             return {
-
                 data: null,
-
-                error:
-                    result.error
-
+                error: result.error
             };
 
         }
@@ -810,13 +700,8 @@
 
 
         return {
-
-            data:
-                currentProfile,
-
-            error:
-                null
-
+            data: currentProfile,
+            error: null
         };
 
     }
@@ -833,38 +718,23 @@
     ) {
 
         email =
-            String(
-                email || ""
-            ).trim();
-
+            String(email || "").trim();
 
         password =
-            String(
-                password || ""
-            );
-
+            String(password || "");
 
         username =
-            String(
-                username || ""
-            ).trim();
+            String(username || "").trim();
 
-
-        /* =========================
-           Email
-        ========================= */
 
         if (!email) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يرجى إدخال البريد الإلكتروني."
                     )
-
             };
 
         }
@@ -873,22 +743,15 @@
         if (!isValidEmail(email)) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يرجى إدخال بريد إلكتروني صحيح."
                     )
-
             };
 
         }
 
-
-        /* =========================
-           Username
-        ========================= */
 
         const usernameValidation =
             validateUsername(
@@ -899,20 +762,13 @@
         if (!usernameValidation.valid) {
 
             return {
-
                 data: null,
-
                 error:
                     usernameValidation.error
-
             };
 
         }
 
-
-        /* =========================
-           Password
-        ========================= */
 
         const passwordValidation =
             validatePassword(
@@ -923,20 +779,13 @@
         if (!passwordValidation.valid) {
 
             return {
-
                 data: null,
-
                 error:
                     passwordValidation.error
-
             };
 
         }
 
-
-        /* =========================
-           Supabase Sign Up
-        ========================= */
 
         let result;
 
@@ -955,10 +804,8 @@
                     options: {
 
                         data: {
-
                             username:
                                 username
-
                         },
 
                         emailRedirectTo:
@@ -975,14 +822,9 @@
                 error
             );
 
-
             return {
-
                 data: null,
-
-                error:
-                    error
-
+                error: error
             };
 
         }
@@ -995,14 +837,10 @@
                 result.error
             );
 
-
             return {
-
                 data: null,
-
                 error:
                     result.error
-
             };
 
         }
@@ -1010,7 +848,6 @@
 
         currentUser =
             result.data.user || null;
-
 
         currentSession =
             result.data.session || null;
@@ -1028,37 +865,16 @@
         }
 
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCAuthChanged",
-                {
-
-                    detail: {
-
-                        user:
-                            currentUser,
-
-                        session:
-                            currentSession,
-
-                        event:
-                            "SIGNED_UP"
-
-                    }
-
-                }
-            )
+        dispatchAuthChanged(
+            "SIGNED_UP"
         );
 
 
         return {
-
             data:
                 result.data,
-
             error:
                 null
-
         };
 
     }
@@ -1074,28 +890,20 @@
     ) {
 
         email =
-            String(
-                email || ""
-            ).trim();
-
+            String(email || "").trim();
 
         password =
-            String(
-                password || ""
-            );
+            String(password || "");
 
 
         if (!email) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يرجى إدخال البريد الإلكتروني."
                     )
-
             };
 
         }
@@ -1104,14 +912,11 @@
         if (!isValidEmail(email)) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يرجى إدخال بريد إلكتروني صحيح."
                     )
-
             };
 
         }
@@ -1126,12 +931,9 @@
         if (!passwordValidation.valid) {
 
             return {
-
                 data: null,
-
                 error:
                     passwordValidation.error
-
             };
 
         }
@@ -1162,31 +964,15 @@
                 error
             );
 
-
             return {
-
                 data: null,
-
-                error:
-                    error
-
+                error: error
             };
 
         }
 
 
-       
-        /* =================================================
-           كلمة المرور خاطئة / فشل تسجيل الدخول
-        ================================================= */
-
         if (result.error) {
-
-            console.error(
-                "WFESC Auth: فشل تسجيل الدخول:",
-                result.error
-            );
-
 
             let message =
                 "تعذر تسجيل الدخول.";
@@ -1194,15 +980,13 @@
 
             const errorCode =
                 String(
-                    result.error.code ||
-                    ""
+                    result.error.code || ""
                 ).toLowerCase();
 
 
             const errorMessage =
                 String(
-                    result.error.message ||
-                    ""
+                    result.error.message || ""
                 ).toLowerCase();
 
 
@@ -1224,14 +1008,11 @@
 
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         message
                     )
-
             };
 
         }
@@ -1239,7 +1020,6 @@
 
         currentSession =
             result.data.session || null;
-
 
         currentUser =
             result.data.user || null;
@@ -1265,37 +1045,16 @@
         }
 
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCAuthChanged",
-                {
-
-                    detail: {
-
-                        user:
-                            currentUser,
-
-                        session:
-                            currentSession,
-
-                        event:
-                            "SIGNED_IN"
-
-                    }
-
-                }
-            )
+        dispatchAuthChanged(
+            "SIGNED_IN"
         );
 
 
         return {
-
             data:
                 result.data,
-
             error:
                 null
-
         };
 
     }
@@ -1304,22 +1063,18 @@
     /* =====================================================
        تغيير كلمة المرور
     ===================================================== */
-
-    async function updatePassword(
+async function updatePassword(
         newPassword
     ) {
 
         if (!currentUser) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يجب تسجيل الدخول أولاً."
                     )
-
             };
 
         }
@@ -1340,12 +1095,9 @@
         if (!validation.valid) {
 
             return {
-
                 data: null,
-
                 error:
                     validation.error
-
             };
 
         }
@@ -1360,10 +1112,8 @@
                 await supabaseClient
                     .auth
                     .updateUser({
-
                         password:
                             newPassword
-
                     });
 
         } catch (error) {
@@ -1373,14 +1123,9 @@
                 error
             );
 
-
             return {
-
                 data: null,
-
-                error:
-                    error
-
+                error: error
             };
 
         }
@@ -1388,19 +1133,10 @@
 
         if (result.error) {
 
-            console.error(
-                "WFESC Auth: فشل تغيير كلمة المرور:",
-                result.error
-            );
-
-
             return {
-
                 data: null,
-
                 error:
                     result.error
-
             };
 
         }
@@ -1415,13 +1151,10 @@
 
 
         return {
-
             data:
                 result.data,
-
             error:
                 null
-
         };
 
     }
@@ -1434,22 +1167,17 @@
     async function resetPassword(email) {
 
         email =
-            String(
-                email || ""
-            ).trim();
+            String(email || "").trim();
 
 
         if (!email) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يرجى إدخال البريد الإلكتروني."
                     )
-
             };
 
         }
@@ -1458,14 +1186,11 @@
         if (!isValidEmail(email)) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يرجى إدخال بريد إلكتروني صحيح."
                     )
-
             };
 
         }
@@ -1482,10 +1207,8 @@
                     .resetPasswordForEmail(
                         email,
                         {
-
                             redirectTo:
                                 SETTINGS_URL
-
                         }
                     );
 
@@ -1496,14 +1219,9 @@
                 error
             );
 
-
             return {
-
                 data: null,
-
-                error:
-                    error
-
+                error: error
             };
 
         }
@@ -1511,32 +1229,18 @@
 
         if (result.error) {
 
-            console.error(
-                "WFESC Auth: فشل إرسال إعادة التعيين:",
-                result.error
-            );
-
-
             return {
-
                 data: null,
-
                 error:
                     result.error
-
             };
 
         }
 
 
         return {
-
-            data:
-                true,
-
-            error:
-                null
-
+            data: true,
+            error: null
         };
 
     }
@@ -1545,10 +1249,8 @@
     /* =====================================================
        حذف الحساب
        
-       ملاحظة أمنية:
-       لا يتم وضع Service Role Key داخل الموقع.
-       الحذف الكامل من auth.users يحتاج Edge Function
-       أو جهة Server-side آمنة في Supabase.
+       لا يتم استخدام Service Role Key داخل الموقع.
+       الحذف الكامل يحتاج Edge Function آمنة.
     ===================================================== */
 
     async function deleteAccount() {
@@ -1556,28 +1258,22 @@
         if (!currentUser) {
 
             return {
-
                 data: null,
-
                 error:
                     new Error(
                         "يجب تسجيل الدخول أولاً."
                     )
-
             };
 
         }
 
 
         return {
-
             data: null,
-
             error:
                 new Error(
                     "حذف الحساب الكامل يحتاج إلى إعداد آمن في Supabase."
                 )
-
         };
 
     }
@@ -1602,10 +1298,7 @@
         } catch (error) {
 
             return {
-
-                error:
-                    error
-
+                error: error
             };
 
         }
@@ -1618,53 +1311,46 @@
                 result.error
             );
 
-
             return {
-
                 error:
                     result.error
-
             };
 
         }
 
 
         currentUser = null;
-
         currentSession = null;
-
         currentProfile = null;
 
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCAuthChanged",
-                {
-
-                    detail: {
-
-                        user:
-                            null,
-
-                        session:
-                            null,
-
-                        event:
-                            "SIGNED_OUT"
-
-                    }
-
-                }
-            )
+        dispatchAuthChanged(
+            "SIGNED_OUT"
         );
 
 
         return {
-
-            error:
-                null
-
+            error: null
         };
+
+    }
+
+
+    /* =====================================================
+       فحص رابط التحقق / الاسترداد
+    ===================================================== */
+
+    function hasAuthCodeInUrl() {
+
+        const url =
+            window.location.href;
+
+
+        return (
+            url.includes("code=") ||
+            url.includes("access_token=") ||
+            url.includes("refresh_token=")
+        );
 
     }
 
@@ -1694,23 +1380,15 @@
 
 
             currentSession = null;
-
             currentUser = null;
-
             currentProfile = null;
 
 
             return {
-
                 session: null,
-
                 user: null,
-
                 profile: null,
-
-                error:
-                    error
-
+                error: error
             };
 
         }
@@ -1725,23 +1403,16 @@
 
 
             currentSession = null;
-
             currentUser = null;
-
             currentProfile = null;
 
 
             return {
-
                 session: null,
-
                 user: null,
-
                 profile: null,
-
                 error:
                     result.error
-
             };
 
         }
@@ -1780,75 +1451,22 @@
         }
 
 
-        /* =================================================
-           معرفة العودة من رابط تأكيد البريد
-        ================================================= */
-
-        const currentUrl =
-            window.location.href;
-
-
-        const cameFromEmailVerification =
-            currentUrl.includes("code=") ||
-            currentUrl.includes("access_token=") ||
-            currentUrl.includes("refresh_token=");
-
-
         if (
             currentUser &&
-            cameFromEmailVerification
+            hasAuthCodeInUrl()
         ) {
 
-            window.dispatchEvent(
-                new CustomEvent(
-                    "WFESCEmailVerified",
-                    {
-
-                        detail: {
-
-                            user:
-                                currentUser,
-
-                            session:
-                                currentSession,
-
-                            profile:
-                                currentProfile
-
-                        }
-
-                    }
-                )
-            );
+            dispatchEmailVerified();
 
         }
 
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCAuthChanged",
-                {
-
-                    detail: {
-
-                        user:
-                            currentUser,
-
-                        session:
-                            currentSession,
-
-                        event:
-                            "SESSION_RESTORED"
-
-                    }
-
-                }
-            )
+        dispatchAuthChanged(
+            "SESSION_RESTORED"
         );
 
 
         return {
-
             session:
                 currentSession,
 
@@ -1860,14 +1478,13 @@
 
             error:
                 null
-
         };
 
     }
 
 
     /* =====================================================
-       مراقبة Auth
+       مراقبة تغييرات Auth
     ===================================================== */
 
     const authListener =
@@ -1920,10 +1537,6 @@
                         }
 
 
-                        /* =================================
-                           تأكيد البريد
-                        ================================= */
-
                         if (
                             currentUser &&
                             (
@@ -1931,70 +1544,18 @@
                                 "SIGNED_IN" ||
                                 event ===
                                 "INITIAL_SESSION"
-                            )
+                            ) &&
+                            hasAuthCodeInUrl()
                         ) {
 
-                            const currentUrl =
-                                window.location.href;
-
-
-                            const verifiedFromUrl =
-                                currentUrl.includes("code=") ||
-                                currentUrl.includes("access_token=") ||
-                                currentUrl.includes("refresh_token=");
-
-
-                            if (verifiedFromUrl) {
-
-                                window.dispatchEvent(
-                                    new CustomEvent(
-                                        "WFESCEmailVerified",
-                                        {
-
-                                            detail: {
-
-                                                user:
-                                                    currentUser,
-
-                                                session:
-                                                    currentSession,
-
-                                                profile:
-                                                    currentProfile
-
-                                            }
-
-                                        }
-                                    )
-                                );
-
-                            }
+                            dispatchEmailVerified();
 
                         }
 
 
-                        window.dispatchEvent(
-                            new CustomEvent(
-                                "WFESCAuthChanged",
-                                {
-
-                                    detail: {
-
-                                        user:
-                                            currentUser,
-
-                                        session:
-                                            currentSession,
-
-                                        event:
-                                            event
-
-                                    }
-
-                                }
-                            )
+                        dispatchAuthChanged(
+                            event
                         );
-
 
                     },
                     0
@@ -2027,7 +1588,7 @@
 
 
     /* =====================================================
-       EXPORT
+       التصدير
     ===================================================== */
 
     window.WFESCSettingsAuth = {
@@ -2087,7 +1648,7 @@
 
 
     /* =====================================================
-       تشغيل استعادة الجلسة
+       بدء استعادة الجلسة
     ===================================================== */
 
     restoreSession()
@@ -2103,4 +1664,5 @@
         );
 
 
-})(); 
+})();
+    
