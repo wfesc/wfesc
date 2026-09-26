@@ -174,7 +174,7 @@
 
 
         /* =================================================
-           USERNAME CONFIG
+           LIMITS
            ================================================= */
 
         const usernameConfig =
@@ -189,6 +189,82 @@
             Number(
                 usernameConfig.maxLength || 9
             );
+
+        /*
+         * كلمة المرور:
+         * الحد الأدنى 6
+         * الحد الأقصى 16
+         */
+
+        const passwordMin =
+            6;
+
+        const passwordMax =
+            16;
+
+
+        /* =================================================
+           APPLY HTML LIMITS
+           ================================================= */
+
+        if (accountUsername) {
+
+            accountUsername.setAttribute(
+                "minlength",
+                String(usernameMin)
+            );
+
+            accountUsername.setAttribute(
+                "maxlength",
+                String(usernameMax)
+            );
+
+            accountUsername.setAttribute(
+                "autocomplete",
+                "username"
+            );
+
+        }
+
+
+        if (accountPassword) {
+
+            accountPassword.setAttribute(
+                "minlength",
+                String(passwordMin)
+            );
+
+            accountPassword.setAttribute(
+                "maxlength",
+                String(passwordMax)
+            );
+
+            accountPassword.setAttribute(
+                "autocomplete",
+                "new-password"
+            );
+
+        }
+
+
+        if (accountPasswordConfirm) {
+
+            accountPasswordConfirm.setAttribute(
+                "minlength",
+                String(passwordMin)
+            );
+
+            accountPasswordConfirm.setAttribute(
+                "maxlength",
+                String(passwordMax)
+            );
+
+            accountPasswordConfirm.setAttribute(
+                "autocomplete",
+                "new-password"
+            );
+
+        }
 
 
         /* =================================================
@@ -360,7 +436,9 @@
                     )
                     .forEach(
                         function (item) {
+
                             item.remove();
+
                         }
                     );
 
@@ -465,16 +543,41 @@
         ) {
 
             if (!accountUsername) {
-
                 return true;
-
             }
 
 
-            const username =
+            let username =
                 String(
                     accountUsername.value || ""
                 ).trim();
+
+
+            /*
+             * أحرف إنجليزية فقط
+             */
+            username =
+                username.replace(
+                    /[^A-Za-z]/g,
+                    ""
+                );
+
+
+            /*
+             * الحد الأقصى 9
+             *
+             * مهم:
+             * هنا 9 وليس 3
+             */
+            username =
+                username.slice(
+                    0,
+                    usernameMax
+                );
+
+
+            accountUsername.value =
+                username;
 
 
             clearFieldError(
@@ -498,7 +601,10 @@
             }
 
 
-            if (username.length < usernameMin) {
+            if (
+                username.length <
+                usernameMin
+            ) {
 
                 if (showError) {
 
@@ -516,7 +622,10 @@
             }
 
 
-            if (username.length > usernameMax) {
+            if (
+                username.length >
+                usernameMax
+            ) {
 
                 if (showError) {
 
@@ -534,13 +643,141 @@
             }
 
 
-            if (!/^[A-Za-z]+$/.test(username)) {
+            if (
+                !/^[A-Za-z]+$/.test(
+                    username
+                )
+            ) {
 
                 if (showError) {
 
                     showFieldError(
                         accountUsername,
                         "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط، بدون مسافات أو فواصل أو رموز."
+                    );
+
+                }
+
+                return false;
+
+            }
+
+
+            return true;
+
+        }
+
+
+        /* =================================================
+           PASSWORD VALIDATION
+           ================================================= */
+
+        function limitPasswordInput(
+            input
+        ) {
+
+            if (!input) {
+                return;
+            }
+
+
+            let value =
+                String(
+                    input.value || ""
+                );
+
+
+            if (
+                value.length >
+                passwordMax
+            ) {
+
+                value =
+                    value.slice(
+                        0,
+                        passwordMax
+                    );
+
+            }
+
+
+            input.value =
+                value;
+
+        }
+
+
+        function validatePasswordInput(
+            input,
+            showError
+        ) {
+
+            if (!input) {
+                return false;
+            }
+
+
+            limitPasswordInput(
+                input
+            );
+
+
+            const password =
+                String(
+                    input.value || ""
+                );
+
+
+            clearFieldError(
+                input
+            );
+
+
+            if (!password) {
+
+                if (showError) {
+
+                    showFieldError(
+                        input,
+                        "يرجى إدخال كلمة المرور."
+                    );
+
+                }
+
+                return false;
+
+            }
+
+
+            if (
+                password.length <
+                passwordMin
+            ) {
+
+                if (showError) {
+
+                    showFieldError(
+                        input,
+                        "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
+                    );
+
+                }
+
+                return false;
+
+            }
+
+
+            if (
+                password.length >
+                passwordMax
+            ) {
+
+                if (showError) {
+
+                    showFieldError(
+                        input,
+                        "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
                     );
 
                 }
@@ -574,16 +811,30 @@
             }
 
 
+            limitPasswordInput(
+                accountPassword
+            );
+
+            limitPasswordInput(
+                accountPasswordConfirm
+            );
+
+
             clearFieldError(
                 accountPasswordConfirm
             );
 
 
             const password =
-                accountPassword.value || "";
+                String(
+                    accountPassword.value || ""
+                );
+
 
             const confirmPassword =
-                accountPasswordConfirm.value || "";
+                String(
+                    accountPasswordConfirm.value || ""
+                );
 
 
             if (!confirmPassword) {
@@ -648,6 +899,9 @@
             }
 
 
+            /*
+             * منع إنشاء الزر مرتين
+             */
             if (
                 parent.querySelector(
                     ".wfesc-password-eye"
@@ -664,6 +918,22 @@
                 "relative";
 
 
+            /*
+             * مساحة للزر من جهة اليسار
+             */
+            input.style.paddingLeft =
+                "48px";
+
+
+            /*
+             * الحد الأقصى دائمًا 16
+             */
+            input.setAttribute(
+                "maxlength",
+                String(passwordMax)
+            );
+
+
             const button =
                 document.createElement(
                     "button"
@@ -673,13 +943,16 @@
             button.type =
                 "button";
 
+
             button.className =
                 "wfesc-password-eye";
+
 
             button.setAttribute(
                 "aria-label",
                 "إظهار كلمة المرور"
             );
+
 
             button.setAttribute(
                 "title",
@@ -687,21 +960,34 @@
             );
 
 
+            /*
+             * الشكل المطلوب
+             */
             button.textContent =
-                "👁";
+                "🙉";
 
 
+            /*
+             * جهة اليسار
+             * ووسط الحقل
+             */
             button.style.cssText =
                 "position:absolute;" +
-                "left:10px;" +
+                "left:8px;" +
                 "top:50%;" +
                 "transform:translateY(-50%);" +
+                "width:36px;" +
+                "height:36px;" +
+                "display:flex;" +
+                "align-items:center;" +
+                "justify-content:center;" +
                 "border:0;" +
                 "background:transparent;" +
                 "color:inherit;" +
                 "cursor:pointer;" +
-                "font-size:18px;" +
-                "padding:6px;" +
+                "font-size:19px;" +
+                "padding:0;" +
+                "margin:0;" +
                 "line-height:1;" +
                 "z-index:5;";
 
@@ -711,162 +997,183 @@
                 function () {
 
                     const isPassword =
-                        input.type === "password";
-/* =================================================
-   PASSWORD VISIBILITY
-   ================================================= */
+                        input.type ===
+                        "password";
 
-function createPasswordEye(
-    input
-) {
 
-    if (!input) {
-        return;
-    }
+                    input.type =
+                        isPassword
+                            ? "text"
+                            : "password";
 
-    const parent =
-        input.parentElement;
 
-    if (!parent) {
-        return;
-    }
+                    /*
+                     * تبقى 🙉
+                     */
+                    button.textContent =
+                        "🙉";
 
-    if (
-        parent.querySelector(
-            ".wfesc-password-eye"
-        )
-    ) {
-        return;
-    }
 
-    parent.style.position =
-        parent.style.position ||
-        "relative";
+                    button.setAttribute(
+                        "aria-label",
+                        isPassword
+                            ? "إخفاء كلمة المرور"
+                            : "إظهار كلمة المرور"
+                    );
 
-    /* مساحة للزر من جهة اليسار */
-    input.style.paddingLeft =
-        "48px";
 
-    const button =
-        document.createElement(
-            "button"
-        );
+                    button.setAttribute(
+                        "title",
+                        isPassword
+                            ? "إخفاء كلمة المرور"
+                            : "إظهار كلمة المرور"
+                    );
 
-    button.type =
-        "button";
 
-    button.className =
-        "wfesc-password-eye";
+                    input.focus();
 
-    button.setAttribute(
-        "aria-label",
-        "إظهار كلمة المرور"
-    );
-
-    button.setAttribute(
-        "title",
-        "إظهار كلمة المرور"
-    );
-
-    /*
-     * الشكل الافتراضي
-     */
-    button.textContent =
-        "🙉";
-
-    /*
-     * مكان العين:
-     * جهة اليسار + منتصف الحقل
-     */
-    button.style.cssText =
-        "position:absolute;" +
-        "left:8px;" +
-        "top:50%;" +
-        "transform:translateY(-50%);" +
-        "width:36px;" +
-        "height:36px;" +
-        "display:flex;" +
-        "align-items:center;" +
-        "justify-content:center;" +
-        "border:0;" +
-        "background:transparent;" +
-        "color:inherit;" +
-        "cursor:pointer;" +
-        "font-size:19px;" +
-        "padding:0;" +
-        "margin:0;" +
-        "line-height:1;" +
-        "z-index:5;";
-
-    button.addEventListener(
-        "click",
-        function () {
-
-            const isPassword =
-                input.type ===
-                "password";
-
-            input.type =
-                isPassword
-                    ? "text"
-                    : "password";
-
-            /*
-             * تبقى 🙉 في الحالتين
-             */
-            button.textContent =
-                "🙉";
-
-            button.setAttribute(
-                "aria-label",
-                isPassword
-                    ? "إخفاء كلمة المرور"
-                    : "إظهار كلمة المرور"
+                }
             );
 
-            button.setAttribute(
-                "title",
-                isPassword
-                    ? "إخفاء كلمة المرور"
-                    : "إظهار كلمة المرور"
-            );
 
-            input.focus();
+            parent.appendChild(
+                button
+            );
 
         }
-    );
-
-    parent.appendChild(
-        button
-    );
-
-}
 
 
-function setupPasswordEyes() {
+        function setupPasswordEyes() {
 
-    createPasswordEye(
-        accountPassword
-    );
+            createPasswordEye(
+                accountPassword
+            );
 
-    createPasswordEye(
-        accountPasswordConfirm
-    );
 
-    /*
-     * إذا كان حقل تسجيل الدخول
-     * موجودًا أيضًا في الصفحة
-     */
-    const loginPassword =
-        document.getElementById(
-            "loginPassword"
-        );
+            createPasswordEye(
+                accountPasswordConfirm
+            );
 
-    createPasswordEye(
-        loginPassword
-    );
+        }
 
-}
+
+        /* =================================================
+           PASSWORD INPUT EVENTS
+           ================================================= */
+
+        function setupPasswordInputs() {
+
+            const fields = [
+
+                accountPassword,
+
+                accountPasswordConfirm
+
+            ];
+
+
+            fields.forEach(
+                function (input) {
+
+                    if (!input) {
+                        return;
+                    }
+
+
+                    input.setAttribute(
+                        "maxlength",
+                        String(passwordMax)
+                    );
+
+
+                    input.setAttribute(
+                        "minlength",
+                        String(passwordMin)
+                    );
+
+
+                    input.addEventListener(
+                        "input",
+                        function () {
+
+                            limitPasswordInput(
+                                input
+                            );
+
+
+                            clearFieldError(
+                                input
+                            );
+
+
+                            if (
+                                modalMode ===
+                                "register"
+                            ) {
+
+                                if (
+                                    input ===
+                                    accountPassword ||
+                                    input ===
+                                    accountPasswordConfirm
+                                ) {
+
+                                    if (
+                                        accountPasswordConfirm &&
+                                        accountPasswordConfirm.value
+                                    ) {
+
+                                        validatePasswordMatch(
+                                            true
+                                        );
+
+                                    }
+
+                                }
+
+                            }
+
+                        }
+                    );
+
+
+                    input.addEventListener(
+                        "blur",
+                        function () {
+
+                            if (
+                                modalMode ===
+                                "register"
+                            ) {
+
+                                validatePasswordInput(
+                                    input,
+                                    true
+                                );
+
+
+                                if (
+                                    input ===
+                                    accountPasswordConfirm
+                                ) {
+
+                                    validatePasswordMatch(
+                                        true
+                                    );
+
+                                }
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+
+
         /* =================================================
            LOGIN MODE
            ================================================= */
@@ -889,6 +1196,7 @@ function setupPasswordEyes() {
 
                 const parent =
                     accountUsername.parentElement;
+
 
                 if (parent) {
 
@@ -969,6 +1277,7 @@ function setupPasswordEyes() {
 
                 const parent =
                     accountUsername.parentElement;
+
 
                 if (parent) {
 
@@ -1096,7 +1405,8 @@ function setupPasswordEyes() {
         /* =================================================
            LOGGED IN UI
            ================================================= */
-   function showLoggedInUI(
+
+        function showLoggedInUI(
             user,
             profile
         ) {
@@ -1512,6 +1822,7 @@ function setupPasswordEyes() {
                             : "";
 
 
+               
                     /* =====================================
                        LOGIN
                        ===================================== */
@@ -1541,6 +1852,44 @@ function setupPasswordEyes() {
 
                             setStatus(
                                 "يرجى إدخال كلمة المرور.",
+                                "error"
+                            );
+
+                            if (accountPassword) {
+                                accountPassword.focus();
+                            }
+
+                            return;
+
+                        }
+
+
+                        if (
+                            password.length <
+                            passwordMin
+                        ) {
+
+                            setStatus(
+                                "كلمة المرور يجب أن تكون 6 أحرف أو أكثر.",
+                                "error"
+                            );
+
+                            if (accountPassword) {
+                                accountPassword.focus();
+                            }
+
+                            return;
+
+                        }
+
+
+                        if (
+                            password.length >
+                            passwordMax
+                        ) {
+
+                            setStatus(
+                                "كلمة المرور يجب ألا تتجاوز 16 حرفًا.",
                                 "error"
                             );
 
@@ -1629,12 +1978,6 @@ function setupPasswordEyes() {
                        REGISTER
                        ===================================== */
 
-                    const username =
-                        accountUsername
-                            ? accountUsername.value.trim()
-                            : "";
-
-
                     /* -------------------------------------
                        Username
                        ------------------------------------- */
@@ -1683,26 +2026,15 @@ function setupPasswordEyes() {
                        Password
                        ------------------------------------- */
 
-                    if (!password) {
+                    if (
+                        !validatePasswordInput(
+                            accountPassword,
+                            true
+                        )
+                    ) {
 
                         setStatus(
-                            "يرجى إدخال كلمة المرور.",
-                            "error"
-                        );
-
-                        if (accountPassword) {
-                            accountPassword.focus();
-                        }
-
-                        return;
-
-                    }
-
-
-                    if (password.length < 6) {
-
-                        setStatus(
-                            "كلمة المرور يجب أن تكون 6 أحرف أو أكثر.",
+                            "يرجى تصحيح كلمة المرور.",
                             "error"
                         );
 
@@ -1750,6 +2082,12 @@ function setupPasswordEyes() {
                         "جاري إنشاء الحساب...",
                         "info"
                     );
+
+
+                    const username =
+                        accountUsername
+                            ? accountUsername.value.trim()
+                            : "";
 
 
                     const result =
@@ -1864,38 +2202,42 @@ function setupPasswordEyes() {
                 "input",
                 function () {
 
-                    /*
-                     * حذف أي حرف ليس إنكليزيًا
-                     */
-                    const cleaned =
+                    let cleaned =
                         String(
                             accountUsername.value || ""
-                        )
-                        .replace(
+                        );
+
+
+                    /*
+                     * أحرف إنجليزية فقط
+                     */
+                    cleaned =
+                        cleaned.replace(
                             /[^A-Za-z]/g,
                             ""
-                        )
-                        .slice(
+                        );
+
+
+                    /*
+                     * الحد الأقصى 9
+                     *
+                     * وليس 3
+                     */
+                    cleaned =
+                        cleaned.slice(
                             0,
                             usernameMax
                         );
 
 
-                    if (
-                        accountUsername.value !==
-                        cleaned
-                    ) {
-
-                        accountUsername.value =
-                            cleaned;
-
-                    }
+                    accountUsername.value =
+                        cleaned;
 
 
                     if (
-                        accountUsername.value.length >=
+                        cleaned.length >=
                         usernameMin &&
-                        accountUsername.value.length <=
+                        cleaned.length <=
                         usernameMax
                     ) {
 
@@ -1924,85 +2266,17 @@ function setupPasswordEyes() {
 
 
         /* =================================================
-           PASSWORD CONFIRM INPUT
-           ================================================= */
-
-
-        if (accountPasswordConfirm) {
-
-            accountPasswordConfirm.addEventListener(
-                "input",
-                function () {
-
-                    if (
-                        accountPasswordConfirm.value
-                    ) {
-
-                        validatePasswordMatch(
-                            true
-                        );
-
-                    }
-
-                }
-            );
-
-
-            accountPasswordConfirm.addEventListener(
-                "blur",
-                function () {
-
-                    if (
-                        modalMode ===
-                        "register"
-                    ) {
-
-                        validatePasswordMatch(
-                            true
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           PASSWORD INPUT
-           ================================================= */
-
-        if (accountPassword) {
-
-            accountPassword.addEventListener(
-                "input",
-                function () {
-
-                    if (
-                        modalMode ===
-                        "register" &&
-                        accountPasswordConfirm &&
-                        accountPasswordConfirm.value
-                    ) {
-
-                        validatePasswordMatch(
-                            true
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
            PASSWORD EYES
            ================================================= */
 
         setupPasswordEyes();
+
+
+        /* =================================================
+           PASSWORD INPUTS
+           ================================================= */
+
+        setupPasswordInputs();
 
 
         /* =================================================
@@ -2116,6 +2390,27 @@ function setupPasswordEyes() {
 
 
         /* =================================================
+           EMAIL VERIFIED
+           ================================================= */
+
+        window.addEventListener(
+            "WFESCEmailVerified",
+            function () {
+
+                setStatus(
+                    "تم التحقق بنجاح واكتمال التسجيل.",
+                    "success"
+                );
+
+                setModalNote(
+                    "تم التحقق من بريدك الإلكتروني بنجاح واكتمل تسجيل حساب WFESC."
+                );
+
+            }
+        );
+
+
+        /* =================================================
            AUTH ERROR TRANSLATION
            ================================================= */
 
@@ -2175,7 +2470,21 @@ function setupPasswordEyes() {
                 )
             ) {
 
-                return "كلمة المرور قصيرة جدًا.";
+                return "كلمة المرور يجب أن تكون 6 أحرف أو أكثر.";
+
+            }
+
+
+            if (
+                message.includes(
+                    "password"
+                ) &&
+                message.includes(
+                    "16"
+                )
+            ) {
+
+                return "كلمة المرور يجب ألا تتجاوز 16 حرفًا.";
 
             }
 
@@ -2270,8 +2579,6 @@ function setupPasswordEyes() {
         /* =================================================
            START
            ================================================= */
-
-        setupPasswordEyes();
 
         restore();
 
