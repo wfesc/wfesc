@@ -1,24 +1,4 @@
-function init() {
 
-    alert("WFESC UI اشتغل");
-
-    ensureRoot();
-
-    buildUI();
-
-    injectCSS();
-
-    bindEvents();
-
-    bindAuthEvents();
-
-    handleRecoveryURL();
-
-    setMode("login");
-
-    restoreSession();
-
-}
 /*
  * WFESC Settings Auth UI
  * Complete UI controller for settings.html
