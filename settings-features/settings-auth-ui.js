@@ -1120,4 +1120,608 @@
        إظهار الرسائل
     ========================================= */
     
+    function showStatus(
+        message,
+        type = "info",
+        duration = 5000
+    ) {
+        const element =
+            document.getElementById(
+                "wfesc-auth-status"
+            );
+
+        if (!element) {
+            return;
+        }
+
+        clearTimeout(
+            state.statusTimer
+        );
+
+        element.textContent =
+            String(message || "");
+
+        element.className =
+            "wfesc-status show " +
+            type;
+
+        if (duration > 0) {
+            state.statusTimer =
+                setTimeout(
+                    function () {
+                        element.className =
+                            "wfesc-status";
+                    },
+                    duration
+                );
+        }
+    }
+
+    function hideStatus() {
+        const element =
+            document.getElementById(
+                "wfesc-auth-status"
+            );
+
+        if (!element) {
+            return;
+        }
+
+        clearTimeout(
+            state.statusTimer
+        );
+
+        element.className =
+            "wfesc-status";
+    }
+
+    /* =========================================
+       حالة التحميل
+    ========================================= */
+
+    function setLoading(
+        loading,
+        button
+    ) {
+        state.loading = loading;
+
+        if (!button) {
+            return;
+        }
+
+        if (loading) {
+            button.dataset.originalText =
+                button.textContent;
+
+            button.disabled = true;
+            button.classList.add(
+                "wfesc-loading"
+            );
+
+            button.innerHTML =
+                "يرجى الانتظار" +
+                '<span class="wfesc-spinner"></span>';
+        } else {
+            button.disabled = false;
+            button.classList.remove(
+                "wfesc-loading"
+            );
+
+            if (
+                button.dataset.originalText
+            ) {
+                button.textContent =
+                    button.dataset.originalText;
+            }
+        }
+    }
+
+    /* =========================================
+       التبويبات
+    ========================================= */
+
+    function setMode(mode) {
+        state.mode = mode;
+
+        const loginForm =
+            document.getElementById(
+                "wfesc-login-form"
+            );
+
+        const registerForm =
+            document.getElementById(
+                "wfesc-register-form"
+            );
+
+        const recovery =
+            document.getElementById(
+                "wfesc-recovery"
+            );
+
+        const tabs =
+            document.querySelectorAll(
+                ".wfesc-auth-tab"
+            );
+
+        const title =
+            document.getElementById(
+                "wfesc-auth-title"
+            );
+
+        const subtitle =
+            document.getElementById(
+                "wfesc-auth-subtitle"
+            );
+
+        const tabBox =
+            document.getElementById(
+                "wfesc-auth-tabs"
+            );
+
+        if (loginForm) {
+            loginForm.classList.toggle(
+                "show",
+                mode === "login"
+            );
+        }
+
+        if (registerForm) {
+            registerForm.classList.toggle(
+                "show",
+                mode === "register"
+            );
+        }
+
+        if (recovery) {
+            recovery.classList.toggle(
+                "show",
+                mode === "recovery"
+            );
+        }
+
+        tabs.forEach(
+            function (tab) {
+                tab.classList.toggle(
+                    "active",
+                    tab.dataset.authTab ===
+                        mode
+                );
+            }
+        );
+
+        if (tabBox) {
+            tabBox.style.display =
+                mode === "recovery"
+                    ? "none"
+                    : "grid";
+        }
+
+        if (mode === "login") {
+            if (title) {
+                title.textContent =
+                    "تسجيل الدخول";
+            }
+
+            if (subtitle) {
+                subtitle.textContent =
+                    "سجّل الدخول إلى حسابك في WFESC";
+            }
+        }
+
+        if (mode === "register") {
+            if (title) {
+                title.textContent =
+                    "إنشاء حساب";
+            }
+
+            if (subtitle) {
+                subtitle.textContent =
+                    "أنشئ حسابك وابدأ استخدام WFESC";
+            }
+        }
+
+        if (mode === "recovery") {
+            if (title) {
+                title.textContent =
+                    "استعادة كلمة المرور";
+            }
+
+            if (subtitle) {
+                subtitle.textContent =
+                    "سنرسل رابط الاستعادة إلى بريدك الإلكتروني";
+            }
+        }
+
+        hideStatus();
+    }
+
+    /* =========================================
+       كلمة المرور
+    ========================================= */
+
+    function togglePassword(type) {
+        let input = null;
+        let button = null;
+
+        if (type === "login") {
+            input =
+                document.getElementById(
+                    "wfesc-login-password"
+                );
+
+            button =
+                document.querySelector(
+                    '[data-password-toggle="login"]'
+                );
+        }
+
+        if (type === "register") {
+            input =
+                document.getElementById(
+                    "wfesc-register-password"
+                );
+
+            button =
+                document.querySelector(
+                    '[data-password-toggle="register"]'
+                );
+        }
+
+        if (type === "confirm") {
+            input =
+                document.getElementById(
+                    "wfesc-register-confirm"
+                );
+
+            button =
+                document.querySelector(
+                    '[data-password-toggle="confirm"]'
+                );
+        }
+
+        if (!input || !button) {
+            return;
+        }
+
+        const visible =
+            input.type === "text";
+
+        input.type =
+            visible
+                ? "password"
+                : "text";
+
+        button.textContent =
+            visible
+                ? "🙈"
+                : "🙉";
+
+        button.setAttribute(
+            "aria-label",
+            visible
+                ? "إظهار كلمة المرور"
+                : "إخفاء كلمة المرور"
+        );
+    }
+
+    /* =========================================
+       الحساب
+    ========================================= */
+
+    function getCurrentUser() {
+        if (
+            typeof AUTH.getCurrentUser ===
+            "function"
+        ) {
+            return AUTH.getCurrentUser();
+        }
+
+        if (
+            typeof AUTH.getUser ===
+            "function"
+        ) {
+            return AUTH.getUser();
+        }
+
+        return null;
+    }
+
+    function getCurrentProfile() {
+        if (
+            typeof AUTH.getCurrentProfile ===
+            "function"
+        ) {
+            return AUTH.getCurrentProfile();
+        }
+
+        if (
+            typeof AUTH.getProfile ===
+            "function"
+        ) {
+            return AUTH.getProfile();
+        }
+
+        return null;
+    }
+
+    function renderAccount() {
+        const account =
+            document.getElementById(
+                "wfesc-account"
+            );
+
+        const forms =
+            document.querySelectorAll(
+                ".wfesc-form"
+            );
+
+        const recovery =
+            document.getElementById(
+                "wfesc-recovery"
+            );
+
+        const tabs =
+            document.getElementById(
+                "wfesc-auth-tabs"
+            );
+
+        const verifyBox =
+            document.getElementById(
+                "wfesc-verify-box"
+            );
+
+        const title =
+            document.getElementById(
+                "wfesc-auth-title"
+            );
+
+        const subtitle =
+            document.getElementById(
+                "wfesc-auth-subtitle"
+            );
+
+        const user =
+            getCurrentUser();
+
+        const profile =
+            getCurrentProfile();
+
+        if (!user) {
+            if (account) {
+                account.classList.remove(
+                    "show"
+                );
+            }
+
+            forms.forEach(
+                function (form) {
+                    form.style.display = "";
+                }
+            );
+
+            if (recovery) {
+                recovery.style.display = "";
+            }
+
+            if (tabs) {
+                tabs.style.display =
+                    state.mode === "recovery"
+                        ? "none"
+                        : "grid";
+            }
+
+            return;
+        }
+
+        if (account) {
+            account.classList.add(
+                "show"
+            );
+        }
+
+        forms.forEach(
+            function (form) {
+                form.classList.remove(
+                    "show"
+                );
+                form.style.display =
+                    "none";
+            }
+        );
+
+        if (recovery) {
+            recovery.classList.remove(
+                "show"
+            );
+            recovery.style.display =
+                "none";
+        }
+
+        if (tabs) {
+            tabs.style.display =
+                "none";
+        }
+
+        if (verifyBox) {
+            verifyBox.classList.remove(
+                "show"
+            );
+        }
+
+        if (title) {
+            title.textContent =
+                "حسابك في WFESC";
+        }
+
+        if (subtitle) {
+            subtitle.textContent =
+                "تم تسجيل الدخول إلى حسابك";
+        }
+
+        const name =
+            document.getElementById(
+                "wfesc-account-name"
+            );
+
+        const email =
+            document.getElementById(
+                "wfesc-account-email"
+            );
+
+        const avatar =
+            document.getElementById(
+                "wfesc-account-avatar"
+            );
+
+        if (name) {
+            name.innerHTML =
+                displayUserNameWithVerification(
+                    profile
+                );
+        }
+
+        if (email) {
+            email.textContent =
+                user.email || "";
+        }
+
+        if (avatar) {
+            avatar.innerHTML = "";
+
+            if (
+                profile &&
+                profile.avatar_url
+            ) {
+                const image =
+                    document.createElement(
+                        "img"
+                    );
+
+                image.src =
+                    profile.avatar_url;
+
+                image.alt =
+                    "صورة الحساب";
+
+                image.onerror =
+                    function () {
+                        avatar.innerHTML =
+                            "W";
+                    };
+
+                avatar.appendChild(
+                    image
+                );
+            } else {
+                avatar.textContent =
+                    (
+                        profile &&
+                        profile.username
+                    )
+                        ? profile.username
+                            .charAt(0)
+                            .toUpperCase()
+                        : "W";
+            }
+        }
+    }
+
+    function updateUI() {
+        renderAccount();
+    }
+
+    /* =========================================
+       تسجيل الدخول
+    ========================================= */
+
+    async function handleLogin(
+        event
+    ) {
+        event.preventDefault();
+
+        if (state.loading) {
+            return;
+        }
+
+        const email =
+            document.getElementById(
+                "wfesc-login-email"
+            );
+
+        const password =
+            document.getElementById(
+                "wfesc-login-password"
+            );
+
+        const button =
+            document.getElementById(
+                "wfesc-login-submit"
+            );
+
+        if (!email || !password) {
+            return;
+        }
+
+        const emailValue =
+            email.value.trim();
+
+        const passwordValue =
+            password.value;
+
+        if (!emailValue) {
+            showStatus(
+                "يرجى إدخال البريد الإلكتروني.",
+                "error"
+            );
+            email.focus();
+            return;
+        }
+
+        if (!passwordValue) {
+            showStatus(
+                "يرجى إدخال كلمة المرور.",
+                "error"
+            );
+            password.focus();
+            return;
+        }
+
+        setLoading(
+            true,
+            button
+        );
+
+        try {
+            await AUTH.signIn(
+                emailValue,
+                passwordValue
+            );
+
+            showStatus(
+                CONFIG.messages &&
+                CONFIG.messages.loginSuccess
+                    ? CONFIG.messages.loginSuccess
+                    : "تم تسجيل الدخول بنجاح.",
+                "success",
+                3000
+            );
+
+            updateUI();
+
+        } catch (error) {
+            handleAuthError(
+                error
+            );
+        } finally {
+            setLoading(
+                false,
+                button
+            );
+        }
+    }
+
+    /* =========================================
+       إنشاء الحساب
+    ========================================= */
+            
     
