@@ -881,180 +881,163 @@
            PASSWORD VISIBILITY
            ================================================= */
 
-        function createPasswordEye(
-            input
-        ) {
+function createPasswordEye(input) {
 
-            if (!input) {
-                return;
-            }
+    if (!input) {
+        return;
+    }
 
+    const parent = input.parentElement;
 
-            const parent =
-                input.parentElement;
+    if (!parent) {
+        return;
+    }
 
+    /*
+     * منع إنشاء الزر مرتين
+     */
+    if (
+        parent.querySelector(
+            ".wfesc-password-eye"
+        )
+    ) {
+        return;
+    }
 
-            if (!parent) {
-                return;
-            }
+    parent.style.position =
+        parent.style.position || "relative";
 
+    /*
+     * مساحة للزر من جهة اليسار
+     */
+    input.style.paddingLeft =
+        "48px";
+
+    /*
+     * الحد الأقصى دائمًا 16
+     */
+    input.setAttribute(
+        "maxlength",
+        String(passwordMax)
+    );
+
+    const button =
+        document.createElement(
+            "button"
+        );
+
+    button.type =
+        "button";
+
+    button.className =
+        "wfesc-password-eye";
+
+    /*
+     * كلمة المرور مخفية بالبداية
+     */
+    button.textContent =
+        "🙉";
+
+    button.setAttribute(
+        "aria-label",
+        "إظهار كلمة المرور"
+    );
+
+    button.setAttribute(
+        "title",
+        "إظهار كلمة المرور"
+    );
+
+    /*
+     * جهة اليسار ووسط الحقل
+     */
+    button.style.cssText =
+        "position:absolute;" +
+        "left:8px;" +
+        "top:50%;" +
+        "transform:translateY(-50%);" +
+        "width:36px;" +
+        "height:36px;" +
+        "display:flex;" +
+        "align-items:center;" +
+        "justify-content:center;" +
+        "border:0;" +
+        "background:transparent;" +
+        "color:inherit;" +
+        "cursor:pointer;" +
+        "font-size:19px;" +
+        "padding:0;" +
+        "margin:0;" +
+        "line-height:1;" +
+        "z-index:5;";
+
+    button.addEventListener(
+        "click",
+        function () {
+
+            const isPassword =
+                input.type ===
+                "password";
 
             /*
-             * منع إنشاء الزر مرتين
+             * تبديل حالة الحقل
              */
-            if (
-                parent.querySelector(
-                    ".wfesc-password-eye"
-                )
-            ) {
-
-                return;
-
-            }
-
-
-            parent.style.position =
-                parent.style.position ||
-                "relative";
-
+            input.type =
+                isPassword
+                    ? "text"
+                    : "password";
 
             /*
-             * مساحة للزر من جهة اليسار
+             * تغيير الرمز حسب الحالة
+             *
+             * 🙉 = كلمة المرور مخفية
+             * 🙈 = كلمة المرور ظاهرة
              */
-            input.style.paddingLeft =
-                "48px";
-
-
-            /*
-             * الحد الأقصى دائمًا 16
-             */
-            input.setAttribute(
-                "maxlength",
-                String(passwordMax)
-            );
-
-
-            const button =
-                document.createElement(
-                    "button"
-                );
-
-
-            button.type =
-                "button";
-
-
-            button.className =
-                "wfesc-password-eye";
-
+            button.textContent =
+                isPassword
+                    ? "🙈"
+                    : "🙉";
 
             button.setAttribute(
                 "aria-label",
-                "إظهار كلمة المرور"
+                isPassword
+                    ? "إخفاء كلمة المرور"
+                    : "إظهار كلمة المرور"
             );
-
 
             button.setAttribute(
                 "title",
-                "إظهار كلمة المرور"
+                isPassword
+                    ? "إخفاء كلمة المرور"
+                    : "إظهار كلمة المرور"
             );
-
 
             /*
-             * الشكل المطلوب
+             * إعادة التركيز للحقل
              */
-            button.textContent =
-                "🙉";
-
-
-            /*
-             * جهة اليسار
-             * ووسط الحقل
-             */
-            button.style.cssText =
-                "position:absolute;" +
-                "left:8px;" +
-                "top:50%;" +
-                "transform:translateY(-50%);" +
-                "width:36px;" +
-                "height:36px;" +
-                "display:flex;" +
-                "align-items:center;" +
-                "justify-content:center;" +
-                "border:0;" +
-                "background:transparent;" +
-                "color:inherit;" +
-                "cursor:pointer;" +
-                "font-size:19px;" +
-                "padding:0;" +
-                "margin:0;" +
-                "line-height:1;" +
-                "z-index:5;";
-
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    const isPassword =
-                        input.type ===
-                        "password";
-
-
-                    input.type =
-                        isPassword
-                            ? "text"
-                            : "password";
-
-
-                    /*
-                     * تبقى 🙉
-                     */
-                    button.textContent =
-                        "🙉";
-
-
-                    button.setAttribute(
-                        "aria-label",
-                        isPassword
-                            ? "إخفاء كلمة المرور"
-                            : "إظهار كلمة المرور"
-                    );
-
-
-                    button.setAttribute(
-                        "title",
-                        isPassword
-                            ? "إخفاء كلمة المرور"
-                            : "إظهار كلمة المرور"
-                    );
-
-
-                    input.focus();
-
-                }
-            );
-
-
-            parent.appendChild(
-                button
-            );
+            input.focus();
 
         }
+    );
+
+    parent.appendChild(
+        button
+    );
+
+}
 
 
-        function setupPasswordEyes() {
+function setupPasswordEyes() {
 
-            createPasswordEye(
-                accountPassword
-            );
+    createPasswordEye(
+        accountPassword
+    );
 
+    createPasswordEye(
+        accountPasswordConfirm
+    );
 
-            createPasswordEye(
-                accountPasswordConfirm
-            );
-
-        }
+}
 
 
         /* =================================================
