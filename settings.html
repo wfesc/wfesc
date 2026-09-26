@@ -2181,3 +2181,68 @@
     ================================================== */
 
     
+    window.addEventListener(
+        "WFESCAuthChanged",
+        function () {
+
+            updateAccountCard();
+
+        }
+    );
+
+
+    window.addEventListener(
+        "WFESCProfileUpdated",
+        function () {
+
+            updateAccountCard();
+
+        }
+    );
+
+
+    /* =================================================
+       تشغيل
+    ================================================== */
+
+    function waitForAuth() {
+
+        if (
+            window.WFESCSettingsAuth
+        ) {
+
+            updateAccountCard();
+
+            return;
+
+        }
+
+
+        setTimeout(
+            waitForAuth,
+            100
+        );
+
+    }
+
+
+    waitForAuth();
+
+
+})();
+
+</script>
+
+
+<!-- =================================================
+     NAVIGATION
+================================================== -->
+
+<script
+    src="navigation/navigation-loader.js"
+></script>
+
+
+</body>
+
+</html>
