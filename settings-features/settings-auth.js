@@ -1,21 +1,6 @@
 /* =========================================================
    WFESC SETTINGS AUTH
    settings-auth.js
-
-   مسؤول عن:
-   - إنشاء حساب
-   - تسجيل الدخول
-   - تسجيل الخروج
-   - استعادة الجلسة
-   - معرفة المستخدم الحالي
-   - إنشاء/تحديث ملف المستخدم في profiles
-   - مراقبة تغيّر حالة تسجيل الدخول
-   - التحقق من اسم المستخدم
-   - إعادة تعيين كلمة المرور
-
-   يعتمد على:
-   settings-auth-config.js
-   Supabase JS v2
    ========================================================= */
 
 (function () {
@@ -24,7 +9,7 @@
 
 
     /* =====================================================
-       منع تشغيل الملف أكثر من مرة
+       منع التحميل أكثر من مرة
     ===================================================== */
 
     if (window.WFESCSettingsAuth) {
@@ -33,7 +18,7 @@
 
 
     /* =====================================================
-       التحقق من إعدادات WFESC
+       التحقق من CONFIG
     ===================================================== */
 
     if (!window.WFESCSettingsAuthConfig) {
@@ -65,19 +50,22 @@
 
 
     /* =====================================================
-       إنشاء عميل Supabase
-       نفس اتصال WFESC الحالي
+       إنشاء اتصال Supabase
+       المفتاح الجديد يؤخذ من settings-auth-config.js
     ===================================================== */
 
     const supabaseClient =
         window.supabase.createClient(
+
             CONFIG.supabaseUrl,
+
             CONFIG.supabaseKey
+
         );
 
 
     /* =====================================================
-       متغيرات النظام
+       الحالة
     ===================================================== */
 
     let currentUser = null;
@@ -88,7 +76,7 @@
 
 
     /* =====================================================
-       أدوات مساعدة
+       GETTERS
     ===================================================== */
 
     function getClient() {
@@ -122,7 +110,9 @@
     function getCurrentUserId() {
 
         if (!currentUser) {
+
             return null;
+
         }
 
         return currentUser.id || null;
@@ -131,26 +121,28 @@
 
 
     /* =====================================================
-       التحقق من البريد الإلكتروني
+       البريد الإلكتروني
     ===================================================== */
 
     function isValidEmail(email) {
 
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-            String(email || "").trim()
-        );
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(
+                String(email || "").trim()
+            );
 
     }
 
 
     /* =====================================================
-       إعدادات اسم المستخدم
+       حدود اسم المستخدم
     ===================================================== */
 
     function getUsernameLimits() {
 
         const usernameConfig =
             CONFIG.username || {};
+
 
         return {
 
@@ -193,9 +185,10 @@
 
                 valid: false,
 
-                error: new Error(
-                    "يرجى إدخال اسم المستخدم."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال اسم المستخدم."
+                    )
 
             };
 
@@ -208,9 +201,10 @@
 
                 valid: false,
 
-                error: new Error(
-                    "اسم المستخدم قصير جدًا."
-                )
+                error:
+                    new Error(
+                        "اسم المستخدم قصير جدًا."
+                    )
 
             };
 
@@ -223,9 +217,12 @@
 
                 valid: false,
 
-                error: new Error(
-                    "اسم المستخدم يجب ألا يتجاوز 3 أحرف."
-                )
+                error:
+                    new Error(
+                        "اسم المستخدم يجب ألا يتجاوز " +
+                        limits.max +
+                        " أحرف."
+                    )
 
             };
 
@@ -244,19 +241,18 @@
 
 
     /* =====================================================
-       الحصول على اسم المستخدم الافتراضي
+       اسم افتراضي
     ===================================================== */
 
     function getDefaultUsername(user) {
 
         if (!user) {
+
             return "W";
+
         }
 
 
-        /*
-         * إذا كان username موجودًا في metadata
-         */
         if (
             user.user_metadata &&
             user.user_metadata.username
@@ -283,16 +279,14 @@
         }
 
 
-        /*
-         * نأخذ أول 3 أحرف من البريد
-         * كاسم مؤقت إذا لم يوجد username.
-         */
         if (user.email) {
 
             const emailName =
-                String(user.email)
-                    .split("@")[0]
-                    .trim();
+                String(
+                    user.email
+                )
+                .split("@")[0]
+                .trim();
 
 
             if (emailName) {
@@ -303,10 +297,7 @@
 
                 const shortName =
                     [...emailName]
-                        .slice(
-                            0,
-                            limits.max
-                        )
+                        .slice(0, limits.max)
                         .join("");
 
 
@@ -333,15 +324,24 @@
     async function fetchProfile(userId) {
 
         if (!userId) {
+
+            currentProfile = null;
+
             return null;
+
         }
 
 
         const result =
             await supabaseClient
-                .from(CONFIG.profilesTable)
+                .from(
+                    CONFIG.profilesTable
+                )
                 .select("*")
-                .eq("id", userId)
+                .eq(
+                    "id",
+                    userId
+                )
                 .maybeSingle();
 
 
@@ -352,7 +352,9 @@
                 result.error
             );
 
+
             return null;
+
         }
 
 
@@ -367,12 +369,18 @@
 
     /* =====================================================
        إنشاء Profile إذا لم يكن موجودًا
+       مهم:
+       فشل profile لا يمنع تسجيل الدخول
     ===================================================== */
 
     async function ensureProfile(user) {
 
         if (!user) {
+
+            currentProfile = null;
+
             return null;
+
         }
 
 
@@ -382,13 +390,11 @@
             );
 
 
-        /*
-         * موجود مسبقًا
-         */
         if (existingProfile) {
 
             currentProfile =
                 existingProfile;
+
 
             return existingProfile;
 
@@ -420,7 +426,9 @@
 
         const result =
             await supabaseClient
-                .from(CONFIG.profilesTable)
+                .from(
+                    CONFIG.profilesTable
+                )
                 .insert(
                     profileData
                 )
@@ -430,12 +438,22 @@
 
         if (result.error) {
 
+            /*
+             * تسجيل الدخول لا يفشل إذا كانت
+             * مشكلة الـprofile من RLS أو الجدول.
+             */
+
             console.warn(
                 "WFESC Auth: تعذر إنشاء profile:",
                 result.error
             );
 
+
+            currentProfile = null;
+
+
             return null;
+
         }
 
 
@@ -460,9 +478,10 @@
 
                 data: null,
 
-                error: new Error(
-                    "يجب تسجيل الدخول أولاً."
-                )
+                error:
+                    new Error(
+                        "يجب تسجيل الدخول أولاً."
+                    )
 
             };
 
@@ -478,9 +497,10 @@
 
                 data: null,
 
-                error: new Error(
-                    "بيانات التحديث غير صحيحة."
-                )
+                error:
+                    new Error(
+                        "بيانات التحديث غير صحيحة."
+                    )
 
             };
 
@@ -490,9 +510,9 @@
         const allowedUpdates = {};
 
 
-        /* -------------------------------------------------
+        /* =========================
            Username
-        ------------------------------------------------- */
+        ========================= */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -533,9 +553,9 @@
         }
 
 
-        /* -------------------------------------------------
+        /* =========================
            Avatar
-        ------------------------------------------------- */
+        ========================= */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -550,9 +570,9 @@
         }
 
 
-        /* -------------------------------------------------
+        /* =========================
            Bio
-        ------------------------------------------------- */
+        ========================= */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -588,7 +608,9 @@
 
         const result =
             await supabaseClient
-                .from(CONFIG.profilesTable)
+                .from(
+                    CONFIG.profilesTable
+                )
                 .update(
                     allowedUpdates
                 )
@@ -607,6 +629,7 @@
                 result.error
             );
 
+
             return {
 
                 data: null,
@@ -623,9 +646,6 @@
             result.data || null;
 
 
-        /*
-         * إشعار الصفحات الأخرى
-         */
         window.dispatchEvent(
             new CustomEvent(
                 "WFESCProfileUpdated",
@@ -665,10 +685,12 @@
                 email || ""
             ).trim();
 
+
         password =
             String(
                 password || ""
             );
+
 
         username =
             String(
@@ -676,9 +698,9 @@
             ).trim();
 
 
-        /* -------------------------------------------------
-           البريد
-        ------------------------------------------------- */
+        /* =========================
+           Email
+        ========================= */
 
         if (!email) {
 
@@ -686,9 +708,10 @@
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال البريد الإلكتروني."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال البريد الإلكتروني."
+                    )
 
             };
 
@@ -701,18 +724,19 @@
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال بريد إلكتروني صحيح."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال بريد إلكتروني صحيح."
+                    )
 
             };
 
         }
 
 
-        /* -------------------------------------------------
-           اسم المستخدم
-        ------------------------------------------------- */
+        /* =========================
+           Username
+        ========================= */
 
         const usernameValidation =
             validateUsername(
@@ -734,9 +758,9 @@
         }
 
 
-        /* -------------------------------------------------
-           كلمة المرور
-        ------------------------------------------------- */
+        /* =========================
+           Password
+        ========================= */
 
         if (!password) {
 
@@ -744,9 +768,10 @@
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال كلمة المرور."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال كلمة المرور."
+                    )
 
             };
 
@@ -759,44 +784,69 @@
 
                 data: null,
 
-                error: new Error(
-                    "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
-                )
+                error:
+                    new Error(
+                        "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
+                    )
 
             };
 
         }
 
 
-        /* -------------------------------------------------
-           إنشاء الحساب في Supabase Auth
-        ------------------------------------------------- */
+        /* =========================
+           Supabase Sign Up
+        ========================= */
 
-        const result =
-            await supabaseClient.auth.signUp({
+        let result;
 
-                email:
-                    email,
 
-                password:
-                    password,
+        try {
 
-                options: {
+            result =
+                await supabaseClient.auth.signUp({
 
-                    data: {
+                    email:
+                        email,
 
-                        username:
-                            username
+                    password:
+                        password,
 
-                    },
+                    options: {
 
-                    emailRedirectTo:
-                        window.location.origin +
-                        window.location.pathname
+                        data: {
 
-                }
+                            username:
+                                username
 
-            });
+                        },
+
+                        emailRedirectTo:
+                            window.location.origin +
+                            window.location.pathname
+
+                    }
+
+                });
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: خطأ أثناء إنشاء الحساب:",
+                error
+            );
+
+
+            return {
+
+                data: null,
+
+                error:
+                    error
+
+            };
+
+        }
 
 
         if (result.error) {
@@ -805,6 +855,7 @@
                 "WFESC Auth: فشل إنشاء الحساب:",
                 result.error
             );
+
 
             return {
 
@@ -818,22 +869,21 @@
         }
 
 
-        /* -------------------------------------------------
-           تحديث الحالة المحلية
-        ------------------------------------------------- */
-
         currentUser =
-            result.data.user ||
-            null;
+            result.data.user || null;
+
 
         currentSession =
-            result.data.session ||
-            null;
+            result.data.session || null;
 
 
-        /* -------------------------------------------------
-           إنشاء Profile إذا كانت الجلسة موجودة
-        ------------------------------------------------- */
+        /*
+         * إذا Supabase أعطى Session مباشرة
+         * ننشئ profile.
+         *
+         * إذا كان تأكيد البريد مطلوبًا
+         * فلن توجد Session وهذا طبيعي.
+         */
 
         if (
             currentUser &&
@@ -847,14 +897,11 @@
         }
 
 
-        /* -------------------------------------------------
-           إشعار الموقع
-        ------------------------------------------------- */
-
         window.dispatchEvent(
             new CustomEvent(
                 "WFESCAuthChanged",
                 {
+
                     detail: {
 
                         user:
@@ -867,6 +914,7 @@
                             "SIGNED_UP"
 
                     }
+
                 }
             )
         );
@@ -899,15 +947,12 @@
                 email || ""
             ).trim();
 
+
         password =
             String(
                 password || ""
             );
 
-
-        /* -------------------------------------------------
-           البريد
-        ------------------------------------------------- */
 
         if (!email) {
 
@@ -915,9 +960,10 @@
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال البريد الإلكتروني."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال البريد الإلكتروني."
+                    )
 
             };
 
@@ -930,18 +976,15 @@
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال بريد إلكتروني صحيح."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال بريد إلكتروني صحيح."
+                    )
 
             };
 
         }
 
-
-        /* -------------------------------------------------
-           كلمة المرور
-        ------------------------------------------------- */
 
         if (!password) {
 
@@ -949,29 +992,52 @@
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال كلمة المرور."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال كلمة المرور."
+                    )
 
             };
 
         }
 
 
-        /* -------------------------------------------------
-           تسجيل الدخول
-        ------------------------------------------------- */
+        let result;
 
-        const result =
-            await supabaseClient.auth.signInWithPassword({
 
-                email:
-                    email,
+        try {
 
-                password:
-                    password
+            result =
+                await supabaseClient
+                    .auth
+                    .signInWithPassword({
 
-            });
+                        email:
+                            email,
+
+                        password:
+                            password
+
+                    });
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: خطأ أثناء تسجيل الدخول:",
+                error
+            );
+
+
+            return {
+
+                data: null,
+
+                error:
+                    error
+
+            };
+
+        }
 
 
         if (result.error) {
@@ -981,17 +1047,6 @@
                 result.error
             );
 
-
-            /*
-             * Supabase لا يميز بأمان من جهة المتصفح
-             * بين:
-             * - بريد غير موجود
-             * - كلمة مرور خاطئة
-             *
-             * لذلك نرجع نفس الخطأ الأصلي
-             * حتى تعرض الواجهة رسالة آمنة
-             * مع خيار إعادة التعيين.
-             */
 
             return {
 
@@ -1005,40 +1060,46 @@
         }
 
 
-        /* -------------------------------------------------
-           حفظ الجلسة
-        ------------------------------------------------- */
-
         currentSession =
-            result.data.session ||
-            null;
+            result.data.session || null;
+
 
         currentUser =
-            result.data.user ||
-            null;
+            result.data.user || null;
 
 
-        /* -------------------------------------------------
-           التأكد من Profile
-        ------------------------------------------------- */
+        /*
+         * نجاح تسجيل الدخول الحقيقي
+         */
 
         if (currentUser) {
 
-            await ensureProfile(
+            /*
+             * لا ننتظر profile حتى لا تتعطل
+             * واجهة الحساب إذا كانت RLS تمنع القراءة.
+             */
+
+            ensureProfile(
                 currentUser
+            ).catch(
+                function (error) {
+
+                    console.warn(
+                        "WFESC Auth: مشكلة profile بعد تسجيل الدخول:",
+                        error
+                    );
+
+                }
             );
 
         }
 
 
-        /* -------------------------------------------------
-           إشعار الموقع
-        ------------------------------------------------- */
-
         window.dispatchEvent(
             new CustomEvent(
                 "WFESCAuthChanged",
                 {
+
                     detail: {
 
                         user:
@@ -1051,6 +1112,7 @@
                             "SIGNED_IN"
 
                     }
+
                 }
             )
         );
@@ -1073,9 +1135,8 @@
        إعادة تعيين كلمة المرور
     ===================================================== */
 
-async function resetPassword(
-        email
-    ) {
+    
+    async function resetPassword(email) {
 
         email =
             String(
@@ -1089,9 +1150,10 @@ async function resetPassword(
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال البريد الإلكتروني."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال البريد الإلكتروني."
+                    )
 
             };
 
@@ -1104,9 +1166,10 @@ async function resetPassword(
 
                 data: null,
 
-                error: new Error(
-                    "يرجى إدخال بريد إلكتروني صحيح."
-                )
+                error:
+                    new Error(
+                        "يرجى إدخال بريد إلكتروني صحيح."
+                    )
 
             };
 
@@ -1118,14 +1181,36 @@ async function resetPassword(
             window.location.pathname;
 
 
-        const result =
-            await supabaseClient.auth.resetPasswordForEmail(
-                email,
-                {
-                    redirectTo:
-                        redirectUrl
-                }
-            );
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .auth
+                    .resetPasswordForEmail(
+                        email,
+                        {
+
+                            redirectTo:
+                                redirectUrl
+
+                        }
+                    );
+
+        } catch (error) {
+
+            return {
+
+                data: null,
+
+                error:
+                    error
+
+            };
+
+        }
 
 
         if (result.error) {
@@ -1134,6 +1219,7 @@ async function resetPassword(
                 "WFESC Auth: فشل إرسال إعادة التعيين:",
                 result.error
             );
+
 
             return {
 
@@ -1149,11 +1235,9 @@ async function resetPassword(
 
         return {
 
-            data:
-                true,
+            data: true,
 
-            error:
-                null
+            error: null
 
         };
 
@@ -1166,8 +1250,26 @@ async function resetPassword(
 
     async function signOut() {
 
-        const result =
-            await supabaseClient.auth.signOut();
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+        } catch (error) {
+
+            return {
+
+                error:
+                    error
+
+            };
+
+        }
 
 
         if (result.error) {
@@ -1176,6 +1278,7 @@ async function resetPassword(
                 "WFESC Auth: فشل تسجيل الخروج:",
                 result.error
             );
+
 
             return {
 
@@ -1187,20 +1290,18 @@ async function resetPassword(
         }
 
 
-        currentUser =
-            null;
+        currentUser = null;
 
-        currentSession =
-            null;
+        currentSession = null;
 
-        currentProfile =
-            null;
+        currentProfile = null;
 
 
         window.dispatchEvent(
             new CustomEvent(
                 "WFESCAuthChanged",
                 {
+
                     detail: {
 
                         user:
@@ -1213,6 +1314,7 @@ async function resetPassword(
                             "SIGNED_OUT"
 
                     }
+
                 }
             )
         );
@@ -1229,13 +1331,50 @@ async function resetPassword(
 
 
     /* =====================================================
-       استعادة الجلسة الحالية
+       استعادة الجلسة
     ===================================================== */
 
     async function restoreSession() {
 
-        const result =
-            await supabaseClient.auth.getSession();
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .auth
+                    .getSession();
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: فشل استعادة الجلسة:",
+                error
+            );
+
+
+            currentSession = null;
+
+            currentUser = null;
+
+            currentProfile = null;
+
+
+            return {
+
+                session: null,
+
+                user: null,
+
+                profile: null,
+
+                error:
+                    error
+
+            };
+
+        }
 
 
         if (result.error) {
@@ -1246,26 +1385,20 @@ async function resetPassword(
             );
 
 
-            currentSession =
-                null;
+            currentSession = null;
 
-            currentUser =
-                null;
+            currentUser = null;
 
-            currentProfile =
-                null;
+            currentProfile = null;
 
 
             return {
 
-                session:
-                    null,
+                session: null,
 
-                user:
-                    null,
+                user: null,
 
-                profile:
-                    null,
+                profile: null,
 
                 error:
                     result.error
@@ -1276,34 +1409,43 @@ async function resetPassword(
 
 
         currentSession =
-            result.data.session ||
-            null;
+            result.data.session || null;
+
 
         currentUser =
             currentSession
                 ? currentSession.user
                 : null;
 
-        currentProfile =
-            null;
+
+        currentProfile = null;
 
 
         if (currentUser) {
 
-            await ensureProfile(
-                currentUser
-            );
+            try {
+
+                await ensureProfile(
+                    currentUser
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC Auth: تعذر استعادة profile:",
+                    error
+                );
+
+            }
 
         }
 
 
-        /*
-         * إرسال الحالة الحالية للواجهة
-         */
         window.dispatchEvent(
             new CustomEvent(
                 "WFESCAuthChanged",
                 {
+
                     detail: {
 
                         user:
@@ -1316,6 +1458,7 @@ async function resetPassword(
                             "SESSION_RESTORED"
 
                     }
+
                 }
             )
         );
@@ -1341,7 +1484,7 @@ async function resetPassword(
 
 
     /* =====================================================
-       مراقبة تغيّر حالة المصادقة
+       مراقبة Auth
     ===================================================== */
 
     const authListener =
@@ -1352,8 +1495,8 @@ async function resetPassword(
             ) {
 
                 currentSession =
-                    session ||
-                    null;
+                    session || null;
+
 
                 currentUser =
                     session
@@ -1361,33 +1504,40 @@ async function resetPassword(
                         : null;
 
 
-                /* -----------------------------------------
-                   تسجيل الخروج
-                ----------------------------------------- */
-
                 if (
                     event ===
                     "SIGNED_OUT"
                 ) {
 
-                    currentProfile =
-                        null;
+                    currentProfile = null;
 
                 }
 
 
-                /* -----------------------------------------
-                   تحديث Profile
-                ----------------------------------------- */
+                /*
+                 * لا ننفذ عمليات Supabase
+                 * مباشرة داخل callback.
+                 */
 
                 setTimeout(
                     async function () {
 
                         if (currentUser) {
 
-                            await ensureProfile(
-                                currentUser
-                            );
+                            try {
+
+                                await ensureProfile(
+                                    currentUser
+                                );
+
+                            } catch (error) {
+
+                                console.warn(
+                                    "WFESC Auth: مشكلة profile:",
+                                    error
+                                );
+
+                            }
 
                         }
 
@@ -1396,6 +1546,7 @@ async function resetPassword(
                             new CustomEvent(
                                 "WFESCAuthChanged",
                                 {
+
                                     detail: {
 
                                         user:
@@ -1408,9 +1559,11 @@ async function resetPassword(
                                             event
 
                                     }
+
                                 }
                             )
                         );
+
 
                     },
                     0
@@ -1421,7 +1574,7 @@ async function resetPassword(
 
 
     /* =====================================================
-       إيقاف مراقبة المصادقة
+       إلغاء Listener
     ===================================================== */
 
     function unsubscribe() {
@@ -1432,7 +1585,10 @@ async function resetPassword(
             authListener.data.subscription
         ) {
 
-            authListener.data.subscription.unsubscribe();
+            authListener
+                .data
+                .subscription
+                .unsubscribe();
 
         }
 
@@ -1440,7 +1596,7 @@ async function resetPassword(
 
 
     /* =====================================================
-       تصدير نظام المصادقة
+       EXPORT
     ===================================================== */
 
     window.WFESCSettingsAuth = {
@@ -1511,4 +1667,3 @@ async function resetPassword(
 
 
 })();
- 
