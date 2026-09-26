@@ -46,6 +46,53 @@
 
         navigation.id = "wfesc-navigation";
         navigation.className = "wfesc-navigation";
+
+        /* =====================================================
+           FORCE FIXED BOTTOM POSITION
+           ===================================================== */
+
+        navigation.style.setProperty(
+            "position",
+            "fixed",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "top",
+            "auto",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "bottom",
+            "12px",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "left",
+            "12px",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "right",
+            "12px",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "width",
+            "auto",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "z-index",
+            "99990",
+            "important"
+        );
+
         navigation.setAttribute(
             "aria-label",
             "WFESC Navigation"
@@ -142,7 +189,13 @@
 
         });
 
-        document.body.appendChild(navigation);
+        /*
+         * وضع شريط التنقل مباشرة داخل HTML
+         * لتجنب أي تأثير من CSS الخاص بالـ body.
+         */
+        document.documentElement.appendChild(
+            navigation
+        );
 
     }
 
@@ -179,7 +232,9 @@
                 </div>
             `;
 
-            document.body.appendChild(loader);
+            document.documentElement.appendChild(
+                loader
+            );
 
         }
 
