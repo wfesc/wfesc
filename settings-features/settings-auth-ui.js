@@ -1,108 +1,47 @@
+/*
+ * WFESC Settings Auth UI
+ * Complete UI controller for settings.html
+ */
+
 (function () {
     "use strict";
-
-    /*
-     * =========================================================
-     * WFESC SETTINGS AUTH UI
-     * الإصدار الكامل
-     * =========================================================
-     *
-     * هذا الملف مسؤول عن واجهة:
-     *
-     * 1. تسجيل الدخول
-     * 2. إنشاء الحساب
-     * 3. التحقق من البريد
-     * 4. استعادة كلمة المرور
-     * 5. عرض الحساب
-     * 6. إدارة الحساب
-     * 7. تغيير كلمة المرور
-     * 8. تسجيل الخروج
-     * 9. حذف الحساب
-     * 10. عرض التوثيق ✓
-     *
-     * الاتصال بـ Supabase موجود في:
-     *
-     * settings-auth.js
-     *
-     * وهذا الملف لا ينشئ اتصال Supabase جديد.
-     *
-     * =========================================================
-     */
 
     if (window.WFESCSettingsAuthUI) {
         return;
     }
 
-    if (!window.WFESCSettingsAuth) {
-        console.error(
-            "WFESC Settings Auth غير موجود."
-        );
-        return;
-    }
-
-    const AUTH =
-        window.WFESCSettingsAuth;
+    window.WFESCSettingsAuthUI = true;
 
     const CONFIG =
         window.WFESCSettingsAuthConfig || {};
 
-    window.WFESCSettingsAuthUI = true;
-
-    /*
-     * =========================================================
-     * الحالة
-     * =========================================================
-     */
-
-    const state = {
-        mode: "login",
-
-        loading: false,
-
-        statusTimer: null,
-
-        verifyTimer: null,
-
-        passwordVisible: false,
-
-        confirmPasswordVisible: false,
-
-        recoveryPasswordVisible: false,
-
-        recoveryConfirmVisible: false,
-
-        initialized: false,
-
-        loginError: false,
-
-        registerPasswordError: false,
-
-        confirmPasswordError: false
-    };
-
-    let root = null;
-
-    /*
-     * =========================================================
-     * إعدادات عامة
-     * =========================================================
-     */
-
-    const USERNAME_MIN = 3;
-
-    const USERNAME_MAX = 9;
-
     const PASSWORD_MIN = 6;
-
     const PASSWORD_MAX = 16;
 
-    /*
-     * =========================================================
-     * العثور على مكان الواجهة
-     * =========================================================
-     */
+    const USERNAME_MIN =
+        Number(
+            CONFIG.username &&
+            CONFIG.username.minLength
+        ) || 3;
 
-    function findRoot() {
+    const USERNAME_MAX =
+        Number(
+            CONFIG.username &&
+            CONFIG.username.maxLength
+        ) || 9;
+
+    const SETTINGS_URL =
+        "https://wfesc.github.io/wfesc/settings.html";
+
+    let busy = false;
+    let verificationTimer = null;
+
+    /* =========================================
+       ROOT
+    ========================================= */
+
+    function getRoot() {
+
         return (
             document.querySelector(
                 "[data-wfesc-auth]"
@@ -112,19 +51,402 @@
             ) ||
             document.querySelector(
                 "#wfesc-settings-auth-root"
-            ) ||
-            document.body
+            )
         );
+
     }
 
-    /*
-     * =========================================================
-     * حماية HTML
-     * =========================================================
-     */
+    function ensureRoot() {
 
-    function escapeHTML(value) {
-        return String(value || "")
+        let root = getRoot();
+
+        if (!root) {
+
+            root =
+                document.createElement("div");
+
+            root.id =
+                "wfesc-settings-auth-root";
+
+            document.body.appendChild(
+                root
+            );
+
+        }
+
+        return root;
+
+    }
+
+    /* =========================================
+       ELEMENTS
+    ========================================= */
+
+    function getElements() {
+
+        const q = function (id) {
+            return document.getElementById(id);
+        };
+
+        return {
+
+            root:
+                q(
+                    "wfesc-settings-auth-root"
+                ) ||
+                getRoot(),
+
+            loginTab:
+                q("wfesc-login-tab"),
+
+            registerTab:
+                q("wfesc-register-tab"),
+
+            loginForm:
+                q("wfesc-login-form"),
+
+            registerForm:
+                q("wfesc-register-form"),
+
+            loginEmail:
+                q("wfesc-login-email"),
+
+            loginEmailError:
+                q("wfesc-login-email-error"),
+
+            loginPassword:
+                q("wfesc-login-password"),
+
+            loginPasswordError:
+                q("wfesc-login-password-error"),
+
+            loginPasswordToggle:
+                q(
+                    "wfesc-login-password-toggle"
+                ),
+
+            loginSubmit:
+                q("wfesc-login-submit"),
+
+            forgotPassword:
+                q("wfesc-forgot-password"),
+
+            registerName:
+                q("wfesc-register-name"),
+
+            registerNameError:
+                q(
+                    "wfesc-register-name-error"
+                ),
+
+            registerUsername:
+                q(
+                    "wfesc-register-username"
+                ),
+
+            registerUsernameError:
+                q(
+                    "wfesc-register-username-error"
+                ),
+
+            registerEmail:
+                q("wfesc-register-email"),
+
+            registerEmailError:
+                q(
+                    "wfesc-register-email-error"
+                ),
+
+            registerPassword:
+                q(
+                    "wfesc-register-password"
+                ),
+
+            registerPasswordError:
+                q(
+                    "wfesc-register-password-error"
+                ),
+
+            registerPasswordToggle:
+                q(
+                    "wfesc-register-password-toggle"
+                ),
+
+            registerConfirm:
+                q("wfesc-register-confirm"),
+
+            registerConfirmError:
+                q(
+                    "wfesc-register-confirm-error"
+                ),
+
+            registerConfirmToggle:
+                q(
+                    "wfesc-register-confirm-toggle"
+                ),
+
+            registerSubmit:
+                q("wfesc-register-submit"),
+
+            recoveryCard:
+                q("wfesc-recovery-card"),
+
+            recoveryEmail:
+                q("wfesc-recovery-email"),
+
+            recoveryEmailError:
+                q(
+                    "wfesc-recovery-email-error"
+                ),
+
+            recoverySubmit:
+                q("wfesc-recovery-submit"),
+
+            recoveryBack:
+                q("wfesc-recovery-back"),
+
+            recoveryPasswordCard:
+                q(
+                    "wfesc-recovery-password-card"
+                ),
+
+            recoveryPassword:
+                q(
+                    "wfesc-recovery-password"
+                ),
+
+            recoveryPasswordToggle:
+                q(
+                    "wfesc-recovery-password-toggle"
+                ),
+
+            recoveryPasswordError:
+                q(
+                    "wfesc-recovery-password-error"
+                ),
+
+            recoveryConfirm:
+                q(
+                    "wfesc-recovery-confirm"
+                ),
+
+            recoveryConfirmToggle:
+                q(
+                    "wfesc-recovery-confirm-toggle"
+                ),
+
+            recoveryConfirmError:
+                q(
+                    "wfesc-recovery-confirm-error"
+                ),
+
+            recoveryPasswordSubmit:
+                q(
+                    "wfesc-recovery-password-submit"
+                ),
+
+            accountCard:
+                q("wfesc-account-card"),
+
+            accountAvatar:
+                q("wfesc-account-avatar"),
+
+            accountName:
+                q("wfesc-account-name"),
+
+            accountVerified:
+                q(
+                    "wfesc-account-verified"
+                ),
+
+            accountUsername:
+                q(
+                    "wfesc-account-username"
+                ),
+
+            accountEmail:
+                q(
+                    "wfesc-account-email"
+                ),
+
+            profileButton:
+                q("wfesc-profile-button"),
+
+            changePasswordButton:
+                q(
+                    "wfesc-change-password-button"
+                ),
+
+            logoutButton:
+                q("wfesc-logout-button"),
+
+            deleteButton:
+                q("wfesc-delete-button"),
+
+            accountStatusText:
+                q(
+                    "wfesc-account-status-text"
+                ),
+
+            status:
+                q("wfesc-auth-status"),
+
+            verification:
+                q(
+                    "wfesc-email-verification"
+                ),
+
+            loading:
+                q("wfesc-loading")
+
+        };
+
+    }
+
+    /* =========================================
+       AUTH ACCESS
+    ========================================= */
+
+    function getAuth() {
+
+        return (
+            window.WFESCSettingsAuth ||
+            null
+        );
+
+    }
+
+    async function getCurrentUser() {
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return null;
+        }
+
+        if (
+            typeof auth.getCurrentUser ===
+            "function"
+        ) {
+
+            return await auth.getCurrentUser();
+
+        }
+
+        if (
+            typeof auth.getUser ===
+            "function"
+        ) {
+
+            return await auth.getUser();
+
+        }
+
+        if (
+            typeof auth.restoreSession ===
+            "function"
+        ) {
+
+            const result =
+                await auth.restoreSession();
+
+            if (
+                result &&
+                result.user
+            ) {
+
+                return result.user;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+    async function getCurrentProfile(
+        user
+    ) {
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return null;
+        }
+
+        if (
+            typeof auth.getCurrentProfile ===
+            "function"
+        ) {
+
+            return await auth.getCurrentProfile(
+                user
+            );
+
+        }
+
+        if (
+            typeof auth.getProfile ===
+            "function"
+        ) {
+
+            return await auth.getProfile(
+                user
+            );
+
+        }
+
+        return null;
+
+    }
+
+    /* =========================================
+       HELPERS
+    ========================================= */
+
+    function sanitizeUsername(
+        value
+    ) {
+
+        return String(
+            value || ""
+        )
+            .replace(
+                /[^A-Za-z0-9]/g,
+                ""
+            )
+            .slice(
+                0,
+                USERNAME_MAX
+            );
+
+    }
+
+    function displayUsername(
+        value
+    ) {
+
+        const clean =
+            sanitizeUsername(value);
+
+        return clean
+            ? "@" + clean
+            : "";
+
+    }
+
+    function escapeHTML(
+        value
+    ) {
+
+        return String(
+            value == null
+                ? ""
+                : value
+        )
             .replace(
                 /&/g,
                 "&amp;"
@@ -145,2092 +467,934 @@
                 /'/g,
                 "&#039;"
             );
+
     }
 
-    /*
-     * =========================================================
-     * تنظيف الاسم
-     * =========================================================
-     *
-     * الاسم العادي يسمح بالعربي والإنجليزي.
-     */
+    function validateEmail(
+        email
+    ) {
 
-    function cleanDisplayName(value) {
-        return String(value || "")
-            .trim()
-            .replace(
-                /\s+/g,
-                " "
-            )
-            .slice(
-                0,
-                40
-            );
-    }
+        const value =
+            String(
+                email || ""
+            ).trim();
 
-    /*
-     * =========================================================
-     * تنظيف اسم المستخدم
-     * =========================================================
-     *
-     * المسموح:
-     *
-     * ali
-     * ali12
-     * xzz123
-     *
-     * غير مسموح:
-     *
-     * ali@
-     * ali-12
-     * ali_12
-     * عربي
-     *
-     * ويمكن للمستخدم كتابة:
-     *
-     * @ali12
-     *
-     * والواجهة تخزن:
-     *
-     * ali12
-     */
+        if (!value) {
 
-    function cleanUsername(value) {
-        return String(value || "")
-            .trim()
-            .replace(
-                /^@+/,
-                ""
-            )
-            .replace(
-                /[^A-Za-z0-9]/g,
-                ""
-            )
-            .slice(
-                0,
-                USERNAME_MAX
-            );
-    }
-
-    /*
-     * =========================================================
-     * التحقق من اسم المستخدم
-     * =========================================================
-     */
-
-    function validateUsername(value) {
-        const username =
-            cleanUsername(value);
-
-        if (
-            username.length <
-            USERNAME_MIN
-        ) {
             return {
                 valid: false,
                 message:
-                    "اسم المستخدم يجب أن يكون من 3 إلى 9 خانات."
+                    "يرجى إدخال بريدك الإلكتروني."
             };
+
         }
 
         if (
-            username.length >
-            USERNAME_MAX
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                .test(value)
         ) {
-            return {
-                valid: false,
-                message:
-                    "اسم المستخدم تجاوز الحد المسموح."
-            };
-        }
 
-        if (
-            !/^[A-Za-z0-9]+$/.test(
-                username
-            )
-        ) {
             return {
                 valid: false,
                 message:
-                    "اسم المستخدم يقبل الأحرف الإنجليزية والأرقام فقط."
+                    "يرجى إدخال بريد إلكتروني صحيح."
             };
+
         }
 
         return {
             valid: true,
-            value: username
+            value: value
         };
+
     }
 
-    /*
-     * =========================================================
-     * عرض اسم المستخدم
-     * =========================================================
-     *
-     * قاعدة البيانات:
-     *
-     * ali12
-     *
-     * العرض:
-     *
-     * @ali12
-     */
-
-    function displayUsername(value) {
-        const username =
-            cleanUsername(value);
-
-        if (!username) {
-            return "@WFESC";
-        }
-
-        return "@" + username;
-    }
-
-    /*
-     * =========================================================
-     * التوثيق
-     * =========================================================
-     */
-
-    function verifiedBadge(
-        verified
+    function validateUsername(
+        username
     ) {
-        if (
-            verified !== true
-        ) {
-            return "";
-        }
 
-        return `
-            <span
-                class="wfesc-verified"
-                title="حساب موثق"
-                aria-label="حساب موثق"
-            >✓</span>
-        `;
-    }
-
-    /*
-     * =========================================================
-     * عرض اسم الحساب + التوثيق
-     * =========================================================
-     */
-
-    function displayUserNameWithVerification(
-        profile
-    ) {
-        if (!profile) {
-            return `
-                <span
-                    class="wfesc-user-name"
-                >
-                    @WFESC
-                </span>
-            `;
-        }
-
-        return `
-            <span
-                class="wfesc-user-name"
-            >
-                ${escapeHTML(
-                    displayUsername(
-                        profile.username
-                    )
-                )}
-            </span>
-
-            ${verifiedBadge(
-                profile.verified === true
-            )}
-        `;
-    }
-
-    /*
-     * =========================================================
-     * الاسم الظاهر
-     * =========================================================
-     */
-
-    function getProfileDisplayName(
-        profile
-    ) {
-        if (!profile) {
-            return "WFESC";
-        }
-
-        const name =
-            cleanDisplayName(
-                profile.full_name ||
-                profile.name ||
-                ""
+        const value =
+            sanitizeUsername(
+                username
             );
 
-        if (name) {
-            return name;
+        if (
+            value.length <
+            USERNAME_MIN
+        ) {
+
+            return {
+                valid: false,
+                message:
+                    "اسم المستخدم يجب أن يتكون من " +
+                    USERNAME_MIN +
+                    " إلى " +
+                    USERNAME_MAX +
+                    " أحرف أو أرقام."
+            };
+
         }
 
-        return displayUsername(
-            profile.username
+        return {
+            valid: true,
+            value: value
+        };
+
+    }
+
+    function validatePassword(
+        password
+    ) {
+
+        const value =
+            String(
+                password || ""
+            );
+
+        if (
+            value.length <
+            PASSWORD_MIN
+        ) {
+
+            return {
+                valid: false,
+                message:
+                    "كلمة المرور يجب أن تكون من 6 إلى 16 خانة."
+            };
+
+        }
+
+        if (
+            value.length >
+            PASSWORD_MAX
+        ) {
+
+            return {
+                valid: false,
+                message:
+                    "كلمة المرور يجب ألا تتجاوز 16 خانة."
+            };
+
+        }
+
+        return {
+            valid: true,
+            value: value
+        };
+
+    }
+
+    /* =========================================
+       ERRORS
+    ========================================= */
+
+    function setFieldError(
+        input,
+        errorElement,
+        message
+    ) {
+
+        if (input) {
+
+            input.classList.add(
+                "wfesc-input-error"
+            );
+
+            input.setAttribute(
+                "aria-invalid",
+                "true"
+            );
+
+        }
+
+        if (errorElement) {
+
+            errorElement.textContent =
+                message || "";
+
+            errorElement.style.display =
+                message
+                    ? "block"
+                    : "none";
+
+        }
+
+    }
+
+    function clearFieldError(
+        input,
+        errorElement
+    ) {
+
+        if (input) {
+
+            input.classList.remove(
+                "wfesc-input-error"
+            );
+
+            input.removeAttribute(
+                "aria-invalid"
+            );
+
+        }
+
+        if (errorElement) {
+
+            errorElement.textContent =
+                "";
+
+            errorElement.style.display =
+                "none";
+
+        }
+
+    }
+
+    function clearAllErrors() {
+
+        const e =
+            getElements();
+
+        clearFieldError(
+            e.loginEmail,
+            e.loginEmailError
         );
+
+        clearFieldError(
+            e.loginPassword,
+            e.loginPasswordError
+        );
+
+        clearFieldError(
+            e.registerName,
+            e.registerNameError
+        );
+
+        clearFieldError(
+            e.registerUsername,
+            e.registerUsernameError
+        );
+
+        clearFieldError(
+            e.registerEmail,
+            e.registerEmailError
+        );
+
+        clearFieldError(
+            e.registerPassword,
+            e.registerPasswordError
+        );
+
+        clearFieldError(
+            e.registerConfirm,
+            e.registerConfirmError
+        );
+
+        clearFieldError(
+            e.recoveryEmail,
+            e.recoveryEmailError
+        );
+
+        clearFieldError(
+            e.recoveryPassword,
+            e.recoveryPasswordError
+        );
+
+        clearFieldError(
+            e.recoveryConfirm,
+            e.recoveryConfirmError
+        );
+
     }
 
-    /*
-     * =========================================================
-     * الأحرف الأولى للصورة الافتراضية
-     * =========================================================
-     */
-
-    function getAvatarLetter(
-        profile
+    function shake(
+        element
     ) {
-        const name =
-            getProfileDisplayName(
-                profile
-            );
 
-        if (!name) {
-            return "W";
-        }
-
-        return name
-            .charAt(0)
-            .toUpperCase();
-    }
-
-    /*
-     * =========================================================
-     * CSS
-     * =========================================================
-     */
-
-    function injectStyles() {
-        if (
-            document.getElementById(
-                "wfesc-settings-auth-ui-style"
-            )
-        ) {
+        if (!element) {
             return;
         }
 
-        const style =
-            document.createElement(
-                "style"
-            );
-
-        style.id =
-            "wfesc-settings-auth-ui-style";
-
-        style.textContent = `
-
-        /*
-         * =====================================================
-         * ROOT
-         * =====================================================
-         */
-
-        #wfesc-settings-auth-root,
-        .wfesc-auth-root {
-            width: 100%;
-            max-width: 560px;
-            margin: 30px auto;
-            padding: 0 14px;
-            box-sizing: border-box;
-            color: #eeeeee;
-            font-family:
-                Arial,
-                Tahoma,
-                sans-serif;
-        }
-
-        /*
-         * =====================================================
-         * CARD
-         * =====================================================
-         */
-
-        .wfesc-auth-card {
-            width: 100%;
-            box-sizing: border-box;
-            background:
-                linear-gradient(
-                    145deg,
-                    #111111,
-                    #080808
-                );
-            border: 1px solid #242424;
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow:
-                0 12px 35px
-                rgba(
-                    0,
-                    0,
-                    0,
-                    .35
-                );
-        }
-
-        /*
-         * =====================================================
-         * HEADER
-         * =====================================================
-         */
-
-        .wfesc-auth-header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .wfesc-auth-logo {
-            width: 58px;
-            height: 58px;
-            border-radius: 50%;
-            margin:
-                0 auto 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #151515;
-            border:
-                1px solid #303030;
-            color: #ffffff;
-            font-size: 22px;
-            font-weight: 800;
-            box-shadow:
-                0 0 0 5px
-                rgba(
-                    255,
-                    255,
-                    255,
-                    .025
-                );
-        }
-
-        .wfesc-auth-title {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 800;
-            color: #ffffff;
-        }
-
-        .wfesc-auth-subtitle {
-            margin:
-                7px 0 0;
-            color: #8f8f8f;
-            font-size: 13px;
-            line-height: 1.7;
-        }
-
-        /*
-         * =====================================================
-         * TABS
-         * =====================================================
-         */
-
-        .wfesc-auth-tabs {
-            display: grid;
-            grid-template-columns:
-                1fr 1fr;
-            gap: 7px;
-            padding: 5px;
-            margin-bottom: 20px;
-            background: #0b0b0b;
-            border:
-                1px solid #222222;
-            border-radius: 13px;
-        }
-
-        .wfesc-auth-tab {
-            appearance: none;
-            border: 0;
-            border-radius: 9px;
-            min-height: 43px;
-            padding:
-                9px 10px;
-            background:
-                transparent;
-            color: #888888;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition:
-                background .18s ease,
-                color .18s ease;
-        }
-
-        .wfesc-auth-tab:hover {
-            color: #ffffff;
-        }
-
-        .wfesc-auth-tab.active {
-            background: #191919;
-            color: #ffffff;
-        }
-
-        /*
-         * =====================================================
-         * FIELDS
-         * =====================================================
-         */
-
-        .wfesc-field {
-            margin-bottom: 14px;
-        }
-
-        .wfesc-field label {
-            display: block;
-            margin:
-                0 0 7px;
-            color: #d5d5d5;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .wfesc-input-wrap {
-            position: relative;
-            width: 100%;
-        }
-
-        .wfesc-input {
-            width: 100%;
-            min-height: 48px;
-            box-sizing: border-box;
-            border:
-                1px solid #292929;
-            border-radius: 12px;
-            outline: none;
-            background: #0d0d0d;
-            color: #ffffff;
-            padding:
-                0 14px;
-            font-size: 15px;
-            transition:
-                border-color .18s ease,
-                background .18s ease,
-                box-shadow .18s ease;
-        }
-
-        .wfesc-input:focus {
-            border-color: #4a4a4a;
-            background: #101010;
-            box-shadow:
-                0 0 0 3px
-                rgba(
-                    255,
-                    255,
-                    255,
-                    .035
-                );
-        }
-
-        .wfesc-input::placeholder {
-            color: #626262;
-        }
-
-        /*
-         * =====================================================
-         * INPUT ERROR
-         * =====================================================
-         */
-
-        .wfesc-input.wfesc-error {
-            border-color:
-                #a13b3b;
-            background:
-                #160d0d;
-            box-shadow:
-                0 0 0 3px
-                rgba(
-                    161,
-                    59,
-                    59,
-                    .10
-                );
-        }
-
-        .wfesc-input.wfesc-success {
-            border-color:
-                #287a49;
-            background:
-                #0d1711;
-        }
-
-        .wfesc-field-error {
-            display: none;
-            margin-top: 6px;
-            color: #ff9696;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        .wfesc-field-error.show {
-            display: block;
-        }
-
-        /*
-         * =====================================================
-         * SHAKE
-         * =====================================================
-         */
-
-        .wfesc-shake {
-            animation:
-                wfescInputShake
-                .38s ease;
-        }
-
-        @keyframes wfescInputShake {
-
-            0% {
-                transform:
-                    translateX(0);
-            }
-
-            20% {
-                transform:
-                    translateX(-7px);
-            }
-
-            40% {
-                transform:
-                    translateX(7px);
-            }
-
-            60% {
-                transform:
-                    translateX(-5px);
-            }
-
-            80% {
-                transform:
-                    translateX(5px);
-            }
-
-            100% {
-                transform:
-                    translateX(0);
-            }
-        }
-
-        /*
-         * =====================================================
-         * PASSWORD
-         * =====================================================
-         */
-
-        .wfesc-password-input {
-            padding-left: 50px;
-        }
-
-        .wfesc-password-toggle {
-            position: absolute;
-            left: 6px;
-            top: 50%;
-            transform:
-                translateY(-50%);
-            width: 38px;
-            height: 38px;
-            border: 0;
-            border-radius: 9px;
-            background:
-                transparent;
-            color: #8c8c8c;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        .wfesc-password-toggle:hover {
-            background: #181818;
-            color: #ffffff;
-        }
-
-        /*
-         * =====================================================
-         * HINT
-         * =====================================================
-         */
-
-        .wfesc-hint {
-            margin-top: 6px;
-            color: #666666;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        /*
-         * =====================================================
-         * BUTTONS
-         * =====================================================
-         */
-
-        .wfesc-primary-button,
-        .wfesc-secondary-button,
-        .wfesc-danger-button {
-            width: 100%;
-            min-height: 48px;
-            border-radius: 12px;
-            padding:
-                10px 15px;
-            border:
-                1px solid #2b2b2b;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 800;
-            transition:
-                background .18s ease,
-                border-color .18s ease,
-                transform .12s ease;
-        }
-
-        .wfesc-primary-button {
-            background: #f1f1f1;
-            color: #080808;
-            border-color: #f1f1f1;
-        }
-
-        .wfesc-primary-button:hover {
-            background: #ffffff;
-        }
-
-        .wfesc-primary-button:active,
-        .wfesc-secondary-button:active,
-        .wfesc-danger-button:active {
-            transform:
-                scale(.985);
-        }
-
-        .wfesc-secondary-button {
-            background: #151515;
-            color: #eeeeee;
-        }
-
-        .wfesc-secondary-button:hover {
-            background: #1d1d1d;
-            border-color:
-                #3a3a3a;
-        }
-
-        .wfesc-danger-button {
-            background: #160d0d;
-            color: #ff9c9c;
-            border-color:
-                #3a1919;
-        }
-
-        .wfesc-danger-button:hover {
-            background: #211010;
-        }
-
-        .wfesc-button-row {
-            display: grid;
-            gap: 9px;
-            margin-top: 18px;
-        }
-
-        /*
-         * =====================================================
-         * LINK BUTTON
-         * =====================================================
-         */
-
-        .wfesc-link-button {
-            appearance: none;
-            border: 0;
-            background:
-                transparent;
-            color: #999999;
-            padding: 8px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .wfesc-link-button:hover {
-            color: #ffffff;
-        }
-
-        /*
-         * =====================================================
-         * STATUS
-         * =====================================================
-         */
-
-        .wfesc-status {
-            display: none;
-            margin:
-                0 0 16px;
-            padding:
-                12px 14px;
-            border-radius: 12px;
-            border:
-                1px solid #292929;
-            background: #111111;
-            color: #dddddd;
-            font-size: 13px;
-            line-height: 1.7;
-            text-align: center;
-        }
-
-        .wfesc-status.show {
-            display: block;
-            animation:
-                wfescStatusIn
-                .2s ease;
-        }
-
-        .wfesc-status.success {
-            border-color:
-                #19472c;
-            background:
-                #0d1d13;
-            color:
-                #9be8b4;
-        }
-
-        .wfesc-status.error {
-            border-color:
-                        #6b2222;
-            background:
-                #1b0d0d;
-            color:
-                #ffaaaa;
-        }
-
-        @keyframes wfescStatusIn {
-            from {
-                opacity: 0;
-                transform:
-                    translateY(-4px);
-            }
-
-            to {
-                opacity: 1;
-                transform:
-                    translateY(0);
-            }
-        }
-
-        /*
-         * =====================================================
-         * VERIFY BOX
-         * =====================================================
-         */
-
-        .wfesc-verify-box {
-            display: none;
-            margin:
-                0 0 18px;
-            padding:
-                15px;
-            border-radius: 14px;
-            border:
-                1px solid #245f3b;
-            background:
-                linear-gradient(
-                    145deg,
-                    #0d2115,
-                    #0b1710
-                );
-            color:
-                #b8f3c9;
-            text-align: center;
-            line-height: 1.8;
-            font-size: 13px;
-        }
-
-        .wfesc-verify-box.show {
-            display: block;
-            animation:
-                wfescVerifyPulse
-                1.1s ease-in-out
-                infinite;
-        }
-
-        .wfesc-verify-icon {
-            width: 34px;
-            height: 34px;
-            margin:
-                0 auto 8px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background:
-                #183d27;
-            border:
-                1px solid #2c7547;
-            color:
-                #8ee7aa;
-            font-size: 18px;
-            font-weight: 900;
-        }
-
-        .wfesc-verify-title {
-            display: block;
-            margin-bottom: 4px;
-            color:
-                #d8ffe3;
-            font-weight: 800;
-        }
-
-        .wfesc-verify-text {
-            color:
-                #98cda8;
-            font-size: 12px;
-        }
-
-        @keyframes wfescVerifyPulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: .55;
-            }
-        }
-
-        /*
-         * =====================================================
-         * ACCOUNT
-         * =====================================================
-         */
-
-        .wfesc-account-card {
-            display: none;
-        }
-
-        .wfesc-account-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding:
-                15px;
-            margin-bottom: 16px;
-            border-radius: 15px;
-            background:
-                #0d0d0d;
-            border:
-                1px solid #252525;
-        }
-
-        .wfesc-account-avatar {
-            width: 62px;
-            height: 62px;
-            flex:
-                0 0 62px;
-            border-radius: 50%;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background:
-                #1a1a1a;
-            border:
-                1px solid #333333;
-            color:
-                #ffffff;
-            font-size: 22px;
-            font-weight: 900;
-        }
-
-        .wfesc-account-avatar img {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: cover;
-        }
-
-        .wfesc-account-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .wfesc-account-name-row {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .wfesc-account-name {
-            color:
-                #ffffff;
-            font-size: 17px;
-            font-weight: 900;
-            word-break: break-word;
-        }
-
-        .wfesc-account-username {
-            margin-top: 4px;
-            color:
-                #969696;
-            font-size: 13px;
-            direction: ltr;
-            text-align: right;
-            word-break: break-all;
-        }
-
-        .wfesc-account-email {
-            margin-top: 3px;
-            color:
-                #666666;
-            font-size: 11px;
-            direction: ltr;
-            text-align: right;
-            word-break: break-all;
-        }
-
-        /*
-         * =====================================================
-         * VERIFIED
-         * =====================================================
-         */
-
-        .wfesc-verified {
-            display: inline-flex;
-            width: 19px;
-            height: 19px;
-            flex:
-                0 0 19px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background:
-                #20a85a;
-            color:
-                #ffffff;
-            font-size: 12px;
-            font-weight: 900;
-            line-height: 1;
-            vertical-align: middle;
-            box-shadow:
-                0 0 0 2px
-                rgba(
-                    32,
-                    168,
-                    90,
-                    .12
-                );
-        }
-
-        .wfesc-user-name {
-            display: inline;
-        }
-
-        /*
-         * =====================================================
-         * ACCOUNT ACTIONS
-         * =====================================================
-         */
-
-        .wfesc-account-actions {
-            display: grid;
-            gap: 9px;
-        }
-
-        .wfesc-account-action {
-            width: 100%;
-            min-height: 47px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding:
-                10px 13px;
-            box-sizing: border-box;
-            border-radius: 12px;
-            border:
-                1px solid #292929;
-            background:
-                #101010;
-            color:
-                #eeeeee;
-            cursor: pointer;
-            text-align: right;
-            transition:
-                background .18s ease,
-                border-color .18s ease;
-        }
-
-        .wfesc-account-action:hover {
-            background:
-                #171717;
-            border-color:
-                #383838;
-        }
-
-        .wfesc-account-action-main {
-            min-width: 0;
-        }
-
-        .wfesc-account-action-title {
-            display: block;
-            color:
-                #eeeeee;
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .wfesc-account-action-description {
-            display: block;
-            margin-top: 3px;
-            color:
-                #666666;
-            font-size: 10px;
-            line-height: 1.5;
-        }
-
-        .wfesc-account-action-icon {
-            width: 34px;
-            height: 34px;
-            flex:
-                0 0 34px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9px;
-            background:
-                #191919;
-            color:
-                #aaaaaa;
-            font-size: 16px;
-        }
-
-        /*
-         * =====================================================
-         * SECTION
-         * =====================================================
-         */
-
-        .wfesc-section {
-            margin-top: 18px;
-            padding-top: 18px;
-            border-top:
-                1px solid #202020;
-        }
-
-        .wfesc-section-title {
-            margin:
-                0 0 10px;
-            color:
-                #dddddd;
-            font-size: 14px;
-            font-weight: 800;
-        }
-
-        .wfesc-section-text {
-            margin: 0;
-            color:
-                #777777;
-            font-size: 12px;
-            line-height: 1.8;
-        }
-
-        /*
-         * =====================================================
-         * LOADING
-         * =====================================================
-         */
-
-        .wfesc-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 9px;
-            min-height: 130px;
-            color:
-                #888888;
-            font-size: 13px;
-        }
-
-        .wfesc-loading-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background:
-                #aaaaaa;
-            animation:
-                wfescLoadingDot
-                1s infinite;
-        }
-
-        .wfesc-loading-dot:nth-child(2) {
-            animation-delay:
-                .15s;
-        }
-
-        .wfesc-loading-dot:nth-child(3) {
-            animation-delay:
-                .3s;
-        }
-
-        @keyframes wfescLoadingDot {
-            0%,
-            70%,
-            100% {
-                opacity: .25;
-                transform:
-                    translateY(0);
-            }
-
-            35% {
-                opacity: 1;
-                transform:
-                    translateY(-4px);
-            }
-        }
-
-        /*
-         * =====================================================
-         * DIVIDER
-         * =====================================================
-         */
-
-        .wfesc-divider {
-            height: 1px;
-            margin:
-                17px 0;
-            background:
-                #202020;
-        }
-
-        /*
-         * =====================================================
-         * RECOVERY
-         * =====================================================
-         */
-
-        .wfesc-recovery-card {
-            display: none;
-        }
-
-        .wfesc-recovery-description {
-            margin:
-                0 0 17px;
-            color:
-                #888888;
-            font-size: 12px;
-            line-height: 1.8;
-        }
-
-        /*
-         * =====================================================
-         * DISABLED
-         * =====================================================
-         */
-
-        .wfesc-disabled {
-            opacity: .55;
-            pointer-events: none;
-        }
-
-        /*
-         * =====================================================
-         * RESPONSIVE
-         * =====================================================
-         */
-
-        @media (
-            max-width: 520px
-        ) {
-
-            #wfesc-settings-auth-root,
-            .wfesc-auth-root {
-                margin:
-                    18px auto;
-                padding:
-                    0 10px;
-            }
-
-            .wfesc-auth-card {
-                padding:
-                    18px;
-                border-radius:
-                    17px;
-            }
-
-            .wfesc-auth-title {
-                font-size:
-                    21px;
-            }
-
-            .wfesc-account-header {
-                align-items:
-                    flex-start;
-            }
-
-            .wfesc-account-avatar {
-                width:
-                    55px;
-                height:
-                    55px;
-                flex-basis:
-                    55px;
-            }
-        }
-
-        `;
-
-        document.head.appendChild(style);
-    }
-
-    /*
-     * =========================================================
-     * إنشاء عنصر الجذر
-     * =========================================================
-     */
-
-    function ensureRoot() {
-        const existing =
-            document.querySelector(
-                "[data-wfesc-auth]"
-            ) ||
-            document.querySelector(
-                "#wfesc-auth"
-            ) ||
-            document.querySelector(
-                "#wfesc-settings-auth-root"
-            );
-
-        if (existing) {
-            root = existing;
-
-            root.classList.add(
-                "wfesc-auth-root"
-            );
-
-            return root;
-        }
-
-        root =
-            document.createElement(
-                "div"
-            );
-
-        root.id =
-            "wfesc-settings-auth-root";
-
-        root.className =
-            "wfesc-auth-root";
-
-        document.body.appendChild(
-            root
+        element.classList.remove(
+            "wfesc-shake"
         );
 
-        return root;
+        void element.offsetWidth;
+
+        element.classList.add(
+            "wfesc-shake"
+        );
+
+        setTimeout(
+            function () {
+
+                element.classList.remove(
+                    "wfesc-shake"
+                );
+
+            },
+            500
+        );
+
     }
 
-    /*
-     * =========================================================
-     * HTML
-     * =========================================================
-     */
+    /* =========================================
+       STATUS
+    ========================================= */
 
-    function buildUI() {
+    function showStatus(
+        message,
+        type
+    ) {
 
-        if (!root) {
-            ensureRoot();
+        const e =
+            getElements();
+
+        if (!e.status) {
+            return;
         }
 
-        root.innerHTML = `
-
-            <div
-                class="wfesc-auth-card"
-                id="wfesc-auth-card"
-            >
-
-                <div
-                    class="wfesc-auth-header"
-                >
-
-                    <div
-                        class="wfesc-auth-logo"
-                    >
-                        WF
-                    </div>
-
-                    <h2
-                        class="wfesc-auth-title"
-                    >
-                        حساب WFESC
-                    </h2>
-
-                    <p
-                        class="wfesc-auth-subtitle"
-                    >
-                        تسجيل الدخول وإدارة حسابك
-                    </p>
-
-                </div>
-
-                <!-- ===================================== -->
-                <!-- STATUS -->
-                <!-- ===================================== -->
-
-                <div
-                    class="wfesc-status"
-                    id="wfesc-status"
-                    aria-live="polite"
-                ></div>
-
-                <!-- ===================================== -->
-                <!-- VERIFY -->
-                <!-- ===================================== -->
-
-                <div
-                    class="wfesc-verify-box"
-                    id="wfesc-verify-box"
-                    aria-live="polite"
-                >
-
-                    <div
-                        class="wfesc-verify-icon"
-                    >
-                        ✓
-                    </div>
-
-                    <span
-                        class="wfesc-verify-title"
-                    >
-                        تم إنشاء الحساب
-                    </span>
-
-                    <span
-                        class="wfesc-verify-text"
-                    >
-                        تحقق من بريدك الإلكتروني، وتأكد أيضًا من مجلد الرسائل غير المرغوب فيها.
-                    </span>
-
-                </div>
-
-                <!-- ===================================== -->
-                <!-- AUTH AREA -->
-                <!-- ===================================== -->
-
-                <div
-                    id="wfesc-auth-area"
-                >
-
-                    <div
-                        class="wfesc-auth-tabs"
-                    >
-
-                        <button
-                            type="button"
-                            class="wfesc-auth-tab active"
-                            data-mode="login"
-                            id="wfesc-login-tab"
-                        >
-                            تسجيل الدخول
-                        </button>
-
-                        <button
-                            type="button"
-                            class="wfesc-auth-tab"
-                            data-mode="register"
-                            id="wfesc-register-tab"
-                        >
-                            إنشاء حساب
-                        </button>
-
-                    </div>
-
-                    <!-- ================================= -->
-                    <!-- LOGIN -->
-                    <!-- ================================= -->
-
-                    <form
-                        id="wfesc-login-form"
-                        novalidate
-                    >
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-login-email"
-                            >
-                                البريد الإلكتروني
-                            </label>
-
-                            <input
-                                id="wfesc-login-email"
-                                class="wfesc-input"
-                                type="email"
-                                autocomplete="email"
-                                inputmode="email"
-                                placeholder="example@email.com"
-                                maxlength="120"
-                            >
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-login-email-error"
-                            ></div>
-
-                        </div>
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-login-password"
-                            >
-                                كلمة المرور
-                            </label>
-
-                            <div
-                                class="wfesc-input-wrap"
-                            >
-
-                                <input
-                                    id="wfesc-login-password"
-                                    class="wfesc-input wfesc-password-input"
-                                    type="password"
-                                    autocomplete="current-password"
-                                    placeholder="أدخل كلمة المرور"
-                                    maxlength="16"
-                                >
-
-                                <button
-                                    type="button"
-                                    class="wfesc-password-toggle"
-                                    id="wfesc-login-password-toggle"
-                                    aria-label="إظهار كلمة المرور"
-                                    title="إظهار كلمة المرور"
-                                >
-                                    🙈
-                                </button>
-
-                            </div>
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-login-password-error"
-                            ></div>
-
-                        </div>
-
-                        <button
-                            type="submit"
-                            class="wfesc-primary-button"
-                            id="wfesc-login-submit"
-                        >
-                            تسجيل الدخول
-                        </button>
-
-                        <div
-                            style="
-                                text-align:center;
-                                margin-top:8px;
-                            "
-                        >
-
-                            <button
-                                type="button"
-                                class="wfesc-link-button"
-                                id="wfesc-forgot-button"
-                            >
-                                نسيت كلمة المرور؟
-                            </button>
-
-                        </div>
-
-                    </form>
-
-                    <!-- ================================= -->
-                    <!-- REGISTER -->
-                    <!-- ================================= -->
-
-                    <form
-                        id="wfesc-register-form"
-                        novalidate
-                        style="display:none;"
-                    >
-
-                        <!-- NAME -->
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-register-name"
-                            >
-                                الاسم
-                            </label>
-
-                            <input
-                                id="wfesc-register-name"
-               
-                                          class="wfesc-input"
-                                type="text"
-                                autocomplete="name"
-                                placeholder="اكتب اسمك"
-                                maxlength="40"
-                            >
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-register-name-error"
-                            ></div>
-
-                        </div>
-
-                        <!-- USERNAME -->
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-register-username"
-                            >
-                                اسم المستخدم
-                            </label>
-
-                            <input
-                                id="wfesc-register-username"
-                                class="wfesc-input"
-                                type="text"
-                                autocomplete="username"
-                                autocapitalize="none"
-                                spellcheck="false"
-                                placeholder="مثال: ali12"
-                                maxlength="9"
-                            >
-
-                            <div
-                                class="wfesc-hint"
-                            >
-                                3 إلى 9 خانات — أحرف إنجليزية وأرقام فقط.
-                            </div>
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-register-username-error"
-                            ></div>
-
-                        </div>
-
-                        <!-- EMAIL -->
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-register-email"
-                            >
-                                البريد الإلكتروني
-                            </label>
-
-                            <input
-                                id="wfesc-register-email"
-                                class="wfesc-input"
-                                type="email"
-                                autocomplete="email"
-                                inputmode="email"
-                                placeholder="example@email.com"
-                                maxlength="120"
-                            >
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-register-email-error"
-                            ></div>
-
-                        </div>
-
-                        <!-- PASSWORD -->
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-register-password"
-                            >
-                                كلمة المرور
-                            </label>
-
-                            <div
-                                class="wfesc-input-wrap"
-                            >
-
-                                <input
-                                    id="wfesc-register-password"
-                                    class="wfesc-input wfesc-password-input"
-                                    type="password"
-                                    autocomplete="new-password"
-                                    placeholder="6 إلى 16 خانة"
-                                    maxlength="16"
-                                >
-
-                                <button
-                                    type="button"
-                                    class="wfesc-password-toggle"
-                                    id="wfesc-register-password-toggle"
-                                    aria-label="إظهار كلمة المرور"
-                                    title="إظهار كلمة المرور"
-                                >
-                                    🙈
-                                </button>
-
-                            </div>
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-register-password-error"
-                            ></div>
-
-                        </div>
-
-                        <!-- CONFIRM PASSWORD -->
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-register-confirm"
-                            >
-                                تأكيد كلمة المرور
-                            </label>
-
-                            <div
-                                class="wfesc-input-wrap"
-                            >
-
-                                <input
-                                    id="wfesc-register-confirm"
-                                    class="wfesc-input wfesc-password-input"
-                                    type="password"
-                                    autocomplete="new-password"
-                                    placeholder="أعد كتابة كلمة المرور"
-                                    maxlength="16"
-                                >
-
-                                <button
-                                    type="button"
-                                    class="wfesc-password-toggle"
-                                    id="wfesc-register-confirm-toggle"
-                                    aria-label="إظهار كلمة المرور"
-                                    title="إظهار كلمة المرور"
-                                >
-                                    🙈
-                                </button>
-
-                            </div>
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-register-confirm-error"
-                            ></div>
-
-                        </div>
-
-                        <button
-                            type="submit"
-                            class="wfesc-primary-button"
-                            id="wfesc-register-submit"
-                        >
-                            إنشاء الحساب
-                        </button>
-
-                    </form>
-
-                    <!-- ================================= -->
-                    <!-- RECOVERY EMAIL -->
-                    <!-- ================================= -->
-
-                    <div
-                        class="wfesc-recovery-card"
-                        id="wfesc-recovery-card"
-                    >
-
-                        <div
-                            class="wfesc-section-title"
-                        >
-                            استعادة كلمة المرور
-                        </div>
-
-                        <p
-                            class="wfesc-recovery-description"
-                        >
-                            أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.
-                        </p>
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-recovery-email"
-                            >
-                                البريد الإلكتروني
-                            </label>
-
-                            <input
-                                id="wfesc-recovery-email"
-                                class="wfesc-input"
-                                type="email"
-                                autocomplete="email"
-                                placeholder="example@email.com"
-                                maxlength="120"
-                            >
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-recovery-email-error"
-                            ></div>
-
-                        </div>
-
-                        <button
-                            type="button"
-                            class="wfesc-primary-button"
-                            id="wfesc-recovery-submit"
-                        >
-                            إرسال رابط الاستعادة
-                        </button>
-
-                        <div
-                            style="
-                                text-align:center;
-                                margin-top:8px;
-                            "
-                        >
-
-                            <button
-                                type="button"
-                                class="wfesc-link-button"
-                                id="wfesc-recovery-back"
-                            >
-                                العودة لتسجيل الدخول
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                    <!-- ================================= -->
-                    <!-- RECOVERY PASSWORD -->
-                    <!-- ================================= -->
-
-                    <div
-                        class="wfesc-recovery-card"
-                        id="wfesc-recovery-password-card"
-                    >
-
-                        <div
-                            class="wfesc-section-title"
-                        >
-                            تعيين كلمة مرور جديدة
-                        </div>
-
-                        <p
-                            class="wfesc-recovery-description"
-                        >
-                            أدخل كلمة المرور الجديدة ثم أكدها مرة أخرى.
-                        </p>
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-recovery-password"
-                            >
-                                كلمة المرور الجديدة
-                            </label>
-
-                            <div
-                                class="wfesc-input-wrap"
-                            >
-
-                                <input
-                                    id="wfesc-recovery-password"
-                                    class="wfesc-input wfesc-password-input"
-                                    type="password"
-                                    autocomplete="new-password"
-                                    placeholder="6 إلى 16 خانة"
-                                    maxlength="16"
-                                >
-
-                                <button
-                                    type="button"
-                                    class="wfesc-password-toggle"
-                                    id="wfesc-recovery-password-toggle"
-                                    aria-label="إظهار كلمة المرور"
-                                    title="إظهار كلمة المرور"
-                                >
-                                    🙈
-                                </button>
-
-                            </div>
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-recovery-password-error"
-                            ></div>
-
-                        </div>
-
-                        <div
-                            class="wfesc-field"
-                        >
-
-                            <label
-                                for="wfesc-recovery-confirm"
-                            >
-                                تأكيد كلمة المرور
-                            </label>
-
-                            <div
-                                class="wfesc-input-wrap"
-                            >
-
-                                <input
-                                    id="wfesc-recovery-confirm"
-                                    class="wfesc-input wfesc-password-input"
-                                    type="password"
-                                    autocomplete="new-password"
-                                    placeholder="أعد كتابة كلمة المرور"
-                                    maxlength="16"
-                                >
-
-                                <button
-                                    type="button"
-                                    class="wfesc-password-toggle"
-                                    id="wfesc-recovery-confirm-toggle"
-                                    aria-label="إظهار كلمة المرور"
-                                    title="إظهار كلمة المرور"
-                                >
-                                    🙈
-                                </button>
-
-                            </div>
-
-                            <div
-                                class="wfesc-field-error"
-                                id="wfesc-recovery-confirm-error"
-                            ></div>
-
-                        </div>
-
-                        <button
-                            type="button"
-                            class="wfesc-primary-button"
-                            id="wfesc-recovery-password-submit"
-                        >
-                            حفظ كلمة المرور
-                        </button>
-
-                    </div>
-
-                </div>
-
-                <!-- ===================================== -->
-                <!-- ACCOUNT -->
-                <!-- ===================================== -->
-
-                <div
-                    class="wfesc-account-card"
-                    id="wfesc-account-card"
-                >
-
-                    <div
-                        class="wfesc-account-header"
-                    >
-
-                        <div
-                            class="wfesc-account-avatar"
-                            id="wfesc-account-avatar"
-                        >
-                            W
-                        </div>
-
-                        <div
-                            class="wfesc-account-info"
-                        >
-
-                            <div
-                                class="wfesc-account-name-row"
-                            >
-
-                                <span
-                                    class="wfesc-account-name"
-                                    id="wfesc-account-name"
-                                >
-                                    WFESC
-                                </span>
-
-                                <span
-                                    id="wfesc-account-verified"
-                                ></span>
-
-                            </div>
-
-                            <div
-                                class="wfesc-account-username"
-                                id="wfesc-account-username"
-                            >
-                                @WFESC
-                            </div>
-
-                            <div
-                                class="wfesc-account-email"
-                                id="wfesc-account-email"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                    <div
-                        class="wfesc-account-actions"
-                    >
-
-                        <button
-                            type="button"
-                            class="wfesc-account-action"
-                            id="wfesc-profile-button"
-                        >
-
-                            <span
-                                class="wfesc-account-action-main"
-                            >
-
-                                <span
-                                    class="wfesc-account-action-title"
-                                >
-                                    إدارة الحساب
-                                </span>
-
-                                <span
-                                    class="wfesc-account-action-description"
-                                >
-                                    تعديل الاسم واسم المستخدم والصورة والنبذة
-                                </span>
-
-                            </span>
-
-                            <span
-                                class="wfesc-account-action-icon"
-                            >
-                                👤
-                            </span>
-
-                        </button>
-
-                        <button
-                            type="button"
-                            class="wfesc-account-action"
-                            id="wfesc-change-password-button"
-                        >
-
-                            <span
-                                class="wfesc-account-action-main"
-                            >
-
-                                <span
-                                    class="wfesc-account-action-title"
-                                >
-                                    تغيير كلمة المرور
-                                </span>
-
-                                <span
-                                    class="wfesc-account-action-description"
-                                >
-                                    تحديث كلمة مرور حسابك
-                                </span>
-
-                            </span>
-
-                            <span
-                                class="wfesc-account-action-icon"
-                            >
-                                🔐
-                            </span>
-
-                        </button>
-
-                        <button
-                            type="button"
-                            class="wfesc-account-action"
-                            id="wfesc-logout-button"
-                        >
-
-                            <span
-                                class="wfesc-account-action-main"
-                            >
-
-                                <span
-                                    class="wfesc-account-action-title"
-                                >
-                                    تسجيل الخروج
-                                </span>
-
-                                <span
-                                    class="wfesc-account-action-description"
-                                >
-                                    الخروج من الحساب على هذا الجهاز
-                                </span>
-
-                            </span>
-
-                            <span
-                                class="wfesc-account-action-icon"
-                            >
-                                ↪
-                            </span>
-
-                        </button>
-
-                        <button
-                            type="button"
-                            class="wfesc-account-action"
-                            id="wfesc-delete-button"
-                        >
-
-                            <span
-                                class="wfesc-account-action-main"
-                            >
-
-                                <span
-                                    class="wfesc-account-action-title"
-                                >
-                                    حذف الحساب
-                                </span>
-
-                                <span
-                                    class="wfesc-account-action-description"
-                                >
-                                    حذف الحساب نهائيًا
-                                </span>
-
-                            </span>
-
-                            <span
-                                class="wfesc-account-action-icon"
-                            >
-                                🗑
-                            </span>
-
-                        </button>
-
-                    </div>
-
-                    <div
-                        class="wfesc-section"
-                    >
-
-                        <div
-                            class="wfesc-section-title"
-                        >
-                       
+        e.status.textContent =
+            message || "";
+
+        e.status.className =
+            "wfesc-status " +
+            (type || "");
+
+        e.status.style.display =
+            message
+                ? "block"
+                : "none";
+
+    }
+
+    function hideStatus() {
+
+        const e =
+            getElements();
+
+        if (!e.status) {
+            return;
+        }
+
+        e.status.textContent =
+            "";
+
+        e.status.style.display =
+            "none";
+
+        e.status.className =
+            "wfesc-status";
+
+    }
+
+    /* =========================================
+       LOADING
+    ========================================= */
+
+    function setLoading(
+        value
+    ) {
+
+        busy =
+            Boolean(value);
+
+        const e =
+            getElements();
+
+        if (e.loading) {
+
+            e.loading.style.display =
+                busy
+                    ? "flex"
+                    : "none";
+
+        }
+
+        [
+            e.loginSubmit,
+            e.registerSubmit,
+            e.recoverySubmit,
+            e.recoveryPasswordSubmit
+        ].forEach(
+            function (button) {
+
+                if (button) {
+
+                    button.disabled =
+                        busy;
+
+                }
+
+            }
+        );
+
+    }
+
+    /* =========================================
+       MODES
+    ========================================= */
+
+    function setMode(
+        mode
+    ) {
+
+        const e =
+            getElements();
+
+        const login =
+            mode === "login";
+
+        if (e.loginTab) {
+
+            e.loginTab.classList.toggle(
+                "active",
+                login
+            );
+
+        }
+
+        if (e.registerTab) {
+
+            e.registerTab.classList.toggle(
+                "active",
+                !login
+            );
+
+        }
+
+        if (e.loginForm) {
+
+            e.loginForm.style.display =
+                login
+                    ? "block"
+                    : "none";
+
+        }
+
+        if (e.registerForm) {
+
+            e.registerForm.style.display =
+                login
+                    ? "none"
+                    : "block";
+
+        }
+
+        if (e.recoveryCard) {
+
+            e.recoveryCard.style.display =
+                "none";
+
+        }
+
+        if (
+            e.recoveryPasswordCard
+        ) {
+
+            e.recoveryPasswordCard.style.display =
+                "none";
+
+        }
+
+        hideStatus();
+        clearAllErrors();
+
+    }
+
+    function showRecoveryEmail() {
+
+        const e =
+            getElements();
+
+        if (e.loginForm) {
+            e.loginForm.style.display =
+                "none";
+        }
+
+        if (e.registerForm) {
+            e.registerForm.style.display =
+                "none";
+        }
+
+        if (e.recoveryCard) {
+            e.recoveryCard.style.display =
+                "block";
+        }
+
+        if (
+            e.recoveryPasswordCard
+        ) {
+            e.recoveryPasswordCard.style.display =
+                "none";
+        }
+
+        hideStatus();
+        clearAllErrors();
+
+        if (e.recoveryEmail) {
+            e.recoveryEmail.focus();
+        }
+
+    }
+
+    function showRecoveryPassword() {
+
+        const e =
+            getElements();
+
+        if (e.loginForm) {
+            e.loginForm.style.display =
+                "none";
+        }
+
+        if (e.registerForm) {
+            e.registerForm.style.display =
+                "none";
+        }
+
+        if (e.recoveryCard) {
+            e.recoveryCard.style.display =
+                "none";
+        }
+
+        if (
+            e.recoveryPasswordCard
+        ) {
+
+            e.recoveryPasswordCard.style.display =
+                "block";
+
+        }
+
+        hideStatus();
+        clearAllErrors();
+
+        if (
+            e.recoveryPassword
+        ) {
+
+            e.recoveryPassword.focus();
+
+        }
+
+    }
+
+    /* =========================================
+       VERIFICATION MESSAGE
+    ========================================= */
+
+    function showVerificationMessage(
+        email
+    ) {
+
+        const e =
+            getElements();
+
+        if (!e.verification) {
+            return;
+        }
+
+        e.verification.innerHTML =
+            "<strong>تحقق من بريدك الإلكتروني</strong>" +
+            "<br>" +
+            "تم إرسال رابط التحقق إلى " +
+            "<b>" +
+            escapeHTML(
+                email ||
+                "بريدك الإلكتروني"
+            ) +
+            "</b>." +
+            "<br>" +
+            "إذا لم تجده، افحص الرسائل غير المرغوب فيها أو Spam.";
+
+        e.verification.style.display =
+            "block";
+
+        e.verification.classList.remove(
+            "wfesc-verification-blink"
+        );
+
+        void e.verification.offsetWidth;
+
+        e.verification.classList.add(
+            "wfesc-verification-blink"
+        );
+
+        if (verificationTimer) {
+
+            clearTimeout(
+                verificationTimer
+            );
+
+        }
+
+        verificationTimer =
+            setTimeout(
+                function () {
+
+                    e.verification.style.display =
+                        "none";
+
+                },
+                5000
+            );
+
+    }
+
+    function hideVerificationMessage() {
+
+        const e =
+            getElements();
+
+        if (e.verification) {
+
+            e.verification.style.display =
+                "none";
+
+        }
+
+        if (verificationTimer) {
+
+            clearTimeout(
+                verificationTimer
+            );
+
+            verificationTimer =
+                null;
+
+        }
+
+    }
+    /* =========================================
+       ERROR MESSAGE
+    ========================================= */
+
+    function getAuthErrorMessage(
+        error,
+        fallback
+    ) {
+
+        const raw =
+            String(
+                error &&
+                error.message
+                    ? error.message
+                    : error || ""
+            ).toLowerCase();
+
+        if (
+            raw.includes(
+                "invalid login credentials"
+            ) ||
+            raw.includes(
+                "invalid credentials"
+            ) ||
+            raw.includes(
+                "invalid password"
+            )
+        ) {
+
+            return (
+                CONFIG.messages &&
+                CONFIG.messages.wrongPassword
+            ) ||
+            "كلمة المرور غير صحيحة.";
+
+        }
+
+        if (
+            raw.includes(
+                "email not confirmed"
+            ) ||
+            raw.includes(
+                "email_not_confirmed"
+            )
+        ) {
+
+            return (
+                "يجب تأكيد بريدك الإلكتروني أولًا."
+            );
+
+        }
+
+        if (
+            raw.includes(
+                "already registered"
+            ) ||
+            raw.includes(
+                "user already registered"
+            ) ||
+            raw.includes(
+                "already exists"
+            )
+        ) {
+
+            return (
+                CONFIG.messages &&
+                CONFIG.messages.alreadyRegistered
+            ) ||
+            "أنت مسجل بالفعل، تابع من صفحة لدي حساب.";
+
+        }
+
+        if (
+            raw.includes(
+                "weak password"
+            ) ||
+            raw.includes(
+                "password should be"
+            )
+        ) {
+
+            return (
+                "كلمة المرور يجب أن تكون من 6 إلى 16 خانة."
+            );
+
+        }
+
+        return (
+            fallback ||
+            "حدث خطأ. حاول مرة أخرى."
+        );
+
+    }
+
+    /* =========================================
+       ACCOUNT DATA
+    ========================================= */
+
+    function getName(
+        user,
+        profile
+    ) {
+
+        const metadata =
+            user &&
+            user.user_metadata
+                ? user.user_metadata
+                : {};
+
+        return (
+            profile &&
+            (
+                profile.full_name ||
+                profile.name
+            )
+        ) ||
+        metadata.full_name ||
+        metadata.name ||
+        metadata.fullName ||
+        "WFESC";
+
+    }
+
+    function getUsername(
+        user,
+        profile
+    ) {
+
+        const metadata =
+            user &&
+            user.user_metadata
+                ? user.user_metadata
+                : {};
+
+        return sanitizeUsername(
+            (
+                profile &&
+                profile.username
+            ) ||
+            metadata.username ||
+            (
+                user &&
+                user.email
+                    ? user.email.split("@")[0]
+                    : "WFESC"
+            )
+        );
+
+    }
+
+    function getAvatar(
+        user,
+        profile
+    ) {
+
+        const metadata =
+            user &&
+            user.user_metadata
+                ? user.user_metadata
+                : {};
+
+        return (
+            profile &&
+            (
+                profile.avatar_url ||
+                profile.avatar
+            )
+        ) ||
+        metadata.avatar_url ||
+        metadata.avatar ||
+        "";
+
+    }
+
+    /* =========================================
+       RENDER ACCOUNT
+    ========================================= */
+
+    function renderAccount(
+        user,
+        profile
+    ) {
+
+        const e =
+            getElements();
+
+        if (!user) {
+
+            if (e.accountCard) {
+
+                e.accountCard.style.display =
+                    "none";
+
+            }
+
+            if (e.loginTab) {
+                e.loginTab.style.display =
+                    "";
+            }
+
+            if (e.registerTab) {
+                e.registerTab.style.display =
+                    "";
+            }
+
+            return;
+
+        }
+
+        if (e.accountCard) {
+
+            e.accountCard.style.display =
+                "block";
+
+        }
+
+        if (e.loginTab) {
+
+            e.loginTab.style.display =
+                "none";
+
+        }
+
+        if (e.registerTab) {
+
+            e.registerTab.style.display =
+                "none";
+
+        }
+
+        if (e.loginForm) {
+
+            e.loginForm.style.display =
+                "none";
+
+        }
+
+        if (e.registerForm) {
+
+            e.registerForm.style.display =
+                "none";
+
+        }
+
+        const name =
+            getName(
+                user,
+                profile
+            );
+
+        const username =
+            getUsername(
+                user,
+                profile
+            );
+
+        const avatar =
+            getAvatar(
+                user,
+                profile
+            );
+
+        const verified =
+            Boolean(
+                profile &&
+                profile.verified === true
+            );
+
+        if (e.accountName) {
+
+            e.accountName.textContent =
+                name;
+
+        }
+
+        if (e.accountUsername) {
+
+            e.accountUsername.textContent =
+                displayUsername(
+                    username
+                );
+
+        }
+
+        if (e.accountEmail) {
+
+            e.accountEmail.textContent =
+                user.email || "";
+
+        }
+
+        if (e.accountVerified) {
+
+            e.accountVerified.style.display =
+                verified
+                    ? "inline-flex"
+                    : "none";
+
+        }
+
+        if (e.accountAvatar) {
+
+            if (avatar) {
+
+                e.accountAvatar.innerHTML =
+                    '<img src="' +
+                    escapeHTML(
+                        avatar
+                    ) +
+                    '" alt="صورة الحساب">';
+
+            } else {
+
+                e.accountAvatar.textContent =
+                    String(
+                        name || "W"
+                    )
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase() ||
+                    "W";
+
+            }
+
+        }
+
+    }
+
+    /* =========================================
+       PASSWORD TOGGLE
+    ========================================= */
+    
