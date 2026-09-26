@@ -712,62 +712,161 @@
 
                     const isPassword =
                         input.type === "password";
+/* =================================================
+   PASSWORD VISIBILITY
+   ================================================= */
 
+function createPasswordEye(
+    input
+) {
 
-                    input.type =
-                        isPassword
-                            ? "text"
-                            : "password";
+    if (!input) {
+        return;
+    }
 
+    const parent =
+        input.parentElement;
 
-                    button.textContent =
-                        isPassword
-                            ? "🙈"
-                            : "👁";
+    if (!parent) {
+        return;
+    }
 
+    if (
+        parent.querySelector(
+            ".wfesc-password-eye"
+        )
+    ) {
+        return;
+    }
 
-                    button.setAttribute(
-                        "aria-label",
-                        isPassword
-                            ? "إخفاء كلمة المرور"
-                            : "إظهار كلمة المرور"
-                    );
+    parent.style.position =
+        parent.style.position ||
+        "relative";
 
+    /* مساحة للزر من جهة اليسار */
+    input.style.paddingLeft =
+        "48px";
 
-                    button.setAttribute(
-                        "title",
-                        isPassword
-                            ? "إخفاء كلمة المرور"
-                            : "إظهار كلمة المرور"
-                    );
+    const button =
+        document.createElement(
+            "button"
+        );
 
+    button.type =
+        "button";
 
-                    input.focus();
+    button.className =
+        "wfesc-password-eye";
 
-                }
+    button.setAttribute(
+        "aria-label",
+        "إظهار كلمة المرور"
+    );
+
+    button.setAttribute(
+        "title",
+        "إظهار كلمة المرور"
+    );
+
+    /*
+     * الشكل الافتراضي
+     */
+    button.textContent =
+        "🙉";
+
+    /*
+     * مكان العين:
+     * جهة اليسار + منتصف الحقل
+     */
+    button.style.cssText =
+        "position:absolute;" +
+        "left:8px;" +
+        "top:50%;" +
+        "transform:translateY(-50%);" +
+        "width:36px;" +
+        "height:36px;" +
+        "display:flex;" +
+        "align-items:center;" +
+        "justify-content:center;" +
+        "border:0;" +
+        "background:transparent;" +
+        "color:inherit;" +
+        "cursor:pointer;" +
+        "font-size:19px;" +
+        "padding:0;" +
+        "margin:0;" +
+        "line-height:1;" +
+        "z-index:5;";
+
+    button.addEventListener(
+        "click",
+        function () {
+
+            const isPassword =
+                input.type ===
+                "password";
+
+            input.type =
+                isPassword
+                    ? "text"
+                    : "password";
+
+            /*
+             * تبقى 🙉 في الحالتين
+             */
+            button.textContent =
+                "🙉";
+
+            button.setAttribute(
+                "aria-label",
+                isPassword
+                    ? "إخفاء كلمة المرور"
+                    : "إظهار كلمة المرور"
             );
 
-
-            parent.appendChild(
-                button
+            button.setAttribute(
+                "title",
+                isPassword
+                    ? "إخفاء كلمة المرور"
+                    : "إظهار كلمة المرور"
             );
+
+            input.focus();
 
         }
+    );
+
+    parent.appendChild(
+        button
+    );
+
+}
 
 
-        function setupPasswordEyes() {
+function setupPasswordEyes() {
 
-            createPasswordEye(
-                accountPassword
-            );
+    createPasswordEye(
+        accountPassword
+    );
 
-            createPasswordEye(
-                accountPasswordConfirm
-            );
+    createPasswordEye(
+        accountPasswordConfirm
+    );
 
-        }
+    /*
+     * إذا كان حقل تسجيل الدخول
+     * موجودًا أيضًا في الصفحة
+     */
+    const loginPassword =
+        document.getElementById(
+            "loginPassword"
+        );
 
+    createPasswordEye(
+        loginPassword
+    );
 
+}
         /* =================================================
            LOGIN MODE
            ================================================= */
