@@ -711,7 +711,6 @@
 
     <!-- =========================
          الحساب
-         واجهة فقط حاليًا
     ========================== -->
 
     <section class="settings-section">
@@ -922,7 +921,10 @@
         </form>
 
 
-        <div class="modal-note" id="modalNote">
+        <div
+            class="modal-note"
+            id="modalNote"
+        >
             سيتم تفعيل الحسابات وربطها بقاعدة البيانات لاحقًا.
         </div>
 
@@ -931,29 +933,19 @@
 </div>
 
 
+<!-- =====================================================
+     WFESC GLOBAL SETTINGS
+     لا يوجد هنا اتصال بقاعدة البيانات
+     ===================================================== -->
+
 <script>
 
 "use strict";
 
-
-/* =====================================================
-   WFESC GLOBAL SETTINGS
-
-   لا يوجد هنا أي اتصال بقاعدة البيانات.
-
-   هذه الإعدادات تحفظ محليًا:
-   wfesc_theme
-   wfesc_animation_enabled
-
-   ويمكن لـ posts.html قراءتها.
-===================================================== */
-
-    
 (function () {
 
     const ANIMATION_KEY =
         "wfesc_animation_enabled";
-
 
     const THEME_KEY =
         "wfesc_theme";
@@ -966,16 +958,11 @@
                 ANIMATION_KEY
             );
 
-
         if (value === null) {
-
             return true;
-
         }
 
-
         return value === "true";
-
     }
 
 
@@ -986,19 +973,14 @@
                 THEME_KEY
             );
 
-
         if (
             value !== "light" &&
             value !== "dark"
         ) {
-
             return "dark";
-
         }
 
-
         return value;
-
     }
 
 
@@ -1035,7 +1017,6 @@
 
             enabled = !!enabled;
 
-
             localStorage.setItem(
                 ANIMATION_KEY,
                 enabled
@@ -1043,11 +1024,9 @@
                     : "false"
             );
 
-
             applyAnimation(
                 enabled
             );
-
 
             window.dispatchEvent(
                 new CustomEvent(
@@ -1082,17 +1061,14 @@
 
             }
 
-
             localStorage.setItem(
                 THEME_KEY,
                 theme
             );
 
-
             applyTheme(
                 theme
             );
-
 
             window.dispatchEvent(
                 new CustomEvent(
@@ -1115,7 +1091,6 @@
                 readTheme()
             );
 
-
             applyAnimation(
                 readAnimation()
             );
@@ -1130,9 +1105,8 @@
 })();
 
 
-
 /* =====================================================
-   ELEMENTS
+   SETTINGS UI
 ===================================================== */
 
 const animationToggle =
@@ -1159,102 +1133,18 @@ const settingsStatus =
     );
 
 
-const accountModal =
-    document.getElementById(
-        "accountModal"
-    );
-
-
-const modalTitle =
-    document.getElementById(
-        "modalTitle"
-    );
-
-
-const closeModal =
-    document.getElementById(
-        "closeModal"
-    );
-
-
-const accountForm =
-    document.getElementById(
-        "accountForm"
-    );
-
-
-const accountUsername =
-    document.getElementById(
-        "accountUsername"
-    );
-
-
-const accountEmail =
-    document.getElementById(
-        "accountEmail"
-    );
-
-
-const accountPassword =
-    document.getElementById(
-        "accountPassword"
-    );
-
-
-const accountPasswordConfirm =
-    document.getElementById(
-        "accountPasswordConfirm"
-    );
-
-
-const passwordGroup =
-    document.getElementById(
-        "passwordGroup"
-    );
-
-
-const confirmPasswordGroup =
-    document.getElementById(
-        "confirmPasswordGroup"
-    );
-
-
-const modalAction =
-    document.getElementById(
-        "modalAction"
-    );
-
-
-const modalNote =
-    document.getElementById(
-        "modalNote"
-    );
-
-
-let accountMode =
-    "register";
-
-
-
-/* =====================================================
-   STATUS
-===================================================== */
-
 function showStatus(message) {
 
     settingsStatus.textContent =
         message;
 
-
     settingsStatus.classList.add(
         "show"
     );
 
-
     clearTimeout(
         window.__wfescSettingsStatusTimer
     );
-
 
     window.__wfescSettingsStatusTimer =
         setTimeout(
@@ -1270,11 +1160,6 @@ function showStatus(message) {
 
 }
 
-
-
-/* =====================================================
-   SETTINGS UI
-===================================================== */
 
 function updateSettingsUI() {
 
@@ -1306,7 +1191,6 @@ function updateSettingsUI() {
 }
 
 
-
 /* =====================================================
    ANIMATION
 ===================================================== */
@@ -1329,7 +1213,6 @@ animationToggle.addEventListener(
 
     }
 );
-
 
 
 /* =====================================================
@@ -1378,7 +1261,6 @@ lightThemeButton.addEventListener(
 );
 
 
-
 /* =====================================================
    OTHER TABS / PAGES
 ===================================================== */
@@ -1415,395 +1297,6 @@ window.addEventListener(
 );
 
 
-
-/* =====================================================
-   ACCOUNT MODAL
-===================================================== */
-
-function openAccountModal(mode) {
-
-    accountMode =
-        mode;
-
-
-    accountForm.reset();
-
-
-    if (mode === "register") {
-
-        modalTitle.textContent =
-            "إنشاء حساب";
-
-
-        accountUsername.parentElement.style.display =
-            "";
-
-
-        passwordGroup.style.display =
-            "";
-
-
-        confirmPasswordGroup.style.display =
-            "";
-
-
-        modalAction.textContent =
-            "إنشاء الحساب";
-
-
-        modalNote.textContent =
-            "واجهة إنشاء الحساب جاهزة. التفعيل وربط قاعدة البيانات سيكون لاحقًا.";
-
-    }
-
-
-    else if (mode === "login") {
-
-        modalTitle.textContent =
-            "تسجيل الدخول";
-
-
-        accountUsername.parentElement.style.display =
-            "none";
-
-
-        passwordGroup.style.display =
-            "";
-
-
-        confirmPasswordGroup.style.display =
-            "none";
-
-
-        modalAction.textContent =
-            "تسجيل الدخول";
-
-
-        modalNote.textContent =
-            "واجهة تسجيل الدخول جاهزة. التفعيل الفعلي سيكون لاحقًا.";
-
-    }
-
-
-    else if (mode === "forgot") {
-
-        modalTitle.textContent =
-            "استعادة الحساب";
-
-
-        accountUsername.parentElement.style.display =
-            "none";
-
-
-        passwordGroup.style.display =
-            "none";
-
-
-        confirmPasswordGroup.style.display =
-            "none";
-
-
-        modalAction.textContent =
-            "إرسال طلب الاستعادة";
-
-
-        modalNote.textContent =
-            "لاحقًا سيتم إرسال رابط أو رمز الاستعادة إلى البريد الإلكتروني.";
-
-    }
-
-
-    accountModal.classList.add(
-        "show"
-    );
-
-
-    setTimeout(
-        function () {
-
-            accountEmail.focus();
-
-        },
-        100
-    );
-
-}
-
-
-
-function closeAccountModal() {
-
-    accountModal.classList.remove(
-        "show"
-    );
-
-}
-
-
-
-/* =====================================================
-   ACCOUNT BUTTONS
-===================================================== */
-
-document
-    .getElementById(
-        "createAccountButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
-
-            openAccountModal(
-                "register"
-            );
-
-        }
-    );
-
-
-document
-    .getElementById(
-        "loginButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
-
-            openAccountModal(
-                "login"
-            );
-
-        }
-    );
-
-
-document
-    .getElementById(
-        "forgotPasswordButton"
-    )
-    .addEventListener(
-        "click",
-        function () {
-
-            openAccountModal(
-                "forgot"
-            );
-
-        }
-    );
-
-
-
-/* =====================================================
-   CLOSE MODAL
-===================================================== */
-
-closeModal.addEventListener(
-    "click",
-    closeAccountModal
-);
-
-
-accountModal.addEventListener(
-    "click",
-    function (event) {
-
-        if (
-            event.target ===
-            accountModal
-        ) {
-
-            closeAccountModal();
-
-        }
-
-    }
-);
-
-
-document.addEventListener(
-    "keydown",
-    function (event) {
-
-        if (
-            event.key ===
-            "Escape"
-        ) {
-
-            closeAccountModal();
-
-        }
-
-    }
-);
-
-
-
-/* =====================================================
-   ACCOUNT FORM
-===================================================== */
-
-accountForm.addEventListener(
-    "submit",
-    function (event) {
-
-        event.preventDefault();
-
-
-        const email =
-            accountEmail.value.trim();
-
-
-        if (!email) {
-
-            showStatus(
-                "أدخل البريد الإلكتروني"
-            );
-
-            return;
-
-        }
-
-
-        /* REGISTER */
-
-        if (
-            accountMode ===
-            "register"
-        ) {
-
-            const username =
-                accountUsername.value.trim();
-
-
-            const password =
-                accountPassword.value;
-
-
-            const confirmPassword =
-                accountPasswordConfirm.value;
-
-
-            if (!username) {
-
-                showStatus(
-                    "أدخل اسم المستخدم"
-                );
-
-                return;
-
-            }
-
-
-            if (!password) {
-
-                showStatus(
-                    "أدخل كلمة المرور"
-                );
-
-                return;
-
-            }
-
-
-            if (
-                password.length < 6
-            ) {
-
-                showStatus(
-                    "كلمة المرور يجب أن تكون 6 أحرف أو أكثر"
-                );
-
-                return;
-
-            }
-
-
-            if (
-                password !==
-                confirmPassword
-            ) {
-
-                showStatus(
-                    "كلمتا المرور غير متطابقتين"
-                );
-
-                return;
-
-            }
-
-
-            showStatus(
-                "واجهة إنشاء الحساب جاهزة للتفعيل"
-            );
-
-
-            closeAccountModal();
-
-            return;
-
-        }
-
-
-
-        /* LOGIN */
-
-        if (
-            accountMode ===
-            "login"
-        ) {
-
-            const password =
-                accountPassword.value;
-
-
-            if (!password) {
-
-                showStatus(
-                    "أدخل كلمة المرور"
-                );
-
-                return;
-
-            }
-
-
-            showStatus(
-                "واجهة تسجيل الدخول جاهزة للتفعيل"
-            );
-
-
-            closeAccountModal();
-
-            return;
-
-        }
-
-
-
-        /* FORGOT PASSWORD */
-
-        if (
-            accountMode ===
-            "forgot"
-        ) {
-
-            showStatus(
-                "واجهة استعادة الحساب جاهزة للتفعيل"
-            );
-
-
-            closeAccountModal();
-
-            return;
-
-        }
-
-    }
-);
-
-
-
 /* =====================================================
    INITIALIZE
 ===================================================== */
@@ -1814,21 +1307,30 @@ updateSettingsUI();
 
 
 <!-- =====================================================
-     WFESC SUPABASE + ACCOUNT SYSTEM
+     SUPABASE
      ===================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="./settings-features/settings-auth-config.js"></script>
 
-<script src="./settings-features/settings-auth.js"></script>
+<!-- =====================================================
+     WFESC ACCOUNT SYSTEM
+     ===================================================== -->
 
-<script src="./settings-features/settings-auth-ui.js?v=2"></script>
-<!--
-    التنقل الحالي فقط.
-    لا يوجد Loader إضافي خاص بصفحة الإعدادات.
--->
+<script src="./settings-features/settings-auth-config.js?v=3"></script>
+
+<script src="./settings-features/settings-auth.js?v=3"></script>
+
+<script src="./settings-features/settings-auth-ui.js?v=3"></script>
+
+
+<!-- =====================================================
+     WFESC NAVIGATION
+     ===================================================== -->
+
 <script src="./navigation/navigation-loader.js"></script>
+
 
 </body>
 </html>
+    
