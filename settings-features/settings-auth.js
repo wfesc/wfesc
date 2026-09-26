@@ -1,6 +1,7 @@
 /* =========================================================
    WFESC SETTINGS AUTH
    settings-auth.js
+   الإصدار المحسن
    ========================================================= */
 
 (function () {
@@ -70,11 +71,15 @@
 
 
     /* =====================================================
-       رابط صفحة الإعدادات
+       روابط النظام
     ===================================================== */
 
     const SETTINGS_URL =
         "https://wfesc.github.io/wfesc/settings.html";
+
+
+    const PROFILE_URL =
+        "profile.html";
 
 
     /* =====================================================
@@ -86,26 +91,42 @@
 
 
     /* =====================================================
+       حدود اسم العرض
+    ===================================================== */
+
+    const DISPLAY_NAME_MIN = 1;
+    const DISPLAY_NAME_MAX = 15;
+
+
+    /* =====================================================
        أدوات عامة
     ===================================================== */
 
     function getClient() {
+
         return supabaseClient;
+
     }
 
 
     function getUser() {
+
         return currentUser;
+
     }
 
 
     function getSession() {
+
         return currentSession;
+
     }
 
 
     function getProfile() {
+
         return currentProfile;
+
     }
 
 
@@ -118,38 +139,103 @@
     }
 
 
+    /* =====================================================
+       أحداث النظام
+    ===================================================== */
+
     function dispatchAuthChanged(eventName) {
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCAuthChanged",
-                {
-                    detail: {
-                        user: currentUser,
-                        session: currentSession,
-                        event: eventName
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "WFESCAuthChanged",
+                    {
+                        detail: {
+                            user:
+                                currentUser,
+
+                            session:
+                                currentSession,
+
+                            profile:
+                                currentProfile,
+
+                            event:
+                                eventName
+                        }
                     }
-                }
-            )
-        );
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC Auth: تعذر إرسال حدث المصادقة.",
+                error
+            );
+
+        }
 
     }
 
 
     function dispatchEmailVerified() {
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCEmailVerified",
-                {
-                    detail: {
-                        user: currentUser,
-                        session: currentSession,
-                        profile: currentProfile
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "WFESCEmailVerified",
+                    {
+                        detail: {
+                            user:
+                                currentUser,
+
+                            session:
+                                currentSession,
+
+                            profile:
+                                currentProfile
+                        }
                     }
-                }
-            )
-        );
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC Auth: تعذر إرسال حدث التحقق.",
+                error
+            );
+
+        }
+
+    }
+
+
+    function dispatchProfileUpdated() {
+
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "WFESCProfileUpdated",
+                    {
+                        detail:
+                            currentProfile
+                    }
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC Auth: تعذر إرسال حدث تحديث الملف.",
+                error
+            );
+
+        }
 
     }
 
@@ -182,6 +268,7 @@
 
             return {
                 valid: false,
+
                 error:
                     new Error(
                         "يرجى إدخال كلمة المرور."
@@ -191,10 +278,14 @@
         }
 
 
-        if (password.length < PASSWORD_MIN) {
+        if (
+            password.length <
+            PASSWORD_MIN
+        ) {
 
             return {
                 valid: false,
+
                 error:
                     new Error(
                         "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
@@ -204,10 +295,14 @@
         }
 
 
-        if (password.length > PASSWORD_MAX) {
+        if (
+            password.length >
+            PASSWORD_MAX
+        ) {
 
             return {
                 valid: false,
+
                 error:
                     new Error(
                         "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
@@ -226,7 +321,80 @@
 
 
     /* =====================================================
-       اسم المستخدم
+       اسم العرض
+       
+       يسمح بالعربي والإنجليزي والأرقام والرموز.
+       الحد الأقصى 15 حرفًا.
+    ===================================================== */
+
+    function validateDisplayName(name) {
+
+        name =
+            String(name || "").trim();
+
+
+        if (!name) {
+
+            return {
+                valid: false,
+
+                error:
+                    new Error(
+                        "يرجى إدخال الاسم."
+                    )
+            };
+
+        }
+
+
+        const length =
+            [...name].length;
+
+
+        if (
+            length <
+            DISPLAY_NAME_MIN
+        ) {
+
+            return {
+                valid: false,
+
+                error:
+                    new Error(
+                        "يرجى إدخال اسم صحيح."
+                    )
+            };
+
+        }
+
+
+        if (
+            length >
+            DISPLAY_NAME_MAX
+        ) {
+
+            return {
+                valid: false,
+
+                error:
+                    new Error(
+                        "الاسم يجب ألا يتجاوز 15 حرفًا."
+                    )
+            };
+
+        }
+
+
+        return {
+            valid: true,
+            error: null
+        };
+
+    }
+
+
+    /* =====================================================
+       حدود اسم المستخدم
     ===================================================== */
 
     function getUsernameLimits() {
@@ -252,6 +420,46 @@
     }
 
 
+    /* =====================================================
+       تنظيف اسم المستخدم
+       
+       المسموح:
+       a-z
+       0-9
+
+       يتم تحويل الأحرف الكبيرة إلى صغيرة.
+    ===================================================== */
+
+    function sanitizeUsername(username) {
+
+        username =
+            String(username || "")
+                .toLowerCase();
+
+
+        username =
+            username.replace(
+                /[^a-z0-9]/g,
+                ""
+            );
+
+
+        const limits =
+            getUsernameLimits();
+
+
+        return username.slice(
+            0,
+            limits.max
+        );
+
+    }
+
+
+    /* =====================================================
+       التحقق من اسم المستخدم
+    ===================================================== */
+
     function validateUsername(username) {
 
         username =
@@ -270,6 +478,7 @@
 
             return {
                 valid: false,
+
                 error:
                     new Error(
                         "يرجى إدخال اسم المستخدم."
@@ -279,39 +488,52 @@
         }
 
 
-        if (length < limits.min) {
+        if (
+            length <
+            limits.min
+        ) {
 
             return {
                 valid: false,
+
                 error:
                     new Error(
-                        "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
+                        "اسم المستخدم يجب أن يتكون من 3 أحرف أو أرقام على الأقل."
                     )
             };
 
         }
 
 
-        if (length > limits.max) {
+        if (
+            length >
+            limits.max
+        ) {
 
             return {
                 valid: false,
+
                 error:
                     new Error(
-                        "اسم المستخدم يجب ألا يتجاوز 9 أحرف."
+                        "اسم المستخدم يجب ألا يتجاوز 9 أحرف أو أرقام."
                     )
             };
 
         }
 
 
-        if (!/^[A-Za-z]+$/.test(username)) {
+        if (
+            !/^[a-z0-9]+$/.test(
+                username
+            )
+        ) {
 
             return {
                 valid: false,
+
                 error:
                     new Error(
-                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط، بدون مسافات أو أرقام أو رموز."
+                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية صغيرة وأرقام فقط."
                     )
             };
 
@@ -326,30 +548,9 @@
     }
 
 
-    function sanitizeUsername(username) {
-
-        username =
-            String(username || "");
-
-
-        username =
-            username.replace(
-                /[^A-Za-z]/g,
-                ""
-            );
-
-
-        const limits =
-            getUsernameLimits();
-
-
-        return username.slice(
-            0,
-            limits.max
-        );
-
-    }
-
+    /* =====================================================
+       إنشاء اسم مستخدم افتراضي
+    ===================================================== */
 
     function getDefaultUsername(user) {
 
@@ -358,9 +559,15 @@
 
 
         if (!user) {
-            return "WFESC";
+
+            return "wfesc";
+
         }
 
+
+        /* ---------------------------------------------
+           من user_metadata
+        --------------------------------------------- */
 
         if (
             user.user_metadata &&
@@ -368,15 +575,14 @@
         ) {
 
             const metadataUsername =
-                String(
+                sanitizeUsername(
                     user.user_metadata.username
-                ).trim();
+                );
 
 
             if (
-                validateUsername(
-                    metadataUsername
-                ).valid
+                metadataUsername.length >=
+                limits.min
             ) {
 
                 return metadataUsername;
@@ -386,11 +592,16 @@
         }
 
 
+        /* ---------------------------------------------
+           من البريد
+        --------------------------------------------- */
+
         if (user.email) {
 
             const emailName =
-                String(user.email)
-                    .split("@")[0];
+                String(
+                    user.email
+                ).split("@")[0];
 
 
             const cleaned =
@@ -411,7 +622,152 @@
         }
 
 
-        return "WFESC";
+        /* ---------------------------------------------
+           fallback
+        --------------------------------------------- */
+
+        return "wfesc";
+
+    }
+
+
+    /* =====================================================
+       اسم العرض الافتراضي من البريد
+    ===================================================== */
+
+    function getDefaultDisplayName(user) {
+
+        if (
+            !user ||
+            !user.email
+        ) {
+
+            return "";
+
+        }
+
+
+        const emailName =
+            String(
+                user.email
+            ).split("@")[0];
+
+
+        return [...emailName]
+            .slice(
+                0,
+                DISPLAY_NAME_MAX
+            )
+            .join("")
+            .trim();
+
+    }
+
+
+    /* =====================================================
+       استخراج رسالة الخطأ الأصلية
+    ===================================================== */
+
+    function getErrorText(error) {
+
+        if (!error) {
+            return "";
+        }
+
+
+        return String(
+            error.message ||
+            error.error_description ||
+            error.msg ||
+            ""
+        ).trim();
+
+    }
+
+
+    /* =====================================================
+       التعرف على البريد الموجود مسبقًا
+    ===================================================== */
+
+    function isExistingEmailError(error) {
+
+        const message =
+            getErrorText(
+                error
+            ).toLowerCase();
+
+
+        return (
+            message.includes(
+                "already registered"
+            ) ||
+
+            message.includes(
+                "user already registered"
+            ) ||
+
+            message.includes(
+                "already exists"
+            ) ||
+
+            message.includes(
+                "email already"
+            ) ||
+
+            (
+                message.includes("email") &&
+                message.includes("exist")
+            ) ||
+
+            message.includes(
+                "duplicate"
+            )
+        );
+
+    }
+
+
+    /* =====================================================
+       التعرف على خطأ كلمة المرور
+    ===================================================== */
+
+    function isWrongPasswordError(error) {
+
+        const message =
+            getErrorText(
+                error
+            ).toLowerCase();
+
+
+        const code =
+            String(
+                error &&
+                error.code
+                    ? error.code
+                    : ""
+            ).toLowerCase();
+
+
+        return (
+            code ===
+                "invalid_credentials" ||
+
+            message.includes(
+                "invalid login credentials"
+            ) ||
+
+            message.includes(
+                "invalid credentials"
+            ) ||
+
+            message.includes(
+                "wrong password"
+            ) ||
+
+            message.includes(
+                "invalid password"
+            )
+        );
 
     }
 
@@ -425,22 +781,39 @@
         if (!userId) {
 
             currentProfile = null;
+
             return null;
 
         }
 
 
-        const result =
-            await supabaseClient
-                .from(
-                    CONFIG.profilesTable
-                )
-                .select("*")
-                .eq(
-                    "id",
-                    userId
-                )
-                .maybeSingle();
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .from(
+                        CONFIG.profilesTable
+                    )
+                    .select("*")
+                    .eq(
+                        "id",
+                        userId
+                    )
+                    .maybeSingle();
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: خطأ في جلب profile:",
+                error
+            );
+
+            return null;
+
+        }
 
 
         if (result.error) {
@@ -464,11 +837,16 @@
     }
 
 
+    /* =====================================================
+       إنشاء Profile تلقائيًا
+    ===================================================== */
+
     async function ensureProfile(user) {
 
         if (!user) {
 
             currentProfile = null;
+
             return null;
 
         }
@@ -487,13 +865,19 @@
         }
 
 
+        const defaultUsername =
+            getDefaultUsername(
+                user
+            );
+
+
         const profileData = {
 
             id:
                 user.id,
 
             username:
-                getDefaultUsername(user),
+                defaultUsername,
 
             avatar_url:
                 null,
@@ -504,19 +888,57 @@
         };
 
 
-        const result =
-            await supabaseClient
-                .from(
-                    CONFIG.profilesTable
-                )
-                .insert(
-                    profileData
-                )
-                .select("*")
-                .maybeSingle();
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .from(
+                        CONFIG.profilesTable
+                    )
+                    .insert(
+                        profileData
+                    )
+                    .select("*")
+                    .maybeSingle();
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC Auth: تعذر إنشاء profile:",
+                error
+            );
+
+            currentProfile = null;
+
+            return null;
+
+        }
 
 
         if (result.error) {
+
+            /*
+             * ممكن يصير تعارض إذا تم إنشاء
+             * profile بنفس اللحظة من مكان آخر.
+             *
+             * لذلك نحاول جلبه مرة ثانية.
+             */
+
+            const retryProfile =
+                await fetchProfile(
+                    user.id
+                );
+
+
+            if (retryProfile) {
+
+                return retryProfile;
+
+            }
+
 
             console.warn(
                 "WFESC Auth: تعذر إنشاء profile:",
@@ -549,6 +971,7 @@
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يجب تسجيل الدخول أولاً."
@@ -565,6 +988,7 @@
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "بيانات التحديث غير صحيحة."
@@ -577,6 +1001,10 @@
         const allowedUpdates = {};
 
 
+        /* ---------------------------------------------
+           Username
+        --------------------------------------------- */
+
         if (
             Object.prototype.hasOwnProperty.call(
                 updates,
@@ -585,9 +1013,9 @@
         ) {
 
             const username =
-                String(
-                    updates.username || ""
-                ).trim();
+                sanitizeUsername(
+                    updates.username
+                );
 
 
             const validation =
@@ -613,6 +1041,10 @@
         }
 
 
+        /* ---------------------------------------------
+           Avatar
+        --------------------------------------------- */
+
         if (
             Object.prototype.hasOwnProperty.call(
                 updates,
@@ -625,6 +1057,10 @@
 
         }
 
+
+        /* ---------------------------------------------
+           Bio
+        --------------------------------------------- */
 
         if (
             Object.prototype.hasOwnProperty.call(
@@ -646,27 +1082,49 @@
         ) {
 
             return {
-                data: currentProfile,
-                error: null
+                data:
+                    currentProfile,
+
+                error:
+                    null
             };
 
         }
 
 
-        const result =
-            await supabaseClient
-                .from(
-                    CONFIG.profilesTable
-                )
-                .update(
-                    allowedUpdates
-                )
-                .eq(
-                    "id",
-                    currentUser.id
-                )
-                .select("*")
-                .maybeSingle();
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .from(
+                        CONFIG.profilesTable
+                    )
+                    .update(
+                        allowedUpdates
+                    )
+                    .eq(
+                        "id",
+                        currentUser.id
+                    )
+                    .select("*")
+                    .maybeSingle();
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: فشل تحديث profile:",
+                error
+            );
+
+            return {
+                data: null,
+                error: error
+            };
+
+        }
 
 
         if (result.error) {
@@ -678,7 +1136,9 @@
 
             return {
                 data: null,
-                error: result.error
+
+                error:
+                    result.error
             };
 
         }
@@ -688,49 +1148,320 @@
             result.data || null;
 
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "WFESCProfileUpdated",
-                {
-                    detail:
-                        currentProfile
-                }
-            )
-        );
+        dispatchProfileUpdated();
 
 
         return {
-            data: currentProfile,
-            error: null
+            data:
+                currentProfile,
+
+            error:
+                null
         };
 
     }
 
 
     /* =====================================================
-       إنشاء حساب
+       تحديث بيانات الحساب في Auth
+       
+       اسم العرض يخزن في user_metadata
+       ولا يحتاج عمود جديد في profiles.
+    ===================================================== */
+
+    async function updateAccountMetadata(updates) {
+
+        if (!currentUser) {
+
+            return {
+                data: null,
+
+                error:
+                    new Error(
+                        "يجب تسجيل الدخول أولاً."
+                    )
+            };
+
+        }
+
+
+        if (
+            !updates ||
+            typeof updates !== "object"
+        ) {
+
+            return {
+                data: null,
+
+                error:
+                    new Error(
+                        "بيانات التحديث غير صحيحة."
+                    )
+            };
+
+        }
+
+
+        const metadata = {
+
+            ...(currentUser.user_metadata || {})
+
+        };
+
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                updates,
+                "name"
+            )
+        ) {
+
+            const name =
+                String(
+                    updates.name || ""
+                ).trim();
+
+
+            const validation =
+                validateDisplayName(
+                    name
+                );
+
+
+            if (!validation.valid) {
+
+                return {
+                    data: null,
+
+                    error:
+                        validation.error
+                };
+
+            }
+
+
+            metadata.name =
+                name;
+
+            metadata.display_name =
+                name;
+
+        }
+
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                updates,
+                "display_name"
+            )
+        ) {
+
+            const displayName =
+                String(
+                    updates.display_name || ""
+                ).trim();
+
+
+            const validation =
+                validateDisplayName(
+                    displayName
+                );
+
+
+            if (!validation.valid) {
+
+                return {
+                    data: null,
+
+                    error:
+                        validation.error
+                };
+
+            }
+
+
+            metadata.name =
+                displayName;
+
+            metadata.display_name =
+                displayName;
+
+        }
+
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                updates,
+                "username"
+            )
+        ) {
+
+            const username =
+                sanitizeUsername(
+                    updates.username
+                );
+
+
+            const validation =
+                validateUsername(
+                    username
+                );
+
+
+            if (!validation.valid) {
+
+                return {
+                    data: null,
+
+                    error:
+                        validation.error
+                };
+
+            }
+
+
+            metadata.username =
+                username;
+
+        }
+
+
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .auth
+                    .updateUser({
+                        data:
+                            metadata
+                    });
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: فشل تحديث بيانات الحساب:",
+                error
+            );
+
+            return {
+                data: null,
+                error: error
+            };
+
+        }
+
+
+        if (result.error) {
+
+            return {
+                data: null,
+
+                error:
+                    result.error
+            };
+
+        }
+
+
+        if (result.data.user) {
+
+            currentUser =
+                result.data.user;
+
+        }
+
+
+        dispatchAuthChanged(
+            "USER_UPDATED"
+        );
+
+
+        return {
+            data:
+                result.data,
+
+            error:
+                null
+        };
+
+    }
+
+
+    /* =====================================================
+       إنشاء الحساب
+       
+       يدعم الشكل الجديد:
+       signUp(name, email, password, username)
+
+       ويدعم الشكل القديم:
+       signUp(email, password, username)
     ===================================================== */
 
     async function signUp(
+        name,
         email,
         password,
         username
     ) {
 
+        /*
+         * دعم الاستدعاء القديم
+         *
+         * signUp(email, password, username)
+         */
+
+        if (
+            arguments.length === 3
+        ) {
+
+            username =
+                password;
+
+            password =
+                email;
+
+            email =
+                name;
+
+            name =
+                "";
+
+        }
+
+
+        name =
+            String(
+                name || ""
+            ).trim();
+
         email =
-            String(email || "").trim();
+            String(
+                email || ""
+            ).trim();
 
         password =
-            String(password || "");
+            String(
+                password || ""
+            );
 
         username =
-            String(username || "").trim();
+            sanitizeUsername(
+                username
+            );
 
+
+        /* ---------------------------------------------
+           البريد
+        --------------------------------------------- */
 
         if (!email) {
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يرجى إدخال البريد الإلكتروني."
@@ -744,6 +1475,7 @@
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يرجى إدخال بريد إلكتروني صحيح."
@@ -753,16 +1485,59 @@
         }
 
 
+        /* ---------------------------------------------
+           الاسم
+        --------------------------------------------- */
+
+        if (name) {
+
+            const nameValidation =
+                validateDisplayName(
+                    name
+                );
+
+
+            if (
+                !nameValidation.valid
+            ) {
+
+                return {
+                    data: null,
+
+                    error:
+                        nameValidation.error
+                };
+
+            }
+
+        } else {
+
+            name =
+                getDefaultDisplayName({
+                    email:
+                        email
+                });
+
+        }
+
+
+        /* ---------------------------------------------
+           Username
+        --------------------------------------------- */
+
         const usernameValidation =
             validateUsername(
                 username
             );
 
 
-        if (!usernameValidation.valid) {
+        if (
+            !usernameValidation.valid
+        ) {
 
             return {
                 data: null,
+
                 error:
                     usernameValidation.error
             };
@@ -770,16 +1545,23 @@
         }
 
 
+        /* ---------------------------------------------
+           Password
+        --------------------------------------------- */
+
         const passwordValidation =
             validatePassword(
                 password
             );
 
 
-        if (!passwordValidation.valid) {
+        if (
+            !passwordValidation.valid
+        ) {
 
             return {
                 data: null,
+
                 error:
                     passwordValidation.error
             };
@@ -804,8 +1586,16 @@
                     options: {
 
                         data: {
+
                             username:
-                                username
+                                username,
+
+                            name:
+                                name,
+
+                            display_name:
+                                name
+
                         },
 
                         emailRedirectTo:
@@ -830,17 +1620,41 @@
         }
 
 
+        /* ---------------------------------------------
+           خطأ Supabase
+        --------------------------------------------- */
+
         if (result.error) {
+
+            let finalError =
+                result.error;
+
+
+            if (
+                isExistingEmailError(
+                    result.error
+                )
+            ) {
+
+                finalError =
+                    new Error(
+                        "يوجد حساب بهذا البريد، قم بتسجيل الدخول."
+                    );
+
+            }
+
 
             console.error(
                 "WFESC Auth: فشل إنشاء الحساب:",
                 result.error
             );
 
+
             return {
                 data: null,
+
                 error:
-                    result.error
+                    finalError
             };
 
         }
@@ -852,6 +1666,10 @@
         currentSession =
             result.data.session || null;
 
+
+        /* ---------------------------------------------
+           إنشاء Profile فقط إذا عندنا Session
+        --------------------------------------------- */
 
         if (
             currentUser &&
@@ -870,9 +1688,15 @@
         );
 
 
+        /*
+         * إذا Supabase يحتاج تحقق البريد،
+         * غالبًا session ستكون null.
+         */
+
         return {
             data:
                 result.data,
+
             error:
                 null
         };
@@ -890,16 +1714,21 @@
     ) {
 
         email =
-            String(email || "").trim();
+            String(
+                email || ""
+            ).trim();
 
         password =
-            String(password || "");
+            String(
+                password || ""
+            );
 
 
         if (!email) {
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يرجى إدخال البريد الإلكتروني."
@@ -913,6 +1742,7 @@
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يرجى إدخال بريد إلكتروني صحيح."
@@ -928,10 +1758,13 @@
             );
 
 
-        if (!passwordValidation.valid) {
+        if (
+            !passwordValidation.valid
+        ) {
 
             return {
                 data: null,
+
                 error:
                     passwordValidation.error
             };
@@ -972,32 +1805,19 @@
         }
 
 
+        /* ---------------------------------------------
+           خطأ تسجيل الدخول
+        --------------------------------------------- */
+
         if (result.error) {
 
             let message =
                 "تعذر تسجيل الدخول.";
 
 
-            const errorCode =
-                String(
-                    result.error.code || ""
-                ).toLowerCase();
-
-
-            const errorMessage =
-                String(
-                    result.error.message || ""
-                ).toLowerCase();
-
-
             if (
-                errorCode ===
-                    "invalid_credentials" ||
-                errorMessage.includes(
-                    "invalid login credentials"
-                ) ||
-                errorMessage.includes(
-                    "invalid credentials"
+                isWrongPasswordError(
+                    result.error
                 )
             ) {
 
@@ -1007,12 +1827,32 @@
             }
 
 
+            const finalError =
+                new Error(
+                    message
+                );
+
+
+            /*
+             * نحتفظ بالكود الأصلي أيضًا
+             * حتى تستطيع الواجهة التعرف عليه.
+             */
+
+            finalError.code =
+                result.error.code || "";
+
+
+            console.error(
+                "WFESC Auth: فشل تسجيل الدخول:",
+                result.error
+            );
+
+
             return {
                 data: null,
+
                 error:
-                    new Error(
-                        message
-                    )
+                    finalError
             };
 
         }
@@ -1024,6 +1864,10 @@
         currentUser =
             result.data.user || null;
 
+
+        /* ---------------------------------------------
+           Profile
+        --------------------------------------------- */
 
         if (currentUser) {
 
@@ -1053,6 +1897,7 @@
         return {
             data:
                 result.data,
+
             error:
                 null
         };
@@ -1063,7 +1908,8 @@
     /* =====================================================
        تغيير كلمة المرور
     ===================================================== */
-async function updatePassword(
+
+    async function updatePassword(
         newPassword
     ) {
 
@@ -1071,6 +1917,7 @@ async function updatePassword(
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يجب تسجيل الدخول أولاً."
@@ -1096,6 +1943,7 @@ async function updatePassword(
 
             return {
                 data: null,
+
                 error:
                     validation.error
             };
@@ -1112,8 +1960,10 @@ async function updatePassword(
                 await supabaseClient
                     .auth
                     .updateUser({
+
                         password:
                             newPassword
+
                     });
 
         } catch (error) {
@@ -1135,6 +1985,7 @@ async function updatePassword(
 
             return {
                 data: null,
+
                 error:
                     result.error
             };
@@ -1150,9 +2001,15 @@ async function updatePassword(
         }
 
 
+        dispatchAuthChanged(
+            "PASSWORD_UPDATED"
+        );
+
+
         return {
             data:
                 result.data,
+
             error:
                 null
         };
@@ -1164,16 +2021,21 @@ async function updatePassword(
        إعادة تعيين كلمة المرور
     ===================================================== */
 
-    async function resetPassword(email) {
+    async function resetPassword(
+        email
+    ) {
 
         email =
-            String(email || "").trim();
+            String(
+                email || ""
+            ).trim();
 
 
         if (!email) {
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يرجى إدخال البريد الإلكتروني."
@@ -1187,6 +2049,7 @@ async function updatePassword(
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يرجى إدخال بريد إلكتروني صحيح."
@@ -1231,6 +2094,7 @@ async function updatePassword(
 
             return {
                 data: null,
+
                 error:
                     result.error
             };
@@ -1239,8 +2103,11 @@ async function updatePassword(
 
 
         return {
-            data: true,
-            error: null
+            data:
+                true,
+
+            error:
+                null
         };
 
     }
@@ -1249,8 +2116,12 @@ async function updatePassword(
     /* =====================================================
        حذف الحساب
        
-       لا يتم استخدام Service Role Key داخل الموقع.
-       الحذف الكامل يحتاج Edge Function آمنة.
+       مهم:
+       لا نضع Service Role Key داخل JavaScript.
+       
+       الحذف الكامل من auth.users يحتاج:
+       Supabase Edge Function
+       أو Backend آمن.
     ===================================================== */
 
     async function deleteAccount() {
@@ -1259,6 +2130,7 @@ async function updatePassword(
 
             return {
                 data: null,
+
                 error:
                     new Error(
                         "يجب تسجيل الدخول أولاً."
@@ -1268,8 +2140,14 @@ async function updatePassword(
         }
 
 
+        /*
+         * لا نحاول حذف المستخدم مباشرة من المتصفح
+         * لأن ذلك غير آمن مع الحسابات.
+         */
+
         return {
             data: null,
+
             error:
                 new Error(
                     "حذف الحساب الكامل يحتاج إلى إعداد آمن في Supabase."
@@ -1297,8 +2175,14 @@ async function updatePassword(
 
         } catch (error) {
 
+            console.error(
+                "WFESC Auth: خطأ أثناء تسجيل الخروج:",
+                error
+            );
+
             return {
-                error: error
+                error:
+                    error
             };
 
         }
@@ -1319,9 +2203,14 @@ async function updatePassword(
         }
 
 
-        currentUser = null;
-        currentSession = null;
-        currentProfile = null;
+        currentUser =
+            null;
+
+        currentSession =
+            null;
+
+        currentProfile =
+            null;
 
 
         dispatchAuthChanged(
@@ -1330,27 +2219,58 @@ async function updatePassword(
 
 
         return {
-            error: null
+            error:
+                null
         };
 
     }
 
 
     /* =====================================================
-       فحص رابط التحقق / الاسترداد
+       فحص رابط Auth
+       
+       نستخدم URL فقط لمعرفة أن الصفحة
+       جاءت من عملية تحقق/استرداد.
     ===================================================== */
 
     function hasAuthCodeInUrl() {
 
-        const url =
-            window.location.href;
+        try {
+
+            const url =
+                new URL(
+                    window.location.href
+                );
 
 
-        return (
-            url.includes("code=") ||
-            url.includes("access_token=") ||
-            url.includes("refresh_token=")
-        );
+            const params =
+                url.searchParams;
+
+
+            const hash =
+                String(
+                    url.hash || ""
+                );
+
+
+            return (
+                params.has("code") ||
+                params.has("access_token") ||
+                params.has("refresh_token") ||
+                params.has("type") ||
+                hash.includes(
+                    "access_token="
+                ) ||
+                hash.includes(
+                    "refresh_token="
+                )
+            );
+
+        } catch (error) {
+
+            return false;
+
+        }
 
     }
 
@@ -1379,16 +2299,28 @@ async function updatePassword(
             );
 
 
-            currentSession = null;
-            currentUser = null;
-            currentProfile = null;
+            currentSession =
+                null;
+
+            currentUser =
+                null;
+
+            currentProfile =
+                null;
 
 
             return {
-                session: null,
-                user: null,
-                profile: null,
-                error: error
+                session:
+                    null,
+
+                user:
+                    null,
+
+                profile:
+                    null,
+
+                error:
+                    error
             };
 
         }
@@ -1402,15 +2334,26 @@ async function updatePassword(
             );
 
 
-            currentSession = null;
-            currentUser = null;
-            currentProfile = null;
+            currentSession =
+                null;
+
+            currentUser =
+                null;
+
+            currentProfile =
+                null;
 
 
             return {
-                session: null,
-                user: null,
-                profile: null,
+                session:
+                    null,
+
+                user:
+                    null,
+
+                profile:
+                    null,
+
                 error:
                     result.error
             };
@@ -1428,7 +2371,8 @@ async function updatePassword(
                 : null;
 
 
-        currentProfile = null;
+        currentProfile =
+            null;
 
 
         if (currentUser) {
@@ -1450,6 +2394,11 @@ async function updatePassword(
 
         }
 
+
+        /*
+         * إذا كانت الصفحة عائدة من رابط Auth
+         * والـ user موجود، نرسل حدث التحقق.
+         */
 
         if (
             currentUser &&
@@ -1509,15 +2458,24 @@ async function updatePassword(
                     "SIGNED_OUT"
                 ) {
 
-                    currentProfile = null;
+                    currentProfile =
+                        null;
 
                 }
 
 
+                /*
+                 * نؤجل العمليات الإضافية
+                 * حتى لا نسبب مشاكل داخل callback
+                 * الخاص بـ Supabase.
+                 */
+
                 setTimeout(
                     async function () {
 
-                        if (currentUser) {
+                        if (
+                            currentUser
+                        ) {
 
                             try {
 
@@ -1542,8 +2500,12 @@ async function updatePassword(
                             (
                                 event ===
                                 "SIGNED_IN" ||
+
                                 event ===
-                                "INITIAL_SESSION"
+                                "INITIAL_SESSION" ||
+
+                                event ===
+                                "USER_UPDATED"
                             ) &&
                             hasAuthCodeInUrl()
                         ) {
@@ -1593,11 +2555,16 @@ async function updatePassword(
 
     window.WFESCSettingsAuth = {
 
+        /* Supabase */
+
         client:
             getClient(),
 
         config:
             CONFIG,
+
+
+        /* الحالة */
 
         getUser:
             getUser,
@@ -1611,6 +2578,9 @@ async function updatePassword(
         getCurrentUserId:
             getCurrentUserId,
 
+
+        /* Profile */
+
         fetchProfile:
             fetchProfile,
 
@@ -1619,6 +2589,15 @@ async function updatePassword(
 
         updateProfile:
             updateProfile,
+
+
+        /* Account metadata */
+
+        updateAccountMetadata:
+            updateAccountMetadata,
+
+
+        /* Auth */
 
         signUp:
             signUp,
@@ -1638,8 +2617,35 @@ async function updatePassword(
         signOut:
             signOut,
 
+
+        /* Session */
+
         restoreSession:
             restoreSession,
+
+
+        /* Utilities */
+
+        validateUsername:
+            validateUsername,
+
+        sanitizeUsername:
+            sanitizeUsername,
+
+        validatePassword:
+            validatePassword,
+
+        validateDisplayName:
+            validateDisplayName,
+
+        getUsernameLimits:
+            getUsernameLimits,
+
+        getDefaultUsername:
+            getDefaultUsername,
+
+        getDefaultDisplayName:
+            getDefaultDisplayName,
 
         unsubscribe:
             unsubscribe
@@ -1665,4 +2671,3 @@ async function updatePassword(
 
 
 })();
-    
