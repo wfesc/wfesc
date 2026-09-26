@@ -4263,12 +4263,16 @@ async function handleChangePassword() {
 
     }
 
+ 
     /* =========================================
        INITIALIZE
     ========================================= */
+
     function init() {
 
         ensureRoot();
+
+        buildUI();
 
         injectCSS();
 
@@ -4301,8 +4305,7 @@ async function handleChangePassword() {
 
         init();
 
-    }
-
+                }
     /* =========================================
        PUBLIC API
     ========================================= */
