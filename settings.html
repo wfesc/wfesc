@@ -267,6 +267,11 @@
             background: #222;
         }
 
+        .account-button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
         .account-button.primary {
             background: #eee;
             color: #050505;
@@ -281,6 +286,10 @@
             color: #aaa;
             font-size: 13px;
             font-weight: normal;
+        }
+
+        .account-button.logout {
+            background: #171717;
         }
 
 
@@ -363,10 +372,6 @@
             font-size: 13px;
         }
 
-        .logged-in-account .account-button {
-            margin-top: 3px;
-        }
-
 
         /* =========================
            STATUS
@@ -396,6 +401,10 @@
             z-index: 10000;
 
             white-space: nowrap;
+
+            max-width: calc(100% - 30px);
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .settings-status.show {
@@ -440,6 +449,9 @@
 
         .modal-box {
             width: min(100%, 430px);
+
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
 
             background: #111;
 
@@ -538,6 +550,11 @@
             font-weight: bold;
 
             cursor: pointer;
+        }
+
+        .modal-action:disabled {
+            opacity: .55;
+            cursor: not-allowed;
         }
 
         .modal-note {
@@ -706,6 +723,11 @@
                 font-size: 16px;
             }
 
+            .settings-status {
+                white-space: normal;
+                text-align: center;
+            }
+
         }
 
     </style>
@@ -740,17 +762,13 @@
             المظهر
         </div>
 
-
         <div class="settings-card">
-
-            <!-- ANIMATION -->
 
             <div class="setting-row">
 
                 <div class="setting-icon">
                     ✨
                 </div>
-
 
                 <div class="setting-info">
 
@@ -763,7 +781,6 @@
                     </div>
 
                 </div>
-
 
                 <label class="switch">
 
@@ -779,14 +796,11 @@
             </div>
 
 
-            <!-- THEME -->
-
             <div class="setting-row">
 
                 <div class="setting-icon">
                     🎨
                 </div>
-
 
                 <div class="setting-info">
 
@@ -855,11 +869,12 @@
             الحساب
         </div>
 
-
         <div class="settings-card">
 
 
-            <!-- LOGGED OUT -->
+            <!-- =====================
+                 LOGGED OUT
+            ====================== -->
 
             <div
                 class="account-buttons"
@@ -895,8 +910,11 @@
             </div>
 
 
-            <!-- LOGGED IN -->
+            <!-- =====================
+                 LOGGED IN
+            ====================== -->
 
+            
             <div
                 class="logged-in-account"
                 id="loggedInAccount"
@@ -943,6 +961,15 @@
 
                 <button
                     class="account-button"
+                    id="manageAccountButton"
+                    type="button"
+                >
+                    إدارة الحساب
+                </button>
+
+
+                <button
+                    class="account-button"
                     id="logoutAccountButton"
                     type="button"
                 >
@@ -956,9 +983,8 @@
     </section>
 
 
-    
     <!-- =========================
-         حول الموقع
+         معلومات
     ========================== -->
 
     <section class="settings-section">
@@ -966,7 +992,6 @@
         <div class="section-title">
             حول الموقع
         </div>
-
 
         <div class="settings-card">
 
@@ -976,7 +1001,6 @@
                     𝑾
                 </div>
 
-
                 <div class="setting-info">
 
                     <div class="setting-name">
@@ -984,7 +1008,7 @@
                     </div>
 
                     <div class="setting-description">
-                        المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
+                        ذاكرة العراق... بصورة مختلفة
                     </div>
 
                 </div>
@@ -998,7 +1022,9 @@
 </main>
 
 
-<!-- STATUS -->
+<!-- =========================
+     STATUS
+========================== -->
 
 <div
     class="settings-status"
@@ -1006,11 +1032,14 @@
 ></div>
 
 
-<!-- ACCOUNT MODAL -->
+<!-- =========================
+     ACCOUNT MODAL
+========================== -->
 
 <div
     class="modal"
     id="accountModal"
+    aria-hidden="true"
 >
 
     <div class="modal-box">
@@ -1018,14 +1047,14 @@
         <div class="modal-header">
 
             <h2 id="modalTitle">
-                إنشاء حساب
+                حساب WFESC
             </h2>
-
 
             <button
                 class="close-modal"
                 id="closeModal"
                 type="button"
+                aria-label="إغلاق"
             >
                 ×
             </button>
@@ -1035,7 +1064,12 @@
 
         <form id="accountForm">
 
-            <div class="form-group">
+            <!-- USERNAME -->
+
+            <div
+                class="form-group"
+                id="usernameGroup"
+            >
 
                 <label for="accountUsername">
                     اسم المستخدم
@@ -1045,12 +1079,15 @@
                     class="form-input"
                     id="accountUsername"
                     type="text"
-                    placeholder="اسم المستخدم"
+                    maxlength="3"
                     autocomplete="username"
+                    placeholder="اسم المستخدم"
                 >
 
             </div>
 
+
+            <!-- EMAIL -->
 
             <div class="form-group">
 
@@ -1062,13 +1099,14 @@
                     class="form-input"
                     id="accountEmail"
                     type="email"
-                    placeholder="example@email.com"
                     autocomplete="email"
-                    required
+                    placeholder="example@email.com"
                 >
 
             </div>
 
+
+            <!-- PASSWORD -->
 
             <div
                 class="form-group"
@@ -1083,12 +1121,14 @@
                     class="form-input"
                     id="accountPassword"
                     type="password"
-                    placeholder="كلمة المرور"
                     autocomplete="new-password"
+                    placeholder="كلمة المرور"
                 >
 
             </div>
 
+
+            <!-- CONFIRM PASSWORD -->
 
             <div
                 class="form-group"
@@ -1103,8 +1143,8 @@
                     class="form-input"
                     id="accountPasswordConfirm"
                     type="password"
-                    placeholder="أعد كتابة كلمة المرور"
                     autocomplete="new-password"
+                    placeholder="أعد كتابة كلمة المرور"
                 >
 
             </div>
@@ -1115,18 +1155,18 @@
                 id="modalAction"
                 type="submit"
             >
-                متابعة
+                إنشاء الحساب
             </button>
 
+
+            <div
+                class="modal-note"
+                id="modalNote"
+            >
+                اسم المستخدم يجب ألا يتجاوز 3 أحرف.
+            </div>
+
         </form>
-
-
-        <div
-            class="modal-note"
-            id="modalNote"
-        >
-            سيتم تفعيل الحسابات وربطها بقاعدة البيانات لاحقًا.
-        </div>
 
     </div>
 
@@ -1134,736 +1174,404 @@
 
 
 <!-- =====================================================
-     WFESC GLOBAL SETTINGS
-     لا يوجد هنا اتصال بقاعدة البيانات
-     ===================================================== -->
-
-<script>
-
-"use strict";
-
-(function () {
-
-    const ANIMATION_KEY =
-        "wfesc_animation_enabled";
-
-    const THEME_KEY =
-        "wfesc_theme";
-
-
-    function readAnimation() {
-
-        const value =
-            localStorage.getItem(
-                ANIMATION_KEY
-            );
-
-        if (value === null) {
-            return true;
-        }
-
-        return value === "true";
-    }
-
-
-    function readTheme() {
-
-        const value =
-            localStorage.getItem(
-                THEME_KEY
-            );
-
-        if (
-            value !== "light" &&
-            value !== "dark"
-        ) {
-            return "dark";
-        }
-
-        return value;
-    }
-
-
-    function applyTheme(theme) {
-
-        document.documentElement.classList.toggle(
-            "wfesc-light-mode",
-            theme === "light"
-        );
-
-    }
-
-
-    function applyAnimation(enabled) {
-
-        document.documentElement.classList.toggle(
-            "wfesc-animation-off",
-            !enabled
-        );
-
-    }
-
-
-    window.WFESCGlobalSettings = {
-
-        getAnimationEnabled: function () {
-
-            return readAnimation();
-
-        },
-
-
-        setAnimationEnabled: function (enabled) {
-
-            enabled = !!enabled;
-
-            localStorage.setItem(
-                ANIMATION_KEY,
-                enabled
-                    ? "true"
-                    : "false"
-            );
-
-            applyAnimation(
-                enabled
-            );
-
-            window.dispatchEvent(
-                new CustomEvent(
-                    "wfesc:settings-changed",
-                    {
-                        detail: {
-                            type: "animation",
-                            value: enabled
-                        }
-                    }
-                )
-            );
-
-        },
-
-
-        getTheme: function () {
-
-            return readTheme();
-
-        },
-
-
-        setTheme: function (theme) {
-
-            if (
-                theme !== "light" &&
-                theme !== "dark"
-            ) {
-
-                theme = "dark";
-
-            }
-
-            localStorage.setItem(
-                THEME_KEY,
-                theme
-            );
-
-            applyTheme(
-                theme
-            );
-
-            window.dispatchEvent(
-                new CustomEvent(
-                    "wfesc:settings-changed",
-                    {
-                        detail: {
-                            type: "theme",
-                            value: theme
-                        }
-                    }
-                )
-            );
-
-        },
-
-
-        apply: function () {
-
-            applyTheme(
-                readTheme()
-            );
-
-            applyAnimation(
-                readAnimation()
-            );
-
-        }
-
-    };
-
-
-    window.WFESCGlobalSettings.apply();
-
-})();
-
-
-/* =====================================================
-   SETTINGS UI
-===================================================== */
-
-const animationToggle =
-    document.getElementById(
-        "animationToggle"
-    );
-
-
-const darkThemeButton =
-    document.getElementById(
-        "darkThemeButton"
-    );
-
-
-const lightThemeButton =
-    document.getElementById(
-        "lightThemeButton"
-    );
-
-
-const settingsStatus =
-    document.getElementById(
-        "settingsStatus"
-    );
-
-
-function showStatus(message) {
-
-    settingsStatus.textContent =
-        message;
-
-    settingsStatus.classList.add(
-        "show"
-    );
-
-    clearTimeout(
-        window.__wfescSettingsStatusTimer
-    );
-
-    window.__wfescSettingsStatusTimer =
-        setTimeout(
-            function () {
-
-                settingsStatus.classList.remove(
-                    "show"
-                );
-
-            },
-            2500
-        );
-
-}
-
-
-function updateSettingsUI() {
-
-    const animation =
-        WFESCGlobalSettings
-            .getAnimationEnabled();
-
-
-    const theme =
-        WFESCGlobalSettings
-            .getTheme();
-
-
-    animationToggle.checked =
-        animation;
-
-
-    darkThemeButton.classList.toggle(
-        "active",
-        theme === "dark"
-    );
-
-
-    lightThemeButton.classList.toggle(
-        "active",
-        theme === "light"
-    );
-
-}
-
-
-/* =====================================================
-   ANIMATION
-===================================================== */
-
-animationToggle.addEventListener(
-    "change",
-    function () {
-
-        WFESCGlobalSettings
-            .setAnimationEnabled(
-                animationToggle.checked
-            );
-
-
-        showStatus(
-            animationToggle.checked
-                ? "تم تشغيل الأنميشن"
-                : "تم إيقاف الأنميشن"
-        );
-
-    }
-);
-
-
-/* =====================================================
-   THEME
-===================================================== */
-
-darkThemeButton.addEventListener(
-    "click",
-    function () {
-
-        WFESCGlobalSettings
-            .setTheme(
-                "dark"
-            );
-
-
-        updateSettingsUI();
-
-
-        showStatus(
-            "تم تفعيل الوضع المظلم"
-        );
-
-    }
-);
-
-
-lightThemeButton.addEventListener(
-    "click",
-    function () {
-
-        WFESCGlobalSettings
-            .setTheme(
-                "light"
-            );
-
-
-        updateSettingsUI();
-
-
-        showStatus(
-            "تم تفعيل الوضع العادي"
-        );
-
-    }
-);
-
-
-/* =====================================================
-   OTHER TABS / PAGES
-===================================================== */
-
-window.addEventListener(
-    "wfesc:settings-changed",
-    function () {
-
-        updateSettingsUI();
-
-    }
-);
-
-
-window.addEventListener(
-    "storage",
-    function (event) {
-
-        if (
-            event.key ===
-                "wfesc_theme" ||
-
-            event.key ===
-                "wfesc_animation_enabled"
-        ) {
-
-            WFESCGlobalSettings.apply();
-
-            updateSettingsUI();
-
-        }
-
-    }
-);
-
-
-/* =====================================================
-   INITIALIZE
-===================================================== */
-
-updateSettingsUI();
-
-</script>
-
-
-<!-- =====================================================
      SUPABASE
-     ===================================================== -->
+====================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
 <!-- =====================================================
-     WFESC ACCOUNT SYSTEM
-     ===================================================== -->
+     WFESC AUTH CONFIG
+====================================================== -->
 
 <script src="settings-features/settings-auth-config.js"></script>
 
+
+<!-- =====================================================
+     WFESC AUTH CORE
+====================================================== -->
+
 <script src="settings-features/settings-auth.js"></script>
+
+
+<!-- =====================================================
+     WFESC AUTH UI
+====================================================== -->
 
 <script src="settings-features/settings-auth-ui.js"></script>
 
 
 <!-- =====================================================
-     LOGGED IN ACCOUNT UI
-     ===================================================== -->
+     WFESC LOGGED-IN ACCOUNT UI
+====================================================== -->
 
 <script>
 
-"use strict";
-
 (function () {
 
-    function getElement(id) {
-
-        return document.getElementById(id);
-
-    }
+    "use strict";
 
 
-    function getFallbackLetter(username) {
+    async function updateLoggedInUI() {
 
-        const text =
-            String(username || "W").trim();
-
-        if (!text) {
-            return "W";
-        }
-
-        return text.charAt(0).toUpperCase();
-
-    }
-
-
-    function updateLoggedInUI() {
-
-        const accountButtons =
-            getElement("accountButtons");
-
-        const loggedInAccount =
-            getElement("loggedInAccount");
-
-        const loggedInAvatar =
-            getElement("loggedInAvatar");
-
-        const loggedInAvatarFallback =
-            getElement("loggedInAvatarFallback");
-
-        const loggedInUsername =
-            getElement("loggedInUsername");
-
-
-        if (
-            !accountButtons ||
-            !loggedInAccount ||
-            !loggedInAvatar ||
-            !loggedInAvatarFallback ||
-            !loggedInUsername
-        ) {
-            return;
-        }
-
-
-        const auth =
+        const AUTH =
             window.WFESCSettingsAuth;
 
 
-        if (!auth) {
-
-            accountButtons.style.display =
-                "grid";
-
-            loggedInAccount.style.display =
-                "none";
-
+        if (!AUTH) {
             return;
-
         }
+
+
+        const loggedInAccount =
+            document.getElementById(
+                "loggedInAccount"
+            );
+
+
+        const accountButtons =
+            document.getElementById(
+                "accountButtons"
+            );
+
+
+        const loggedInAvatar =
+            document.getElementById(
+                "loggedInAvatar"
+            );
+
+
+        const loggedInAvatarFallback =
+            document.getElementById(
+                "loggedInAvatarFallback"
+            );
+
+
+        const loggedInUsername =
+            document.getElementById(
+                "loggedInUsername"
+            );
 
 
         const user =
-            auth.getUser();
+            AUTH.getUser();
 
+
+        /* =========================
+           LOGGED OUT
+        ========================== */
 
         if (!user) {
 
-            accountButtons.style.display =
-                "grid";
+            if (loggedInAccount) {
 
-            loggedInAccount.style.display =
-                "none";
+                loggedInAccount.style.display =
+                    "none";
 
-            loggedInAvatar.removeAttribute(
-                "src"
-            );
+            }
 
-            loggedInAvatar.style.display =
-                "none";
 
-            loggedInAvatarFallback.style.display =
-                "flex";
+            if (accountButtons) {
 
-            loggedInAvatarFallback.textContent =
-                "W";
+                accountButtons.style.display =
+                    "grid";
 
-            loggedInUsername.textContent =
-                "مستخدم WFESC";
+            }
+
 
             return;
 
         }
 
 
-        const profile =
-            auth.getProfile() || {};
+        /* =========================
+           PROFILE
+        ========================== */
+
+        let profile =
+            AUTH.getProfile();
 
 
-        const metadata =
-            user.user_metadata || {};
-
-
-        const username =
-            profile.username ||
-            metadata.username ||
-            (
-                user.email
-                    ? user.email.split("@")[0]
-                    : "مستخدم WFESC"
-            );
-
-
-        const avatar =
-            profile.avatar_url ||
-            "";
-
-
-        accountButtons.style.display =
-            "none";
-
-        loggedInAccount.style.display =
-            "block";
-
-
-        loggedInUsername.textContent =
-            username;
-
-
-        loggedInAvatarFallback.textContent =
-            getFallbackLetter(
-                username
-            );
-
-
-        if (avatar) {
-
-            loggedInAvatar.src =
-                avatar;
-
-            loggedInAvatar.style.display =
-                "block";
-
-            loggedInAvatarFallback.style.display =
-                "none";
-
-        } else {
-
-            loggedInAvatar.removeAttribute(
-                "src"
-            );
-
-            loggedInAvatar.style.display =
-                "none";
-
-            loggedInAvatarFallback.style.display =
-                "flex";
-
-        }
-
-    }
-
-
-    async function waitForAuth() {
-
-        for (
-            let i = 0;
-            i < 100;
-            i++
+        if (
+            !profile &&
+            user.id &&
+            typeof AUTH.fetchProfile ===
+            "function"
         ) {
 
-            if (
-                window.WFESCSettingsAuth
-            ) {
+            try {
 
-                updateLoggedInUI();
+                profile =
+                    await AUTH.fetchProfile(
+                        user.id
+                    );
 
-                return;
+            } catch (error) {
+
+                console.warn(
+                    "WFESC profile load error:",
+                    error
+                );
 
             }
 
-            await new Promise(
-                function (resolve) {
+        }
 
-                    setTimeout(
-                        resolve,
-                        50
-                    );
 
-                }
-            );
+        /* =========================
+           SHOW ACCOUNT
+        ========================== */
+
+        if (loggedInAccount) {
+
+            loggedInAccount.style.display =
+                "block";
 
         }
 
-        updateLoggedInUI();
+
+        if (accountButtons) {
+
+            accountButtons.style.display =
+                "none";
+
+        }
+
+
+        /* =========================
+           USERNAME
+        ========================== */
+
+        const username =
+            profile?.username ||
+            user?.user_metadata?.username ||
+            "مستخدم WFESC";
+
+
+        if (loggedInUsername) {
+
+            loggedInUsername.textContent =
+                username;
+
+        }
+
+
+        /* =========================
+           AVATAR
+        ========================== */
+
+        const avatarUrl =
+            profile?.avatar_url ||
+            user?.user_metadata?.avatar_url ||
+            "";
+
+
+        if (
+            loggedInAvatar &&
+            loggedInAvatarFallback
+        ) {
+
+            if (avatarUrl) {
+
+                loggedInAvatar.src =
+                    avatarUrl;
+
+                loggedInAvatar.style.display =
+                    "block";
+
+                loggedInAvatarFallback.style.display =
+                    "none";
+
+            } else {
+
+                loggedInAvatar.removeAttribute(
+                    "src"
+                );
+
+                loggedInAvatar.style.display =
+                    "none";
+
+
+                const firstLetter =
+                    [...String(username)]
+                    .slice(0, 1)
+                    .join("")
+                    .toUpperCase() ||
+                    "W";
+
+
+                loggedInAvatarFallback.textContent =
+                    firstLetter;
+
+                loggedInAvatarFallback.style.display =
+                    "flex";
+
+            }
+
+        }
 
     }
 
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        function () {
+    /* =========================
+       إدارة الحساب
+    ========================== */
 
-            waitForAuth();
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            const button =
+                event.target.closest(
+                    "#manageAccountButton"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            if (
+                typeof window.WFESCOpenAccountModal ===
+                "function"
+            ) {
+
+                window.WFESCOpenAccountModal(
+                    "account"
+                );
+
+            }
 
         }
     );
 
+
+    /* =========================
+       تسجيل الخروج
+    ========================== */
+
+    document.addEventListener(
+        "click",
+        async function (event) {
+
+            const button =
+                event.target.closest(
+                    "#logoutAccountButton"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            const AUTH =
+                window.WFESCSettingsAuth;
+
+
+            if (!AUTH) {
+                return;
+            }
+
+
+            button.disabled =
+                true;
+
+
+            try {
+
+                await AUTH.signOut();
+
+
+                await updateLoggedInUI();
+
+
+            } catch (error) {
+
+                console.error(
+                    "WFESC Logout Error:",
+                    error
+                );
+
+            } finally {
+
+                button.disabled =
+                    false;
+
+            }
+
+        }
+    );
+
+
+    /* =========================
+       AUTH CHANGED
+    ========================== */
 
     window.addEventListener(
         "WFESCAuthChanged",
         function () {
 
-            setTimeout(
-                function () {
-
-                    updateLoggedInUI();
-
-                },
-                50
-            );
+            updateLoggedInUI();
 
         }
     );
 
+
+    /* =========================
+       PROFILE UPDATED
+    ========================== */
 
     window.addEventListener(
         "WFESCProfileUpdated",
         function () {
 
-            setTimeout(
-                function () {
-
-                    updateLoggedInUI();
-
-                },
-                50
-            );
+            updateLoggedInUI();
 
         }
     );
 
 
-    const logoutButton =
-        getElement(
-            "logoutAccountButton"
-        );
+    /* =========================
+       WAIT FOR AUTH
+    ========================== */
+
+    function waitForAuth() {
+
+        if (
+            window.WFESCSettingsAuth
+        ) {
+
+            updateLoggedInUI();
+
+            return;
+
+        }
 
 
-    if (logoutButton) {
-
-        logoutButton.addEventListener(
-            "click",
-            async function () {
-
-                const auth =
-                    window.WFESCSettingsAuth;
-
-
-                if (!auth) {
-                    return;
-                }
-
-
-                logoutButton.disabled =
-                    true;
-
-
-                try {
-
-                    await auth.signOut();
-
-
-                    updateLoggedInUI();
-
-
-                    if (
-                        typeof showStatus ===
-                        "function"
-                    ) {
-
-                        showStatus(
-                            "تم تسجيل الخروج"
-                        );
-
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        "WFESC logout error:",
-                        error
-                    );
-
-                    if (
-                        typeof showStatus ===
-                        "function"
-                    ) {
-
-                        showStatus(
-                            "تعذر تسجيل الخروج"
-                        );
-
-                    }
-
-                } finally {
-
-                    logoutButton.disabled =
-                        false;
-
-                }
-
-            }
+        setTimeout(
+            waitForAuth,
+            100
         );
 
     }
 
 
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="settings-features/settings-auth-config.js"></script>
-<script src="settings-features/settings-auth.js"></script>
-<script src="settings-features/settings-auth-ui.js"></script>
+    waitForAuth();
 
 
-<!-- هنا مباشرة البلوك الجديد لواجهة الحساب -->
+})();
 
+</script>
+
+
+<!-- =====================================================
+     NAVIGATION
+====================================================== -->
 
 <script src="navigation/navigation-loader.js"></script>
+
+
+</body>
+</html>
