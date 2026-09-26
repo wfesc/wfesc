@@ -1591,4 +1591,562 @@
         /* =================================================
            SUBMIT
            ================================================= */
-           
+
+       
+        async function handleSubmit() {
+
+            if (actionLoading) {
+                return;
+            }
+
+
+            if (currentMode === "register") {
+
+                await handleRegister();
+                return;
+
+            }
+
+
+            if (currentMode === "login") {
+
+                await handleLogin();
+                return;
+
+            }
+
+
+            if (currentMode === "forgot") {
+
+                await handleForgotPassword();
+                return;
+
+            }
+        }
+
+
+        /* =================================================
+           REGISTER
+           ================================================= */
+
+        async function handleRegister() {
+
+            clearInputMessages();
+
+
+            const usernameOK =
+                validateUsername();
+
+            const email =
+                emailInput.value.trim();
+
+            const password =
+                passwordInput.value;
+
+
+            if (!usernameOK) {
+                return;
+            }
+
+
+            if (!isValidEmail(email)) {
+
+                setFieldError(
+                    document.getElementById(
+                        "wfescEmailGroup"
+                    ),
+                    "يرجى إدخال بريد إلكتروني صحيح."
+                );
+
+                return;
+            }
+
+
+            if (!validatePassword()) {
+                return;
+            }
+
+
+            if (!validatePasswordMatch()) {
+                return;
+            }
+
+
+            setActionLoading(
+                true,
+                "جاري إنشاء الحساب..."
+            );
+
+
+            try {
+
+                const result =
+                    await AUTH.signUp(
+                        email,
+                        password,
+                        usernameInput.value.trim()
+                    );
+
+
+                if (
+                    result?.error
+                ) {
+
+                    throw result.error;
+
+                }
+
+
+                const user =
+                    result?.data?.user ||
+                    result?.user ||
+                    AUTH.getUser?.();
+
+
+                const session =
+                    result?.data?.session ||
+                    result?.session ||
+                    AUTH.getSession?.();
+
+
+                await closeModal(
+                    true
+                );
+
+
+                if (
+                    session ||
+                    (
+                        user &&
+                        user.email_confirmed_at
+                    )
+                ) {
+
+                    showStatus(
+                        "تم إنشاء الحساب وتسجيل الدخول بنجاح.",
+                        "success",
+                        5000
+                    );
+
+                    await renderAccount(
+                        true
+                    );
+
+                    return;
+                }
+
+
+                showVerifyMessage(
+                    email
+                );
+
+            }
+
+            catch (error) {
+
+                setActionLoading(
+                    false
+                );
+
+                showModalError(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           LOGIN
+           ================================================= */
+
+        async function handleLogin() {
+
+            clearInputMessages();
+
+
+            const email =
+                emailInput.value.trim();
+
+            const password =
+                passwordInput.value;
+
+
+            if (!isValidEmail(email)) {
+
+                setFieldError(
+                    document.getElementById(
+                        "wfescEmailGroup"
+                    ),
+                    "يرجى إدخال بريد إلكتروني صحيح."
+                );
+
+                return;
+            }
+
+
+            if (!validatePassword()) {
+                return;
+            }
+
+
+            setActionLoading(
+                true,
+                "جاري تسجيل الدخول..."
+            );
+
+
+            try {
+
+                const result =
+                    await AUTH.signIn(
+                        email,
+                        password
+                    );
+
+
+                if (
+                    result?.error
+                ) {
+
+                    throw result.error;
+
+                }
+
+
+                await closeModal(
+                    true
+                );
+
+
+                showStatus(
+                    "تم تسجيل الدخول بنجاح.",
+                    "success",
+                    4000
+                );
+
+
+                await renderAccount(
+                    true
+                );
+
+            }
+
+            catch (error) {
+
+                setActionLoading(
+                    false
+                );
+
+                showModalError(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           FORGOT PASSWORD
+           ================================================= */
+
+        async function handleForgotPassword() {
+
+            clearInputMessages();
+
+
+            const email =
+                emailInput.value.trim();
+
+
+            if (!isValidEmail(email)) {
+
+                setFieldError(
+                    document.getElementById(
+                        "wfescEmailGroup"
+                    ),
+                    "يرجى إدخال بريد إلكتروني صحيح."
+                );
+
+                return;
+            }
+
+
+            setActionLoading(
+                true,
+                "جاري إرسال الرابط..."
+            );
+
+
+            try {
+
+                const result =
+                    await AUTH.resetPassword(
+                        email
+                    );
+
+
+                if (
+                    result?.error
+                ) {
+
+                    throw result.error;
+
+                }
+
+
+                await closeModal(
+                    true
+                );
+
+
+                createAccountInterface(
+                    true
+                );
+
+
+                showStatus(
+                    "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+                    "success",
+                    6500
+                );
+
+            }
+
+            catch (error) {
+
+                setActionLoading(
+                    false
+                );
+
+                showModalError(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           MODAL ERROR
+           ================================================= */
+
+        function showModalError(
+            message
+        ) {
+
+            showStatus(
+                message,
+                "error",
+                6000
+            );
+
+
+            const box =
+                modal?.querySelector(
+                    ".wfesc-auth-modal-box"
+                );
+
+
+            if (!box) {
+                return;
+            }
+
+
+            box.classList.remove(
+                "wfesc-modal-error"
+            );
+
+
+            void box.offsetWidth;
+
+
+            box.classList.add(
+                "wfesc-modal-error"
+            );
+
+
+            setTimeout(() => {
+
+                box.classList.remove(
+                    "wfesc-modal-error"
+                );
+
+            }, 500);
+        }
+
+
+        /* =================================================
+           EMAIL VERIFICATION
+           ================================================= */
+
+        function showVerifyMessage(
+            email
+        ) {
+
+            accountApp.innerHTML = `
+                <div class="wfesc-special-view wfesc-verify-view">
+
+                    <div class="wfesc-special-icon">
+                        ✉️
+                    </div>
+
+                    <h2>
+                        تحقق من بريدك الإلكتروني
+                    </h2>
+
+                    <p>
+                        أرسلنا رابط التحقق إلى:
+                    </p>
+
+                    <strong>
+                        ${escapeHtml(email || "")}
+                    </strong>
+
+                    <p class="wfesc-special-small">
+                        افحص البريد الوارد والرسائل غير المرغوب فيها.
+                    </p>
+
+                    <div class="wfesc-special-loader"></div>
+
+                </div>
+            `;
+
+            requestAnimationFrame(() => {
+
+                accountApp
+                    .querySelector(
+                        ".wfesc-special-view"
+                    )
+                    ?.classList.add(
+                        "wfesc-view-visible"
+                    );
+
+            });
+
+
+            showStatus(
+                "تم إنشاء الحساب، يرجى تأكيد بريدك الإلكتروني.",
+                "success",
+                6000
+            );
+        }
+
+
+        /* =================================================
+           EMAIL VERIFIED
+           ================================================= */
+
+        async function showVerifiedMessage() {
+
+            accountApp.innerHTML = `
+                <div class="wfesc-special-view wfesc-success-view">
+
+                    <div class="wfesc-success-check">
+                        ✓
+                    </div>
+
+                    <h2>
+                        تم التحقق بنجاح
+                    </h2>
+
+                    <p>
+                        تم التحقق من بريدك الإلكتروني وإكمال التسجيل.
+                    </p>
+
+                    <div class="wfesc-special-loader"></div>
+
+                </div>
+            `;
+
+
+            requestAnimationFrame(() => {
+
+                accountApp
+                    .querySelector(
+                        ".wfesc-special-view"
+                    )
+                    ?.classList.add(
+                        "wfesc-view-visible"
+                    );
+
+            });
+
+
+            await sleep(1800);
+
+
+            await renderAccount(
+                true
+            );
+
+            showStatus(
+                "تم التحقق بنجاح وإكمال التسجيل.",
+                "success",
+                5000
+            );
+        }
+
+
+        /* =================================================
+           PASSWORD RECOVERY DETECTION
+           ================================================= */
+
+        function isPasswordRecoveryUrl() {
+
+            const hash =
+                window.location.hash || "";
+
+            const search =
+                window.location.search || "";
+
+
+            const combined =
+                (
+                    hash +
+                    "&" +
+                    search
+                ).toLowerCase();
+
+
+            return (
+                combined.includes(
+                    "type=recovery"
+                ) ||
+                combined.includes(
+                    "type%3drecovery"
+                )
+            );
+        }
+
+
+        function getRecoveryEmail() {
+
+            try {
+
+                const user =
+                    AUTH.getUser?.();
+
+                if (
+                    user?.email
+                ) {
+                    return user.email;
+                }
+
+            } catch (_) {}
+
+
+            return "";
+        }
+
+
+        /* =================================================
+           RESET PASSWORD SCREEN
+           ================================================= */
+       
