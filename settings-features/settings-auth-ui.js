@@ -36,7 +36,7 @@
 
     /*
      * الزجاج السائل:
-     * مفعّل افتراضيًا إلى أن تتم إضافة مفتاحه داخل Settings.
+     * مفعّل افتراضيًا.
      */
 
     let liquidGlassEnabled = true;
@@ -46,6 +46,7 @@
     let currentProfile = null;
     let initialized = false;
     let verificationTimer = null;
+    let animationObserver = null;
 
     /*
      * ============================================================
@@ -74,12 +75,14 @@
     }
 
     /*
-     * اسم المستخدم:
-     * أحرف إنجليزية صغيرة + أرقام فقط.
+     * ============================================================
+     * USERNAME
+     * ============================================================
      */
 
     function sanitizeUsername(value) {
         return safeText(value)
+            .toLowerCase()
             .replace(/[^a-z0-9]/g, "")
             .slice(0, USERNAME_MAX);
     }
@@ -95,8 +98,9 @@
     }
 
     /*
-     * الاسم:
-     * يسمح بالعربي والإنكليزي والأرقام والمسافات والعلامات.
+     * ============================================================
+     * NAME
+     * ============================================================
      */
 
     function sanitizeName(value) {
@@ -112,12 +116,24 @@
         );
     }
 
+    /*
+     * ============================================================
+     * EMAIL
+     * ============================================================
+     */
+
     function validEmail(value) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
             .test(
                 safeText(value).trim()
             );
     }
+
+    /*
+     * ============================================================
+     * PASSWORD
+     * ============================================================
+     */
 
     function validPassword(value) {
         return (
@@ -129,59 +145,167 @@
 
     /*
      * ============================================================
+     * REAL USER CHECK
+     * ============================================================
+     *
+     * مهم:
+     * لا نعتبر أي object مستخدمًا.
+     * يجب أن يكون عندنا user.id حقيقي.
+     */
+
+    function isRealUser(user) {
+
+        if (!user) {
+            return false;
+        }
+
+        if (
+            typeof user !== "object"
+        ) {
+            return false;
+        }
+
+        if (
+            !user.id ||
+            typeof user.id !== "string"
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function extractUser(result) {
+
+        if (!result) {
+            return null;
+        }
+
+        /*
+         * الشكل:
+         * { user: {...} }
+         */
+
+        if (
+            isRealUser(
+                result.user
+            )
+        ) {
+            return result.user;
+        }
+
+        /*
+         * الشكل:
+         * { data: { user: {...} } }
+         */
+
+        if (
+            isRealUser(
+                result.data?.user
+            )
+        ) {
+            return result.data.user;
+        }
+
+        /*
+         * لا نستخدم result نفسه
+         * حتى لا يتحول Error object إلى حساب.
+         */
+
+        if (
+            isRealUser(result)
+        ) {
+            return result;
+        }
+
+        return null;
+    }
+
+    /*
+     * ============================================================
      * ERROR NORMALIZATION
      * ============================================================
      */
 
     function getErrorMessage(error) {
+
         if (!error) {
             return "حدث خطأ غير معروف.";
         }
 
-        if (typeof error === "string") {
+        if (
+            typeof error === "string"
+        ) {
             return error;
         }
 
-        const raw = (
+        const raw =
             error.message ||
             error.error_description ||
             error.msg ||
-            ""
-        );
+            "";
 
-        const text = safeText(raw).toLowerCase();
+        const text =
+            safeText(raw)
+                .toLowerCase();
 
         /*
-         * البريد موجود مسبقًا.
+         * تسجيل الدخول:
+         * Supabase يستخدم نفس الخطأ عادةً
+         * للبريد غير الموجود وكلمة المرور الخطأ.
          */
 
         if (
-            text.includes("already registered") ||
-            text.includes("user already registered") ||
-            text.includes("email already") ||
-            text.includes("already exists") ||
-            text.includes("duplicate key") ||
-            text.includes("email_exists")
-        ) {
-            return "يوجد حساب بهذا البريد، قم بتسجيل الدخول.";
-        }
-
-        /*
-         * كلمة المرور خاطئة.
-         */
-
-        if (
-            text.includes("invalid login credentials") ||
-            text.includes("invalid credentials") ||
-            text.includes("wrong password") ||
-            text.includes("invalid password")
+            text.includes(
+                "invalid login credentials"
+            ) ||
+            text.includes(
+                "invalid credentials"
+            ) ||
+            text.includes(
+                "wrong password"
+            ) ||
+            text.includes(
+                "invalid password"
+            )
         ) {
             return "كلمة المرور خطأ.";
         }
 
+        /*
+         * البريد موجود مسبقًا أثناء التسجيل.
+         */
+
         if (
-            text.includes("email not confirmed") ||
-            text.includes("email_not_confirmed")
+            text.includes(
+                "already registered"
+            ) ||
+            text.includes(
+                "user already registered"
+            ) ||
+            text.includes(
+                "email already"
+            ) ||
+            text.includes(
+                "already exists"
+            ) ||
+            text.includes(
+                "duplicate key"
+            ) ||
+            text.includes(
+                "email_exists"
+            )
+        ) {
+            return "يوجد حساب بهذا البريد، قم بتسجيل الدخول.";
+        }
+
+        if (
+            text.includes(
+                "email not confirmed"
+            ) ||
+            text.includes(
+                "email_not_confirmed"
+            )
         ) {
             return "يرجى تأكيد بريدك الإلكتروني أولًا.";
         }
@@ -199,6 +323,7 @@
      */
 
     function animationsEnabled() {
+
         return !document.documentElement
             .classList.contains(
                 "wfesc-animation-off"
@@ -206,7 +331,10 @@
     }
 
     function applyAnimationState() {
-        if (!root) return;
+
+        if (!root) {
+            return;
+        }
 
         root.classList.toggle(
             "wfesc-auth-no-animation",
@@ -215,16 +343,25 @@
     }
 
     function observeAnimationSetting() {
-        const observer =
-            new MutationObserver(function () {
-                applyAnimationState();
-            });
 
-        observer.observe(
+        if (animationObserver) {
+            return;
+        }
+
+        animationObserver =
+            new MutationObserver(
+                function () {
+                    applyAnimationState();
+                }
+            );
+
+        animationObserver.observe(
             document.documentElement,
             {
                 attributes: true,
-                attributeFilter: ["class"]
+                attributeFilter: [
+                    "class"
+                ]
             }
         );
     }
@@ -236,7 +373,10 @@
      */
 
     function applyLiquidGlass() {
-        if (!root) return;
+
+        if (!root) {
+            return;
+        }
 
         root.classList.toggle(
             "wfesc-liquid-glass-enabled",
@@ -248,11 +388,6 @@
                 ? "on"
                 : "off";
     }
-
-    /*
-     * هذه الدالة موجودة حتى نستطيع لاحقًا ربطها
-     * بزر Settings بدون إعادة بناء الملف.
-     */
 
     window.WFESCSetAuthLiquidGlass =
         function (enabled) {
@@ -275,7 +410,11 @@
      */
 
     function shake(element) {
-        if (!element || !animationsEnabled()) {
+
+        if (
+            !element ||
+            !animationsEnabled()
+        ) {
             return;
         }
 
@@ -289,15 +428,25 @@
             "wfesc-auth-shake"
         );
 
-        setTimeout(function () {
-            element.classList.remove(
-                "wfesc-auth-shake"
-            );
-        }, 450);
+        setTimeout(
+            function () {
+
+                element.classList.remove(
+                    "wfesc-auth-shake"
+                );
+
+            },
+            450
+        );
     }
 
     function shakeMany(elements) {
-        elements.forEach(shake);
+
+        elements.forEach(
+            function (element) {
+                shake(element);
+            }
+        );
     }
 
     /*
@@ -311,7 +460,10 @@
         text,
         type
     ) {
-        if (!element) return;
+
+        if (!element) {
+            return;
+        }
 
         element.textContent =
             text || "";
@@ -322,7 +474,10 @@
     }
 
     function clearMessage(element) {
-        if (!element) return;
+
+        if (!element) {
+            return;
+        }
 
         element.textContent = "";
 
@@ -341,10 +496,17 @@
         loading,
         text
     ) {
-        if (!button) return;
+
+        if (!button) {
+            return;
+        }
 
         if (loading) {
-            if (!button.dataset.originalText) {
+
+            if (
+                !button.dataset.originalText
+            ) {
+
                 button.dataset.originalText =
                     button.textContent;
             }
@@ -352,8 +514,11 @@
             button.disabled = true;
 
             button.textContent =
-                text || "جارٍ التنفيذ...";
+                text ||
+                "جارٍ التنفيذ...";
+
         } else {
+
             button.disabled = false;
 
             button.textContent =
@@ -374,12 +539,14 @@
         text,
         type
     ) {
+
         let status =
             document.getElementById(
                 "wfesc-auth-status"
             );
 
         if (!status) {
+
             status =
                 document.createElement(
                     "div"
@@ -411,7 +578,9 @@
 
         void status.offsetWidth;
 
-        status.classList.add("show");
+        status.classList.add(
+            "show"
+        );
 
         clearTimeout(
             status._wfescTimer
@@ -420,9 +589,11 @@
         status._wfescTimer =
             setTimeout(
                 function () {
+
                     status.classList.remove(
                         "show"
                     );
+
                 },
                 4500
             );
@@ -435,8 +606,10 @@
      */
 
     function closeAllModals() {
+
         qsa(".modal").forEach(
             function (modal) {
+
                 modal.classList.remove(
                     "show"
                 );
@@ -445,17 +618,27 @@
     }
 
     function openModal(modal) {
-        if (!modal) return;
 
-        modal.classList.add("show");
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add(
+            "show"
+        );
 
         applyAnimationState();
     }
 
     function closeModal(modal) {
-        if (!modal) return;
 
-        modal.classList.remove("show");
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove(
+            "show"
+        );
     }
 
     /*
@@ -465,6 +648,7 @@
      */
 
     function injectCSS() {
+
         if (
             document.getElementById(
                 "wfesc-settings-auth-ui-css"
@@ -474,19 +658,23 @@
         }
 
         const style =
-            document.createElement("style");
+            document.createElement(
+                "style"
+            );
 
         style.id =
             "wfesc-settings-auth-ui-css";
 
         style.textContent = `
+
             #settingsAccountApp {
                 width: 100%;
             }
 
             #settingsAccountApp,
             #settingsAccountApp * {
-                -webkit-tap-highlight-color: transparent;
+                -webkit-tap-highlight-color:
+                    transparent;
             }
 
             .wfesc-auth-shell {
@@ -502,46 +690,54 @@
 
             .wfesc-liquid-glass-enabled
             .wfesc-auth-glass {
+
                 background:
                     linear-gradient(
                         135deg,
-                        rgba(255,255,255,.105),
-                        rgba(255,255,255,.025)
+                        rgba(255,255,255,.055),
+                        rgba(255,255,255,.012)
                     ) !important;
 
                 border-color:
-                    rgba(255,255,255,.16) !important;
+                    rgba(255,255,255,.115)
+                    !important;
 
                 box-shadow:
                     inset 0 1px 0
-                    rgba(255,255,255,.10),
+                    rgba(255,255,255,.085),
+
                     inset 0 -1px 0
-                    rgba(255,255,255,.035),
-                    0 14px 40px
-                    rgba(0,0,0,.20) !important;
+                    rgba(255,255,255,.018),
+
+                    0 10px 34px
+                    rgba(0,0,0,.18)
+                    !important;
 
                 backdrop-filter:
-                    blur(22px)
-                    saturate(145%);
+                    blur(28px)
+                    saturate(155%);
 
                 -webkit-backdrop-filter:
-                    blur(22px)
-                    saturate(145%);
+                    blur(28px)
+                    saturate(155%);
             }
 
             .wfesc-liquid-glass-enabled
             .wfesc-auth-input {
+
                 background:
-                    rgba(255,255,255,.045);
+                    rgba(255,255,255,.026);
 
                 border-color:
-                    rgba(255,255,255,.12);
+                    rgba(255,255,255,.105);
 
                 backdrop-filter:
-                    blur(14px);
+                    blur(20px)
+                    saturate(140%);
 
                 -webkit-backdrop-filter:
-                    blur(14px);
+                    blur(20px)
+                    saturate(140%);
             }
 
             .wfesc-liquid-glass-enabled
@@ -550,17 +746,55 @@
             .wfesc-auth-button:not(.primary),
             .wfesc-liquid-glass-enabled
             .wfesc-auth-action {
+
                 background:
-                    rgba(255,255,255,.055);
+                    rgba(255,255,255,.032);
 
                 border-color:
-                    rgba(255,255,255,.12);
+                    rgba(255,255,255,.105);
 
                 backdrop-filter:
-                    blur(15px);
+                    blur(22px)
+                    saturate(150%);
 
                 -webkit-backdrop-filter:
-                    blur(15px);
+                    blur(22px)
+                    saturate(150%);
+            }
+
+            /*
+             * لمعة زجاج خفيفة جدًا.
+             */
+
+            .wfesc-liquid-glass-enabled
+            .wfesc-auth-glass::before {
+
+                content: "";
+
+                position: absolute;
+
+                inset: 0;
+
+                pointer-events: none;
+
+                border-radius:
+                    inherit;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgba(255,255,255,.045),
+                        transparent 35%,
+                        transparent 70%,
+                        rgba(255,255,255,.012)
+                    );
+
+                opacity: .8;
+            }
+
+            .wfesc-auth-glass {
+                position: relative;
+                overflow: hidden;
             }
 
             /*
@@ -570,21 +804,36 @@
              */
 
             .wfesc-auth-tabs {
+
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+
+                grid-template-columns:
+                    1fr 1fr;
+
                 gap: 8px;
+
                 margin-bottom: 15px;
             }
 
             .wfesc-auth-tab {
+
                 min-height: 45px;
-                border: 1px solid #292929;
+
+                border:
+                    1px solid #292929;
+
                 border-radius: 13px;
+
                 background: #171717;
+
                 color: #999;
+
                 cursor: pointer;
+
                 font-size: 14px;
+
                 font-weight: bold;
+
                 transition:
                     transform .22s ease,
                     background .22s ease,
@@ -593,13 +842,18 @@
             }
 
             .wfesc-auth-tab.active {
+
                 background: #eee;
+
                 color: #050505;
+
                 border-color: #eee;
             }
 
             .wfesc-auth-tab:active {
-                transform: scale(.98);
+
+                transform:
+                    scale(.98);
             }
 
             /*
@@ -613,7 +867,9 @@
             }
 
             .wfesc-auth-panel.active {
+
                 display: block;
+
                 animation:
                     wfescAuthPanelIn
                     .32s ease both;
@@ -630,9 +886,13 @@
             }
 
             .wfesc-auth-form-group label {
+
                 display: block;
+
                 color: #aaa;
+
                 font-size: 12px;
+
                 margin-bottom: 7px;
             }
 
@@ -641,15 +901,26 @@
             }
 
             .wfesc-auth-input {
+
                 width: 100%;
+
                 height: 47px;
+
+                border:
+                    1px solid #292929;
+
                 border-radius: 13px;
-                border: 1px solid #292929;
+
                 outline: none;
+
                 background: #181818;
+
                 color: #fff;
+
                 padding: 0 13px;
+
                 font-size: 14px;
+
                 transition:
                     border-color .2s ease,
                     box-shadow .2s ease,
@@ -658,47 +929,76 @@
             }
 
             .wfesc-auth-input:focus {
-                border-color: #777;
+
+                border-color:
+                    rgba(255,255,255,.42);
+
                 box-shadow:
                     0 0 0 3px
-                    rgba(255,255,255,.045);
+                    rgba(255,255,255,.035);
             }
 
             .wfesc-auth-input.error {
-                border-color: #a84b4b;
+
+                border-color:
+                    #a84b4b;
+
                 box-shadow:
                     0 0 0 3px
                     rgba(168,75,75,.08);
             }
 
             .wfesc-auth-password-toggle {
+
                 position: absolute;
+
                 left: 3px;
+
                 top: 3px;
+
                 width: 40px;
+
                 height: 40px;
+
                 border: 0;
+
                 border-radius: 10px;
-                background: transparent;
+
+                background:
+                    transparent;
+
                 color: #aaa;
+
                 cursor: pointer;
+
                 font-size: 17px;
             }
 
             .wfesc-auth-error {
+
                 min-height: 17px;
+
                 color: #df7777;
+
                 font-size: 11px;
+
                 margin-top: 5px;
+
                 line-height: 1.4;
             }
 
             .wfesc-auth-message {
+
                 min-height: 20px;
+
                 text-align: center;
+
                 color: #888;
+
                 font-size: 12px;
+
                 line-height: 1.6;
+
                 margin-top: 10px;
             }
 
@@ -717,44 +1017,70 @@
              */
 
             .wfesc-auth-button {
+
                 width: 100%;
+
                 min-height: 50px;
+
+                border:
+                    1px solid #292929;
+
                 border-radius: 13px;
-                border: 1px solid #292929;
+
                 background: #171717;
+
                 color: #eee;
+
                 cursor: pointer;
+
                 font-size: 14px;
+
                 font-weight: bold;
+
                 transition:
                     transform .2s ease,
                     opacity .2s ease,
                     background .2s ease;
+
                 margin-top: 5px;
             }
 
             .wfesc-auth-button.primary {
+
                 background: #eee;
+
                 color: #050505;
+
                 border-color: #eee;
             }
 
             .wfesc-auth-button:active {
-                transform: scale(.985);
+
+                transform:
+                    scale(.985);
             }
 
             .wfesc-auth-button:disabled {
+
                 opacity: .55;
+
                 cursor: wait;
             }
 
             .wfesc-auth-link {
+
                 width: 100%;
+
                 min-height: 42px;
+
                 border: 0;
+
                 background: transparent;
+
                 color: #888;
+
                 cursor: pointer;
+
                 font-size: 12px;
             }
 
@@ -769,20 +1095,31 @@
             }
 
             .wfesc-auth-profile {
+
                 display: flex;
+
                 align-items: center;
+
                 gap: 13px;
+
                 padding: 15px;
+
                 margin-bottom: 12px;
-                border: 1px solid #242424;
+
+                border:
+                    1px solid #242424;
+
                 border-radius: 18px;
+
                 background: #111;
+
                 box-shadow:
                     0 8px 25px
                     rgba(0,0,0,.12);
             }
 
             .wfesc-auth-glass {
+
                 transition:
                     background .25s ease,
                     border-color .25s ease,
@@ -790,82 +1127,137 @@
             }
 
             .wfesc-auth-avatar-wrap {
+
                 width: 62px;
+
                 height: 62px;
+
                 min-width: 62px;
+
                 border-radius: 50%;
+
                 overflow: hidden;
-                border: 1px solid #303030;
+
+                border:
+                    1px solid #303030;
+
                 background: #1b1b1b;
             }
 
             .wfesc-auth-avatar {
+
                 width: 100%;
+
                 height: 100%;
+
                 object-fit: cover;
+
                 display: none;
             }
 
             .wfesc-auth-avatar-fallback {
+
                 width: 100%;
+
                 height: 100%;
+
                 display: flex;
+
                 align-items: center;
+
                 justify-content: center;
+
                 color: #eee;
+
                 font-size: 23px;
+
                 font-weight: bold;
             }
 
             .wfesc-auth-account-info {
+
                 min-width: 0;
+
                 flex: 1;
             }
 
             .wfesc-auth-account-name {
+
                 font-size: 17px;
+
                 font-weight: bold;
+
                 margin-bottom: 4px;
+
                 overflow: hidden;
+
                 text-overflow: ellipsis;
+
                 white-space: nowrap;
             }
 
             .wfesc-auth-account-username {
+
                 color: #aaa;
+
                 font-size: 12px;
+
                 direction: ltr;
+
                 text-align: right;
             }
 
             .wfesc-auth-account-email {
+
                 color: #777;
+
                 font-size: 11px;
+
                 margin-top: 4px;
+
                 direction: ltr;
+
                 text-align: right;
+
                 overflow: hidden;
+
                 text-overflow: ellipsis;
+
                 white-space: nowrap;
             }
 
             .wfesc-auth-verified {
+
                 color: #aaa;
+
                 font-size: 10px;
+
                 margin-top: 5px;
             }
 
             .wfesc-auth-action {
+
                 width: 100%;
+
                 min-height: 58px;
+
                 padding: 10px 14px;
-                border: 1px solid #292929;
+
+                border:
+                    1px solid #292929;
+
                 border-radius: 13px;
+
                 background: #171717;
+
                 color: #eee;
+
                 text-align: right;
+
                 cursor: pointer;
+
                 margin-top: 8px;
+
                 transition:
                     transform .2s ease,
                     background .2s ease,
@@ -873,22 +1265,31 @@
             }
 
             .wfesc-auth-action strong {
+
                 display: block;
+
                 font-size: 13px;
             }
 
             .wfesc-auth-action span {
+
                 display: block;
+
                 color: #777;
+
                 font-size: 10px;
+
                 margin-top: 4px;
             }
 
             .wfesc-auth-action:active {
-                transform: scale(.985);
+
+                transform:
+                    scale(.985);
             }
 
             .wfesc-auth-action.danger {
+
                 color: #df7777;
             }
 
@@ -899,23 +1300,39 @@
              */
 
             .wfesc-auth-verification {
+
                 display: none;
+
                 padding: 12px;
+
                 margin-bottom: 13px;
-                border: 1px solid #303030;
+
+                border:
+                    1px solid #303030;
+
                 border-radius: 13px;
+
                 background: #171717;
+
                 color: #aaa;
+
                 text-align: center;
+
                 font-size: 11px;
+
                 line-height: 1.7;
             }
 
             .wfesc-auth-verification.show {
+
                 display: block;
+
                 animation:
                     wfescVerificationIn
-                    .3s ease both;
+                    .3s ease both,
+                    wfescVerificationPulse
+                    1.1s ease-in-out
+                    infinite alternate;
             }
 
             /*
@@ -925,15 +1342,22 @@
              */
 
             .wfesc-auth-loading {
+
                 display: none;
-                padding: 14px;
+
+                padding: 8px;
+
                 text-align: center;
-                color: #888;
-                font-size: 12px;
+
+                color: #777;
+
+                font-size: 11px;
             }
 
             .wfesc-auth-loading.show {
+
                 display: block;
+
                 animation:
                     wfescAuthFade
                     .25s ease both;
@@ -946,6 +1370,7 @@
              */
 
             .wfesc-auth-shake {
+
                 animation:
                     wfescAuthShake
                     .4s ease;
@@ -958,105 +1383,139 @@
              */
 
             .wfesc-delete-warning {
+
                 text-align: center;
-                padding: 5px 0 12px;
+
+                padding:
+                    5px 0 12px;
             }
 
             .wfesc-delete-warning-icon {
+
                 font-size: 38px;
+
                 margin-bottom: 8px;
             }
 
             .wfesc-delete-warning-title {
+
                 font-size: 18px;
+
                 font-weight: bold;
+
                 color: #fff;
+
                 margin-bottom: 9px;
             }
 
             .wfesc-delete-warning-text {
+
                 color: #aaa;
+
                 font-size: 12px;
+
                 line-height: 1.8;
             }
 
             .wfesc-delete-warning-text strong {
+
                 color: #df7777;
             }
 
             .wfesc-delete-final {
-                padding: 4px 0 8px;
+
+                padding:
+                    4px 0 8px;
             }
 
             .wfesc-delete-final-title {
+
                 font-size: 17px;
+
                 font-weight: bold;
+
                 text-align: center;
+
                 margin-bottom: 12px;
             }
 
             .wfesc-delete-support {
+
                 padding: 12px;
+
                 border-radius: 13px;
-                border: 1px solid #292929;
+
+                border:
+                    1px solid #292929;
+
                 background: #171717;
+
                 color: #999;
+
                 font-size: 11px;
+
                 line-height: 1.7;
+
                 text-align: center;
+
                 margin-bottom: 13px;
             }
 
             .wfesc-delete-support-button {
+
                 width: 100%;
+
                 min-height: 43px;
+
                 border-radius: 12px;
-                border: 1px solid #303030;
+
+                border:
+                    1px solid #303030;
+
                 background: #202020;
+
                 color: #eee;
+
                 cursor: pointer;
+
                 margin-top: 9px;
             }
 
             .wfesc-delete-confirm {
+
                 width: 100%;
+
                 min-height: 47px;
+
                 border-radius: 12px;
-                border: 1px solid #7a3d3d;
+
+                border:
+                    1px solid #7a3d3d;
+
                 background: #512727;
+
                 color: #fff;
+
                 cursor: pointer;
+
                 font-weight: bold;
+
                 margin-top: 6px;
             }
 
             .wfesc-delete-cancel {
+
                 width: 100%;
+
                 min-height: 43px;
+
                 border: 0;
+
                 background: transparent;
+
                 color: #888;
+
                 cursor: pointer;
-            }
-
-            /*
-             * ====================================================
-             * DEBUG
-             * ====================================================
-             */
-
-            .wfesc-auth-debug {
-                margin-top: 12px;
-                padding: 10px;
-                border-radius: 10px;
-                background: #0d0d0d;
-                border: 1px solid #242424;
-                color: #666;
-                font-size: 9px;
-                line-height: 1.5;
-                direction: ltr;
-                text-align: left;
-                word-break: break-word;
             }
 
             /*
@@ -1066,6 +1525,7 @@
              */
 
             @keyframes wfescAuthPanelIn {
+
                 from {
                     opacity: 0;
                     transform:
@@ -1080,6 +1540,7 @@
             }
 
             @keyframes wfescAuthFade {
+
                 from {
                     opacity: 0;
                 }
@@ -1090,6 +1551,7 @@
             }
 
             @keyframes wfescVerificationIn {
+
                 from {
                     opacity: 0;
                     transform:
@@ -1103,46 +1565,80 @@
                 }
             }
 
+            @keyframes wfescVerificationPulse {
+
+                from {
+                    opacity: .68;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
             @keyframes wfescAuthShake {
-                0%,100% {
-                    transform: translateX(0);
+
+                0%, 100% {
+                    transform:
+                        translateX(0);
                 }
 
                 20% {
-                    transform: translateX(6px);
+                    transform:
+                        translateX(6px);
                 }
 
                 40% {
-                    transform: translateX(-6px);
+                    transform:
+                        translateX(-6px);
                 }
 
                 60% {
-                    transform: translateX(4px);
+                    transform:
+                        translateX(4px);
                 }
 
                 80% {
-                    transform: translateX(-3px);
+                    transform:
+                        translateX(-3px);
                 }
             }
 
             .wfesc-auth-no-animation *,
-            .wfesc-auth-no-animation *::before,
-            .wfesc-auth-no-animation *::after {
-                animation: none !important;
-                transition: none !important;
-                scroll-behavior: auto !important;
+            .wfesc-auth-no-animation
+            *::before,
+            .wfesc-auth-no-animation
+            *::after {
+
+                animation:
+                    none !important;
+
+                transition:
+                    none !important;
+
+                scroll-behavior:
+                    auto !important;
             }
 
-            @media (prefers-reduced-motion: reduce) {
+            @media
+            (prefers-reduced-motion: reduce) {
+
                 #settingsAccountApp *,
-                #settingsAccountApp *::before,
-                #settingsAccountApp *::after {
-                    animation: none !important;
-                    transition: none !important;
+                #settingsAccountApp
+                *::before,
+                #settingsAccountApp
+                *::after {
+
+                    animation:
+                        none !important;
+
+                    transition:
+                        none !important;
                 }
             }
 
             @media (max-width: 500px) {
+
                 .wfesc-auth-tabs {
                     gap: 6px;
                 }
@@ -1167,12 +1663,14 @@
      */
 
     function ensureRoot() {
+
         root =
             document.getElementById(
                 "settingsAccountApp"
             );
 
         if (!root) {
+
             console.error(
                 "WFESC: #settingsAccountApp غير موجود."
             );
@@ -1190,9 +1688,13 @@
      */
 
     function buildUI() {
-        if (!root) return;
+
+        if (!root) {
+            return;
+        }
 
         root.innerHTML = `
+
             <div class="wfesc-auth-shell">
 
                 <div
@@ -1242,6 +1744,7 @@
                     >
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 البريد الإلكتروني
                             </label>
@@ -1258,14 +1761,18 @@
                                 id="wfesc-login-email-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 كلمة المرور
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-login-password"
@@ -1290,6 +1797,7 @@
                                 id="wfesc-login-password-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <button
@@ -1323,6 +1831,7 @@
                     >
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 الاسم
                             </label>
@@ -1340,9 +1849,11 @@
                                 id="wfesc-register-name-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 اسم المستخدم
                             </label>
@@ -1363,9 +1874,11 @@
                                 id="wfesc-register-username-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 البريد الإلكتروني
                             </label>
@@ -1382,14 +1895,18 @@
                                 id="wfesc-register-email-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 كلمة المرور
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-register-password"
@@ -1414,14 +1931,18 @@
                                 id="wfesc-register-password-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <div class="wfesc-auth-form-group">
+
                             <label>
                                 تأكيد كلمة المرور
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-register-confirm"
@@ -1446,6 +1967,7 @@
                                 id="wfesc-register-confirm-error"
                                 class="wfesc-auth-error"
                             ></div>
+
                         </div>
 
                         <button
@@ -1470,7 +1992,9 @@
                         class="wfesc-auth-panel"
                     >
 
-                        <div class="wfesc-auth-form-group">
+                        <div
+                            class="wfesc-auth-form-group"
+                        >
 
                             <label>
                                 البريد الإلكتروني
@@ -1524,9 +2048,13 @@
                     style="display:none;"
                 >
 
-                    <div class="wfesc-auth-profile wfesc-auth-glass">
+                    <div
+                        class="wfesc-auth-profile wfesc-auth-glass"
+                    >
 
-                        <div class="wfesc-auth-avatar-wrap">
+                        <div
+                            class="wfesc-auth-avatar-wrap"
+                        >
 
                             <img
                                 id="wfesc-logged-avatar"
@@ -1543,21 +2071,19 @@
 
                         </div>
 
-                        <div class="wfesc-auth-account-info">
+                        <div
+                            class="wfesc-auth-account-info"
+                        >
 
                             <div
                                 id="wfesc-logged-name"
                                 class="wfesc-auth-account-name"
-                            >
-                                WFESC
-                            </div>
+                            ></div>
 
                             <div
                                 id="wfesc-logged-username"
                                 class="wfesc-auth-account-username"
-                            >
-                                @wfesc
-                            </div>
+                            ></div>
 
                             <div
                                 id="wfesc-logged-email"
@@ -1627,7 +2153,7 @@
 
                 </div>
 
-                <!-- CHANGE PASSWORD MODAL -->
+                <!-- CHANGE PASSWORD -->
 
                 <div
                     id="wfesc-change-password-modal"
@@ -1658,7 +2184,9 @@
                                 كلمة المرور الجديدة
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-new-password"
@@ -1687,7 +2215,9 @@
                                 تأكيد كلمة المرور
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-new-password-confirm"
@@ -1727,7 +2257,7 @@
 
                 </div>
 
-                <!-- RECOVERY PASSWORD MODAL -->
+                <!-- RECOVERY -->
 
                 <div
                     id="wfesc-recovery-modal"
@@ -1750,7 +2280,9 @@
                                 كلمة المرور الجديدة
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-recovery-password"
@@ -1778,7 +2310,9 @@
                                 تأكيد كلمة المرور
                             </label>
 
-                            <div class="wfesc-auth-input-wrap">
+                            <div
+                                class="wfesc-auth-input-wrap"
+                            >
 
                                 <input
                                     id="wfesc-recovery-confirm"
@@ -1817,7 +2351,7 @@
 
                 </div>
 
-                <!-- DELETE FIRST CONFIRMATION -->
+                <!-- DELETE WARNING -->
 
                 <div
                     id="wfesc-delete-warning-modal"
@@ -1844,15 +2378,21 @@
 
                         <div class="wfesc-delete-warning">
 
-                            <div class="wfesc-delete-warning-icon">
+                            <div
+                                class="wfesc-delete-warning-icon"
+                            >
                                 ⚠️
                             </div>
 
-                            <div class="wfesc-delete-warning-title">
+                            <div
+                                class="wfesc-delete-warning-title"
+                            >
                                 هل أنت متأكد من خيارك لحذف الحساب؟
                             </div>
 
-                            <div class="wfesc-delete-warning-text">
+                            <div
+                                class="wfesc-delete-warning-text"
+                            >
                                 سيتم حذف حسابك بشكل نهائي خلال أسبوع،
                                 <strong>
                                     ويُحذف بالكامل خلال أسبوع.
@@ -1881,7 +2421,7 @@
 
                 </div>
 
-                <!-- DELETE SECOND CONFIRMATION -->
+                <!-- DELETE FINAL -->
 
                 <div
                     id="wfesc-delete-final-modal"
@@ -1906,13 +2446,19 @@
 
                         </div>
 
-                        <div class="wfesc-delete-final">
+                        <div
+                            class="wfesc-delete-final"
+                        >
 
-                            <div class="wfesc-delete-final-title">
+                            <div
+                                class="wfesc-delete-final-title"
+                            >
                                 متأكد من طلبك؟
                             </div>
 
-                            <div class="wfesc-delete-support">
+                            <div
+                                class="wfesc-delete-support"
+                            >
 
                                 إذا تواجه مشكلة وبسببها تريد حذف الحساب،
                                 يمكنك التواصل مع الدعم قبل حذف حسابك.
@@ -1965,6 +2511,7 @@
      */
 
     function getElements() {
+
         return {
 
             loading:
@@ -2152,7 +2699,10 @@
      */
 
     function setMode(mode) {
-        if (!E) return;
+
+        if (!E) {
+            return;
+        }
 
         E.loginPanel.classList.remove(
             "active"
@@ -2168,6 +2718,7 @@
 
         E.tabs.forEach(
             function (tab) {
+
                 tab.classList.remove(
                     "active"
                 );
@@ -2286,7 +2837,9 @@
         errorElement,
         text
     ) {
+
         if (input) {
+
             input.classList.add(
                 "error"
             );
@@ -2295,6 +2848,7 @@
         }
 
         if (errorElement) {
+
             errorElement.textContent =
                 text || "";
         }
@@ -2304,13 +2858,16 @@
         input,
         errorElement
     ) {
+
         if (input) {
+
             input.classList.remove(
                 "error"
             );
         }
 
         if (errorElement) {
+
             errorElement.textContent =
                 "";
         }
@@ -2367,24 +2924,22 @@
 
     /*
      * ============================================================
-     * AUTOMATIC NAME / USERNAME FROM EMAIL
+     * AUTOMATIC NAME / USERNAME
      * ============================================================
      */
 
-    function getEmailName(
-        email
-    ) {
-        const value =
-            safeText(email)
-                .trim()
-                .split("@")[0];
+    function getEmailName(email) {
 
-        return value;
+        return safeText(email)
+            .trim()
+            .split("@")[0];
     }
 
     function autoFillFromEmail() {
 
-        if (!E) return;
+        if (!E) {
+            return;
+        }
 
         const email =
             E.registerEmail.value
@@ -2404,36 +2959,25 @@
             return;
         }
 
-        /*
-         * الاسم:
-         * نملأ فقط إذا كان فارغًا.
-         */
-
         if (
             !E.registerName.value
                 .trim()
         ) {
+
             E.registerName.value =
                 sanitizeName(
                     localPart
                 );
         }
 
-        /*
-         * اسم المستخدم:
-         * نملأ فقط إذا كان فارغًا.
-         * الأحرف تصبح lowercase لأن
-         * اسم المستخدم يسمح بالصغير فقط.
-         */
-
         if (
             !E.registerUsername.value
                 .trim()
         ) {
+
             E.registerUsername.value =
                 sanitizeUsername(
                     localPart
-                        .toLowerCase()
                 );
         }
     }
@@ -2446,16 +2990,22 @@
 
     function showGuest() {
 
-        if (!E) return;
+        if (!E) {
+            return;
+        }
 
-        E.guest.style.display = "";
+        E.guest.style.display =
+            "";
+
         E.logged.style.display =
             "none";
     }
 
     function showLoggedIn() {
 
-        if (!E) return;
+        if (!E) {
+            return;
+        }
 
         E.guest.style.display =
             "none";
@@ -2464,34 +3014,43 @@
             "";
     }
 
+    /*
+     * لا يوجد WFESC كقيمة افتراضية
+     * للحساب القادم من تسجيل دخول فاشل.
+     */
+
     function getDisplayName(
         user,
         profile
     ) {
-        return (
+
+        const value =
             profile?.full_name ||
             profile?.name ||
             user?.user_metadata?.full_name ||
             user?.user_metadata?.name ||
+            user?.user_metadata?.display_name ||
             profile?.username ||
             user?.email?.split("@")[0] ||
-            "WFESC"
-        );
+            "";
+
+        return safeText(value)
+            .trim()
+            .slice(0, NAME_MAX);
     }
 
     function getUsername(
         user,
         profile
     ) {
-        const username =
+
+        const value =
             profile?.username ||
             user?.user_metadata?.username ||
-            user?.email?.split("@")[0] ||
-            "wfesc";
+            "";
 
         return sanitizeUsername(
-            safeText(username)
-                .toLowerCase()
+            value
         );
     }
 
@@ -2499,9 +3058,19 @@
         user,
         profile
     ) {
-        if (!E) return;
 
-        if (!user) {
+        if (!E) {
+            return;
+        }
+
+        /*
+         * أهم حماية:
+         * أي قيمة ليست User حقيقي = خروج.
+         */
+
+        if (
+            !isRealUser(user)
+        ) {
 
             currentUser = null;
             currentProfile = null;
@@ -2511,9 +3080,11 @@
             return;
         }
 
-        currentUser = user;
+        currentUser =
+            user;
+
         currentProfile =
-            profile || {};
+            profile || null;
 
         showLoggedIn();
 
@@ -2532,11 +3103,17 @@
         const email =
             user.email || "";
 
+        /*
+         * لا نعرض قيمًا وهمية.
+         */
+
         E.loggedName.textContent =
-            name;
+            name || "حساب WFESC";
 
         E.loggedUsername.textContent =
-            "@" + username;
+            username
+                ? "@" + username
+                : "";
 
         E.loggedEmail.textContent =
             email;
@@ -2545,9 +3122,12 @@
             user.email_confirmed_at ||
             user.confirmed_at
         ) {
+
             E.loggedVerified.textContent =
                 "✓ البريد الإلكتروني موثق";
+
         } else {
+
             E.loggedVerified.textContent =
                 "البريد الإلكتروني غير موثق";
         }
@@ -2581,7 +3161,9 @@
                 "flex";
 
             E.loggedAvatarFallback.textContent =
-                safeText(name)
+                safeText(
+                    name || "W"
+                )
                     .trim()
                     .charAt(0)
                     .toUpperCase() ||
@@ -2597,11 +3179,14 @@
 
     async function restoreSession() {
 
-        if (!E) return;
+        if (!E) {
+            return;
+        }
 
-        E.loading.classList.add(
-            "show"
-        );
+        /*
+         * هذه فقط لاستعادة جلسة موجودة مسبقًا.
+         * لا علاقة لها بمحاولة تسجيل الدخول.
+         */
 
         try {
 
@@ -2609,8 +3194,9 @@
                 getAuth();
 
             if (!auth) {
+
                 throw new Error(
-                    "WFESCSettingsAuth غير موجود. تأكد من تحميل settings-auth.js قبل settings-auth-ui.js."
+                    "WFESCSettingsAuth غير موجود."
                 );
             }
 
@@ -2622,14 +3208,42 @@
                 const result =
                     await auth.restoreSession();
 
-                if (result?.user) {
+                const user =
+                    extractUser(result);
+
+                if (user) {
 
                     currentUser =
-                        result.user;
+                        user;
 
                     currentProfile =
-                        result.profile ||
+                        result?.profile ||
                         null;
+
+                    /*
+                     * إذا لم يكن Profile موجودًا،
+                     * لا ننشئ Profile وهمي.
+                     */
+
+                    if (
+                        !currentProfile &&
+                        typeof auth.fetchProfile ===
+                        "function"
+                    ) {
+
+                        try {
+
+                            currentProfile =
+                                await auth.fetchProfile(
+                                    user.id
+                                );
+
+                        } catch (_) {
+
+                            currentProfile =
+                                null;
+                        }
+                    }
 
                     renderAccount(
                         currentUser,
@@ -2658,13 +3272,15 @@
                 const session =
                     result?.data?.session ||
                     result?.session ||
-                    result;
+                    null;
 
                 const user =
                     session?.user ||
                     null;
 
-                if (user) {
+                if (
+                    isRealUser(user)
+                ) {
 
                     currentUser =
                         user;
@@ -2673,10 +3289,19 @@
                         typeof auth.fetchProfile ===
                         "function"
                     ) {
-                        currentProfile =
-                            await auth.fetchProfile(
-                                user.id
-                            );
+
+                        try {
+
+                            currentProfile =
+                                await auth.fetchProfile(
+                                    user.id
+                                );
+
+                        } catch (_) {
+
+                            currentProfile =
+                                null;
+                        }
                     }
 
                     renderAccount(
@@ -2696,7 +3321,7 @@
             }
 
             throw new Error(
-                "دالة restoreSession أو getSession غير موجودة في settings-auth.js."
+                "دالة استعادة الجلسة غير موجودة."
             );
 
         } catch (error) {
@@ -2711,20 +3336,19 @@
                 null
             );
 
-            showStatus(
-                "تعذر استعادة جلسة الحساب.",
-                "error"
-            );
-
-            showDebugError(
-                error
-            );
-
         } finally {
 
-            E.loading.classList.remove(
-                "show"
-            );
+            /*
+             * لا نعرض شاشة WFESC أو Logo.
+             * فقط نخفي نص التحقق.
+             */
+
+            if (E.loading) {
+
+                E.loading.classList.remove(
+                    "show"
+                );
+            }
         }
     }
 
@@ -2741,6 +3365,11 @@
         const email =
             E.loginEmail.value
                 .trim();
+
+        /*
+         * لا نلمس كلمة المرور.
+         * تبقى كما كتبها المستخدم حتى عند الخطأ.
+         */
 
         const password =
             E.loginPassword.value;
@@ -2783,23 +3412,22 @@
 
             setMessage(
                 E.loginMessage,
-                getErrorMessage(
-                    error
-                ),
+                getErrorMessage(error),
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
         }
 
+        /*
+         * مهم:
+         * لا نعرض شعار ولا Profile ولا واجهة حساب.
+         */
+
         setButtonLoading(
             E.loginSubmit,
             true,
-            "جارٍ تسجيل الدخول..."
+            "جارٍ التحقق..."
         );
 
         try {
@@ -2810,30 +3438,67 @@
                     password
                 );
 
-            const user =
-                result?.user ||
-                result?.data?.user ||
-                result;
+            /*
+             * استخراج User حقيقي فقط.
+             */
 
-            if (!user) {
+            const user =
+                extractUser(result);
+
+            /*
+             * إذا لم يوجد user.id:
+             * لا تسجيل دخول.
+             * لا Profile.
+             * لا WFESC.
+             */
+
+            if (
+                !isRealUser(user)
+            ) {
+
                 throw new Error(
-                    "تم تنفيذ تسجيل الدخول لكن لم يتم استلام بيانات المستخدم."
+                    "تعذر التحقق من بيانات تسجيل الدخول."
                 );
             }
 
             currentUser =
                 user;
 
+            currentProfile =
+                null;
+
+            /*
+             * جلب Profile الحقيقي فقط
+             * بعد نجاح Auth.
+             */
+
             if (
                 typeof auth.fetchProfile ===
                 "function"
             ) {
 
-                currentProfile =
-                    await auth.fetchProfile(
-                        user.id
+                try {
+
+                    currentProfile =
+                        await auth.fetchProfile(
+                            user.id
+                        );
+
+                } catch (profileError) {
+
+                    console.warn(
+                        "WFESC: تعذر جلب Profile بعد نجاح تسجيل الدخول.",
+                        profileError
                     );
+
+                    currentProfile =
+                        null;
+                }
             }
+
+            /*
+             * هنا فقط يظهر الحساب.
+             */
 
             renderAccount(
                 currentUser,
@@ -2844,6 +3509,11 @@
                 "تم تسجيل الدخول بنجاح.",
                 "success"
             );
+
+            /*
+             * نمسح كلمة المرور فقط
+             * بعد نجاح الدخول.
+             */
 
             E.loginPassword.value =
                 "";
@@ -2860,6 +3530,21 @@
                     error
                 );
 
+            /*
+             * لا نعرض الحساب أبدًا
+             * عند الخطأ.
+             */
+
+            currentUser = null;
+            currentProfile = null;
+
+            showGuest();
+
+            /*
+             * كلمة المرور الخطأ:
+             * تبقى موجودة + اهتزاز.
+             */
+
             setMessage(
                 E.loginMessage,
                 message,
@@ -2875,10 +3560,6 @@
             showStatus(
                 message,
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
         } finally {
@@ -2906,8 +3587,9 @@
             );
 
         const username =
-            E.registerUsername.value
-                .trim();
+            sanitizeUsername(
+                E.registerUsername.value
+            );
 
         const email =
             E.registerEmail.value
@@ -2922,11 +3604,10 @@
         E.registerName.value =
             name;
 
-        let valid = true;
+        E.registerUsername.value =
+            username;
 
-        /*
-         * الاسم
-         */
+        let valid = true;
 
         if (!validName(name)) {
 
@@ -2939,10 +3620,6 @@
             valid = false;
         }
 
-        /*
-         * اسم المستخدم
-         */
-
         if (!validUsername(username)) {
 
             fieldError(
@@ -2953,10 +3630,6 @@
 
             valid = false;
         }
-
-        /*
-         * البريد
-         */
 
         if (!validEmail(email)) {
 
@@ -2969,10 +3642,6 @@
             valid = false;
         }
 
-        /*
-         * كلمة المرور
-         */
-
         if (!validPassword(password)) {
 
             fieldError(
@@ -2983,10 +3652,6 @@
 
             valid = false;
         }
-
-        /*
-         * التأكيد
-         */
 
         if (
             password !==
@@ -3026,21 +3691,10 @@
             "function"
         ) {
 
-            const error =
-                new Error(
-                    "دالة signUp غير موجودة في settings-auth.js."
-                );
-
             setMessage(
                 E.registerMessage,
-                getErrorMessage(
-                    error
-                ),
+                "تعذر الوصول إلى نظام الحساب.",
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
@@ -3063,9 +3717,7 @@
                 );
 
             const user =
-                result?.user ||
-                result?.data?.user ||
-                null;
+                extractUser(result);
 
             if (
                 user &&
@@ -3078,15 +3730,26 @@
                 currentUser =
                     user;
 
+                currentProfile =
+                    null;
+
                 if (
                     typeof auth.fetchProfile ===
                     "function"
                 ) {
 
-                    currentProfile =
-                        await auth.fetchProfile(
-                            user.id
-                        );
+                    try {
+
+                        currentProfile =
+                            await auth.fetchProfile(
+                                user.id
+                            );
+
+                    } catch (_) {
+
+                        currentProfile =
+                            null;
+                    }
                 }
 
                 renderAccount(
@@ -3122,11 +3785,6 @@
                     error
                 );
 
-            /*
-             * البريد موجود مسبقًا:
-             * نضع الخطأ على البريد نفسه.
-             */
-
             if (
                 message ===
                 "يوجد حساب بهذا البريد، قم بتسجيل الدخول."
@@ -3152,10 +3810,6 @@
                 "error"
             );
 
-            showDebugError(
-                error
-            );
-
         } finally {
 
             setButtonLoading(
@@ -3173,7 +3827,9 @@
 
     function showVerificationMessage() {
 
-        if (!E) return;
+        if (!E) {
+            return;
+        }
 
         E.verification.textContent =
             "✓ تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو الرسائل غير المرغوب فيها. ستختفي هذه الرسالة تلقائيًا.";
@@ -3240,21 +3896,10 @@
             "function"
         ) {
 
-            const error =
-                new Error(
-                    "دالة resetPassword غير موجودة في settings-auth.js."
-                );
-
             setMessage(
                 E.forgotMessage,
-                getErrorMessage(
-                    error
-                ),
+                "تعذر الوصول إلى نظام استعادة كلمة المرور.",
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
@@ -3304,10 +3949,6 @@
             showStatus(
                 message,
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
         } finally {
@@ -3397,21 +4038,10 @@
             "function"
         ) {
 
-            const error =
-                new Error(
-                    "دالة updatePassword غير موجودة في settings-auth.js."
-                );
-
             setMessage(
                 E.changePasswordMessage,
-                getErrorMessage(
-                    error
-                ),
+                "تعذر الوصول إلى نظام تغيير كلمة المرور.",
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
@@ -3442,9 +4072,11 @@
 
             setTimeout(
                 function () {
+
                     closeModal(
                         E.changePasswordModal
                     );
+
                 },
                 900
             );
@@ -3472,10 +4104,6 @@
                 "error"
             );
 
-            showDebugError(
-                error
-            );
-
         } finally {
 
             setButtonLoading(
@@ -3487,7 +4115,7 @@
 
     /*
      * ============================================================
-     * RECOVERY PASSWORD
+     * RECOVERY
      * ============================================================
      */
 
@@ -3546,21 +4174,10 @@
             "function"
         ) {
 
-            const error =
-                new Error(
-                    "دالة updatePassword غير موجودة في settings-auth.js."
-                );
-
             setMessage(
                 E.recoveryMessage,
-                getErrorMessage(
-                    error
-                ),
+                "تعذر تغيير كلمة المرور.",
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
@@ -3606,6 +4223,9 @@
                         } catch (_) {}
                     }
 
+                    currentUser = null;
+                    currentProfile = null;
+
                     renderAccount(
                         null,
                         null
@@ -3642,10 +4262,6 @@
                 "error"
             );
 
-            showDebugError(
-                error
-            );
-
         } finally {
 
             setButtonLoading(
@@ -3672,20 +4288,9 @@
             "function"
         ) {
 
-            const error =
-                new Error(
-                    "دالة signOut غير موجودة في settings-auth.js."
-                );
-
             showStatus(
-                getErrorMessage(
-                    error
-                ),
+                "تعذر تسجيل الخروج.",
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
@@ -3719,25 +4324,16 @@
                 error
             );
 
-            const message =
-                getErrorMessage(
-                    error
-                );
-
             showStatus(
-                message,
+                getErrorMessage(error),
                 "error"
-            );
-
-            showDebugError(
-                error
             );
         }
     }
 
     /*
      * ============================================================
-     * DELETE ACCOUNT - FIRST STEP
+     * DELETE
      * ============================================================
      */
 
@@ -3756,12 +4352,6 @@
         );
     }
 
-    /*
-     * ============================================================
-     * DELETE ACCOUNT - SECOND STEP
-     * ============================================================
-     */
-
     function openDeleteFinal() {
 
         closeModal(
@@ -3776,12 +4366,6 @@
             E.deleteFinalModal
         );
     }
-
-    /*
-     * ============================================================
-     * DELETE ACCOUNT - FINAL ACTION
-     * ============================================================
-     */
 
     async function executeDeleteAccount() {
 
@@ -3798,28 +4382,15 @@
             "function"
         ) {
 
-            const error =
-                new Error(
-                    "دالة deleteAccount غير موجودة في settings-auth.js."
-                );
-
             setMessage(
                 E.deleteMessage,
-                getErrorMessage(
-                    error
-                ),
+                "تعذر تنفيذ حذف الحساب حاليًا.",
                 "error"
             );
 
             showStatus(
-                getErrorMessage(
-                    error
-                ),
+                "تعذر تنفيذ حذف الحساب حاليًا.",
                 "error"
-            );
-
-            showDebugError(
-                error
             );
 
             return;
@@ -3846,7 +4417,7 @@
             );
 
             showStatus(
-                "تم إرسال طلب حذف الحساب بنجاح. سيتم حذف الحساب بالكامل خلال أسبوع.",
+                "تم إرسال طلب حذف الحساب بنجاح.",
                 "success"
             );
 
@@ -3873,10 +4444,6 @@
                 "error"
             );
 
-            showDebugError(
-                error
-            );
-
         } finally {
 
             setButtonLoading(
@@ -3893,10 +4460,6 @@
      */
 
     function openSupport() {
-        /*
-         * سيتم ربط هذا لاحقًا بنظام الرسائل.
-         * حاليًا يفتح messages.html.
-         */
 
         window.location.href =
             "messages.html";
@@ -3909,6 +4472,7 @@
      */
 
     function openProfile() {
+
         window.location.href =
             "profile.html";
     }
@@ -3968,51 +4532,10 @@
             );
 
             showStatus(
-                getErrorMessage(
-                    error
-                ),
+                getErrorMessage(error),
                 "error"
             );
-
-            showDebugError(
-                error
-            );
         }
-    }
-
-    /*
-     * ============================================================
-     * DEBUG ERROR
-     * ============================================================
-     */
-
-    function showDebugError(error) {
-
-        let debug =
-            qs(".wfesc-auth-debug");
-
-        if (!debug) {
-
-            debug =
-                document.createElement(
-                    "div"
-                );
-
-            debug.className =
-                "wfesc-auth-debug";
-
-            if (root) {
-                root.appendChild(
-                    debug
-                );
-            }
-        }
-
-        debug.textContent =
-            "WFESC ERROR: " +
-            getErrorMessage(
-                error
-            );
     }
 
     /*
@@ -4038,10 +4561,27 @@
                     detail.profile ||
                     null;
 
-                renderAccount(
-                    user,
-                    profile
-                );
+                /*
+                 * حتى أحداث AuthChanged:
+                 * لا تعرض أي حساب غير حقيقي.
+                 */
+
+                if (
+                    isRealUser(user)
+                ) {
+
+                    renderAccount(
+                        user,
+                        profile
+                    );
+
+                } else {
+
+                    renderAccount(
+                        null,
+                        null
+                    );
+                }
             }
         );
 
@@ -4060,18 +4600,6 @@
             }
         );
 
-        /*
-         * إذا أضيف لاحقًا مفتاح الزجاج السائل
-         * من Settings يمكن إرسال هذا الحدث:
-         *
-         * window.dispatchEvent(
-         *     new CustomEvent(
-         *         "WFESCLiquidGlassChanged",
-         *         { detail: { enabled: true } }
-         *     )
-         * );
-         */
-
         window.addEventListener(
             "WFESCLiquidGlassChanged",
             function (event) {
@@ -4083,6 +4611,7 @@
                     typeof enabled ===
                     "boolean"
                 ) {
+
                     liquidGlassEnabled =
                         enabled;
 
@@ -4182,6 +4711,7 @@
         E.forgotBack.addEventListener(
             "click",
             function () {
+
                 setMode(
                     "login"
                 );
@@ -4203,7 +4733,7 @@
         );
 
         /*
-         * Change password
+         * Password
          */
 
         E.changePasswordButton.addEventListener(
@@ -4274,10 +4804,6 @@
             }
         );
 
-        /*
-         * إغلاق عند الضغط على الخلفية.
-         */
-
         [
             E.changePasswordModal,
             E.recoveryModal,
@@ -4309,13 +4835,7 @@
         );
 
         /*
-         * ========================================================
-         * USERNAME INPUT
-         * ========================================================
-         *
-         * هنا لا نحول الأحرف الكبيرة إلى صغيرة.
-         * الأحرف الكبيرة والرموز لا تصبح جزءًا من القيمة.
-         * ويتم إظهار الخطأ عند محاولة استخدام غير المسموح.
+         * USERNAME
          */
 
         E.registerUsername.addEventListener(
@@ -4345,9 +4865,7 @@
                     );
 
                 } else if (
-                    validUsername(
-                        cleaned
-                    )
+                    validUsername(cleaned)
                 ) {
 
                     clearFieldError(
@@ -4359,9 +4877,7 @@
         );
 
         /*
-         * ========================================================
-         * NAME LIMIT
-         * ========================================================
+         * NAME
          */
 
         E.registerName.addEventListener(
@@ -4398,9 +4914,7 @@
         );
 
         /*
-         * ========================================================
          * EMAIL AUTO FILL
-         * ========================================================
          */
 
         E.registerEmail.addEventListener(
@@ -4425,9 +4939,7 @@
         );
 
         /*
-         * ========================================================
          * PASSWORD MATCH
-         * ========================================================
          */
 
         E.registerPassword.addEventListener(
@@ -4486,9 +4998,7 @@
         );
 
         /*
-         * ========================================================
-         * ENTER KEYS
-         * ========================================================
+         * ENTER
          */
 
         E.loginPassword.addEventListener(
@@ -4499,6 +5009,9 @@
                     event.key ===
                     "Enter"
                 ) {
+
+                    event.preventDefault();
+
                     login();
                 }
             }
@@ -4512,6 +5025,9 @@
                     event.key ===
                     "Enter"
                 ) {
+
+                    event.preventDefault();
+
                     login();
                 }
             }
@@ -4525,56 +5041,11 @@
                     event.key ===
                     "Enter"
                 ) {
+
+                    event.preventDefault();
+
                     register();
                 }
-            }
-        );
-
-        /*
-         * ========================================================
-         * GLOBAL ERROR TRACKING
-         * ========================================================
-         */
-
-        window.addEventListener(
-            "error",
-            function (event) {
-
-                if (
-                    event &&
-                    event.error
-                ) {
-
-                    console.error(
-                        "WFESC global error:",
-                        event.error
-                    );
-
-                    showDebugError(
-                        event.error
-                    );
-                }
-            }
-        );
-
-        window.addEventListener(
-            "unhandledrejection",
-            function (event) {
-
-                const reason =
-                    event.reason ||
-                    new Error(
-                        "Unhandled Promise Rejection"
-                    );
-
-                console.error(
-                    "WFESC promise error:",
-                    reason
-                );
-
-                showDebugError(
-                    reason
-                );
             }
         );
     }
@@ -4604,18 +5075,10 @@
         E =
             getElements();
 
-        /*
-         * الزجاج السائل مفعّل افتراضيًا.
-         */
-
         liquidGlassEnabled =
             true;
 
         applyLiquidGlass();
-
-        /*
-         * ربط حالة الأنميشن بإعداد الموقع.
-         */
 
         applyAnimationState();
 
@@ -4631,7 +5094,15 @@
             "login"
         );
 
+        /*
+         * استعادة Recovery فقط.
+         */
+
         await handleRecoveryURL();
+
+        /*
+         * استعادة الجلسة الحالية.
+         */
 
         await restoreSession();
     }
