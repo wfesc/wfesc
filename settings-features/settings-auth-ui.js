@@ -10,7 +10,7 @@
     /*
      * ============================================================
      * WFESC SETTINGS AUTH UI
-     * واجهة الحساب داخل صفحة الإعدادات
+     * واجهة الحساب الاحترافية داخل صفحة الإعدادات
      * ============================================================
      */
 
@@ -29,13 +29,23 @@
     const USERNAME_MAX =
         Number(CONFIG.username?.maxLength || 9);
 
+    const NAME_MAX = 15;
+
     const PASSWORD_MIN = 6;
     const PASSWORD_MAX = 16;
+
+    /*
+     * الزجاج السائل:
+     * مفعّل افتراضيًا إلى أن تتم إضافة مفتاحه داخل Settings.
+     */
+
+    let liquidGlassEnabled = true;
 
     let root = null;
     let currentUser = null;
     let currentProfile = null;
     let initialized = false;
+    let verificationTimer = null;
 
     /*
      * ============================================================
@@ -63,15 +73,20 @@
         return String(value ?? "");
     }
 
+    /*
+     * اسم المستخدم:
+     * أحرف إنجليزية صغيرة + أرقام فقط.
+     */
+
     function sanitizeUsername(value) {
         return safeText(value)
-            .replace(/[^A-Za-z0-9]/g, "")
+            .replace(/[^a-z0-9]/g, "")
             .slice(0, USERNAME_MAX);
     }
 
     function validUsername(value) {
         return new RegExp(
-            "^[A-Za-z0-9]{" +
+            "^[a-z0-9]{" +
             USERNAME_MIN +
             "," +
             USERNAME_MAX +
@@ -79,9 +94,29 @@
         ).test(value);
     }
 
+    /*
+     * الاسم:
+     * يسمح بالعربي والإنكليزي والأرقام والمسافات والعلامات.
+     */
+
+    function sanitizeName(value) {
+        return safeText(value)
+            .trim()
+            .slice(0, NAME_MAX);
+    }
+
+    function validName(value) {
+        return (
+            value.length >= 2 &&
+            value.length <= NAME_MAX
+        );
+    }
+
     function validEmail(value) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-            .test(safeText(value).trim());
+            .test(
+                safeText(value).trim()
+            );
     }
 
     function validPassword(value) {
@@ -92,6 +127,12 @@
         );
     }
 
+    /*
+     * ============================================================
+     * ERROR NORMALIZATION
+     * ============================================================
+     */
+
     function getErrorMessage(error) {
         if (!error) {
             return "حدث خطأ غير معروف.";
@@ -101,16 +142,142 @@
             return error;
         }
 
-        return (
+        const raw = (
             error.message ||
             error.error_description ||
             error.msg ||
+            ""
+        );
+
+        const text = safeText(raw).toLowerCase();
+
+        /*
+         * البريد موجود مسبقًا.
+         */
+
+        if (
+            text.includes("already registered") ||
+            text.includes("user already registered") ||
+            text.includes("email already") ||
+            text.includes("already exists") ||
+            text.includes("duplicate key") ||
+            text.includes("email_exists")
+        ) {
+            return "يوجد حساب بهذا البريد، قم بتسجيل الدخول.";
+        }
+
+        /*
+         * كلمة المرور خاطئة.
+         */
+
+        if (
+            text.includes("invalid login credentials") ||
+            text.includes("invalid credentials") ||
+            text.includes("wrong password") ||
+            text.includes("invalid password")
+        ) {
+            return "كلمة المرور خطأ.";
+        }
+
+        if (
+            text.includes("email not confirmed") ||
+            text.includes("email_not_confirmed")
+        ) {
+            return "يرجى تأكيد بريدك الإلكتروني أولًا.";
+        }
+
+        return (
+            raw ||
             "حدث خطأ غير معروف."
         );
     }
 
+    /*
+     * ============================================================
+     * ANIMATION CONTROL
+     * ============================================================
+     */
+
+    function animationsEnabled() {
+        return !document.documentElement
+            .classList.contains(
+                "wfesc-animation-off"
+            );
+    }
+
+    function applyAnimationState() {
+        if (!root) return;
+
+        root.classList.toggle(
+            "wfesc-auth-no-animation",
+            !animationsEnabled()
+        );
+    }
+
+    function observeAnimationSetting() {
+        const observer =
+            new MutationObserver(function () {
+                applyAnimationState();
+            });
+
+        observer.observe(
+            document.documentElement,
+            {
+                attributes: true,
+                attributeFilter: ["class"]
+            }
+        );
+    }
+
+    /*
+     * ============================================================
+     * LIQUID GLASS
+     * ============================================================
+     */
+
+    function applyLiquidGlass() {
+        if (!root) return;
+
+        root.classList.toggle(
+            "wfesc-liquid-glass-enabled",
+            liquidGlassEnabled
+        );
+
+        root.dataset.liquidGlass =
+            liquidGlassEnabled
+                ? "on"
+                : "off";
+    }
+
+    /*
+     * هذه الدالة موجودة حتى نستطيع لاحقًا ربطها
+     * بزر Settings بدون إعادة بناء الملف.
+     */
+
+    window.WFESCSetAuthLiquidGlass =
+        function (enabled) {
+
+            liquidGlassEnabled =
+                Boolean(enabled);
+
+            applyLiquidGlass();
+        };
+
+    window.WFESCGetAuthLiquidGlass =
+        function () {
+            return liquidGlassEnabled;
+        };
+
+    /*
+     * ============================================================
+     * SHAKE
+     * ============================================================
+     */
+
     function shake(element) {
-        if (!element) return;
+        if (!element || !animationsEnabled()) {
+            return;
+        }
 
         element.classList.remove(
             "wfesc-auth-shake"
@@ -133,10 +300,21 @@
         elements.forEach(shake);
     }
 
-    function setMessage(element, text, type) {
+    /*
+     * ============================================================
+     * MESSAGE
+     * ============================================================
+     */
+
+    function setMessage(
+        element,
+        text,
+        type
+    ) {
         if (!element) return;
 
-        element.textContent = text || "";
+        element.textContent =
+            text || "";
 
         element.className =
             "wfesc-auth-message " +
@@ -147,11 +325,22 @@
         if (!element) return;
 
         element.textContent = "";
+
         element.className =
             "wfesc-auth-message";
     }
 
-    function setButtonLoading(button, loading, text) {
+    /*
+     * ============================================================
+     * BUTTON LOADING
+     * ============================================================
+     */
+
+    function setButtonLoading(
+        button,
+        loading,
+        text
+    ) {
         if (!button) return;
 
         if (loading) {
@@ -161,6 +350,7 @@
             }
 
             button.disabled = true;
+
             button.textContent =
                 text || "جارٍ التنفيذ...";
         } else {
@@ -174,14 +364,26 @@
         }
     }
 
-    function showStatus(text, type) {
+    /*
+     * ============================================================
+     * STATUS
+     * ============================================================
+     */
+
+    function showStatus(
+        text,
+        type
+    ) {
         let status =
             document.getElementById(
                 "wfesc-auth-status"
             );
 
         if (!status) {
-            status = document.createElement("div");
+            status =
+                document.createElement(
+                    "div"
+                );
 
             status.id =
                 "wfesc-auth-status";
@@ -189,10 +391,13 @@
             status.className =
                 "settings-status";
 
-            document.body.appendChild(status);
+            document.body.appendChild(
+                status
+            );
         }
 
-        status.textContent = text || "";
+        status.textContent =
+            text || "";
 
         status.classList.remove(
             "show",
@@ -213,17 +418,44 @@
         );
 
         status._wfescTimer =
-            setTimeout(function () {
-                status.classList.remove(
-                    "show"
-                );
-            }, 4500);
+            setTimeout(
+                function () {
+                    status.classList.remove(
+                        "show"
+                    );
+                },
+                4500
+            );
     }
 
+    /*
+     * ============================================================
+     * MODALS
+     * ============================================================
+     */
+
     function closeAllModals() {
-        qsa(".modal").forEach(function (modal) {
-            modal.classList.remove("show");
-        });
+        qsa(".modal").forEach(
+            function (modal) {
+                modal.classList.remove(
+                    "show"
+                );
+            }
+        );
+    }
+
+    function openModal(modal) {
+        if (!modal) return;
+
+        modal.classList.add("show");
+
+        applyAnimationState();
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+
+        modal.classList.remove("show");
     }
 
     /*
@@ -252,9 +484,90 @@
                 width: 100%;
             }
 
+            #settingsAccountApp,
+            #settingsAccountApp * {
+                -webkit-tap-highlight-color: transparent;
+            }
+
             .wfesc-auth-shell {
                 width: 100%;
+                position: relative;
             }
+
+            /*
+             * ====================================================
+             * LIQUID GLASS
+             * ====================================================
+             */
+
+            .wfesc-liquid-glass-enabled
+            .wfesc-auth-glass {
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgba(255,255,255,.105),
+                        rgba(255,255,255,.025)
+                    ) !important;
+
+                border-color:
+                    rgba(255,255,255,.16) !important;
+
+                box-shadow:
+                    inset 0 1px 0
+                    rgba(255,255,255,.10),
+                    inset 0 -1px 0
+                    rgba(255,255,255,.035),
+                    0 14px 40px
+                    rgba(0,0,0,.20) !important;
+
+                backdrop-filter:
+                    blur(22px)
+                    saturate(145%);
+
+                -webkit-backdrop-filter:
+                    blur(22px)
+                    saturate(145%);
+            }
+
+            .wfesc-liquid-glass-enabled
+            .wfesc-auth-input {
+                background:
+                    rgba(255,255,255,.045);
+
+                border-color:
+                    rgba(255,255,255,.12);
+
+                backdrop-filter:
+                    blur(14px);
+
+                -webkit-backdrop-filter:
+                    blur(14px);
+            }
+
+            .wfesc-liquid-glass-enabled
+            .wfesc-auth-tab,
+            .wfesc-liquid-glass-enabled
+            .wfesc-auth-button:not(.primary),
+            .wfesc-liquid-glass-enabled
+            .wfesc-auth-action {
+                background:
+                    rgba(255,255,255,.055);
+
+                border-color:
+                    rgba(255,255,255,.12);
+
+                backdrop-filter:
+                    blur(15px);
+
+                -webkit-backdrop-filter:
+                    blur(15px);
+            }
+
+            /*
+             * ====================================================
+             * TABS
+             * ====================================================
+             */
 
             .wfesc-auth-tabs {
                 display: grid;
@@ -272,7 +585,11 @@
                 cursor: pointer;
                 font-size: 14px;
                 font-weight: bold;
-                transition: .2s;
+                transition:
+                    transform .22s ease,
+                    background .22s ease,
+                    color .22s ease,
+                    border-color .22s ease;
             }
 
             .wfesc-auth-tab.active {
@@ -281,13 +598,32 @@
                 border-color: #eee;
             }
 
+            .wfesc-auth-tab:active {
+                transform: scale(.98);
+            }
+
+            /*
+             * ====================================================
+             * PANELS
+             * ====================================================
+             */
+
             .wfesc-auth-panel {
                 display: none;
             }
 
             .wfesc-auth-panel.active {
                 display: block;
+                animation:
+                    wfescAuthPanelIn
+                    .32s ease both;
             }
+
+            /*
+             * ====================================================
+             * FORM
+             * ====================================================
+             */
 
             .wfesc-auth-form-group {
                 margin-bottom: 13px;
@@ -314,15 +650,25 @@
                 color: #fff;
                 padding: 0 13px;
                 font-size: 14px;
-                transition: .2s;
+                transition:
+                    border-color .2s ease,
+                    box-shadow .2s ease,
+                    background .2s ease,
+                    transform .2s ease;
             }
 
             .wfesc-auth-input:focus {
                 border-color: #777;
+                box-shadow:
+                    0 0 0 3px
+                    rgba(255,255,255,.045);
             }
 
             .wfesc-auth-input.error {
                 border-color: #a84b4b;
+                box-shadow:
+                    0 0 0 3px
+                    rgba(168,75,75,.08);
             }
 
             .wfesc-auth-password-toggle {
@@ -332,6 +678,7 @@
                 width: 40px;
                 height: 40px;
                 border: 0;
+                border-radius: 10px;
                 background: transparent;
                 color: #aaa;
                 cursor: pointer;
@@ -363,6 +710,12 @@
                 color: #aaa;
             }
 
+            /*
+             * ====================================================
+             * BUTTONS
+             * ====================================================
+             */
+
             .wfesc-auth-button {
                 width: 100%;
                 min-height: 50px;
@@ -373,7 +726,10 @@
                 cursor: pointer;
                 font-size: 14px;
                 font-weight: bold;
-                transition: .2s;
+                transition:
+                    transform .2s ease,
+                    opacity .2s ease,
+                    background .2s ease;
                 margin-top: 5px;
             }
 
@@ -381,6 +737,10 @@
                 background: #eee;
                 color: #050505;
                 border-color: #eee;
+            }
+
+            .wfesc-auth-button:active {
+                transform: scale(.985);
             }
 
             .wfesc-auth-button:disabled {
@@ -398,15 +758,35 @@
                 font-size: 12px;
             }
 
+            /*
+             * ====================================================
+             * ACCOUNT
+             * ====================================================
+             */
+
             .wfesc-auth-account {
-                padding: 2px 0;
+                width: 100%;
             }
 
             .wfesc-auth-profile {
                 display: flex;
                 align-items: center;
                 gap: 13px;
-                margin-bottom: 15px;
+                padding: 15px;
+                margin-bottom: 12px;
+                border: 1px solid #242424;
+                border-radius: 18px;
+                background: #111;
+                box-shadow:
+                    0 8px 25px
+                    rgba(0,0,0,.12);
+            }
+
+            .wfesc-auth-glass {
+                transition:
+                    background .25s ease,
+                    border-color .25s ease,
+                    box-shadow .25s ease;
             }
 
             .wfesc-auth-avatar-wrap {
@@ -446,6 +826,9 @@
                 font-size: 17px;
                 font-weight: bold;
                 margin-bottom: 4px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             .wfesc-auth-account-username {
@@ -483,6 +866,10 @@
                 text-align: right;
                 cursor: pointer;
                 margin-top: 8px;
+                transition:
+                    transform .2s ease,
+                    background .2s ease,
+                    border-color .2s ease;
             }
 
             .wfesc-auth-action strong {
@@ -497,9 +884,19 @@
                 margin-top: 4px;
             }
 
+            .wfesc-auth-action:active {
+                transform: scale(.985);
+            }
+
             .wfesc-auth-action.danger {
                 color: #df7777;
             }
+
+            /*
+             * ====================================================
+             * VERIFICATION
+             * ====================================================
+             */
 
             .wfesc-auth-verification {
                 display: none;
@@ -512,21 +909,20 @@
                 text-align: center;
                 font-size: 11px;
                 line-height: 1.7;
-                animation: wfescVerificationPulse 1s infinite;
             }
 
             .wfesc-auth-verification.show {
                 display: block;
+                animation:
+                    wfescVerificationIn
+                    .3s ease both;
             }
 
-            @keyframes wfescVerificationPulse {
-                0%,100% {
-                    opacity: 1;
-                }
-                50% {
-                    opacity: .45;
-                }
-            }
+            /*
+             * ====================================================
+             * LOADING
+             * ====================================================
+             */
 
             .wfesc-auth-loading {
                 display: none;
@@ -538,29 +934,116 @@
 
             .wfesc-auth-loading.show {
                 display: block;
+                animation:
+                    wfescAuthFade
+                    .25s ease both;
             }
+
+            /*
+             * ====================================================
+             * SHAKE
+             * ====================================================
+             */
 
             .wfesc-auth-shake {
-                animation: wfescAuthShake .4s ease;
+                animation:
+                    wfescAuthShake
+                    .4s ease;
             }
 
-            @keyframes wfescAuthShake {
-                0%,100% {
-                    transform: translateX(0);
-                }
-                20% {
-                    transform: translateX(6px);
-                }
-                40% {
-                    transform: translateX(-6px);
-                }
-                60% {
-                    transform: translateX(4px);
-                }
-                80% {
-                    transform: translateX(-3px);
-                }
+            /*
+             * ====================================================
+             * DELETE MODALS
+             * ====================================================
+             */
+
+            .wfesc-delete-warning {
+                text-align: center;
+                padding: 5px 0 12px;
             }
+
+            .wfesc-delete-warning-icon {
+                font-size: 38px;
+                margin-bottom: 8px;
+            }
+
+            .wfesc-delete-warning-title {
+                font-size: 18px;
+                font-weight: bold;
+                color: #fff;
+                margin-bottom: 9px;
+            }
+
+            .wfesc-delete-warning-text {
+                color: #aaa;
+                font-size: 12px;
+                line-height: 1.8;
+            }
+
+            .wfesc-delete-warning-text strong {
+                color: #df7777;
+            }
+
+            .wfesc-delete-final {
+                padding: 4px 0 8px;
+            }
+
+            .wfesc-delete-final-title {
+                font-size: 17px;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 12px;
+            }
+
+            .wfesc-delete-support {
+                padding: 12px;
+                border-radius: 13px;
+                border: 1px solid #292929;
+                background: #171717;
+                color: #999;
+                font-size: 11px;
+                line-height: 1.7;
+                text-align: center;
+                margin-bottom: 13px;
+            }
+
+            .wfesc-delete-support-button {
+                width: 100%;
+                min-height: 43px;
+                border-radius: 12px;
+                border: 1px solid #303030;
+                background: #202020;
+                color: #eee;
+                cursor: pointer;
+                margin-top: 9px;
+            }
+
+            .wfesc-delete-confirm {
+                width: 100%;
+                min-height: 47px;
+                border-radius: 12px;
+                border: 1px solid #7a3d3d;
+                background: #512727;
+                color: #fff;
+                cursor: pointer;
+                font-weight: bold;
+                margin-top: 6px;
+            }
+
+            .wfesc-delete-cancel {
+                width: 100%;
+                min-height: 43px;
+                border: 0;
+                background: transparent;
+                color: #888;
+                cursor: pointer;
+            }
+
+            /*
+             * ====================================================
+             * DEBUG
+             * ====================================================
+             */
 
             .wfesc-auth-debug {
                 margin-top: 12px;
@@ -576,12 +1059,87 @@
                 word-break: break-word;
             }
 
-            .wfesc-auth-modal-note {
-                text-align: center;
-                color: #777;
-                font-size: 11px;
-                line-height: 1.6;
-                margin-top: 9px;
+            /*
+             * ====================================================
+             * ANIMATIONS
+             * ====================================================
+             */
+
+            @keyframes wfescAuthPanelIn {
+                from {
+                    opacity: 0;
+                    transform:
+                        translateY(7px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform:
+                        translateY(0);
+                }
+            }
+
+            @keyframes wfescAuthFade {
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
+            @keyframes wfescVerificationIn {
+                from {
+                    opacity: 0;
+                    transform:
+                        translateY(-5px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform:
+                        translateY(0);
+                }
+            }
+
+            @keyframes wfescAuthShake {
+                0%,100% {
+                    transform: translateX(0);
+                }
+
+                20% {
+                    transform: translateX(6px);
+                }
+
+                40% {
+                    transform: translateX(-6px);
+                }
+
+                60% {
+                    transform: translateX(4px);
+                }
+
+                80% {
+                    transform: translateX(-3px);
+                }
+            }
+
+            .wfesc-auth-no-animation *,
+            .wfesc-auth-no-animation *::before,
+            .wfesc-auth-no-animation *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                #settingsAccountApp *,
+                #settingsAccountApp *::before,
+                #settingsAccountApp *::after {
+                    animation: none !important;
+                    transition: none !important;
+                }
             }
 
             @media (max-width: 500px) {
@@ -592,6 +1150,10 @@
                 .wfesc-auth-input {
                     height: 49px;
                 }
+
+                .wfesc-auth-profile {
+                    padding: 13px;
+                }
             }
         `;
 
@@ -600,7 +1162,7 @@
 
     /*
      * ============================================================
-     * BUILD UI
+     * ROOT
      * ============================================================
      */
 
@@ -621,6 +1183,12 @@
         return true;
     }
 
+    /*
+     * ============================================================
+     * BUILD UI
+     * ============================================================
+     */
+
     function buildUI() {
         if (!root) return;
 
@@ -639,6 +1207,8 @@
                     class="wfesc-auth-verification"
                 ></div>
 
+                <!-- GUEST -->
+
                 <div
                     id="wfesc-auth-guest"
                     class="wfesc-auth-account"
@@ -648,7 +1218,7 @@
 
                         <button
                             type="button"
-                            class="wfesc-auth-tab active"
+                            class="wfesc-auth-tab active wfesc-auth-glass"
                             data-auth-mode="login"
                         >
                             لدي حساب
@@ -656,7 +1226,7 @@
 
                         <button
                             type="button"
-                            class="wfesc-auth-tab"
+                            class="wfesc-auth-tab wfesc-auth-glass"
                             data-auth-mode="register"
                         >
                             إنشاء حساب
@@ -761,6 +1331,7 @@
                                 id="wfesc-register-name"
                                 class="wfesc-auth-input"
                                 type="text"
+                                maxlength="${NAME_MAX}"
                                 autocomplete="name"
                                 placeholder="اسمك"
                             >
@@ -783,8 +1354,9 @@
                                 maxlength="${USERNAME_MAX}"
                                 autocomplete="username"
                                 spellcheck="false"
+                                autocapitalize="none"
                                 dir="ltr"
-                                placeholder="ali12"
+                                placeholder="اسم المستخدم"
                             >
 
                             <div
@@ -952,7 +1524,7 @@
                     style="display:none;"
                 >
 
-                    <div class="wfesc-auth-profile">
+                    <div class="wfesc-auth-profile wfesc-auth-glass">
 
                         <div class="wfesc-auth-avatar-wrap">
 
@@ -984,7 +1556,7 @@
                                 id="wfesc-logged-username"
                                 class="wfesc-auth-account-username"
                             >
-                                @WFESC
+                                @wfesc
                             </div>
 
                             <div
@@ -1004,7 +1576,7 @@
                     <button
                         id="wfesc-profile-button"
                         type="button"
-                        class="wfesc-auth-action"
+                        class="wfesc-auth-action wfesc-auth-glass"
                     >
                         <strong>
                             👤 الملف الشخصي
@@ -1017,7 +1589,7 @@
                     <button
                         id="wfesc-change-password-button"
                         type="button"
-                        class="wfesc-auth-action"
+                        class="wfesc-auth-action wfesc-auth-glass"
                     >
                         <strong>
                             🔐 تغيير كلمة المرور
@@ -1030,7 +1602,7 @@
                     <button
                         id="wfesc-logout-button"
                         type="button"
-                        class="wfesc-auth-action"
+                        class="wfesc-auth-action wfesc-auth-glass"
                     >
                         <strong>
                             ↪ تسجيل الخروج
@@ -1043,13 +1615,13 @@
                     <button
                         id="wfesc-delete-button"
                         type="button"
-                        class="wfesc-auth-action danger"
+                        class="wfesc-auth-action danger wfesc-auth-glass"
                     >
                         <strong>
                             🗑️ حذف الحساب
                         </strong>
                         <span>
-                            حذف الحساب نهائيًا
+                            طلب حذف الحساب
                         </span>
                     </button>
 
@@ -1245,6 +1817,143 @@
 
                 </div>
 
+                <!-- DELETE FIRST CONFIRMATION -->
+
+                <div
+                    id="wfesc-delete-warning-modal"
+                    class="modal"
+                >
+
+                    <div class="modal-box">
+
+                        <div class="modal-header">
+
+                            <h3>
+                                حذف الحساب
+                            </h3>
+
+                            <button
+                                type="button"
+                                class="close-modal"
+                                data-close-modal
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                        <div class="wfesc-delete-warning">
+
+                            <div class="wfesc-delete-warning-icon">
+                                ⚠️
+                            </div>
+
+                            <div class="wfesc-delete-warning-title">
+                                هل أنت متأكد من خيارك لحذف الحساب؟
+                            </div>
+
+                            <div class="wfesc-delete-warning-text">
+                                سيتم حذف حسابك بشكل نهائي خلال أسبوع،
+                                <strong>
+                                    ويُحذف بالكامل خلال أسبوع.
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <button
+                            id="wfesc-delete-first-confirm"
+                            type="button"
+                            class="wfesc-delete-confirm"
+                        >
+                            موافق على حذف الحساب
+                        </button>
+
+                        <button
+                            type="button"
+                            class="wfesc-delete-cancel"
+                            data-close-modal
+                        >
+                            إلغاء
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- DELETE SECOND CONFIRMATION -->
+
+                <div
+                    id="wfesc-delete-final-modal"
+                    class="modal"
+                >
+
+                    <div class="modal-box">
+
+                        <div class="modal-header">
+
+                            <h3>
+                                تأكيد حذف الحساب
+                            </h3>
+
+                            <button
+                                type="button"
+                                class="close-modal"
+                                data-close-modal
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                        <div class="wfesc-delete-final">
+
+                            <div class="wfesc-delete-final-title">
+                                متأكد من طلبك؟
+                            </div>
+
+                            <div class="wfesc-delete-support">
+
+                                إذا تواجه مشكلة وبسببها تريد حذف الحساب،
+                                يمكنك التواصل مع الدعم قبل حذف حسابك.
+
+                                <button
+                                    id="wfesc-delete-support-button"
+                                    type="button"
+                                    class="wfesc-delete-support-button"
+                                >
+                                    💬 التواصل مع الدعم
+                                </button>
+
+                            </div>
+
+                            <button
+                                id="wfesc-delete-final-confirm"
+                                type="button"
+                                class="wfesc-delete-confirm"
+                            >
+                                تأكيد طلب حذف الحساب
+                            </button>
+
+                            <button
+                                type="button"
+                                class="wfesc-delete-cancel"
+                                data-close-modal
+                            >
+                                العودة
+                            </button>
+
+                        </div>
+
+                        <div
+                            id="wfesc-delete-message"
+                            class="wfesc-auth-message"
+                        ></div>
+
+                    </div>
+
+                </div>
+
             </div>
         `;
     }
@@ -1257,6 +1966,7 @@
 
     function getElements() {
         return {
+
             loading:
                 qs("#wfesc-auth-loading"),
 
@@ -1411,7 +2121,25 @@
                 qs("#wfesc-recovery-submit"),
 
             recoveryMessage:
-                qs("#wfesc-recovery-message")
+                qs("#wfesc-recovery-message"),
+
+            deleteWarningModal:
+                qs("#wfesc-delete-warning-modal"),
+
+            deleteFirstConfirm:
+                qs("#wfesc-delete-first-confirm"),
+
+            deleteFinalModal:
+                qs("#wfesc-delete-final-modal"),
+
+            deleteFinalConfirm:
+                qs("#wfesc-delete-final-confirm"),
+
+            deleteSupportButton:
+                qs("#wfesc-delete-support-button"),
+
+            deleteMessage:
+                qs("#wfesc-delete-message")
         };
     }
 
@@ -1426,51 +2154,83 @@
     function setMode(mode) {
         if (!E) return;
 
-        E.loginPanel.classList.remove("active");
-        E.registerPanel.classList.remove("active");
-        E.forgotPanel.classList.remove("active");
+        E.loginPanel.classList.remove(
+            "active"
+        );
 
-        E.tabs.forEach(function (tab) {
-            tab.classList.remove("active");
-        });
+        E.registerPanel.classList.remove(
+            "active"
+        );
+
+        E.forgotPanel.classList.remove(
+            "active"
+        );
+
+        E.tabs.forEach(
+            function (tab) {
+                tab.classList.remove(
+                    "active"
+                );
+            }
+        );
 
         if (mode === "register") {
-            E.registerPanel.classList.add("active");
+
+            E.registerPanel.classList.add(
+                "active"
+            );
 
             const tab =
-                qs('[data-auth-mode="register"]');
+                qs(
+                    '[data-auth-mode="register"]'
+                );
 
             if (tab) {
-                tab.classList.add("active");
+                tab.classList.add(
+                    "active"
+                );
             }
 
             return;
         }
 
         if (mode === "forgot") {
-            E.forgotPanel.classList.add("active");
+
+            E.forgotPanel.classList.add(
+                "active"
+            );
+
             return;
         }
 
-        E.loginPanel.classList.add("active");
+        E.loginPanel.classList.add(
+            "active"
+        );
 
         const tab =
-            qs('[data-auth-mode="login"]');
+            qs(
+                '[data-auth-mode="login"]'
+            );
 
         if (tab) {
-            tab.classList.add("active");
+            tab.classList.add(
+                "active"
+            );
         }
     }
 
     /*
      * ============================================================
-     * PASSWORD TOGGLE
+     * PASSWORD TOGGLES
      * ============================================================
      */
 
     function bindPasswordToggles() {
-        qsa("[data-password-toggle]")
-            .forEach(function (button) {
+
+        qsa(
+            "[data-password-toggle]"
+        ).forEach(
+            function (button) {
 
                 button.addEventListener(
                     "click",
@@ -1482,34 +2242,55 @@
                             );
 
                         const input =
-                            document.getElementById(id);
+                            document.getElementById(
+                                id
+                            );
 
-                        if (!input) return;
+                        if (!input) {
+                            return;
+                        }
 
                         if (
                             input.type ===
                             "password"
                         ) {
-                            input.type = "text";
-                            button.textContent = "🙈";
+
+                            input.type =
+                                "text";
+
+                            button.textContent =
+                                "🙈";
+
                         } else {
-                            input.type = "password";
-                            button.textContent = "🙉";
+
+                            input.type =
+                                "password";
+
+                            button.textContent =
+                                "🙉";
                         }
                     }
                 );
-            });
+            }
+        );
     }
 
     /*
      * ============================================================
-     * ERROR UI
+     * FIELD ERRORS
      * ============================================================
      */
 
-    function fieldError(input, errorElement, text) {
+    function fieldError(
+        input,
+        errorElement,
+        text
+    ) {
         if (input) {
-            input.classList.add("error");
+            input.classList.add(
+                "error"
+            );
+
             shake(input);
         }
 
@@ -1519,17 +2300,24 @@
         }
     }
 
-    function clearFieldError(input, errorElement) {
+    function clearFieldError(
+        input,
+        errorElement
+    ) {
         if (input) {
-            input.classList.remove("error");
+            input.classList.remove(
+                "error"
+            );
         }
 
         if (errorElement) {
-            errorElement.textContent = "";
+            errorElement.textContent =
+                "";
         }
     }
 
     function clearLoginErrors() {
+
         clearFieldError(
             E.loginEmail,
             E.loginEmailError
@@ -1540,10 +2328,13 @@
             E.loginPasswordError
         );
 
-        clearMessage(E.loginMessage);
+        clearMessage(
+            E.loginMessage
+        );
     }
 
     function clearRegisterErrors() {
+
         clearFieldError(
             E.registerName,
             E.registerNameError
@@ -1569,7 +2360,82 @@
             E.registerConfirmError
         );
 
-        clearMessage(E.registerMessage);
+        clearMessage(
+            E.registerMessage
+        );
+    }
+
+    /*
+     * ============================================================
+     * AUTOMATIC NAME / USERNAME FROM EMAIL
+     * ============================================================
+     */
+
+    function getEmailName(
+        email
+    ) {
+        const value =
+            safeText(email)
+                .trim()
+                .split("@")[0];
+
+        return value;
+    }
+
+    function autoFillFromEmail() {
+
+        if (!E) return;
+
+        const email =
+            E.registerEmail.value
+                .trim();
+
+        if (
+            !email ||
+            !email.includes("@")
+        ) {
+            return;
+        }
+
+        const localPart =
+            getEmailName(email);
+
+        if (!localPart) {
+            return;
+        }
+
+        /*
+         * الاسم:
+         * نملأ فقط إذا كان فارغًا.
+         */
+
+        if (
+            !E.registerName.value
+                .trim()
+        ) {
+            E.registerName.value =
+                sanitizeName(
+                    localPart
+                );
+        }
+
+        /*
+         * اسم المستخدم:
+         * نملأ فقط إذا كان فارغًا.
+         * الأحرف تصبح lowercase لأن
+         * اسم المستخدم يسمح بالصغير فقط.
+         */
+
+        if (
+            !E.registerUsername.value
+                .trim()
+        ) {
+            E.registerUsername.value =
+                sanitizeUsername(
+                    localPart
+                        .toLowerCase()
+                );
+        }
     }
 
     /*
@@ -1579,20 +2445,29 @@
      */
 
     function showGuest() {
+
         if (!E) return;
 
         E.guest.style.display = "";
-        E.logged.style.display = "none";
+        E.logged.style.display =
+            "none";
     }
 
     function showLoggedIn() {
+
         if (!E) return;
 
-        E.guest.style.display = "none";
-        E.logged.style.display = "";
+        E.guest.style.display =
+            "none";
+
+        E.logged.style.display =
+            "";
     }
 
-    function getDisplayName(user, profile) {
+    function getDisplayName(
+        user,
+        profile
+    ) {
         return (
             profile?.full_name ||
             profile?.name ||
@@ -1604,29 +2479,41 @@
         );
     }
 
-    function getUsername(user, profile) {
+    function getUsername(
+        user,
+        profile
+    ) {
         const username =
             profile?.username ||
             user?.user_metadata?.username ||
             user?.email?.split("@")[0] ||
-            "WFESC";
+            "wfesc";
 
-        return sanitizeUsername(username);
+        return sanitizeUsername(
+            safeText(username)
+                .toLowerCase()
+        );
     }
 
-    function renderAccount(user, profile) {
+    function renderAccount(
+        user,
+        profile
+    ) {
         if (!E) return;
 
         if (!user) {
+
             currentUser = null;
             currentProfile = null;
 
             showGuest();
+
             return;
         }
 
         currentUser = user;
-        currentProfile = profile || {};
+        currentProfile =
+            profile || {};
 
         showLoggedIn();
 
@@ -1671,14 +2558,21 @@
             "";
 
         if (avatar) {
-            E.loggedAvatar.src = avatar;
+
+            E.loggedAvatar.src =
+                avatar;
+
             E.loggedAvatar.style.display =
                 "block";
 
             E.loggedAvatarFallback.style.display =
                 "none";
+
         } else {
-            E.loggedAvatar.removeAttribute("src");
+
+            E.loggedAvatar.removeAttribute(
+                "src"
+            );
 
             E.loggedAvatar.style.display =
                 "none";
@@ -1702,12 +2596,17 @@
      */
 
     async function restoreSession() {
+
         if (!E) return;
 
-        E.loading.classList.add("show");
+        E.loading.classList.add(
+            "show"
+        );
 
         try {
-            const auth = getAuth();
+
+            const auth =
+                getAuth();
 
             if (!auth) {
                 throw new Error(
@@ -1719,22 +2618,30 @@
                 typeof auth.restoreSession ===
                 "function"
             ) {
+
                 const result =
                     await auth.restoreSession();
 
                 if (result?.user) {
+
                     currentUser =
                         result.user;
 
                     currentProfile =
-                        result.profile || null;
+                        result.profile ||
+                        null;
 
                     renderAccount(
                         currentUser,
                         currentProfile
                     );
+
                 } else {
-                    renderAccount(null, null);
+
+                    renderAccount(
+                        null,
+                        null
+                    );
                 }
 
                 return;
@@ -1744,6 +2651,7 @@
                 typeof auth.getSession ===
                 "function"
             ) {
+
                 const result =
                     await auth.getSession();
 
@@ -1757,7 +2665,9 @@
                     null;
 
                 if (user) {
-                    currentUser = user;
+
+                    currentUser =
+                        user;
 
                     if (
                         typeof auth.fetchProfile ===
@@ -1773,8 +2683,13 @@
                         currentUser,
                         currentProfile
                     );
+
                 } else {
-                    renderAccount(null, null);
+
+                    renderAccount(
+                        null,
+                        null
+                    );
                 }
 
                 return;
@@ -1785,21 +2700,28 @@
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC Auth restore error:",
                 error
             );
 
-            renderAccount(null, null);
+            renderAccount(
+                null,
+                null
+            );
 
             showStatus(
                 "تعذر استعادة جلسة الحساب.",
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
         } finally {
+
             E.loading.classList.remove(
                 "show"
             );
@@ -1813,15 +2735,18 @@
      */
 
     async function login() {
+
         clearLoginErrors();
 
         const email =
-            E.loginEmail.value.trim();
+            E.loginEmail.value
+                .trim();
 
         const password =
             E.loginPassword.value;
 
         if (!validEmail(email)) {
+
             fieldError(
                 E.loginEmail,
                 E.loginEmailError,
@@ -1832,6 +2757,7 @@
         }
 
         if (!validPassword(password)) {
+
             fieldError(
                 E.loginPassword,
                 E.loginPasswordError,
@@ -1841,13 +2767,15 @@
             return;
         }
 
-        const auth = getAuth();
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.signIn !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة signIn غير موجودة في settings-auth.js."
@@ -1855,11 +2783,15 @@
 
             setMessage(
                 E.loginMessage,
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
             return;
         }
@@ -1871,6 +2803,7 @@
         );
 
         try {
+
             const result =
                 await auth.signIn(
                     email,
@@ -1888,12 +2821,14 @@
                 );
             }
 
-            currentUser = user;
+            currentUser =
+                user;
 
             if (
                 typeof auth.fetchProfile ===
                 "function"
             ) {
+
                 currentProfile =
                     await auth.fetchProfile(
                         user.id
@@ -1910,16 +2845,20 @@
                 "success"
             );
 
-            E.loginPassword.value = "";
+            E.loginPassword.value =
+                "";
 
         } catch (error) {
+
             console.error(
                 "WFESC login error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
 
             setMessage(
                 E.loginMessage,
@@ -1927,16 +2866,23 @@
                 "error"
             );
 
-            shake(E.loginPassword);
+            fieldError(
+                E.loginPassword,
+                E.loginPasswordError,
+                message
+            );
 
             showStatus(
                 message,
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
         } finally {
+
             setButtonLoading(
                 E.loginSubmit,
                 false
@@ -1951,18 +2897,21 @@
      */
 
     async function register() {
+
         clearRegisterErrors();
 
         const name =
-            E.registerName.value.trim();
-
-        const username =
-            sanitizeUsername(
-                E.registerUsername.value
+            sanitizeName(
+                E.registerName.value
             );
 
+        const username =
+            E.registerUsername.value
+                .trim();
+
         const email =
-            E.registerEmail.value.trim();
+            E.registerEmail.value
+                .trim();
 
         const password =
             E.registerPassword.value;
@@ -1970,32 +2919,47 @@
         const confirm =
             E.registerConfirm.value;
 
-        E.registerUsername.value =
-            username;
+        E.registerName.value =
+            name;
 
         let valid = true;
 
-        if (name.length < 2) {
+        /*
+         * الاسم
+         */
+
+        if (!validName(name)) {
+
             fieldError(
                 E.registerName,
                 E.registerNameError,
-                "يرجى إدخال الاسم."
+                "يرجى إدخال اسم من 2 إلى 15 حرفًا."
             );
 
             valid = false;
         }
 
+        /*
+         * اسم المستخدم
+         */
+
         if (!validUsername(username)) {
+
             fieldError(
                 E.registerUsername,
                 E.registerUsernameError,
-                "اسم المستخدم يجب أن يتكون من 3 إلى 9 أحرف إنجليزية أو أرقام."
+                "اسم المستخدم يجب أن يكون من 3 إلى 9 أحرف إنجليزية صغيرة أو أرقام فقط."
             );
 
             valid = false;
         }
 
+        /*
+         * البريد
+         */
+
         if (!validEmail(email)) {
+
             fieldError(
                 E.registerEmail,
                 E.registerEmailError,
@@ -2005,7 +2969,12 @@
             valid = false;
         }
 
+        /*
+         * كلمة المرور
+         */
+
         if (!validPassword(password)) {
+
             fieldError(
                 E.registerPassword,
                 E.registerPasswordError,
@@ -2015,17 +2984,25 @@
             valid = false;
         }
 
-        if (password !== confirm) {
+        /*
+         * التأكيد
+         */
+
+        if (
+            password !==
+            confirm
+        ) {
+
             fieldError(
                 E.registerPassword,
                 E.registerPasswordError,
-                "كلمتا المرور غير متطابقتين."
+                "كلمة المرور غير متطابقة."
             );
 
             fieldError(
                 E.registerConfirm,
                 E.registerConfirmError,
-                "كلمتا المرور غير متطابقتين."
+                "كلمة المرور غير متطابقة."
             );
 
             shakeMany([
@@ -2040,13 +3017,15 @@
             return;
         }
 
-        const auth = getAuth();
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.signUp !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة signUp غير موجودة في settings-auth.js."
@@ -2054,11 +3033,15 @@
 
             setMessage(
                 E.registerMessage,
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
             return;
         }
@@ -2070,6 +3053,7 @@
         );
 
         try {
+
             const result =
                 await auth.signUp(
                     name,
@@ -2090,12 +3074,15 @@
                     user.confirmed_at
                 )
             ) {
-                currentUser = user;
+
+                currentUser =
+                    user;
 
                 if (
                     typeof auth.fetchProfile ===
                     "function"
                 ) {
+
                     currentProfile =
                         await auth.fetchProfile(
                             user.id
@@ -2124,28 +3111,53 @@
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC registration error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
 
-            setMessage(
-                E.registerMessage,
-                message,
-                "error"
-            );
+            /*
+             * البريد موجود مسبقًا:
+             * نضع الخطأ على البريد نفسه.
+             */
+
+            if (
+                message ===
+                "يوجد حساب بهذا البريد، قم بتسجيل الدخول."
+            ) {
+
+                fieldError(
+                    E.registerEmail,
+                    E.registerEmailError,
+                    message
+                );
+
+            } else {
+
+                setMessage(
+                    E.registerMessage,
+                    message,
+                    "error"
+                );
+            }
 
             showStatus(
                 message,
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
         } finally {
+
             setButtonLoading(
                 E.registerSubmit,
                 false
@@ -2159,9 +3171,8 @@
      * ============================================================
      */
 
-    let verificationTimer = null;
-
     function showVerificationMessage() {
+
         if (!E) return;
 
         E.verification.textContent =
@@ -2176,11 +3187,16 @@
         );
 
         verificationTimer =
-            setTimeout(function () {
-                E.verification.classList.remove(
-                    "show"
-                );
-            }, 5000);
+            setTimeout(
+                function () {
+
+                    E.verification.classList.remove(
+                        "show"
+                    );
+
+                },
+                5000
+            );
     }
 
     /*
@@ -2190,6 +3206,7 @@
      */
 
     async function sendReset() {
+
         clearFieldError(
             E.forgotEmail,
             E.forgotEmailError
@@ -2200,9 +3217,11 @@
         );
 
         const email =
-            E.forgotEmail.value.trim();
+            E.forgotEmail.value
+                .trim();
 
         if (!validEmail(email)) {
+
             fieldError(
                 E.forgotEmail,
                 E.forgotEmailError,
@@ -2212,13 +3231,15 @@
             return;
         }
 
-        const auth = getAuth();
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.resetPassword !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة resetPassword غير موجودة في settings-auth.js."
@@ -2226,11 +3247,15 @@
 
             setMessage(
                 E.forgotMessage,
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
             return;
         }
@@ -2242,6 +3267,7 @@
         );
 
         try {
+
             await auth.resetPassword(
                 email
             );
@@ -2258,13 +3284,16 @@
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC reset error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
 
             setMessage(
                 E.forgotMessage,
@@ -2277,9 +3306,12 @@
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
         } finally {
+
             setButtonLoading(
                 E.forgotSubmit,
                 false
@@ -2294,25 +3326,24 @@
      */
 
     function openChangePassword() {
-        E.newPassword.value = "";
-        E.newPasswordConfirm.value = "";
+
+        E.newPassword.value =
+            "";
+
+        E.newPasswordConfirm.value =
+            "";
 
         clearMessage(
             E.changePasswordMessage
         );
 
-        E.changePasswordModal.classList.add(
-            "show"
-        );
-    }
-
-    function closeChangePassword() {
-        E.changePasswordModal.classList.remove(
-            "show"
+        openModal(
+            E.changePasswordModal
         );
     }
 
     async function changePassword() {
+
         clearMessage(
             E.changePasswordMessage
         );
@@ -2324,21 +3355,28 @@
             E.newPasswordConfirm.value;
 
         if (!validPassword(password)) {
+
             setMessage(
                 E.changePasswordMessage,
                 "كلمة المرور يجب أن تكون من 6 إلى 16 خانة.",
                 "error"
             );
 
-            shake(E.newPassword);
+            shake(
+                E.newPassword
+            );
 
             return;
         }
 
-        if (password !== confirm) {
+        if (
+            password !==
+            confirm
+        ) {
+
             setMessage(
                 E.changePasswordMessage,
-                "كلمتا المرور غير متطابقتين.",
+                "كلمة المرور غير متطابقة.",
                 "error"
             );
 
@@ -2350,13 +3388,15 @@
             return;
         }
 
-        const auth = getAuth();
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.updatePassword !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة updatePassword غير موجودة في settings-auth.js."
@@ -2364,11 +3404,15 @@
 
             setMessage(
                 E.changePasswordMessage,
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
             return;
         }
@@ -2380,6 +3424,7 @@
         );
 
         try {
+
             await auth.updatePassword(
                 password
             );
@@ -2396,18 +3441,25 @@
             );
 
             setTimeout(
-                closeChangePassword,
+                function () {
+                    closeModal(
+                        E.changePasswordModal
+                    );
+                },
                 900
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC change password error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
 
             setMessage(
                 E.changePasswordMessage,
@@ -2420,9 +3472,12 @@
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
         } finally {
+
             setButtonLoading(
                 E.changePasswordSubmit,
                 false
@@ -2437,6 +3492,7 @@
      */
 
     async function recoveryPassword() {
+
         clearMessage(
             E.recoveryMessage
         );
@@ -2448,21 +3504,28 @@
             E.recoveryConfirm.value;
 
         if (!validPassword(password)) {
+
             setMessage(
                 E.recoveryMessage,
                 "كلمة المرور يجب أن تكون من 6 إلى 16 خانة.",
                 "error"
             );
 
-            shake(E.recoveryPassword);
+            shake(
+                E.recoveryPassword
+            );
 
             return;
         }
 
-        if (password !== confirm) {
+        if (
+            password !==
+            confirm
+        ) {
+
             setMessage(
                 E.recoveryMessage,
-                "كلمتا المرور غير متطابقتين.",
+                "كلمة المرور غير متطابقة.",
                 "error"
             );
 
@@ -2474,13 +3537,15 @@
             return;
         }
 
-        const auth = getAuth();
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.updatePassword !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة updatePassword غير موجودة في settings-auth.js."
@@ -2488,11 +3553,15 @@
 
             setMessage(
                 E.recoveryMessage,
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
             return;
         }
@@ -2504,6 +3573,7 @@
         );
 
         try {
+
             await auth.updatePassword(
                 password
             );
@@ -2520,17 +3590,20 @@
             );
 
             setTimeout(
-                function () {
-                    E.recoveryModal.classList.remove(
-                        "show"
+                async function () {
+
+                    closeModal(
+                        E.recoveryModal
                     );
 
                     if (
                         typeof auth.signOut ===
                         "function"
                     ) {
-                        auth.signOut()
-                            .catch(function () {});
+
+                        try {
+                            await auth.signOut();
+                        } catch (_) {}
                     }
 
                     renderAccount(
@@ -2538,19 +3611,25 @@
                         null
                     );
 
-                    setMode("login");
+                    setMode(
+                        "login"
+                    );
+
                 },
                 1000
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC recovery password error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
 
             setMessage(
                 E.recoveryMessage,
@@ -2563,9 +3642,12 @@
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
         } finally {
+
             setButtonLoading(
                 E.recoverySubmit,
                 false
@@ -2580,29 +3662,37 @@
      */
 
     async function logout() {
-        const auth = getAuth();
+
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.signOut !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة signOut غير موجودة في settings-auth.js."
                 );
 
             showStatus(
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
 
             return;
         }
 
         try {
+
             await auth.signOut();
 
             currentUser = null;
@@ -2613,7 +3703,9 @@
                 null
             );
 
-            setMode("login");
+            setMode(
+                "login"
+            );
 
             showStatus(
                 "تم تسجيل الخروج بنجاح.",
@@ -2621,66 +3713,132 @@
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC logout error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
 
             showStatus(
                 message,
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
         }
     }
 
     /*
      * ============================================================
-     * DELETE ACCOUNT
+     * DELETE ACCOUNT - FIRST STEP
      * ============================================================
      */
 
-    async function deleteAccount() {
-        const confirmed =
-            window.confirm(
-                "هل أنت متأكد من حذف حسابك؟ هذا الإجراء نهائي."
-            );
+    function openDeleteWarning() {
 
-        if (!confirmed) {
-            return;
-        }
+        clearMessage(
+            E.deleteMessage
+        );
 
-        const auth = getAuth();
+        closeModal(
+            E.deleteFinalModal
+        );
+
+        openModal(
+            E.deleteWarningModal
+        );
+    }
+
+    /*
+     * ============================================================
+     * DELETE ACCOUNT - SECOND STEP
+     * ============================================================
+     */
+
+    function openDeleteFinal() {
+
+        closeModal(
+            E.deleteWarningModal
+        );
+
+        clearMessage(
+            E.deleteMessage
+        );
+
+        openModal(
+            E.deleteFinalModal
+        );
+    }
+
+    /*
+     * ============================================================
+     * DELETE ACCOUNT - FINAL ACTION
+     * ============================================================
+     */
+
+    async function executeDeleteAccount() {
+
+        clearMessage(
+            E.deleteMessage
+        );
+
+        const auth =
+            getAuth();
 
         if (
             !auth ||
             typeof auth.deleteAccount !==
             "function"
         ) {
+
             const error =
                 new Error(
                     "دالة deleteAccount غير موجودة في settings-auth.js."
                 );
 
-            showStatus(
-                getErrorMessage(error),
+            setMessage(
+                E.deleteMessage,
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showStatus(
+                getErrorMessage(
+                    error
+                ),
+                "error"
+            );
+
+            showDebugError(
+                error
+            );
 
             return;
         }
 
+        setButtonLoading(
+            E.deleteFinalConfirm,
+            true,
+            "جارٍ إرسال طلب الحذف..."
+        );
+
         try {
+
             await auth.deleteAccount();
 
             currentUser = null;
             currentProfile = null;
+
+            closeAllModals();
 
             renderAccount(
                 null,
@@ -2688,26 +3846,60 @@
             );
 
             showStatus(
-                "تم تنفيذ طلب حذف الحساب.",
+                "تم إرسال طلب حذف الحساب بنجاح. سيتم حذف الحساب بالكامل خلال أسبوع.",
                 "success"
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC delete account error:",
                 error
             );
 
             const message =
-                getErrorMessage(error);
+                getErrorMessage(
+                    error
+                );
+
+            setMessage(
+                E.deleteMessage,
+                message,
+                "error"
+            );
 
             showStatus(
                 message,
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
+
+        } finally {
+
+            setButtonLoading(
+                E.deleteFinalConfirm,
+                false
+            );
         }
+    }
+
+    /*
+     * ============================================================
+     * SUPPORT
+     * ============================================================
+     */
+
+    function openSupport() {
+        /*
+         * سيتم ربط هذا لاحقًا بنظام الرسائل.
+         * حاليًا يفتح messages.html.
+         */
+
+        window.location.href =
+            "messages.html";
     }
 
     /*
@@ -2728,8 +3920,6 @@
      */
 
     async function handleRecoveryURL() {
-        const url =
-            window.location.href;
 
         const search =
             window.location.search;
@@ -2752,33 +3942,41 @@
             return;
         }
 
-        const auth = getAuth();
+        const auth =
+            getAuth();
 
         try {
+
             if (
                 auth &&
                 typeof auth.restoreSession ===
                 "function"
             ) {
+
                 await auth.restoreSession();
             }
 
-            E.recoveryModal.classList.add(
-                "show"
+            openModal(
+                E.recoveryModal
             );
 
         } catch (error) {
+
             console.error(
                 "WFESC recovery URL error:",
                 error
             );
 
             showStatus(
-                getErrorMessage(error),
+                getErrorMessage(
+                    error
+                ),
                 "error"
             );
 
-            showDebugError(error);
+            showDebugError(
+                error
+            );
         }
     }
 
@@ -2789,10 +3987,12 @@
      */
 
     function showDebugError(error) {
+
         let debug =
             qs(".wfesc-auth-debug");
 
         if (!debug) {
+
             debug =
                 document.createElement(
                     "div"
@@ -2802,13 +4002,17 @@
                 "wfesc-auth-debug";
 
             if (root) {
-                root.appendChild(debug);
+                root.appendChild(
+                    debug
+                );
             }
         }
 
         debug.textContent =
             "WFESC ERROR: " +
-            getErrorMessage(error);
+            getErrorMessage(
+                error
+            );
     }
 
     /*
@@ -2818,6 +4022,7 @@
      */
 
     function bindAuthEvents() {
+
         window.addEventListener(
             "WFESCAuthChanged",
             function (event) {
@@ -2843,6 +4048,7 @@
         window.addEventListener(
             "WFESCEmailVerified",
             function () {
+
                 showVerificationMessage();
 
                 showStatus(
@@ -2851,6 +4057,37 @@
                 );
 
                 restoreSession();
+            }
+        );
+
+        /*
+         * إذا أضيف لاحقًا مفتاح الزجاج السائل
+         * من Settings يمكن إرسال هذا الحدث:
+         *
+         * window.dispatchEvent(
+         *     new CustomEvent(
+         *         "WFESCLiquidGlassChanged",
+         *         { detail: { enabled: true } }
+         *     )
+         * );
+         */
+
+        window.addEventListener(
+            "WFESCLiquidGlassChanged",
+            function (event) {
+
+                const enabled =
+                    event.detail?.enabled;
+
+                if (
+                    typeof enabled ===
+                    "boolean"
+                ) {
+                    liquidGlassEnabled =
+                        enabled;
+
+                    applyLiquidGlass();
+                }
             }
         );
     }
@@ -2862,36 +4099,54 @@
      */
 
     function bindEvents() {
-        E.tabs.forEach(function (tab) {
 
-            tab.addEventListener(
-                "click",
-                function () {
+        /*
+         * Tabs
+         */
 
-                    const mode =
-                        tab.getAttribute(
-                            "data-auth-mode"
-                        );
+        E.tabs.forEach(
+            function (tab) {
 
-                    if (mode === "register") {
-                        setMode("register");
-                        clearLoginErrors();
-                    } else {
-                        setMode("login");
-                        clearRegisterErrors();
+                tab.addEventListener(
+                    "click",
+                    function () {
+
+                        const mode =
+                            tab.getAttribute(
+                                "data-auth-mode"
+                            );
+
+                        if (
+                            mode ===
+                            "register"
+                        ) {
+
+                            setMode(
+                                "register"
+                            );
+
+                            clearLoginErrors();
+
+                        } else {
+
+                            setMode(
+                                "login"
+                            );
+
+                            clearRegisterErrors();
+                        }
                     }
-                }
-            );
-        });
+                );
+            }
+        );
+
+        /*
+         * Login
+         */
 
         E.loginSubmit.addEventListener(
             "click",
             login
-        );
-
-        E.registerSubmit.addEventListener(
-            "click",
-            register
         );
 
         E.loginForgot.addEventListener(
@@ -2899,20 +4154,37 @@
             function () {
 
                 const email =
-                    E.loginEmail.value.trim();
+                    E.loginEmail.value
+                        .trim();
 
                 E.forgotEmail.value =
                     email;
 
-                setMode("forgot");
-
+                setMode(
+                    "forgot"
+                );
             }
         );
+
+        /*
+         * Register
+         */
+
+        E.registerSubmit.addEventListener(
+            "click",
+            register
+        );
+
+        /*
+         * Forgot
+         */
 
         E.forgotBack.addEventListener(
             "click",
             function () {
-                setMode("login");
+                setMode(
+                    "login"
+                );
             }
         );
 
@@ -2921,10 +4193,18 @@
             sendReset
         );
 
+        /*
+         * Profile
+         */
+
         E.profileButton.addEventListener(
             "click",
             openProfile
         );
+
+        /*
+         * Change password
+         */
 
         E.changePasswordButton.addEventListener(
             "click",
@@ -2936,35 +4216,79 @@
             changePassword
         );
 
+        /*
+         * Logout
+         */
+
         E.logoutButton.addEventListener(
             "click",
             logout
         );
 
+        /*
+         * Delete
+         */
+
         E.deleteButton.addEventListener(
             "click",
-            deleteAccount
+            openDeleteWarning
         );
+
+        E.deleteFirstConfirm.addEventListener(
+            "click",
+            openDeleteFinal
+        );
+
+        E.deleteFinalConfirm.addEventListener(
+            "click",
+            executeDeleteAccount
+        );
+
+        E.deleteSupportButton.addEventListener(
+            "click",
+            openSupport
+        );
+
+        /*
+         * Recovery
+         */
 
         E.recoverySubmit.addEventListener(
             "click",
             recoveryPassword
         );
 
-        qsa("[data-close-modal]")
-            .forEach(function (button) {
+        /*
+         * Close modals
+         */
+
+        qsa(
+            "[data-close-modal]"
+        ).forEach(
+            function (button) {
 
                 button.addEventListener(
                     "click",
                     closeAllModals
                 );
+            }
+        );
 
-            });
+        /*
+         * إغلاق عند الضغط على الخلفية.
+         */
 
-        [E.changePasswordModal, E.recoveryModal]
-            .forEach(function (modal) {
+        [
+            E.changePasswordModal,
+            E.recoveryModal,
+            E.deleteWarningModal,
+            E.deleteFinalModal
+        ].forEach(
+            function (modal) {
 
-                if (!modal) return;
+                if (!modal) {
+                    return;
+                }
 
                 modal.addEventListener(
                     "click",
@@ -2974,30 +4298,137 @@
                             event.target ===
                             modal
                         ) {
-                            modal.classList.remove(
-                                "show"
+
+                            closeModal(
+                                modal
                             );
                         }
-
                     }
                 );
+            }
+        );
 
-            });
+        /*
+         * ========================================================
+         * USERNAME INPUT
+         * ========================================================
+         *
+         * هنا لا نحول الأحرف الكبيرة إلى صغيرة.
+         * الأحرف الكبيرة والرموز لا تصبح جزءًا من القيمة.
+         * ويتم إظهار الخطأ عند محاولة استخدام غير المسموح.
+         */
 
         E.registerUsername.addEventListener(
             "input",
             function () {
 
-                const clean =
+                const original =
+                    E.registerUsername.value;
+
+                const cleaned =
                     sanitizeUsername(
-                        E.registerUsername.value
+                        original
                     );
 
-                E.registerUsername.value =
-                    clean;
+                if (
+                    original !==
+                    cleaned
+                ) {
 
+                    E.registerUsername.value =
+                        cleaned;
+
+                    fieldError(
+                        E.registerUsername,
+                        E.registerUsernameError,
+                        "اسم المستخدم يقبل الأحرف الإنجليزية الصغيرة والأرقام فقط."
+                    );
+
+                } else if (
+                    validUsername(
+                        cleaned
+                    )
+                ) {
+
+                    clearFieldError(
+                        E.registerUsername,
+                        E.registerUsernameError
+                    );
+                }
             }
         );
+
+        /*
+         * ========================================================
+         * NAME LIMIT
+         * ========================================================
+         */
+
+        E.registerName.addEventListener(
+            "input",
+            function () {
+
+                const value =
+                    E.registerName.value;
+
+                if (
+                    value.length >
+                    NAME_MAX
+                ) {
+
+                    E.registerName.value =
+                        value.slice(
+                            0,
+                            NAME_MAX
+                        );
+                }
+
+                if (
+                    E.registerName.value
+                        .trim()
+                        .length >= 2
+                ) {
+
+                    clearFieldError(
+                        E.registerName,
+                        E.registerNameError
+                    );
+                }
+            }
+        );
+
+        /*
+         * ========================================================
+         * EMAIL AUTO FILL
+         * ========================================================
+         */
+
+        E.registerEmail.addEventListener(
+            "input",
+            function () {
+
+                autoFillFromEmail();
+
+                if (
+                    validEmail(
+                        E.registerEmail.value
+                            .trim()
+                    )
+                ) {
+
+                    clearFieldError(
+                        E.registerEmail,
+                        E.registerEmailError
+                    );
+                }
+            }
+        );
+
+        /*
+         * ========================================================
+         * PASSWORD MATCH
+         * ========================================================
+         */
 
         E.registerPassword.addEventListener(
             "input",
@@ -3008,6 +4439,7 @@
                     E.registerPassword.value ===
                     E.registerConfirm.value
                 ) {
+
                     clearFieldError(
                         E.registerPassword,
                         E.registerPasswordError
@@ -3018,7 +4450,6 @@
                         E.registerConfirmError
                     );
                 }
-
             }
         );
 
@@ -3030,6 +4461,7 @@
                     E.registerPassword.value ===
                     E.registerConfirm.value
                 ) {
+
                     clearFieldError(
                         E.registerPassword,
                         E.registerPasswordError
@@ -3039,19 +4471,36 @@
                         E.registerConfirm,
                         E.registerConfirmError
                     );
-                }
 
+                } else if (
+                    E.registerConfirm.value
+                ) {
+
+                    fieldError(
+                        E.registerConfirm,
+                        E.registerConfirmError,
+                        "كلمة المرور غير متطابقة."
+                    );
+                }
             }
         );
+
+        /*
+         * ========================================================
+         * ENTER KEYS
+         * ========================================================
+         */
 
         E.loginPassword.addEventListener(
             "keydown",
             function (event) {
 
-                if (event.key === "Enter") {
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
                     login();
                 }
-
             }
         );
 
@@ -3059,10 +4508,12 @@
             "keydown",
             function (event) {
 
-                if (event.key === "Enter") {
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
                     login();
                 }
-
             }
         );
 
@@ -3070,15 +4521,19 @@
             "keydown",
             function (event) {
 
-                if (event.key === "Enter") {
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
                     register();
                 }
-
             }
         );
 
         /*
-         * منع prompt الخاص بالمتصفح.
+         * ========================================================
+         * GLOBAL ERROR TRACKING
+         * ========================================================
          */
 
         window.addEventListener(
@@ -3089,6 +4544,7 @@
                     event &&
                     event.error
                 ) {
+
                     console.error(
                         "WFESC global error:",
                         event.error
@@ -3098,7 +4554,6 @@
                         event.error
                     );
                 }
-
             }
         );
 
@@ -3120,7 +4575,6 @@
                 showDebugError(
                     reason
                 );
-
             }
         );
     }
@@ -3132,6 +4586,7 @@
      */
 
     async function init() {
+
         if (initialized) {
             return;
         }
@@ -3146,7 +4601,25 @@
 
         buildUI();
 
-        E = getElements();
+        E =
+            getElements();
+
+        /*
+         * الزجاج السائل مفعّل افتراضيًا.
+         */
+
+        liquidGlassEnabled =
+            true;
+
+        applyLiquidGlass();
+
+        /*
+         * ربط حالة الأنميشن بإعداد الموقع.
+         */
+
+        applyAnimationState();
+
+        observeAnimationSetting();
 
         bindPasswordToggles();
 
@@ -3154,7 +4627,9 @@
 
         bindAuthEvents();
 
-        setMode("login");
+        setMode(
+            "login"
+        );
 
         await handleRecoveryURL();
 
@@ -3171,12 +4646,15 @@
         document.readyState ===
         "loading"
     ) {
+
         document.addEventListener(
             "DOMContentLoaded",
             init,
             { once: true }
         );
+
     } else {
+
         init();
     }
 
