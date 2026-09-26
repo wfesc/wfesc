@@ -1,1133 +1,286 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>WFESC Auth Test</title>
+<title>WFESC - Supabase Auth Test</title>
 
 <style>
-
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
-
 body{
     background:#050505;
-    color:#eee;
+    color:#fff;
     font-family:Arial,Tahoma,sans-serif;
-    padding:20px;
+    padding:25px;
 }
 
-.container{
-    width:100%;
+.box{
     max-width:600px;
-    margin:30px auto;
-}
-
-h1{
-    text-align:center;
-    margin-bottom:10px;
-}
-
-.subtitle{
-    text-align:center;
-    color:#999;
-    margin-bottom:25px;
-}
-
-.card{
+    margin:auto;
     background:#111;
-    border:1px solid #292929;
-    border-radius:16px;
+    border:1px solid #333;
+    border-radius:15px;
     padding:20px;
-    margin-bottom:15px;
 }
 
 h2{
-    font-size:18px;
     margin-bottom:15px;
 }
 
 input{
     width:100%;
-    padding:14px;
-    margin-bottom:12px;
-    background:#080808;
+    padding:12px;
+    margin:7px 0;
+    border-radius:8px;
+    border:1px solid #444;
+    background:#050505;
     color:#fff;
-    border:1px solid #333;
-    border-radius:10px;
-    outline:none;
-    font-size:15px;
-}
-
-input:focus{
-    border-color:#777;
+    box-sizing:border-box;
 }
 
 button{
     width:100%;
-    padding:14px;
-    margin-top:8px;
+    padding:13px;
+    margin-top:10px;
     border:0;
-    border-radius:10px;
+    border-radius:8px;
     background:#fff;
     color:#000;
     font-weight:bold;
-    cursor:pointer;
-    font-size:15px;
 }
 
-button:disabled{
-    opacity:.5;
-    cursor:not-allowed;
-}
-
-.secondary{
-    background:#222;
-    color:#fff;
-    border:1px solid #333;
-}
-
-.status{
+#result{
+    margin-top:20px;
     padding:15px;
-    background:#080808;
-    border:1px solid #292929;
+    background:#050505;
     border-radius:10px;
-    white-space:pre-wrap;
-    line-height:1.8;
-    word-break:break-word;
-}
-
-.success{
-    color:#55ff8a;
-}
-
-.error{
-    color:#ff6262;
-}
-
-.info{
-    color:#ddd;
-}
-
-.account{
-    display:none;
-}
-
-.account.show{
-    display:block;
-}
-
-.user-data{
-    background:#080808;
-    border:1px solid #292929;
-    border-radius:10px;
-    padding:15px;
-    line-height:1.8;
     white-space:pre-wrap;
     word-break:break-word;
 }
-
 </style>
-
 </head>
 
 <body>
 
-<div class="container">
+<div class="box">
 
-<h1>WFESC Auth Test</h1>
+<h2>اختبار Supabase Auth</h2>
 
-<div class="subtitle">
-اختبار كامل قبل ربط النظام بالموقع
-</div>
-
-
-<!-- =====================================================
-     حالة الاتصال
-===================================================== -->
-
-<div class="card">
-
-<h2>حالة الاتصال</h2>
-
-<div id="connectionStatus" class="status info">
-جاري الفحص...
-</div>
-
-</div>
-
-
-<!-- =====================================================
-     إنشاء حساب
-===================================================== -->
-
-<div class="card">
-
-<h2>إنشاء حساب تجريبي</h2>
+<p>
+هذا الاختبار يفحص الاتصال بالمصادقة فقط.
+</p>
 
 <input
-    id="registerUsername"
-    type="text"
-    maxlength="3"
-    placeholder="اسم المستخدم - 1 إلى 3 أحرف"
->
-
-<input
-    id="registerEmail"
+    id="email"
     type="email"
     placeholder="البريد الإلكتروني"
-    autocomplete="email"
 >
 
 <input
-    id="registerPassword"
-    type="password"
-    placeholder="كلمة المرور - 6 أحرف أو أكثر"
-    autocomplete="new-password"
->
-
-<input
-    id="registerConfirm"
-    type="password"
-    placeholder="تأكيد كلمة المرور"
-    autocomplete="new-password"
->
-
-<button
-    id="registerButton"
-    type="button"
->
-إنشاء حساب
-</button>
-
-</div>
-
-
-<!-- =====================================================
-     تسجيل الدخول
-===================================================== -->
-
-<div class="card">
-
-<h2>تسجيل الدخول</h2>
-
-<input
-    id="loginEmail"
-    type="email"
-    placeholder="البريد الإلكتروني"
-    autocomplete="email"
->
-
-<input
-    id="loginPassword"
+    id="password"
     type="password"
     placeholder="كلمة المرور"
-    autocomplete="current-password"
 >
 
-<button
-    id="loginButton"
-    type="button"
->
-تسجيل الدخول
+<button id="login">
+تسجيل الدخول للاختبار
 </button>
 
-</div>
+<button id="session">
+فحص الجلسة
+</button>
 
-
-<!-- =====================================================
-     الحساب الحالي
-===================================================== -->
-
-<div
-    id="accountCard"
-    class="card account"
->
-
-<h2>الحساب الحالي</h2>
-
-<div
-    id="accountData"
-    class="user-data"
->
-</div>
-
-<button
-    id="logoutButton"
-    type="button"
-    class="secondary"
->
+<button id="logout">
 تسجيل الخروج
 </button>
 
-</div>
-
-
-<!-- =====================================================
-     النتائج
-===================================================== -->
-
-<div class="card">
-
-<h2>نتيجة الاختبار</h2>
-
-<div
-    id="result"
-    class="status info"
->
-لم يتم إجراء اختبار بعد.
+<div id="result">
+جاري تجهيز الاختبار...
 </div>
 
 </div>
-
-</div>
-
-
-<!-- =====================================================
-     SUPABASE
-===================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-<!-- =====================================================
-     WFESC CONFIG
-===================================================== -->
-
-<script src="./settings-features/settings-auth-config.js"></script>
-
 
 <script>
 
 "use strict";
 
 
-/* =====================================================
-   العناصر
-===================================================== */
+const SUPABASE_URL =
+    "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
-const connectionStatus =
-    document.getElementById("connectionStatus");
 
-const resultBox =
+const SUPABASE_KEY =
+    "sb_publishable_5b7pTBiGY2D6vDLRsWgVzA_X926lBeM";
+
+
+const result =
     document.getElementById("result");
 
-const accountCard =
-    document.getElementById("accountCard");
 
-const accountData =
-    document.getElementById("accountData");
+function show(text){
 
-const registerButton =
-    document.getElementById("registerButton");
-
-const loginButton =
-    document.getElementById("loginButton");
-
-const logoutButton =
-    document.getElementById("logoutButton");
-
-
-/* =====================================================
-   التأكد من Supabase
-===================================================== */
-
-let supabaseClient = null;
-
-let CONFIG = null;
-
-
-/* =====================================================
-   فحص CONFIG
-===================================================== */
-
-if (!window.WFESCSettingsAuthConfig) {
-
-    connectionStatus.className =
-        "status error";
-
-    connectionStatus.textContent =
-        "❌ فشل تحميل settings-auth-config.js\n\n" +
-        "تأكد من وجود الملف:\n" +
-        "settings-features/settings-auth-config.js";
-
-} else {
-
-    CONFIG =
-        window.WFESCSettingsAuthConfig;
-
-
-    /* =================================================
-       فحص مكتبة Supabase
-    ================================================= */
-
-    if (!window.supabase) {
-
-        connectionStatus.className =
-            "status error";
-
-        connectionStatus.textContent =
-            "❌ مكتبة Supabase غير محملة.";
-
-    } else {
-
-
-        /* =============================================
-           إنشاء العميل
-        ============================================= */
-
-        supabaseClient =
-            window.supabase.createClient(
-                CONFIG.supabaseUrl,
-                CONFIG.supabaseKey
-            );
-
-
-        connectionStatus.className =
-            "status info";
-
-        connectionStatus.textContent =
-            "جاري اختبار الاتصال بـ Supabase...";
-
-
-        testConnection();
-
-    }
+    result.textContent = text;
 
 }
 
 
-/* =====================================================
-   اختبار الاتصال
-===================================================== */
+if(!window.supabase){
 
-async function testConnection(){
+    show("❌ مكتبة Supabase لم يتم تحميلها.");
 
-    try {
+}else{
 
-        /*
-         * أول اختبار:
-         * Auth
-         */
-
-        const authResult =
-            await supabaseClient.auth.getSession();
-
-
-        if (authResult.error) {
-
-            connectionStatus.className =
-                "status error";
-
-            connectionStatus.textContent =
-                "❌ Auth فشل\n\n" +
-                authResult.error.message;
-
-            return;
-
-        }
-
-
-        /*
-         * ثاني اختبار:
-         * profiles
-         */
-
-        const profileResult =
-            await supabaseClient
-            .from("profiles")
-            .select("id")
-            .limit(1);
-
-
-        if (profileResult.error) {
-
-            connectionStatus.className =
-                "status error";
-
-            connectionStatus.textContent =
-                "❌ Supabase وصل لكن جدول profiles رفض الطلب\n\n" +
-                profileResult.error.message;
-
-            return;
-
-        }
-
-
-        connectionStatus.className =
-            "status success";
-
-        connectionStatus.textContent =
-            "✅ الاتصال يعمل\n\n" +
-            "✓ Supabase URL صحيح\n" +
-            "✓ Publishable Key مقبول\n" +
-            "✓ Auth يعمل\n" +
-            "✓ profiles قابل للوصول";
-
-
-        /*
-         * إذا توجد جلسة مسبقًا
-         */
-
-        if (authResult.data.session) {
-
-            await showCurrentUser(
-                authResult.data.session.user
-            );
-
-        }
-
-    } catch(error){
-
-        connectionStatus.className =
-            "status error";
-
-        connectionStatus.textContent =
-            "❌ خطأ أثناء الاتصال\n\n" +
-            error.message;
-
-    }
-
-}
-
-
-/* =====================================================
-   إنشاء الحساب
-===================================================== */
-
-registerButton.addEventListener(
-    "click",
-    async function(){
-
-        const username =
-            document
-            .getElementById("registerUsername")
-            .value
-            .trim();
-
-        const email =
-            document
-            .getElementById("registerEmail")
-            .value
-            .trim();
-
-        const password =
-            document
-            .getElementById("registerPassword")
-            .value;
-
-        const confirm =
-            document
-            .getElementById("registerConfirm")
-            .value;
-
-
-        if (!username) {
-
-            showError(
-                "أدخل اسم المستخدم."
-            );
-
-            return;
-
-        }
-
-
-        if (
-            username.length < 1 ||
-            username.length > 3
-        ){
-
-            showError(
-                "اسم المستخدم يجب أن يكون من 1 إلى 3 أحرف."
-            );
-
-            return;
-
-        }
-
-
-        if (!email) {
-
-            showError(
-                "أدخل البريد الإلكتروني."
-            );
-
-            return;
-
-        }
-
-
-        if (!password) {
-
-            showError(
-                "أدخل كلمة المرور."
-            );
-
-            return;
-
-        }
-
-
-        if (password.length < 6) {
-
-            showError(
-                "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
-            );
-
-            return;
-
-        }
-
-
-        if (password !== confirm) {
-
-            showError(
-                "كلمتا المرور غير متطابقتين."
-            );
-
-            return;
-
-        }
-
-
-        registerButton.disabled = true;
-
-        registerButton.textContent =
-            "جاري إنشاء الحساب...";
-
-
-        try {
-
-            const response =
-                await supabaseClient.auth.signUp({
-
-                    email:email,
-
-                    password:password,
-
-                    options:{
-
-                        data:{
-                            username:username
-                        },
-
-                        emailRedirectTo:
-                            window.location.origin +
-                            window.location.pathname
-
-                    }
-
-                });
-
-
-            if (response.error) {
-
-                showError(
-                    "❌ فشل إنشاء الحساب\n\n" +
-                    response.error.message
-                );
-
-                return;
-
-            }
-
-
-            const user =
-                response.data.user;
-
-            const session =
-                response.data.session;
-
-
-            /*
-             * إنشاء profile
-             */
-
-            if (user && session) {
-
-                const profile =
-                    await createOrGetProfile(
-                        user,
-                        username
-                    );
-
-
-                if (profile.error) {
-
-                    showError(
-                        "تم إنشاء الحساب لكن حدث خطأ في profile:\n\n" +
-                        profile.error.message
-                    );
-
-                    return;
-
-                }
-
-            }
-
-
-            resultBox.className =
-                "status success";
-
-
-            if (session) {
-
-                resultBox.textContent =
-                    "✅ تم إنشاء الحساب وتسجيل الدخول\n\n" +
-                    "User ID:\n" +
-                    user.id;
-
-                await showCurrentUser(user);
-
-            } else {
-
-                resultBox.textContent =
-                    "✅ تم إنشاء الحساب\n\n" +
-                    "إذا كان تأكيد البريد الإلكتروني مفعّلًا في Supabase، افتح رسالة التأكيد ثم سجل الدخول.";
-
-            }
-
-        } catch(error){
-
-            showError(
-                "❌ خطأ أثناء إنشاء الحساب\n\n" +
-                error.message
-            );
-
-        } finally {
-
-            registerButton.disabled = false;
-
-            registerButton.textContent =
-                "إنشاء حساب";
-
-        }
-
-    }
-);
-
-
-/* =====================================================
-   تسجيل الدخول
-===================================================== */
-
-loginButton.addEventListener(
-    "click",
-    async function(){
-
-        const email =
-            document
-            .getElementById("loginEmail")
-            .value
-            .trim();
-
-        const password =
-            document
-            .getElementById("loginPassword")
-            .value;
-
-
-        if (!email) {
-
-            showError(
-                "أدخل البريد الإلكتروني."
-            );
-
-            return;
-
-        }
-
-
-        if (!password) {
-
-            showError(
-                "أدخل كلمة المرور."
-            );
-
-            return;
-
-        }
-
-
-        loginButton.disabled = true;
-
-        loginButton.textContent =
-            "جاري تسجيل الدخول...";
-
-
-        try {
-
-            const response =
-                await supabaseClient.auth
-                .signInWithPassword({
-
-                    email:email,
-
-                    password:password
-
-                });
-
-
-            if (response.error) {
-
-                showError(
-                    "❌ فشل تسجيل الدخول\n\n" +
-                    response.error.message
-                );
-
-                return;
-
-            }
-
-
-            const user =
-                response.data.user;
-
-            const session =
-                response.data.session;
-
-
-            if (!user || !session) {
-
-                showError(
-                    "لم يتم إنشاء Session."
-                );
-
-                return;
-
-            }
-
-
-            /*
-             * التأكد من profile
-             */
-
-            const profile =
-                await createOrGetProfile(
-                    user,
-                    user.user_metadata
-                    ? user.user_metadata.username
-                    : null
-                );
-
-
-            if (profile.error) {
-
-                showError(
-                    "تم تسجيل الدخول، لكن حدث خطأ في profile:\n\n" +
-                    profile.error.message
-                );
-
-                return;
-
-            }
-
-
-            resultBox.className =
-                "status success";
-
-            resultBox.textContent =
-                "✅ تم تسجيل الدخول بنجاح\n\n" +
-                "User ID:\n" +
-                user.id +
-                "\n\n" +
-                "Email:\n" +
-                (user.email || "غير موجود") +
-                "\n\n" +
-                "Session:\n" +
-                "✓ موجودة";
-
-
-            await showCurrentUser(user);
-
-
-        } catch(error){
-
-            showError(
-                "❌ خطأ أثناء تسجيل الدخول\n\n" +
-                error.message
-            );
-
-        } finally {
-
-            loginButton.disabled = false;
-
-            loginButton.textContent =
-                "تسجيل الدخول";
-
-        }
-
-    }
-);
-
-
-/* =====================================================
-   إنشاء أو جلب Profile
-===================================================== */
-
-async function createOrGetProfile(
-    user,
-    username
-){
-
-    const existing =
-        await supabaseClient
-        .from("profiles")
-        .select("*")
-        .eq("id",user.id)
-        .maybeSingle();
-
-
-    if (existing.error) {
-
-        return {
-            data:null,
-            error:existing.error
-        };
-
-    }
-
-
-    if (existing.data) {
-
-        return {
-            data:existing.data,
-            error:null
-        };
-
-    }
-
-
-    let finalUsername =
-        String(
-            username ||
-            user.email ||
-            "W"
-        ).trim();
-
-
-    /*
-     * نضمن الحد الأقصى 3 أحرف
-     */
-
-    finalUsername =
-        [...finalUsername]
-        .slice(0,3)
-        .join("");
-
-
-    if (!finalUsername) {
-
-        finalUsername =
-            "W";
-
-    }
-
-
-    const insertResult =
-        await supabaseClient
-        .from("profiles")
-        .insert({
-
-            id:user.id,
-
-            username:finalUsername,
-
-            avatar_url:null,
-
-            bio:null
-
-        })
-        .select("*")
-        .maybeSingle();
-
-
-    if (insertResult.error) {
-
-        return {
-            data:null,
-            error:insertResult.error
-        };
-
-    }
-
-
-    return {
-        data:insertResult.data,
-        error:null
-    };
-
-}
-
-
-/* =====================================================
-   عرض الحساب الحالي
-===================================================== */
-
-async function showCurrentUser(user){
-
-    if (!user){
-
-        accountCard.classList.remove("show");
-
-        return;
-
-    }
-
-
-    const profileResult =
-        await supabaseClient
-        .from("profiles")
-        .select("*")
-        .eq("id",user.id)
-        .maybeSingle();
-
-
-    let profile =
-        profileResult.data;
-
-
-    accountCard.classList.add("show");
-
-
-    accountData.textContent =
-        "البريد:\n" +
-        (user.email || "غير موجود") +
-
-        "\n\nUser ID:\n" +
-        user.id +
-
-        "\n\nاسم المستخدم:\n" +
-        (
-            profile
-            ? profile.username || "غير موجود"
-            : "غير موجود"
-        ) +
-
-        "\n\nBio:\n" +
-        (
-            profile
-            ? profile.bio || "لا يوجد"
-            : "لا يوجد"
-        );
-
-}
-
-
-/* =====================================================
-   تسجيل الخروج
-===================================================== */
-
-logoutButton.addEventListener(
-    "click",
-    async function(){
-
-        logoutButton.disabled = true;
-
-        logoutButton.textContent =
-            "جاري تسجيل الخروج...";
-
-
-        try {
-
-            const response =
-                await supabaseClient.auth.signOut();
-
-
-            if (response.error) {
-
-                showError(
-                    "❌ فشل تسجيل الخروج\n\n" +
-                    response.error.message
-                );
-
-                return;
-
-            }
-
-
-            accountCard.classList.remove(
-                "show"
-            );
-
-
-            resultBox.className =
-                "status success";
-
-            resultBox.textContent =
-                "✓ تم تسجيل الخروج بنجاح.";
-
-        } catch(error){
-
-            showError(
-                "❌ خطأ أثناء تسجيل الخروج\n\n" +
-                error.message
-            );
-
-        } finally {
-
-            logoutButton.disabled = false;
-
-            logoutButton.textContent =
-                "تسجيل الخروج";
-
-        }
-
-    }
-);
-
-
-/* =====================================================
-   Auth State
-===================================================== */
-
-if (supabaseClient) {
-
-    supabaseClient.auth.onAuthStateChange(
-        async function(event,session){
-
-            if (session && session.user) {
-
-                await showCurrentUser(
-                    session.user
-                );
-
-            } else {
-
-                accountCard.classList.remove(
-                    "show"
-                );
-
-            }
-
-        }
+    show(
+        "✓ مكتبة Supabase تم تحميلها\n\n" +
+        "جاري إنشاء الاتصال..."
     );
 
-}
+
+    const client =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
 
 
-/* =====================================================
-   رسائل الخطأ
-===================================================== */
+    show(
+        "✓ مكتبة Supabase تعمل\n" +
+        "✓ تم إنشاء عميل Supabase\n\n" +
+        "الآن اضغط «فحص الجلسة»."
+    );
 
-function showError(message){
 
-    resultBox.className =
-        "status error";
+    document
+    .getElementById("session")
+    .addEventListener("click", async function(){
 
-    resultBox.textContent =
-        message;
+        show("جاري فحص الجلسة...");
+
+        const response =
+            await client.auth.getSession();
+
+
+        if(response.error){
+
+            show(
+                "❌ فشل Auth\n\n" +
+                response.error.message
+            );
+
+            return;
+        }
+
+
+        if(response.data.session){
+
+            show(
+                "✓ Auth يعمل\n\n" +
+                "User ID:\n" +
+                response.data.session.user.id
+            );
+
+        }else{
+
+            show(
+                "✓ الاتصال بـ Auth يعمل\n\n" +
+                "لا توجد جلسة تسجيل دخول حالياً."
+            );
+
+        }
+
+    });
+
+
+    document
+    .getElementById("login")
+    .addEventListener("click", async function(){
+
+        const email =
+            document
+            .getElementById("email")
+            .value
+            .trim();
+
+
+        const password =
+            document
+            .getElementById("password")
+            .value;
+
+
+        if(!email || !password){
+
+            show(
+                "⚠️ اكتب البريد وكلمة المرور أولاً."
+            );
+
+            return;
+        }
+
+
+        show("جاري اختبار تسجيل الدخول...");
+
+
+        const response =
+            await client.auth.signInWithPassword({
+
+                email: email,
+
+                password: password
+
+            });
+
+
+        if(response.error){
+
+            show(
+                "❌ فشل تسجيل الدخول\n\n" +
+                response.error.message
+            );
+
+            return;
+        }
+
+
+        show(
+            "✓ تسجيل الدخول يعمل\n\n" +
+            "User ID:\n" +
+            response.data.user.id
+        );
+
+    });
+
+
+    document
+    .getElementById("logout")
+    .addEventListener("click", async function(){
+
+        const response =
+            await client.auth.signOut();
+
+
+        if(response.error){
+
+            show(
+                "❌ فشل تسجيل الخروج\n\n" +
+                response.error.message
+            );
+
+            return;
+        }
+
+
+        show(
+            "✓ تم تسجيل الخروج بنجاح."
+        );
+
+    });
 
 }
 
 </script>
 
 </body>
-    </html>
+</html>
