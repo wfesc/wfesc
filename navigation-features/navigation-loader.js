@@ -1,17 +1,5 @@
-
-/* =========================================================
-   WFESC NAVIGATION SYSTEM
-   navigation-loader.js
-   ========================================================= */
-
 (function () {
-
     "use strict";
-
-
-    /*
-     * منع تحميل النظام أكثر من مرة
-     */
 
     if (window.WFESCNavigationLoader) {
         return;
@@ -19,75 +7,144 @@
 
     window.WFESCNavigationLoader = true;
 
+    const currentScript = document.currentScript;
 
-    /*
-     * حفظ مسار هذا الملف مباشرة
-     * قبل الدخول إلى الأحداث
-     */
+    let basePath = "";
 
-    const currentScript =
-        document.currentScript;
-
-
-    const basePath =
-        currentScript
-            ? new URL(
-                ".",
-                currentScript.src
-            ).href
-            : new URL(
-                "navigation-features/",
+    if (currentScript && currentScript.src) {
+        try {
+            const scriptUrl = new URL(
+                currentScript.src,
                 window.location.href
-            ).href;
+            );
 
+            basePath = scriptUrl.href.substring(
+                0,
+                scriptUrl.href.lastIndexOf("/") + 1
+            );
+        } catch (error) {
+            basePath = "navigation-features/";
+        }
+    } else {
+        basePath = "navigation-features/";
+    }
 
-    /*
-     * مسارات ملفات النظام
-     */
-
-    const files = {
-
-        settings:
-            new URL(
-                "navigation-settings.js",
-                basePath
-            ).href,
-
-        ui:
-            new URL(
-                "navigation-ui.js",
-                basePath
-            ).href,
-
-        style:
-            new URL(
-                "navigation-style.css",
-                basePath
-            ).href
-
+    const settings = {
+        enabled: true,
+        minimumTime: 500,
+        navigationDelay: 350,
+        maximumTime: 10000
     };
 
-
     /*
-     * وقت بداية التحميل
+     * =========================================
+     * GLOBAL SETTINGS
+     * =========================================
      */
 
-    const startTime =
-        performance.now();
+    function loadGlobalSettings() {
+        return new Promise(function (resolve) {
 
+            if (window.WFESCGlobalSettings) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement("script");
+
+            script.src =
+                basePath +
+                "wfesc-global-settings.js";
+
+            script.async = false;
+
+            script.onload = function () {
+                resolve();
+            };
+
+            script.onerror = function () {
+                console.warn(
+                    "WFESC: تعذر تحميل wfesc-global-settings.js"
+                );
+
+                resolve();
+            };
+
+            document.head.appendChild(script);
+        });
+    }
 
     /*
-     * تشغيل حالة التحميل
-     * بأسرع وقت ممكن
+     * =========================================
+     * NAVIGATION SETTINGS
+     * =========================================
      */
 
-    document.documentElement.classList.add(
-        "wfesc-loading"
-    );
+    function loadNavigationSettings() {
+        return new Promise(function (resolve) {
 
+            if (window.WFESCNavigationSettings) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement("script");
+
+            script.src =
+                basePath +
+                "navigation-settings.js";
+
+            script.async = false;
+
+            script.onload = function () {
+                resolve();
+            };
+
+            script.onerror = function () {
+                console.error(
+                    "WFESC: تعذر تحميل navigation-settings.js"
+                );
+
+                resolve();
+            };
+
+            document.head.appendChild(script);
+        });
+    }
 
     /*
-     * إنشاء شاشة التحميل
+     * =========================================
+     * NAVIGATION STYLE
+     * =========================================
+     */
+
+    function loadNavigationStyle() {
+
+        if (
+            document.querySelector(
+                'link[data-wfesc-navigation-style="true"]'
+            )
+        ) {
+            return;
+        }
+
+        const link = document.createElement("link");
+
+        link.rel = "stylesheet";
+
+        link.href =
+            basePath +
+            "navigation-style.css";
+
+        link.dataset.wfescNavigationStyle = "true";
+
+        document.head.appendChild(link);
+    }
+
+    /*
+     * =========================================
+     * LOADING SCREEN
+     * =========================================
      */
 
     function createLoader() {
@@ -100,217 +157,94 @@
             return;
         }
 
-
-        const loader =
-            document.createElement("div");
-
+        const loader = document.createElement("div");
 
         loader.className =
             "wfesc-page-loader";
 
-
-        loader.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
         loader.innerHTML = `
-
             <div class="wfesc-loader-box">
 
                 <div class="wfesc-loader-logo">
                     WFESC
                 </div>
 
-                <div
-                    class="wfesc-loader-spinner"
-                    aria-hidden="true">
-                </div>
+                <div class="wfesc-loader-spinner"></div>
 
                 <div class="wfesc-loader-text">
-                    جاري التحميل
-                </div>
-
-                <div class="wfesc-loader-subtext">
-                    يرجى الانتظار...
+                    جاري التحميل...
                 </div>
 
             </div>
-
         `;
 
+        document.body.appendChild(loader);
+    }
 
-        /*
-         * إضافة شاشة التحميل
-         * في بداية الصفحة
-         */
+    function showLoader() {
 
-        if (document.body) {
+        document.documentElement.classList.add(
+            "wfesc-loading"
+        );
 
-            document.body.prepend(
-                loader
+        const loader =
+            document.querySelector(
+                ".wfesc-page-loader"
             );
 
-        } else {
-
-            document.documentElement.appendChild(
-                loader
+        if (loader) {
+            loader.classList.remove(
+                "wfesc-loader-hidden"
             );
-
         }
-
     }
-
-
-    /*
-     * تحميل CSS
-     */
-
-    function loadStyle() {
-
-        return new Promise(
-            function (resolve, reject) {
-
-                /*
-                 * منع تكرار CSS
-                 */
-
-                if (
-                    document.querySelector(
-                        'link[data-wfesc-navigation-style="true"]'
-                    )
-                ) {
-
-                    resolve();
-
-                    return;
-                }
-
-
-                const link =
-                    document.createElement("link");
-
-
-                link.rel =
-                    "stylesheet";
-
-
-                link.href =
-                    files.style;
-
-
-                link.dataset.wfescNavigationStyle =
-                    "true";
-
-
-                link.onload =
-                    resolve;
-
-
-                link.onerror =
-                    reject;
-
-
-                document.head.appendChild(
-                    link
-                );
-
-            }
-        );
-
-    }
-
-
-    /*
-     * تحميل JavaScript
-     */
-
-    function loadScript(
-        src,
-        attributeName
-    ) {
-
-        return new Promise(
-            function (resolve, reject) {
-
-                /*
-                 * منع تكرار الملف
-                 */
-
-                if (
-                    document.querySelector(
-                        `script[data-wfesc-navigation="${attributeName}"]`
-                    )
-                ) {
-
-                    resolve();
-
-                    return;
-                }
-
-
-                const script =
-                    document.createElement("script");
-
-
-                script.src =
-                    src;
-
-
-                script.dataset.wfescNavigation =
-                    attributeName;
-
-
-                script.onload =
-                    resolve;
-
-
-                script.onerror =
-                    function () {
-
-                        console.error(
-                            "WFESC Navigation: فشل تحميل:",
-                            src
-                        );
-
-                        reject(
-                            new Error(
-                                "Failed to load " + src
-                            )
-                        );
-
-                    };
-
-
-                document.head.appendChild(
-                    script
-                );
-
-            }
-        );
-
-    }
-
-
-    /*
-     * إخفاء شاشة التحميل
-     */
 
     function hideLoader() {
 
-        const minimumTime =
-            window.WFESCNavigationSettings &&
-            window.WFESCNavigationSettings.loading &&
-            window.WFESCNavigationSettings.loading.minimumTime
-                ? window.WFESCNavigationSettings.loading.minimumTime
-                : 500;
+        const loader =
+            document.querySelector(
+                ".wfesc-page-loader"
+            );
 
+        if (loader) {
+
+            loader.classList.add(
+                "wfesc-loader-hidden"
+            );
+        }
+
+        document.documentElement.classList.remove(
+            "wfesc-loading"
+        );
+    }
+
+    /*
+     * =========================================
+     * START
+     * =========================================
+     */
+
+    const startedAt = Date.now();
+
+    function finishLoading() {
 
         const elapsed =
-            performance.now() -
-            startTime;
+            Date.now() - startedAt;
 
+        let minimumTime =
+            settings.minimumTime;
+
+        /*
+         * إذا الأنميشن مغلق من الإعدادات
+         * نقلل وقت الانتظار.
+         */
+
+        if (
+            window.WFESCGlobalSettings &&
+            !window.WFESCGlobalSettings.getAnimationEnabled()
+        ) {
+            minimumTime = 0;
+        }
 
         const remaining =
             Math.max(
@@ -318,247 +252,145 @@
                 minimumTime - elapsed
             );
 
-
-        window.setTimeout(
-            function () {
-
-                /*
-                 * إزالة حالة التحميل
-                 */
-
-                document.documentElement.classList.remove(
-                    "wfesc-loading"
-                );
-
-
-                /*
-                 * إخفاء شاشة التحميل
-                 */
-
-                const loader =
-                    document.querySelector(
-                        ".wfesc-page-loader"
-                    );
-
-
-                if (loader) {
-
-                    loader.classList.add(
-                        "wfesc-loader-hidden"
-                    );
-
-
-                    /*
-                     * حذفها بعد انتهاء
-                     * التأثير البصري
-                     */
-
-                    window.setTimeout(
-                        function () {
-
-                            if (
-                                loader &&
-                                loader.parentNode
-                            ) {
-
-                                loader.parentNode.removeChild(
-                                    loader
-                                );
-
-                            }
-
-                        },
-                        400
-                    );
-
-                }
-
-            },
+        setTimeout(
+            hideLoader,
             remaining
         );
-
     }
 
-
     /*
-     * معالجة فشل التحميل
+     * =========================================
+     * INITIALIZATION
+     * =========================================
      */
 
-    function handleError(error) {
-
-        console.error(
-            "WFESC Navigation Error:",
-            error
-        );
-
+    async function initialize() {
 
         /*
-         * حتى إذا حدث خطأ في أحد الملفات
-         * لا نبقي المستخدم محبوسًا
+         * الإعدادات العالمية أول شيء.
          */
+        await loadGlobalSettings();
 
-        window.setTimeout(
+        /*
+         * تطبيق الإعدادات مباشرة.
+         */
+        if (
+            window.WFESCGlobalSettings
+        ) {
+            window.WFESCGlobalSettings.apply();
+        }
+
+        /*
+         * إظهار التحميل قبل بناء الواجهة.
+         */
+        showLoader();
+
+        /*
+         * تحميل إعدادات التنقل.
+         */
+        await loadNavigationSettings();
+
+        /*
+         * تحميل CSS الخاص بالتنقل.
+         */
+        loadNavigationStyle();
+
+        /*
+         * إنشاء شاشة التحميل.
+         */
+        createLoader();
+
+        /*
+         * التأكد من أن الشاشة موجودة.
+         */
+        showLoader();
+
+        /*
+         * تحميل واجهة التنقل.
+         */
+        if (
+            !window.WFESCNavigationUI
+        ) {
+
+            const script =
+                document.createElement("script");
+
+            script.src =
+                basePath +
+                "navigation-ui.js";
+
+            script.async = false;
+
+            document.head.appendChild(
+                script
+            );
+        }
+
+        /*
+         * انتظار تحميل الصفحة.
+         */
+        if (
+            document.readyState ===
+            "complete"
+        ) {
+
+            finishLoading();
+
+        } else {
+
+            window.addEventListener(
+                "load",
+                finishLoading,
+                {
+                    once: true
+                }
+            );
+        }
+
+        /*
+         * حماية من بقاء التحميل عالقًا.
+         */
+        setTimeout(
             function () {
 
-                document.documentElement.classList.remove(
-                    "wfesc-loading"
-                );
-
-
-                const loader =
-                    document.querySelector(
-                        ".wfesc-page-loader"
-                    );
-
-
-                if (loader) {
-
-                    loader.classList.add(
-                        "wfesc-loader-hidden"
-                    );
-
-                }
+                hideLoader();
 
             },
-            500
+            settings.maximumTime
         );
-
     }
 
-
     /*
-     * إنهاء التحميل بعد window.load
-     */
-
-    let pageLoaded =
-        document.readyState ===
-        "complete";
-
-
-    function finishWhenPageLoaded() {
-
-        if (!pageLoaded) {
-            return;
-        }
-
-
-        hideLoader();
-
-    }
-
-
-    /*
-     * الصفحة أصبحت محملة بالكامل
-     */
-
-    window.addEventListener(
-        "load",
-        function () {
-
-            pageLoaded = true;
-
-            finishWhenPageLoaded();
-
-        },
-        {
-            once: true
-        }
-    );
-
-
-    /*
-     * دعم الرجوع والتقدم بالمتصفح
+     * =========================================
+     * BF CACHE
+     * =========================================
      */
 
     window.addEventListener(
         "pageshow",
-        function (event) {
+        function () {
 
             if (
-                event.persisted
+                document.readyState ===
+                "complete"
             ) {
 
-                pageLoaded = true;
-
-                hideLoader();
-
+                setTimeout(
+                    function () {
+                        hideLoader();
+                    },
+                    50
+                );
             }
-
         }
     );
 
-
     /*
-     * إنشاء شاشة التحميل فورًا
+     * =========================================
+     * START NOW
+     * =========================================
      */
 
-    createLoader();
-
-
-    /*
-     * تحميل ملفات النظام
-     */
-
-    Promise.resolve()
-
-        /*
-         * أولًا CSS
-         */
-
-        .then(function () {
-
-            return loadStyle();
-
-        })
-
-        /*
-         * ثانيًا الإعدادات
-         */
-
-        .then(function () {
-
-            return loadScript(
-                files.settings,
-                "settings"
-            );
-
-        })
-
-        /*
-         * ثالثًا الواجهة
-         */
-
-        .then(function () {
-
-            return loadScript(
-                files.ui,
-                "ui"
-            );
-
-        })
-
-        /*
-         * بعد اكتمال ملفات النظام
-         * نتحقق من حالة الصفحة
-         */
-
-        .then(function () {
-
-            finishWhenPageLoaded();
-
-        })
-
-        /*
-         * في حالة وجود خطأ
-         */
-
-        .catch(function (error) {
-
-            handleError(
-                error
-            );
-
-        });
-
+    initialize();
 
 })();
