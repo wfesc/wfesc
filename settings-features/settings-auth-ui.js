@@ -3036,4 +3036,777 @@ async function handleChangePassword() {
     /* =========================================
        AUTH EVENTS
     ========================================= */
- 
+ function bindAuthEvents() {
+
+        document.addEventListener(
+            "WFESCEmailVerified",
+            async function (event) {
+
+                hideVerificationMessage();
+
+                const user =
+                    event &&
+                    event.detail &&
+                    event.detail.user
+                        ? event.detail.user
+                        : await getCurrentUser();
+
+                const profile =
+                    user
+                        ? await getCurrentProfile(
+                            user
+                        )
+                        : null;
+
+                if (user) {
+
+                    renderAccount(
+                        user,
+                        profile
+                    );
+
+                }
+
+                showStatus(
+                    "تم تأكيد بريدك الإلكتروني بنجاح.",
+                    "success"
+                );
+
+            }
+        );
+
+        document.addEventListener(
+            "WFESCProfileChanged",
+            async function () {
+
+                const user =
+                    await getCurrentUser();
+
+                if (!user) {
+                    return;
+                }
+
+                const profile =
+                    await getCurrentProfile(
+                        user
+                    );
+
+                renderAccount(
+                    user,
+                    profile
+                );
+
+            }
+        );
+
+        document.addEventListener(
+            "WFESCAuthChanged",
+            function (event) {
+
+                const detail =
+                    event &&
+                    event.detail
+                        ? event.detail
+                        : {};
+
+                renderAccount(
+                    detail.user || null,
+                    detail.profile || null
+                );
+
+            }
+        );
+
+    }
+
+    /* =========================================
+       RECOVERY URL
+    ========================================= */
+
+    function handleRecoveryURL() {
+
+        const search =
+            String(
+                window.location.search ||
+                ""
+            ).toLowerCase();
+
+        const hash =
+            String(
+                window.location.hash ||
+                ""
+            ).toLowerCase();
+
+        const combined =
+            search +
+            "&" +
+            hash;
+
+        if (
+            combined.includes(
+                "type=recovery"
+            )
+        ) {
+
+            showRecoveryPassword();
+
+        }
+
+    }
+
+    /* =========================================
+       RESTORE SESSION
+    ========================================= */
+
+    async function restoreSession() {
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return;
+        }
+
+        try {
+
+            let result = null;
+
+            if (
+                typeof auth.restoreSession ===
+                "function"
+            ) {
+
+                result =
+                    await auth.restoreSession();
+
+            }
+
+            const user =
+                result &&
+                result.user
+                    ? result.user
+                    : await getCurrentUser();
+
+            if (user) {
+
+                const profile =
+                    result &&
+                    result.profile
+                        ? result.profile
+                        : await getCurrentProfile(
+                            user
+                        );
+
+                renderAccount(
+                    user,
+                    profile
+                );
+
+            } else {
+
+                renderAccount(
+                    null,
+                    null
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "WFESC restore session error:",
+                error
+            );
+
+        }
+
+    }
+
+    /* =========================================
+       CSS
+    ========================================= */
+
+    function injectCSS() {
+
+        if (
+            document.getElementById(
+                "wfesc-settings-auth-ui-style"
+            )
+        ) {
+            return;
+        }
+
+        const style =
+            document.createElement(
+                "style"
+            );
+
+        style.id =
+            "wfesc-settings-auth-ui-style";
+
+        style.textContent = `
+
+#wfesc-settings-auth-root,
+[data-wfesc-auth],
+#wfesc-auth {
+
+    width: 100%;
+    color: #eee;
+    font-family:
+        Arial,
+        Tahoma,
+        sans-serif;
+
+}
+
+.wfesc-auth-shell {
+
+    width: 100%;
+    max-width: 620px;
+    margin: 20px auto;
+
+}
+
+.wfesc-auth-card {
+
+    background: #090909;
+    border: 1px solid #242424;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow:
+        0 12px 40px
+        rgba(0,0,0,.28);
+
+}
+
+.wfesc-auth-header {
+
+    text-align: center;
+    margin-bottom: 20px;
+
+}
+
+.wfesc-auth-title {
+
+    font-size: 27px;
+    font-weight: 800;
+    margin-bottom: 8px;
+
+}
+
+.wfesc-auth-subtitle {
+
+    color: #999;
+    font-size: 14px;
+    line-height: 1.8;
+
+}
+
+.wfesc-tabs {
+
+    display: grid;
+    grid-template-columns:
+        1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+
+}
+
+.wfesc-tab {
+
+    min-height: 46px;
+    border: 1px solid #292929;
+    border-radius: 12px;
+    background: #111;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 700;
+
+}
+
+.wfesc-tab.active {
+
+    background: #eee;
+    color: #050505;
+    border-color: #eee;
+
+}
+
+.wfesc-field {
+
+    margin-bottom: 15px;
+
+}
+
+.wfesc-field label {
+
+    display: block;
+    margin-bottom: 7px;
+    color: #ddd;
+    font-size: 14px;
+    font-weight: 700;
+
+}
+
+.wfesc-input-wrap {
+
+    position: relative;
+
+}
+
+.wfesc-input {
+
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #292929;
+    border-radius: 12px;
+    background: #111;
+    color: #fff;
+    outline: none;
+    padding: 12px 14px;
+    font-size: 16px;
+
+}
+
+.wfesc-input.password-input {
+
+    padding-left: 50px;
+
+}
+
+.wfesc-input:focus {
+
+    border-color: #777;
+
+}
+
+.wfesc-input-error {
+
+    border-color: #d84b4b !important;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(216,75,75,.12);
+
+}
+
+.wfesc-field-error {
+
+    display: none;
+    color: #ff7777;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 6px;
+
+}
+
+.wfesc-password-toggle {
+
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform:
+        translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    color: #ddd;
+    cursor: pointer;
+    border-radius: 10px;
+    font-size: 18px;
+
+}
+
+.wfesc-password-toggle:hover {
+
+    background: #1c1c1c;
+
+}
+
+.wfesc-hint {
+
+    color: #777;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 5px;
+
+}
+
+.wfesc-submit {
+
+    width: 100%;
+    min-height: 50px;
+    border: 0;
+    border-radius: 13px;
+    background: #eee;
+    color: #050505;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+    margin-top: 5px;
+
+}
+
+.wfesc-submit:disabled {
+
+    opacity: .55;
+    cursor: not-allowed;
+
+}
+
+.wfesc-link {
+
+    display: inline-block;
+    border: 0;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    padding: 8px 0;
+    font-size: 13px;
+
+}
+
+.wfesc-link:hover {
+
+    color: #fff;
+
+}
+
+.wfesc-status {
+
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #303030;
+    background: #111;
+    color: #ddd;
+    line-height: 1.8;
+    font-size: 13px;
+
+}
+
+.wfesc-status.success {
+
+    border-color: #316d48;
+    color: #a9efbf;
+    background: #0c1911;
+
+}
+
+.wfesc-status.error {
+
+    border-color: #713b3b;
+    color: #ffadad;
+    background: #1b0d0d;
+
+}
+
+.wfesc-verification {
+
+    display: none;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 13px;
+    border: 1px solid #356b4b;
+    background: #0c1b12;
+    color: #b9f3ca;
+    line-height: 1.8;
+    font-size: 13px;
+
+}
+
+.wfesc-verification-blink {
+
+    animation:
+        wfescVerificationBlink
+        .75s
+        ease-in-out
+        3;
+
+}
+
+@keyframes wfescVerificationBlink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .28;
+    }
+
+}
+
+.wfesc-section {
+
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #222;
+
+}
+
+.wfesc-section-title {
+
+    font-weight: 800;
+    margin-bottom: 10px;
+
+}
+
+.wfesc-account-card {
+
+    display: none;
+
+}
+
+.wfesc-account-head {
+
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding-bottom: 16px;
+
+}
+
+.wfesc-account-avatar {
+
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #191919;
+    border: 1px solid #303030;
+    font-size: 22px;
+    font-weight: 800;
+
+}
+
+.wfesc-account-avatar img {
+
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+}
+
+.wfesc-account-name-row {
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+
+}
+
+.wfesc-account-name {
+
+    font-size: 18px;
+    font-weight: 800;
+
+}
+
+.wfesc-account-verified {
+
+    display: none;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #25b45b;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+
+}
+
+.wfesc-account-username {
+
+    color: #aaa;
+    font-size: 13px;
+    margin-top: 3px;
+
+}
+
+.wfesc-account-email {
+
+    color: #777;
+    font-size: 12px;
+    margin-top: 3px;
+    word-break: break-word;
+
+}
+
+.wfesc-account-actions {
+
+    display: grid;
+    gap: 9px;
+
+}
+
+.wfesc-account-action {
+
+    width: 100%;
+    min-height: 58px;
+    border: 1px solid #252525;
+    border-radius: 13px;
+    background: #101010;
+    color: #eee;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: right;
+    padding: 11px 13px;
+
+}
+
+.wfesc-account-action:hover {
+
+    background: #161616;
+    border-color: #3a3a3a;
+
+}
+
+.wfesc-account-action-main {
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+}
+
+.wfesc-account-action-title {
+
+    font-size: 14px;
+    font-weight: 800;
+
+}
+
+.wfesc-account-action-description {
+
+    color: #777;
+    font-size: 11px;
+
+}
+
+.wfesc-account-action-icon {
+
+    font-size: 19px;
+
+}
+
+.wfesc-loading {
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 13px;
+    color: #aaa;
+    font-size: 13px;
+
+}
+
+.wfesc-spinner {
+
+    width: 17px;
+    height: 17px;
+    border: 2px solid #333;
+    border-top-color: #eee;
+    border-radius: 50%;
+
+    animation:
+        wfescSpin
+        .8s
+        linear
+        infinite;
+
+}
+
+@keyframes wfescSpin {
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+.wfesc-shake {
+
+    animation:
+        wfescShake
+        .45s
+        ease-in-out;
+
+}
+
+@keyframes wfescShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-7px);
+    }
+
+    40% {
+        transform: translateX(7px);
+    }
+
+    60% {
+        transform: translateX(-5px);
+    }
+
+    80% {
+        transform: translateX(5px);
+    }
+
+}
+
+.wfesc-recovery-card,
+.wfesc-recovery-password-card {
+
+    display: none;
+
+}
+
+@media (max-width: 480px) {
+
+    .wfesc-auth-card {
+
+        padding: 15px;
+        border-radius: 15px;
+
+    }
+
+    .wfesc-auth-title {
+
+        font-size: 23px;
+
+    }
+
+}
+
+`;
+
+        document.head.appendChild(
+            style
+        );
+
+    }
+
+    /* =========================================
+       INITIALIZE
+    ========================================= */
+    
