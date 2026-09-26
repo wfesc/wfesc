@@ -1880,4 +1880,367 @@ function bindPasswordToggle(
     /* =========================================
        REGISTER
     ========================================= */
-        
+
+    async function handleRegister(
+        event
+    ) {
+
+        event.preventDefault();
+
+        if (busy) {
+            return;
+        }
+
+        const e =
+            getElements();
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+
+            showStatus(
+                "نظام الحساب غير متوفر حاليًا.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        clearAllErrors();
+
+        const name =
+            String(
+                e.registerName &&
+                e.registerName.value ||
+                ""
+            ).trim();
+
+        if (!name) {
+
+            setFieldError(
+                e.registerName,
+                e.registerNameError,
+                "يرجى إدخال اسمك."
+            );
+
+            shake(
+                e.registerName
+            );
+
+            return;
+
+        }
+
+        const username =
+            validateUsername(
+                e.registerUsername &&
+                e.registerUsername.value
+            );
+
+        if (!username.valid) {
+
+            setFieldError(
+                e.registerUsername,
+                e.registerUsernameError,
+                username.message
+            );
+
+            shake(
+                e.registerUsername
+            );
+
+            return;
+
+        }
+
+        const email =
+            validateEmail(
+                e.registerEmail &&
+                e.registerEmail.value
+            );
+
+        if (!email.valid) {
+
+            setFieldError(
+                e.registerEmail,
+                e.registerEmailError,
+                email.message
+            );
+
+            shake(
+                e.registerEmail
+            );
+
+            return;
+
+        }
+
+        const password =
+            validatePassword(
+                e.registerPassword &&
+                e.registerPassword.value
+            );
+
+        if (!password.valid) {
+
+            setFieldError(
+                e.registerPassword,
+                e.registerPasswordError,
+                password.message
+            );
+
+            shake(
+                e.registerPassword
+            );
+
+            return;
+
+        }
+
+        const confirm =
+            String(
+                e.registerConfirm &&
+                e.registerConfirm.value ||
+                ""
+            );
+
+        if (
+            confirm !==
+            password.value
+        ) {
+
+            const message =
+                "كلمتا المرور غير متطابقتين.";
+
+            setFieldError(
+                e.registerPassword,
+                e.registerPasswordError,
+                message
+            );
+
+            setFieldError(
+                e.registerConfirm,
+                e.registerConfirmError,
+                message
+            );
+
+            shake(
+                e.registerPassword
+            );
+
+            shake(
+                e.registerConfirm
+            );
+
+            return;
+
+        }
+
+        if (
+            typeof auth.signUp !==
+            "function"
+        ) {
+
+            showStatus(
+                "وظيفة إنشاء الحساب غير متوفرة.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            let result;
+
+            /*
+             * API الأساسي:
+             * signUp(name, email, password, username)
+             */
+
+            result =
+                await auth.signUp(
+                    name,
+                    email.value,
+                    password.value,
+                    username.value
+                );
+
+            if (
+                result &&
+                result.error
+            ) {
+
+                throw result.error;
+
+            }
+
+            const user =
+                result &&
+                result.user
+                    ? result.user
+                    : (
+                        result &&
+                        result.data &&
+                        result.data.user
+                            ? result.data.user
+                            : null
+                    );
+
+            const session =
+                result &&
+                result.session
+                    ? result.session
+                    : (
+                        result &&
+                        result.data &&
+                        result.data.session
+                            ? result.data.session
+                            : null
+                    );
+
+            if (
+                user &&
+                session
+            ) {
+
+                const profile =
+                    await getCurrentProfile(
+                        user
+                    );
+
+                renderAccount(
+                    user,
+                    profile
+                );
+
+                showStatus(
+                    "تم إنشاء الحساب وتسجيل الدخول بنجاح.",
+                    "success"
+                );
+
+                document.dispatchEvent(
+                    new CustomEvent(
+                        "WFESCAccountCreated",
+                        {
+                            detail: {
+                                user: user,
+                                profile: profile,
+                                loggedIn: true
+                            }
+                        }
+                    )
+                );
+
+                document.dispatchEvent(
+                    new CustomEvent(
+                        "WFESCAuthChanged",
+                        {
+                            detail: {
+                                user: user,
+                                profile: profile,
+                                loggedIn: true
+                            }
+                        }
+                    )
+                );
+
+            } else {
+
+                showVerificationMessage(
+                    email.value
+                );
+
+                showStatus(
+                    "تم إنشاء الحساب. تحقق من بريدك الإلكتروني.",
+                    "success"
+                );
+
+                document.dispatchEvent(
+                    new CustomEvent(
+                        "WFESCAccountCreated",
+                        {
+                            detail: {
+                                user: user,
+                                email: email.value,
+                                loggedIn: false
+                            }
+                        }
+                    )
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "WFESC register error:",
+                error
+            );
+
+            const raw =
+                String(
+                    error &&
+                    error.message
+                        ? error.message
+                        : error || ""
+                ).toLowerCase();
+
+            const message =
+                getAuthErrorMessage(
+                    error,
+                    "تعذر إنشاء الحساب. حاول مرة أخرى."
+                );
+
+            if (
+                raw.includes(
+                    "already registered"
+                ) ||
+                raw.includes(
+                    "user already registered"
+                ) ||
+                raw.includes(
+                    "already exists"
+                )
+            ) {
+
+                setFieldError(
+                    e.registerEmail,
+                    e.registerEmailError,
+                    (
+                        CONFIG.messages &&
+                        CONFIG.messages.alreadyRegistered
+                    ) ||
+                    "أنت مسجل بالفعل، تابع من صفحة لدي حساب."
+                );
+
+                shake(
+                    e.registerEmail
+                );
+
+            } else {
+
+                showStatus(
+                    message,
+                    "error"
+                );
+
+            }
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       FORGOT PASSWORD
+    ========================================= */
+    
