@@ -2150,3 +2150,600 @@
            RESET PASSWORD SCREEN
            ================================================= */
        
+        async function showResetPasswordScreen() {
+
+            await closeModal(
+                false
+            );
+
+
+            const email =
+                getRecoveryEmail();
+
+
+            accountApp.innerHTML = `
+                <div class="wfesc-reset-view">
+
+                    <div class="wfesc-reset-card">
+
+                        <div class="wfesc-reset-icon">
+                            🔐
+                        </div>
+
+                        <h2>
+                            إعادة تعيين كلمة المرور
+                        </h2>
+
+                        <p class="wfesc-reset-description">
+                            أكد الحساب ثم ضع كلمة المرور الجديدة.
+                        </p>
+
+                        <div class="wfesc-reset-account">
+                            <span>الحساب</span>
+                            <strong id="wfescRecoveryEmail">
+                                ${escapeHtml(
+                                    email ||
+                                    "تم التحقق من الحساب"
+                                )}
+                            </strong>
+                        </div>
+
+                        <form
+                            id="wfescResetPasswordForm"
+                            novalidate
+                        >
+
+                            <div class="wfesc-reset-field">
+
+                                <label>
+                                    كلمة المرور الجديدة
+                                </label>
+
+                                <div class="wfesc-password-container wfesc-password-wrap">
+
+                                    <input
+                                        id="wfescNewPassword"
+                                        type="password"
+                                        maxlength="16"
+                                        autocomplete="new-password"
+                                    >
+
+                                </div>
+
+                                <small
+                                    id="wfescNewPasswordError"
+                                ></small>
+
+                            </div>
+
+
+                            <div class="wfesc-reset-field">
+
+                                <label>
+                                    تأكيد كلمة المرور
+                                </label>
+
+                                <div class="wfesc-password-container wfesc-password-wrap">
+
+                                    <input
+                                        id="wfescNewPasswordConfirm"
+                                        type="password"
+                                        maxlength="16"
+                                        autocomplete="new-password"
+                                    >
+
+                                </div>
+
+                                <small
+                                    id="wfescNewPasswordConfirmError"
+                                ></small>
+
+                            </div>
+
+
+                            <button
+                                type="submit"
+                                id="wfescSaveNewPassword"
+                                class="account-btn primary wfesc-save-password"
+                            >
+                                حفظ كلمة المرور
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+            `;
+
+
+            setupRecoveryPasswordEyes();
+
+            setupRecoveryPasswordForm();
+
+
+            requestAnimationFrame(() => {
+
+                accountApp
+                    .querySelector(
+                        ".wfesc-reset-view"
+                    )
+                    ?.classList.add(
+                        "wfesc-view-visible"
+                    );
+
+            });
+        }
+
+
+        function setupRecoveryPasswordEyes() {
+
+            const newPassword =
+                document.getElementById(
+                    "wfescNewPassword"
+                );
+
+            const confirmPassword =
+                document.getElementById(
+                    "wfescNewPasswordConfirm"
+                );
+
+
+            createPasswordEye(
+                newPassword
+            );
+
+            createPasswordEye(
+                confirmPassword
+            );
+
+
+            [
+                newPassword,
+                confirmPassword
+            ]
+                .forEach(input => {
+
+                    if (!input) {
+                        return;
+                    }
+
+
+                    input.maxLength =
+                        passwordMax;
+
+
+                    input.addEventListener(
+                        "input",
+                        () => {
+
+                            limitPasswordInput(
+                                input
+                            );
+
+                        }
+                    );
+
+                });
+        }
+
+
+        function setupRecoveryPasswordForm() {
+
+            const form =
+                document.getElementById(
+                    "wfescResetPasswordForm"
+                );
+
+
+            if (!form) {
+                return;
+            }
+
+
+            form.addEventListener(
+                "submit",
+                async event => {
+
+                    event.preventDefault();
+
+
+                    const password =
+                        document.getElementById(
+                            "wfescNewPassword"
+                        );
+
+                    const confirm =
+                        document.getElementById(
+                            "wfescNewPasswordConfirm"
+                        );
+
+                    const button =
+                        document.getElementById(
+                            "wfescSaveNewPassword"
+                        );
+
+                    const passwordError =
+                        document.getElementById(
+                            "wfescNewPasswordError"
+                        );
+
+                    const confirmError =
+                        document.getElementById(
+                            "wfescNewPasswordConfirmError"
+                        );
+
+
+                    passwordError.textContent =
+                        "";
+
+                    confirmError.textContent =
+                        "";
+
+
+                    if (
+                        password.value.length <
+                        passwordMin
+                    ) {
+
+                        passwordError.textContent =
+                            "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
+
+                        return;
+                    }
+
+
+                    if (
+                        password.value.length >
+                        passwordMax
+                    ) {
+
+                        passwordError.textContent =
+                            "كلمة المرور يجب ألا تتجاوز 16 حرفًا.";
+
+                        return;
+                    }
+
+
+                    if (
+                        password.value !==
+                        confirm.value
+                    ) {
+
+                        confirmError.textContent =
+                            "كلمة المرور غير متطابقة.";
+
+                        return;
+                    }
+
+
+                    button.disabled =
+                        true;
+
+                    button.classList.add(
+                        "wfesc-button-loading"
+                    );
+
+                    button.innerHTML = `
+                        <span class="wfesc-button-spinner"></span>
+                        <span>
+                            جاري تغيير كلمة المرور...
+                        </span>
+                    `;
+
+
+                    try {
+
+                        const result =
+                            await AUTH.updatePassword(
+                                password.value
+                            );
+
+
+                        if (
+                            result?.error
+                        ) {
+
+                            throw result.error;
+
+                        }
+
+
+                        await showPasswordChangedSuccess();
+
+
+                    }
+
+                    catch (error) {
+
+                        button.disabled =
+                            false;
+
+                        button.classList.remove(
+                            "wfesc-button-loading"
+                        );
+
+                        button.textContent =
+                            "حفظ كلمة المرور";
+
+
+                        showStatus(
+                            getAuthErrorMessage(
+                                error
+                            ),
+                            "error",
+                            6000
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+        /* =================================================
+           PASSWORD CHANGED
+           ================================================= */
+
+        async function showPasswordChangedSuccess() {
+
+            accountApp.innerHTML = `
+                <div class="wfesc-special-view wfesc-password-success">
+
+                    <div class="wfesc-success-check">
+                        ✓
+                    </div>
+
+                    <h2>
+                        تم تغيير كلمة المرور
+                    </h2>
+
+                    <p>
+                        تم تغيير كلمة المرور بنجاح.
+                    </p>
+
+                    <p class="wfesc-special-small">
+                        يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة.
+                    </p>
+
+                    <div class="wfesc-special-loader"></div>
+
+                </div>
+            `;
+
+
+            requestAnimationFrame(() => {
+
+                accountApp
+                    .querySelector(
+                        ".wfesc-special-view"
+                    )
+                    ?.classList.add(
+                        "wfesc-view-visible"
+                    );
+
+            });
+
+
+            showStatus(
+                "تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة.",
+                "success",
+                6500
+            );
+
+
+            await sleep(2200);
+
+
+            try {
+
+                const result =
+                    await AUTH.signOut();
+
+                if (
+                    result?.error
+                ) {
+                    throw result.error;
+                }
+
+            } catch (_) {}
+
+
+            await sleep(350);
+
+
+            createAccountInterface(
+                true
+            );
+
+
+            await sleep(200);
+
+
+            openModal(
+                "login"
+            );
+
+        }
+
+
+        /* =================================================
+           ACCOUNT VIEW
+           ================================================= */
+
+        async function renderAccount(
+            animate = true
+        ) {
+
+            const user =
+                AUTH.getUser?.();
+
+
+            if (!user) {
+
+                createAccountInterface(
+                    animate
+                );
+
+                return;
+            }
+
+
+            let profile = null;
+
+
+            try {
+
+                profile =
+                    await AUTH.getProfile?.();
+
+            } catch (_) {
+
+                profile = null;
+
+            }
+
+
+            const username =
+                profile?.username ||
+                user.user_metadata?.username ||
+                "WFESC User";
+
+
+            const avatar =
+                profile?.avatar_url ||
+                user.user_metadata?.avatar_url ||
+                "";
+
+
+            accountApp.innerHTML = `
+                <div class="logged-in-account wfesc-account-view">
+
+                    <div class="wfesc-account-avatar">
+
+                        ${
+                            avatar
+                            ?
+                            `<img
+                                src="${escapeAttribute(avatar)}"
+                                alt="صورة الحساب"
+                            >`
+                            :
+                            `<span>
+                                ${escapeHtml(
+                                    username
+                                        .charAt(0)
+                                        .toUpperCase()
+                                )}
+                            </span>`
+                        }
+
+                    </div>
+
+                    <div class="wfesc-account-info">
+
+                        <strong>
+                            ${escapeHtml(username)}
+                        </strong>
+
+                        <span>
+                            ${escapeHtml(
+                                user.email || ""
+                            )}
+                        </span>
+
+                    </div>
+
+
+                    <div class="wfesc-account-actions">
+
+                        <button
+                            type="button"
+                            class="account-btn primary"
+                            id="wfescManageAccount"
+                        >
+                            إدارة الحساب
+                        </button>
+
+                        <button
+                            type="button"
+                            class="account-btn secondary"
+                            id="wfescLogout"
+                        >
+                            تسجيل الخروج
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+
+            const manage =
+                document.getElementById(
+                    "wfescManageAccount"
+                );
+
+
+            const logout =
+                document.getElementById(
+                    "wfescLogout"
+                );
+
+
+            if (manage) {
+
+                manage.addEventListener(
+                    "click",
+                    () => {
+
+                        window.location.href =
+                            "profile.html";
+
+                    }
+                );
+
+            }
+
+
+            if (logout) {
+
+                logout.addEventListener(
+                    "click",
+                    handleLogout
+                );
+
+            }
+
+
+            const view =
+                accountApp.querySelector(
+                    ".wfesc-account-view"
+                );
+
+
+            if (animate) {
+
+                requestAnimationFrame(() => {
+
+                    view?.classList.add(
+                        "wfesc-view-visible"
+                    );
+
+                });
+
+            } else {
+
+                view?.classList.add(
+                    "wfesc-view-visible"
+                );
+
+            }
+        }
+
+
+        /* =================================================
+           LOGOUT
+           ================================================= */
+       
