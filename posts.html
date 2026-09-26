@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WFESC Posts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#050505;color:#eee;font-family:Arial,Tahoma,sans-serif;min-height:100vh;padding-bottom:80px}
+button,input{font-family:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+#posts-loader{position:fixed;inset:0;background:#050505;z-index:999999;display:flex;align-items:center;justify-content:center;transition:.5s}
+#posts-loader.hide{opacity:0;pointer-events:none}
+.loader-box{width:85%;max-width:380px;text-align:center}.loader-logo{font-size:42px;font-weight:bold;letter-spacing:8px;margin-bottom:25px}.loader-text{color:#777;font-size:13px;margin-bottom:18px}.loader-line{width:100%;height:2px;background:#1b1b1b;overflow:hidden}.loader-line div{width:35%;height:100%;background:#fff;animation:loaderMove 1.2s infinite ease-in-out}@keyframes loaderMove{from{transform:translateX(300%)}to{transform:translateX(-300%)}}
+.posts-header{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(5,5,5,.94);backdrop-filter:blur(14px);border-bottom:1px solid #181818;display:flex;align-items:center;justify-content:center;z-index:1000}.posts-title{font-size:19px;font-weight:bold;letter-spacing:3px}
+.logged-user{position:fixed;top:76px;right:15px;background:#0c0c0c;border:1px solid #202020;padding:6px 10px;border-radius:20px;color:#999;font-size:10px;z-index:850;display:none}
+.posts-container{width:100%;max-width:600px;margin:auto;padding:88px 12px 30px}.post{background:#0c0c0c;border:1px solid #181818;border-radius:14px;overflow:hidden;margin-bottom:22px}.post-media{width:100%;background:#000}.post-media img,.post-media video{display:block;width:100%;max-height:650px;object-fit:contain;background:#000}.post-info{padding:15px}.post-user-row{display:flex;align-items:center;gap:9px;margin-bottom:13px}.avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#171717;border:1px solid #292929}.post-user{font-size:14px;font-weight:bold}.post-date{display:block;color:#666;font-size:10px;margin-top:3px}.post-title{font-size:17px;font-weight:bold;margin-bottom:8px}.post-content{color:#aaa;font-size:14px;line-height:1.8;white-space:pre-wrap}.post-actions{display:flex;flex-wrap:wrap;gap:7px;padding:0 15px 15px}.post-action{border:1px solid #222;background:#111;color:#ddd;border-radius:18px;padding:8px 12px;font-size:12px}.post-action.active{background:#fff;color:#000}.empty-posts{text-align:center;padding:80px 20px;color:#666}.error-posts{color:#c99}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(30px);background:#fff;color:#000;padding:12px 18px;border-radius:20px;font-size:12px;opacity:0;pointer-events:none;transition:.3s;z-index:99999999;max-width:90%;text-align:center}#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="posts-loader"><div class="loader-box"><div class="loader-logo">WFESC</div><div class="loader-text">جاري تحميل المنشورات...</div><div class="loader-line"><div></div></div></div></div>
+<header class="posts-header"><div class="posts-title">POSTS</div></header>
+<div id="logged-user" class="logged-user"></div>
+<main id="posts-container" class="posts-container"><div class="empty-posts">جاري تحميل المنشورات...</div></main>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+
+/* =====================================================
+   WFESC POSTS — CORE
+   هذا الملف هو الأساس فقط.
+   الإضافات الجديدة ستوضع في ملفات منفصلة لاحقاً.
+   لا يوجد هنا نظام الإعدادات أو النشر أو البحث أو
+   الإضافات الجديدة.
+===================================================== */
+
+const SUPABASE_URL="https://mcgbzfgbaxwmutniorlw.supabase.co";
+const SUPABASE_KEY="sb_publishable_5b7pTbiGY2D6vDLRsWgVzA_X926lBeM";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const postsContainer=document.getElementById("posts-container");
+const loggedUser=document.getElementById("logged-user");
+const toast=document.getElementById("toast");
+const loader=document.getElementById("posts-loader");
+
+let currentUser=null;
+let postsCache=[];
+const profilesCache={};
+
+function esc(value){
+    return String(value??"").replace(/[&<>"']/g,char=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+    }[char]));
+}
+
+function showToast(message){
+    toast.textContent=message;
+    toast.classList.add("show");
+    clearTimeout(window.__wfescToastTimer);
+    window.__wfescToastTimer=setTimeout(()=>toast.classList.remove("show"),3000);
+}
+
+function formatDate(date){
+    if(!date)return "";
+    const d=new Date(date);
+    if(Number.isNaN(d.getTime()))return "";
+    return d.toLocaleString("ar-IQ",{dateStyle:"short",timeStyle:"short"});
+}
+
+function profileAvatar(profile){
+    return profile&&profile.avatar_url?profile.avatar_url:"./sorg.jpg";
+}
+
+async function getProfile(userId){
+    if(!userId)return null;
+    if(profilesCache[userId])return profilesCache[userId];
+
+    const {data,error}=await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id",userId)
+        .maybeSingle();
+
+    if(error){
+        console.warn("WFESC profile error:",error);
+        return null;
+    }
+
+    if(data)profilesCache[userId]=data;
+    return data||null;
+}
+
+async function getPostCounts(postId){
+    const [likes,dislikes]=await Promise.all([
+        supabaseClient.from("likes").select("id",{count:"exact",head:true}).eq("post_id",postId),
+        supabaseClient.from("dislikes").select("id",{count:"exact",head:true}).eq("post_id",postId)
+    ]);
+
+    return {
+        likes:likes.count||0,
+        dislikes:dislikes.count||0
+    };
+}
+
+function mediaMarkup(post){
+    if(!post.media_url)return "";
+
+    if(post.media_type==="video"){
+        return `<div class="post-media"><video controls preload="metadata" src="${esc(post.media_url)}"></video></div>`;
+    }
+
+    return `<div class="post-media"><img loading="lazy" src="${esc(post.media_url)}" alt="منشور WFESC"></div>`;
+}
+
+async function createPostElement(post,profile){
+    const article=document.createElement("article");
+    article.className="post";
+    article.dataset.id=post.id;
+
+    const counts=await getPostCounts(post.id);
+
+    article.innerHTML=`
+        ${mediaMarkup(post)}
+        <div class="post-info">
+            <div class="post-user-row">
+                <img class="avatar" src="${esc(profileAvatar(profile))}" alt="">
+                <div>
+                    <div class="post-user">${esc(profile?.username||"مستخدم")}</div>
+                    <span class="post-date">${formatDate(post.created_at)}</span>
+                </div>
+            </div>
+            ${post.title?`<div class="post-title">${esc(post.title)}</div>`:""}
+            ${post.content?`<div class="post-content">${esc(post.content)}</div>`:""}
+        </div>
+        <div class="post-actions">
+            <button type="button" class="post-action like-button">❤️ <span>${counts.likes}</span></button>
+            <button type="button" class="post-action dislike-button">👎 <span>${counts.dislikes}</span></button>
+        </div>
+    `;
+
+    article.querySelector(".like-button").addEventListener("click",()=>reactPost(post.id,"like"));
+    article.querySelector(".dislike-button").addEventListener("click",()=>reactPost(post.id,"dislike"));
+    return article;
+}
+
+async function loadPosts(){
+    postsContainer.innerHTML='<div class="empty-posts">جاري تحميل المنشورات...</div>';
+
+    const {data,error}=await supabaseClient
+        .from("posts")
+        .select("*")
+        .order("created_at",{ascending:false});
+
+    if(error){
+        console.error("WFESC posts error:",error);
+        postsContainer.innerHTML='<div class="empty-posts error-posts">تعذر تحميل المنشورات من قاعدة البيانات.</div>';
+        return;
+    }
+
+    postsCache=data||[];
+
+    if(!postsCache.length){
+        postsContainer.innerHTML='<div class="empty-posts">لا توجد منشورات حالياً.</div>';
+        return;
+    }
+
+    postsContainer.innerHTML="";
+
+    for(const post of postsCache){
+        const profile=await getProfile(post.user_id);
+        const article=await createPostElement(post,profile);
+        postsContainer.appendChild(article);
+    }
+}
+
+async function reactPost(postId,type){
+    if(!currentUser){
+        showToast("سجّل الدخول أولاً للتفاعل مع المنشور");
+        return;
+    }
+
+    if(type==="like"){
+        const {data}=await supabaseClient.from("likes")
+            .select("id").eq("post_id",postId).eq("user_id",currentUser.id).maybeSingle();
+
+        if(data){
+            await supabaseClient.from("likes").delete().eq("id",data.id);
+        }else{
+            await supabaseClient.from("dislikes").delete().eq("post_id",postId).eq("user_id",currentUser.id);
+            await supabaseClient.from("likes").insert({post_id:postId,user_id:currentUser.id});
+        }
+    }else{
+        const {data}=await supabaseClient.from("dislikes")
+            .select("id").eq("post_id",postId).eq("user_id",currentUser.id).maybeSingle();
+
+        if(data){
+            await supabaseClient.from("dislikes").delete().eq("id",data.id);
+        }else{
+            await supabaseClient.from("likes").delete().eq("post_id",postId).eq("user_id",currentUser.id);
+            await supabaseClient.from("dislikes").insert({post_id:postId,user_id:currentUser.id});
+        }
+    }
+
+    await loadPosts();
+}
+
+async function restoreSession(){
+    const {data}=await supabaseClient.auth.getSession();
+    currentUser=data.session?data.session.user:null;
+
+    if(currentUser){
+        const profile=await getProfile(currentUser.id);
+        loggedUser.style.display="block";
+        loggedUser.textContent=profile?.username||currentUser.email||"";
+    }
+
+    await loadPosts();
+    loader.classList.add("hide");
+    setTimeout(()=>loader.remove(),650);
+}
+
+supabaseClient.auth.onAuthStateChange(async(_event,session)=>{
+    currentUser=session?session.user:null;
+    if(currentUser){
+        const profile=await getProfile(currentUser.id);
+        loggedUser.style.display="block";
+        loggedUser.textContent=profile?.username||currentUser.email||"";
+    }else{
+        loggedUser.style.display="none";
+        loggedUser.textContent="";
+    }
+});
+
+window.addEventListener("load",()=>{
+    restoreSession().catch(error=>{
+        console.error("WFESC posts startup error:",error);
+        postsContainer.innerHTML='<div class="empty-posts error-posts">حدث خطأ أثناء تشغيل صفحة المنشورات.</div>';
+        loader.classList.add("hide");
+    });
+});
+</script>
+
+<!-- نظام التنقل الحالي يبقى مستقلاً عن قلب posts.html -->
+<script src="./navigation/navigation-loader.js"></script>
+</body>
+</html>
