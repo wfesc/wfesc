@@ -1,6 +1,16 @@
 /* =========================================================
    WFESC SETTINGS AUTH UI
    settings-auth-ui.js
+
+   مسؤول بالكامل عن:
+   - أزرار الحساب
+   - نافذة إنشاء الحساب
+   - نافذة تسجيل الدخول
+   - نسيت كلمة المرور
+   - التحقق من البريد
+   - واجهة الحساب بعد الدخول
+   - تسجيل الخروج
+   - إظهار / إخفاء كلمة المرور
    ========================================================= */
 
 (function () {
@@ -8,669 +18,984 @@
     "use strict";
 
 
-    /* =====================================================
-       منع التحميل أكثر من مرة
-       ===================================================== */
+    /* =================================================
+       منع التشغيل مرتين
+    ================================================= */
 
-    if (window.WFESCSettingsAuthUI) {
+    if (window.WFESCSettingsAuthUIStarted) {
         return;
     }
 
-    window.WFESCSettingsAuthUI = true;
+    window.WFESCSettingsAuthUIStarted = true;
 
 
-    /* =====================================================
-       انتظار جاهزية الصفحة
-       ===================================================== */
+    /* =================================================
+       انتظار Auth
+    ================================================= */
 
     function start() {
 
-        if (!window.WFESCSettingsAuth) {
+        const AUTH =
+            window.WFESCSettingsAuth;
 
-            console.error(
-                "WFESC Auth UI: settings-auth.js غير محمّل."
+        const CONFIG =
+            window.WFESCSettingsAuthConfig;
+
+
+        if (!AUTH || !CONFIG) {
+
+            setTimeout(
+                start,
+                100
             );
 
             return;
         }
 
 
-        const AUTH =
-            window.WFESCSettingsAuth;
+        const app =
+            document.getElementById(
+                "settingsAccountApp"
+            );
 
-        const CONFIG =
-            AUTH.config || {};
+
+        if (!app) {
+
+            console.error(
+                "WFESC: settingsAccountApp غير موجود."
+            );
+
+            return;
+        }
 
 
         /* =================================================
-           ELEMENTS
-           ================================================= */
+           المتغيرات
+        ================================================= */
 
-        const createAccountButton =
-            document.getElementById(
-                "createAccountButton"
-            );
+        let modal = null;
 
-        const loginButton =
-            document.getElementById(
-                "loginButton"
-            );
+        let form = null;
 
-        const forgotPasswordButton =
-            document.getElementById(
-                "forgotPasswordButton"
-            );
+        let usernameInput = null;
 
-        const settingsStatus =
-            document.getElementById(
-                "settingsStatus"
-            );
+        let emailInput = null;
 
-        const accountModal =
-            document.getElementById(
-                "accountModal"
-            );
+        let passwordInput = null;
 
-        const modalTitle =
-            document.getElementById(
-                "modalTitle"
-            );
+        let confirmPasswordInput = null;
 
-        const closeModalButton =
-            document.getElementById(
-                "closeModal"
-            );
+        let usernameGroup = null;
 
-        const accountForm =
-            document.getElementById(
-                "accountForm"
-            );
+        let passwordGroup = null;
 
-        const accountUsername =
-            document.getElementById(
-                "accountUsername"
-            );
+        let confirmPasswordGroup = null;
 
-        const accountEmail =
-            document.getElementById(
-                "accountEmail"
-            );
+        let modalTitle = null;
 
-        const passwordGroup =
-            document.getElementById(
-                "passwordGroup"
-            );
+        let modalAction = null;
 
-        const accountPassword =
-            document.getElementById(
-                "accountPassword"
-            );
+        let modalNote = null;
 
-        const confirmPasswordGroup =
-            document.getElementById(
-                "confirmPasswordGroup"
-            );
+        let closeModalButton = null;
 
-        const accountPasswordConfirm =
-            document.getElementById(
-                "accountPasswordConfirm"
-            );
+        let currentMode = "register";
 
-        const modalAction =
-            document.getElementById(
-                "modalAction"
-            );
-
-        const modalNote =
-            document.getElementById(
-                "modalNote"
-            );
-
-        const accountButtons =
-            document.getElementById(
-                "accountButtons"
-            );
-
-        const loggedInAccount =
-            document.getElementById(
-                "loggedInAccount"
-            );
-
-        const loggedInAvatar =
-            document.getElementById(
-                "loggedInAvatar"
-            );
-
-        const loggedInAvatarFallback =
-            document.getElementById(
-                "loggedInAvatarFallback"
-            );
-
-        const loggedInUsername =
-            document.getElementById(
-                "loggedInUsername"
-            );
-
-        const manageAccountButton =
-            document.getElementById(
-                "manageAccountButton"
-            );
-
-        const logoutAccountButton =
-            document.getElementById(
-                "logoutAccountButton"
-            );
-
-
-        /* =================================================
-           STATE
-           ================================================= */
-
-        let modalMode =
-            "login";
-
-        let busy =
-            false;
-
-
-        /* =================================================
-           LIMITS
-           ================================================= */
-
-        const usernameConfig =
-            CONFIG.username || {};
 
         const usernameMin =
             Number(
-                usernameConfig.minLength || 3
-            );
+                CONFIG.username?.minLength
+            ) || 3;
+
 
         const usernameMax =
             Number(
-                usernameConfig.maxLength || 9
-            );
+                CONFIG.username?.maxLength
+            ) || 9;
 
-        /*
-         * كلمة المرور:
-         * الحد الأدنى 6
-         * الحد الأقصى 16
-         */
 
-        const passwordMin =
-            6;
+        const passwordMin = 6;
 
-        const passwordMax =
-            16;
+        const passwordMax = 16;
 
 
         /* =================================================
-           APPLY HTML LIMITS
-           ================================================= */
+           STATUS
+        ================================================= */
 
-        if (accountUsername) {
+        function showStatus(message) {
 
-            accountUsername.setAttribute(
-                "minlength",
-                String(usernameMin)
-            );
-
-            accountUsername.setAttribute(
-                "maxlength",
-                String(usernameMax)
-            );
-
-            accountUsername.setAttribute(
-                "autocomplete",
-                "username"
-            );
-
-        }
+            const status =
+                document.getElementById(
+                    "settingsStatus"
+                );
 
 
-        if (accountPassword) {
-
-            accountPassword.setAttribute(
-                "minlength",
-                String(passwordMin)
-            );
-
-            accountPassword.setAttribute(
-                "maxlength",
-                String(passwordMax)
-            );
-
-            accountPassword.setAttribute(
-                "autocomplete",
-                "new-password"
-            );
-
-        }
-
-
-        if (accountPasswordConfirm) {
-
-            accountPasswordConfirm.setAttribute(
-                "minlength",
-                String(passwordMin)
-            );
-
-            accountPasswordConfirm.setAttribute(
-                "maxlength",
-                String(passwordMax)
-            );
-
-            accountPasswordConfirm.setAttribute(
-                "autocomplete",
-                "new-password"
-            );
-
-        }
-
-
-        /* =================================================
-           HELPERS
-           ================================================= */
-
-        function setStatus(
-            message,
-            type
-        ) {
-
-            if (!settingsStatus) {
+            if (!status) {
                 return;
             }
 
-            settingsStatus.textContent =
-                message || "";
 
-            settingsStatus.dataset.type =
-                type || "";
-
-        }
+            status.textContent =
+                message;
 
 
-        function setModalNote(
-            message
-        ) {
-
-            if (!modalNote) {
-                return;
-            }
-
-            modalNote.textContent =
-                message || "";
-
-        }
-
-
-        function openModal() {
-
-            if (!accountModal) {
-                return;
-            }
-
-            accountModal.classList.add(
+            status.classList.add(
                 "show"
             );
 
-        }
 
-
-        function closeModal() {
-
-            if (!accountModal) {
-                return;
-            }
-
-            accountModal.classList.remove(
-                "show"
+            clearTimeout(
+                status._wfescTimer
             );
 
-        }
 
+            status._wfescTimer =
+                setTimeout(
+                    function () {
 
-        function clearForm() {
-
-            if (accountForm) {
-                accountForm.reset();
-            }
-
-            if (accountPassword) {
-                accountPassword.value = "";
-            }
-
-            if (accountPasswordConfirm) {
-                accountPasswordConfirm.value = "";
-            }
-
-            clearFieldErrors();
-
-        }
-
-
-        function setLoading(
-            loading
-        ) {
-
-            busy =
-                Boolean(loading);
-
-
-            if (modalAction) {
-
-                modalAction.disabled =
-                    busy;
-
-                if (busy) {
-
-                    modalAction.dataset.oldText =
-                        modalAction.textContent;
-
-                    modalAction.textContent =
-                        "جاري المعالجة...";
-
-                } else {
-
-                    modalAction.textContent =
-                        modalAction.dataset.oldText ||
-                        (
-                            modalMode === "register"
-                                ? "إنشاء الحساب"
-                                : "تسجيل الدخول"
+                        status.classList.remove(
+                            "show"
                         );
 
-                }
-
-            }
-
-
-            if (createAccountButton) {
-
-                createAccountButton.disabled =
-                    busy;
-
-            }
-
-
-            if (loginButton) {
-
-                loginButton.disabled =
-                    busy;
-
-            }
+                    },
+                    5000
+                );
 
         }
 
 
         /* =================================================
-           FIELD ERROR HELPERS
-           ================================================= */
+           HTML إنشاء واجهة الحساب
+        ================================================= */
 
-        function getFieldContainer(
-            element
-        ) {
+        function createAccountInterface() {
 
-            if (!element) {
-                return null;
-            }
-
-            return element.parentElement || null;
-
-        }
+            app.innerHTML = "";
 
 
-        function clearFieldError(
-            element
-        ) {
-
-            const container =
-                getFieldContainer(
-                    element
-                );
-
-            if (container) {
-
-                container
-                    .querySelectorAll(
-                        ".wfesc-field-error"
-                    )
-                    .forEach(
-                        function (item) {
-
-                            item.remove();
-
-                        }
-                    );
-
-            }
-
-            if (element) {
-
-                element.removeAttribute(
-                    "aria-invalid"
-                );
-
-            }
-
-        }
-
-
-        function clearFieldErrors() {
-
-            clearFieldError(
-                accountUsername
-            );
-
-            clearFieldError(
-                accountEmail
-            );
-
-            clearFieldError(
-                accountPassword
-            );
-
-            clearFieldError(
-                accountPasswordConfirm
-            );
-
-        }
-
-
-        function showFieldError(
-            element,
-            message
-        ) {
-
-            if (!element) {
-                return;
-            }
-
-            clearFieldError(
-                element
-            );
-
-
-            element.setAttribute(
-                "aria-invalid",
-                "true"
-            );
-
-
-            const container =
-                getFieldContainer(
-                    element
-                );
-
-
-            if (!container) {
-                return;
-            }
-
-
-            const error =
+            const wrapper =
                 document.createElement(
                     "div"
                 );
 
 
-            error.className =
-                "wfesc-field-error";
-
-            error.textContent =
-                message;
+            wrapper.className =
+                "account-buttons";
 
 
-            error.style.cssText =
-                "color:#ff5c5c;" +
-                "font-size:13px;" +
-                "margin-top:6px;" +
-                "line-height:1.5;";
+            wrapper.innerHTML = `
+                <button
+                    class="account-button primary"
+                    id="createAccountButton"
+                    type="button"
+                >
+                    إنشاء حساب
+                </button>
+
+                <button
+                    class="account-button"
+                    id="loginButton"
+                    type="button"
+                >
+                    لدي حساب — تسجيل الدخول
+                </button>
+
+                <button
+                    class="account-button forgot"
+                    id="forgotPasswordButton"
+                    type="button"
+                >
+                    نسيت كلمة المرور؟
+                </button>
+            `;
 
 
-            container.appendChild(
-                error
+            app.appendChild(
+                wrapper
+            );
+
+
+            const createButton =
+                document.getElementById(
+                    "createAccountButton"
+                );
+
+
+            const loginButton =
+                document.getElementById(
+                    "loginButton"
+                );
+
+
+            const forgotButton =
+                document.getElementById(
+                    "forgotPasswordButton"
+                );
+
+
+            createButton.addEventListener(
+                "click",
+                function () {
+
+                    openModal(
+                        "register"
+                    );
+
+                }
+            );
+
+
+            loginButton.addEventListener(
+                "click",
+                function () {
+
+                    openModal(
+                        "login"
+                    );
+
+                }
+            );
+
+
+            forgotButton.addEventListener(
+                "click",
+                function () {
+
+                    openModal(
+                        "forgot"
+                    );
+
+                }
             );
 
         }
 
 
         /* =================================================
-           USERNAME VALIDATION
-           ================================================= */
+           إنشاء Modal
+        ================================================= */
 
-        function validateUsernameInput(
-            showError
-        ) {
+        function createModal() {
 
-            if (!accountUsername) {
-                return true;
+            if (document.getElementById("accountModal")) {
+
+                modal =
+                    document.getElementById(
+                        "accountModal"
+                    );
+
+                connectModalElements();
+
+                return;
             }
 
 
-            let username =
-                String(
-                    accountUsername.value || ""
-                ).trim();
-
-
-            /*
-             * أحرف إنجليزية فقط
-             */
-            username =
-                username.replace(
-                    /[^A-Za-z]/g,
-                    ""
+            modal =
+                document.createElement(
+                    "div"
                 );
 
 
-            /*
-             * الحد الأقصى 9
-             *
-             * مهم:
-             * هنا 9 وليس 3
-             */
-            username =
-                username.slice(
-                    0,
-                    usernameMax
-                );
+            modal.className =
+                "modal";
 
 
-            accountUsername.value =
-                username;
+            modal.id =
+                "accountModal";
 
 
-            clearFieldError(
-                accountUsername
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
             );
 
 
-            if (!username) {
+            modal.innerHTML = `
+                <div class="modal-box">
 
-                if (showError) {
+                    <div class="modal-header">
 
-                    showFieldError(
-                        accountUsername,
-                        "يجب وضع اسم المستخدم."
-                    );
+                        <h2 id="modalTitle">
+                            حساب WFESC
+                        </h2>
 
-                }
+                        <button
+                            class="close-modal"
+                            id="closeModal"
+                            type="button"
+                            aria-label="إغلاق"
+                        >
+                            ×
+                        </button>
 
-                return false;
-
-            }
-
-
-            if (
-                username.length <
-                usernameMin
-            ) {
-
-                if (showError) {
-
-                    showFieldError(
-                        accountUsername,
-                        "يجب أن يتكون اسم المستخدم من " +
-                        usernameMin +
-                        " أحرف أو أكثر."
-                    );
-
-                }
-
-                return false;
-
-            }
+                    </div>
 
 
-            if (
-                username.length >
-                usernameMax
-            ) {
+                    <form id="accountForm">
 
-                if (showError) {
+                        <div
+                            class="form-group"
+                            id="usernameGroup"
+                        >
 
-                    showFieldError(
-                        accountUsername,
-                        "اسم المستخدم يجب ألا يتجاوز " +
-                        usernameMax +
-                        " أحرف."
-                    );
+                            <label for="accountUsername">
+                                اسم المستخدم
+                            </label>
 
-                }
+                            <input
+                                class="form-input"
+                                id="accountUsername"
+                                type="text"
+                                maxlength="9"
+                                minlength="3"
+                                autocomplete="username"
+                                placeholder="اسم المستخدم"
+                            >
 
-                return false;
-
-            }
-
-
-            if (
-                !/^[A-Za-z]+$/.test(
-                    username
-                )
-            ) {
-
-                if (showError) {
-
-                    showFieldError(
-                        accountUsername,
-                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط، بدون مسافات أو فواصل أو رموز."
-                    );
-
-                }
-
-                return false;
-
-            }
+                        </div>
 
 
-            return true;
+                        <div class="form-group">
+
+                            <label for="accountEmail">
+                                البريد الإلكتروني
+                            </label>
+
+                            <input
+                                class="form-input"
+                                id="accountEmail"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="البريد الإلكتروني"
+                            >
+
+                        </div>
+
+
+                        <div
+                            class="form-group"
+                            id="passwordGroup"
+                        >
+
+                            <label for="accountPassword">
+                                كلمة المرور
+                            </label>
+
+                            <input
+                                class="form-input"
+                                id="accountPassword"
+                                type="password"
+                                maxlength="16"
+                                minlength="6"
+                                autocomplete="current-password"
+                                placeholder="كلمة المرور"
+                            >
+
+                        </div>
+
+
+                        <div
+                            class="form-group"
+                            id="confirmPasswordGroup"
+                        >
+
+                            <label for="accountPasswordConfirm">
+                                تأكيد كلمة المرور
+                            </label>
+
+                            <input
+                                class="form-input"
+                                id="accountPasswordConfirm"
+                                type="password"
+                                maxlength="16"
+                                minlength="6"
+                                autocomplete="new-password"
+                                placeholder="أعد كتابة كلمة المرور"
+                            >
+
+                        </div>
+
+
+                        <button
+                            class="modal-action"
+                            id="modalAction"
+                            type="submit"
+                        >
+                            إنشاء الحساب
+                        </button>
+
+
+                        <div
+                            class="modal-note"
+                            id="modalNote"
+                        ></div>
+
+                    </form>
+
+                </div>
+            `;
+
+
+            document.body.appendChild(
+                modal
+            );
+
+
+            connectModalElements();
+
+            setupModalEvents();
+
+            setupPasswordInputs();
+
+            setupPasswordEyes();
 
         }
 
 
         /* =================================================
-           PASSWORD VALIDATION
-           ================================================= */
+           ربط عناصر Modal
+        ================================================= */
+
+        function connectModalElements() {
+
+            modal =
+                document.getElementById(
+                    "accountModal"
+                );
+
+
+            if (!modal) {
+                return;
+            }
+
+
+            form =
+                document.getElementById(
+                    "accountForm"
+                );
+
+
+            usernameInput =
+                document.getElementById(
+                    "accountUsername"
+                );
+
+
+            emailInput =
+                document.getElementById(
+                    "accountEmail"
+                );
+
+
+            passwordInput =
+                document.getElementById(
+                    "accountPassword"
+                );
+
+
+            confirmPasswordInput =
+                document.getElementById(
+                    "accountPasswordConfirm"
+                );
+
+
+            usernameGroup =
+                document.getElementById(
+                    "usernameGroup"
+                );
+
+
+            passwordGroup =
+                document.getElementById(
+                    "passwordGroup"
+                );
+
+
+            confirmPasswordGroup =
+                document.getElementById(
+                    "confirmPasswordGroup"
+                );
+
+
+            modalTitle =
+                document.getElementById(
+                    "modalTitle"
+                );
+
+
+            modalAction =
+                document.getElementById(
+                    "modalAction"
+                );
+
+
+            modalNote =
+                document.getElementById(
+                    "modalNote"
+                );
+
+
+            closeModalButton =
+                document.getElementById(
+                    "closeModal"
+                );
+
+        }
+
+
+        /* =================================================
+           Modal Events
+        ================================================= */
+
+        function setupModalEvents() {
+
+            if (!modal) {
+                return;
+            }
+
+
+            if (closeModalButton) {
+
+                closeModalButton.addEventListener(
+                    "click",
+                    closeModal
+                );
+
+            }
+
+
+            modal.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target ===
+                        modal
+                    ) {
+
+                        closeModal();
+
+                    }
+
+                }
+            );
+
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key ===
+                        "Escape" &&
+                        modal.classList.contains(
+                            "show"
+                        )
+                    ) {
+
+                        closeModal();
+
+                    }
+
+                }
+            );
+
+
+            if (form) {
+
+                form.addEventListener(
+                    "submit",
+                    handleSubmit
+                );
+
+            }
+
+        }
+
+
+        /* =================================================
+           فتح Modal
+        ================================================= */
+
+        function openModal(mode) {
+
+            currentMode =
+                mode;
+
+
+            createModal();
+
+            clearForm();
+
+            setMode(
+                mode
+            );
+
+
+            if (!modal) {
+                return;
+            }
+
+
+            modal.classList.add(
+                "show"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            setTimeout(
+                function () {
+
+                    if (
+                        mode === "forgot"
+                    ) {
+
+                        if (emailInput) {
+                            emailInput.focus();
+                        }
+
+                    } else if (
+                        usernameInput &&
+                        mode === "register"
+                    ) {
+
+                        usernameInput.focus();
+
+                    } else if (
+                        emailInput
+                    ) {
+
+                        emailInput.focus();
+
+                    }
+
+                },
+                50
+            );
+
+        }
+
+
+        window.WFESCOpenAccountModal =
+            openModal;
+
+
+        /* =================================================
+           إغلاق Modal
+        ================================================= */
+
+        function closeModal() {
+
+            if (!modal) {
+                return;
+            }
+
+
+            modal.classList.remove(
+                "show"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+        }
+
+
+        /* =================================================
+           تنظيف الحقول
+        ================================================= */
+
+        function clearForm() {
+
+            if (usernameInput) {
+                usernameInput.value = "";
+            }
+
+
+            if (emailInput) {
+                emailInput.value = "";
+            }
+
+
+            if (passwordInput) {
+
+                passwordInput.value = "";
+
+                passwordInput.type =
+                    "password";
+
+            }
+
+
+            if (confirmPasswordInput) {
+
+                confirmPasswordInput.value = "";
+
+                confirmPasswordInput.type =
+                    "password";
+
+            }
+
+
+            updatePasswordEyes();
+
+        }
+
+
+        /* =================================================
+           أوضاع الحساب
+        ================================================= */
+
+        function setMode(mode) {
+
+            currentMode =
+                mode;
+
+
+            if (!modalTitle) {
+                return;
+            }
+
+
+            if (mode === "register") {
+
+                modalTitle.textContent =
+                    "إنشاء حساب WFESC";
+
+
+                if (usernameGroup) {
+                    usernameGroup.style.display =
+                        "block";
+                }
+
+
+                if (passwordGroup) {
+                    passwordGroup.style.display =
+                        "block";
+                }
+
+
+                if (confirmPasswordGroup) {
+                    confirmPasswordGroup.style.display =
+                        "block";
+                }
+
+
+                if (modalAction) {
+                    modalAction.textContent =
+                        "إنشاء الحساب";
+                }
+
+
+                if (modalNote) {
+
+                    modalNote.textContent =
+                        "اسم المستخدم من 3 إلى 9 أحرف إنجليزية فقط.";
+
+                }
+
+
+                if (emailInput) {
+
+                    emailInput.autocomplete =
+                        "email";
+
+                }
+
+                return;
+            }
+
+
+            if (mode === "login") {
+
+                modalTitle.textContent =
+                    "تسجيل الدخول";
+
+
+                if (usernameGroup) {
+                    usernameGroup.style.display =
+                        "none";
+                }
+
+
+                if (passwordGroup) {
+                    passwordGroup.style.display =
+                        "block";
+                }
+
+
+                if (confirmPasswordGroup) {
+                    confirmPasswordGroup.style.display =
+                        "none";
+                }
+
+
+                if (modalAction) {
+                    modalAction.textContent =
+                        "تسجيل الدخول";
+                }
+
+
+                if (modalNote) {
+
+                    modalNote.textContent =
+                        "أدخل البريد الإلكتروني وكلمة المرور.";
+
+                }
+
+
+                if (emailInput) {
+
+                    emailInput.autocomplete =
+                        "email";
+
+                }
+
+                return;
+            }
+
+
+            if (mode === "forgot") {
+
+                modalTitle.textContent =
+                    "استعادة كلمة المرور";
+
+
+                if (usernameGroup) {
+                    usernameGroup.style.display =
+                        "none";
+                }
+
+
+                if (passwordGroup) {
+                    passwordGroup.style.display =
+                        "none";
+                }
+
+
+                if (confirmPasswordGroup) {
+                    confirmPasswordGroup.style.display =
+                        "none";
+                }
+
+
+                if (modalAction) {
+                    modalAction.textContent =
+                        "إرسال رابط الاستعادة";
+                }
+
+
+                if (modalNote) {
+
+                    modalNote.textContent =
+                        "سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.";
+
+                }
+
+            }
+
+        }
+
+
+        /* =================================================
+           Username
+        ================================================= */
+
+       
+        function setupUsernameInput() {
+
+            if (!usernameInput) {
+                return;
+            }
+
+
+            usernameInput.setAttribute(
+                "maxlength",
+                String(usernameMax)
+            );
+
+
+            usernameInput.setAttribute(
+                "minlength",
+                String(usernameMin)
+            );
+
+
+            usernameInput.addEventListener(
+                "input",
+                function () {
+
+                    let value =
+                        usernameInput.value;
+
+
+                    value =
+                        value.replace(
+                            /[^A-Za-z]/g,
+                            ""
+                        );
+
+
+                    value =
+                        value.slice(
+                            0,
+                            usernameMax
+                        );
+
+
+                    usernameInput.value =
+                        value;
+
+                }
+            );
+
+
+            usernameInput.addEventListener(
+                "blur",
+                function () {
+
+                    if (
+                        currentMode !==
+                        "register"
+                    ) {
+                        return;
+                    }
+
+
+                    const value =
+                        usernameInput.value.trim();
+
+
+                    if (
+                        value.length > 0 &&
+                        value.length <
+                        usernameMin
+                    ) {
+
+                        showStatus(
+                            "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* =================================================
+           Password Input
+        ================================================= */
 
         function limitPasswordInput(
             input
@@ -681,72 +1006,344 @@
             }
 
 
-            let value =
-                String(
-                    input.value || ""
-                );
+            input.setAttribute(
+                "maxlength",
+                String(passwordMax)
+            );
 
 
-            if (
-                value.length >
-                passwordMax
-            ) {
+            input.setAttribute(
+                "minlength",
+                String(passwordMin)
+            );
 
-                value =
-                    value.slice(
-                        0,
+
+            input.addEventListener(
+                "input",
+                function () {
+
+                    if (
+                        input.value.length >
                         passwordMax
-                    );
+                    ) {
 
-            }
+                        input.value =
+                            input.value.slice(
+                                0,
+                                passwordMax
+                            );
 
+                    }
 
-            input.value =
-                value;
+                }
+            );
 
         }
 
 
-        function validatePasswordInput(
-            input,
-            showError
-        ) {
+        function setupPasswordInputs() {
 
-            if (!input) {
-                return false;
-            }
+            limitPasswordInput(
+                passwordInput
+            );
 
 
             limitPasswordInput(
-                input
+                confirmPasswordInput
+            );
+
+        }
+
+
+        /* =================================================
+           Password Eyes
+        ================================================= */
+
+        function createPasswordEye(
+            input
+        ) {
+
+            if (!input) {
+                return;
+            }
+
+
+            const parent =
+                input.parentElement;
+
+
+            if (!parent) {
+                return;
+            }
+
+
+            if (
+                parent.querySelector(
+                    ".wfesc-password-eye"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            parent.style.position =
+                parent.style.position ||
+                "relative";
+
+
+            input.style.paddingLeft =
+                "48px";
+
+
+            input.setAttribute(
+                "maxlength",
+                String(passwordMax)
             );
 
 
-            const password =
-                String(
-                    input.value || ""
+            const button =
+                document.createElement(
+                    "button"
                 );
 
 
-            clearFieldError(
-                input
+            button.type =
+                "button";
+
+
+            button.className =
+                "wfesc-password-eye";
+
+
+            button.textContent =
+                "🙉";
+
+
+            button.setAttribute(
+                "aria-label",
+                "إظهار كلمة المرور"
             );
 
 
-            if (!password) {
+            button.setAttribute(
+                "title",
+                "إظهار كلمة المرور"
+            );
 
-                if (showError) {
 
-                    showFieldError(
-                        input,
-                        "يرجى إدخال كلمة المرور."
+            button.style.cssText =
+                "position:absolute;" +
+                "left:8px;" +
+                "top:50%;" +
+                "transform:translateY(-50%);" +
+                "width:36px;" +
+                "height:36px;" +
+                "display:flex;" +
+                "align-items:center;" +
+                "justify-content:center;" +
+                "border:0;" +
+                "background:transparent;" +
+                "color:inherit;" +
+                "cursor:pointer;" +
+                "font-size:19px;" +
+                "padding:0;" +
+                "margin:0;" +
+                "line-height:1;" +
+                "z-index:5;";
+
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    const isPassword =
+                        input.type ===
+                        "password";
+
+
+                    input.type =
+                        isPassword
+                            ? "text"
+                            : "password";
+
+
+                    button.textContent =
+                        isPassword
+                            ? "🙈"
+                            : "🙉";
+
+
+                    button.setAttribute(
+                        "aria-label",
+                        isPassword
+                            ? "إخفاء كلمة المرور"
+                            : "إظهار كلمة المرور"
                     );
 
-                }
 
-                return false;
+                    button.setAttribute(
+                        "title",
+                        isPassword
+                            ? "إخفاء كلمة المرور"
+                            : "إظهار كلمة المرور"
+                    );
+
+
+                    input.focus();
+
+                }
+            );
+
+
+            parent.appendChild(
+                button
+            );
+
+        }
+
+
+        function setupPasswordEyes() {
+
+            createPasswordEye(
+                passwordInput
+            );
+
+
+            createPasswordEye(
+                confirmPasswordInput
+            );
+
+        }
+
+
+        function updatePasswordEyes() {
+
+            const buttons =
+                document.querySelectorAll(
+                    ".wfesc-password-eye"
+                );
+
+
+            buttons.forEach(
+                function (button) {
+
+                    const input =
+                        button.parentElement
+                            ?.querySelector(
+                                "input"
+                            );
+
+
+                    if (!input) {
+                        return;
+                    }
+
+
+                    if (
+                        input.type ===
+                        "password"
+                    ) {
+
+                        button.textContent =
+                            "🙉";
+
+                    } else {
+
+                        button.textContent =
+                            "🙈";
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* =================================================
+           التحقق من Username
+        ================================================= */
+
+        function validateUsername() {
+
+            const username =
+                usernameInput?.value.trim() ||
+                "";
+
+
+            if (!username) {
+
+                return {
+                    valid: false,
+                    message:
+                        "يرجى إدخال اسم المستخدم."
+                };
 
             }
+
+
+            if (
+                username.length <
+                usernameMin
+            ) {
+
+                return {
+                    valid: false,
+                    message:
+                        "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
+                };
+
+            }
+
+
+            if (
+                username.length >
+                usernameMax
+            ) {
+
+                return {
+                    valid: false,
+                    message:
+                        "اسم المستخدم يجب ألا يتجاوز 9 أحرف."
+                };
+
+            }
+
+
+            if (
+                !/^[A-Za-z]+$/.test(
+                    username
+                )
+            ) {
+
+                return {
+                    valid: false,
+                    message:
+                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط."
+                };
+
+            }
+
+
+            return {
+                valid: true,
+                value: username
+            };
+
+        }
+
+
+        /* =================================================
+           التحقق من كلمة المرور
+        ================================================= */
+
+        function validatePassword() {
+
+            const password =
+                passwordInput?.value ||
+                "";
 
 
             if (
@@ -754,16 +1351,11 @@
                 passwordMin
             ) {
 
-                if (showError) {
-
-                    showFieldError(
-                        input,
+                return {
+                    valid: false,
+                    message:
                         "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
-                    );
-
-                }
-
-                return false;
+                };
 
             }
 
@@ -773,1786 +1365,234 @@
                 passwordMax
             ) {
 
-                if (showError) {
-
-                    showFieldError(
-                        input,
+                return {
+                    valid: false,
+                    message:
                         "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
-                    );
-
-                }
-
-                return false;
+                };
 
             }
 
 
-            return true;
+            return {
+                valid: true
+            };
 
         }
 
 
         /* =================================================
-           PASSWORD MATCH
-           ================================================= */
+           مطابقة كلمة المرور
+        ================================================= */
 
-        function validatePasswordMatch(
-            showError
-        ) {
-
-            if (
-                modalMode !== "register" ||
-                !accountPassword ||
-                !accountPasswordConfirm
-            ) {
-
-                return true;
-
-            }
-
-
-            limitPasswordInput(
-                accountPassword
-            );
-
-            limitPasswordInput(
-                accountPasswordConfirm
-            );
-
-
-            clearFieldError(
-                accountPasswordConfirm
-            );
-
+        function validatePasswordMatch() {
 
             const password =
-                String(
-                    accountPassword.value || ""
-                );
+                passwordInput?.value ||
+                "";
 
 
-            const confirmPassword =
-                String(
-                    accountPasswordConfirm.value || ""
-                );
-
-
-            if (!confirmPassword) {
-
-                if (showError) {
-
-                    showFieldError(
-                        accountPasswordConfirm,
-                        "يرجى تأكيد كلمة المرور."
-                    );
-
-                }
-
-                return false;
-
-            }
+            const confirm =
+                confirmPasswordInput?.value ||
+                "";
 
 
             if (
                 password !==
-                confirmPassword
+                confirm
             ) {
 
-                if (showError) {
-
-                    showFieldError(
-                        accountPasswordConfirm,
+                return {
+                    valid: false,
+                    message:
                         "كلمة المرور غير متطابقة."
-                    );
-
-                }
-
-                return false;
+                };
 
             }
 
 
-            return true;
+            return {
+                valid: true
+            };
 
         }
 
 
         /* =================================================
-           PASSWORD VISIBILITY
-           ================================================= */
-
-function createPasswordEye(input) {
-
-    if (!input) {
-        return;
-    }
-
-    const parent = input.parentElement;
-
-    if (!parent) {
-        return;
-    }
-
-    /*
-     * منع إنشاء الزر مرتين
-     */
-    if (
-        parent.querySelector(
-            ".wfesc-password-eye"
-        )
-    ) {
-        return;
-    }
-
-    parent.style.position =
-        parent.style.position || "relative";
-
-    /*
-     * مساحة للزر من جهة اليسار
-     */
-    input.style.paddingLeft =
-        "48px";
-
-    /*
-     * الحد الأقصى دائمًا 16
-     */
-    input.setAttribute(
-        "maxlength",
-        String(passwordMax)
-    );
-
-    const button =
-        document.createElement(
-            "button"
-        );
-
-    button.type =
-        "button";
-
-    button.className =
-        "wfesc-password-eye";
-
-    /*
-     * كلمة المرور مخفية بالبداية
-     */
-    button.textContent =
-        "🙉";
-
-    button.setAttribute(
-        "aria-label",
-        "إظهار كلمة المرور"
-    );
-
-    button.setAttribute(
-        "title",
-        "إظهار كلمة المرور"
-    );
-
-    /*
-     * جهة اليسار ووسط الحقل
-     */
-    button.style.cssText =
-        "position:absolute;" +
-        "left:8px;" +
-        "top:50%;" +
-        "transform:translateY(-50%);" +
-        "width:36px;" +
-        "height:36px;" +
-        "display:flex;" +
-        "align-items:center;" +
-        "justify-content:center;" +
-        "border:0;" +
-        "background:transparent;" +
-        "color:inherit;" +
-        "cursor:pointer;" +
-        "font-size:19px;" +
-        "padding:0;" +
-        "margin:0;" +
-        "line-height:1;" +
-        "z-index:5;";
-
-    button.addEventListener(
-        "click",
-        function () {
-
-            const isPassword =
-                input.type ===
-                "password";
-
-            /*
-             * تبديل حالة الحقل
-             */
-            input.type =
-                isPassword
-                    ? "text"
-                    : "password";
-
-            /*
-             * تغيير الرمز حسب الحالة
-             *
-             * 🙉 = كلمة المرور مخفية
-             * 🙈 = كلمة المرور ظاهرة
-             */
-            button.textContent =
-                isPassword
-                    ? "🙈"
-                    : "🙉";
-
-            button.setAttribute(
-                "aria-label",
-                isPassword
-                    ? "إخفاء كلمة المرور"
-                    : "إظهار كلمة المرور"
-            );
-
-            button.setAttribute(
-                "title",
-                isPassword
-                    ? "إخفاء كلمة المرور"
-                    : "إظهار كلمة المرور"
-            );
-
-            /*
-             * إعادة التركيز للحقل
-             */
-            input.focus();
-
-        }
-    );
-
-    parent.appendChild(
-        button
-    );
-
-}
-
-
-function setupPasswordEyes() {
-
-    createPasswordEye(
-        accountPassword
-    );
-
-    createPasswordEye(
-        accountPasswordConfirm
-    );
-
-}
-
-
-        /* =================================================
-           PASSWORD INPUT EVENTS
-           ================================================= */
-
-        function setupPasswordInputs() {
-
-            const fields = [
-
-                accountPassword,
-
-                accountPasswordConfirm
-
-            ];
-
-
-            fields.forEach(
-                function (input) {
-
-                    if (!input) {
-                        return;
-                    }
-
-
-                    input.setAttribute(
-                        "maxlength",
-                        String(passwordMax)
-                    );
-
-
-                    input.setAttribute(
-                        "minlength",
-                        String(passwordMin)
-                    );
-
-
-                    input.addEventListener(
-                        "input",
-                        function () {
-
-                            limitPasswordInput(
-                                input
-                            );
-
-
-                            clearFieldError(
-                                input
-                            );
-
-
-                            if (
-                                modalMode ===
-                                "register"
-                            ) {
-
-                                if (
-                                    input ===
-                                    accountPassword ||
-                                    input ===
-                                    accountPasswordConfirm
-                                ) {
-
-                                    if (
-                                        accountPasswordConfirm &&
-                                        accountPasswordConfirm.value
-                                    ) {
-
-                                        validatePasswordMatch(
-                                            true
-                                        );
-
-                                    }
-
-                                }
-
-                            }
-
-                        }
-                    );
-
-
-                    input.addEventListener(
-                        "blur",
-                        function () {
-
-                            if (
-                                modalMode ===
-                                "register"
-                            ) {
-
-                                validatePasswordInput(
-                                    input,
-                                    true
-                                );
-
-
-                                if (
-                                    input ===
-                                    accountPasswordConfirm
-                                ) {
-
-                                    validatePasswordMatch(
-                                        true
-                                    );
-
-                                }
-
-                            }
-
-                        }
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           LOGIN MODE
-           ================================================= */
-
-        function setLoginMode() {
-
-            modalMode =
-                "login";
-
-
-            if (modalTitle) {
-
-                modalTitle.textContent =
-                    "تسجيل الدخول";
-
-            }
-
-
-            if (accountUsername) {
-
-                const parent =
-                    accountUsername.parentElement;
-
-
-                if (parent) {
-
-                    parent.style.display =
-                        "none";
-
-                }
-
-            }
-
-
-            if (passwordGroup) {
-
-                passwordGroup.style.display =
-                    "";
-
-            }
-
-
-            if (confirmPasswordGroup) {
-
-                confirmPasswordGroup.style.display =
-                    "none";
-
-            }
-
-
-            if (accountForm) {
-
-                accountForm.style.display =
-                    "";
-
-            }
-
-
-            if (modalAction) {
-
-                modalAction.style.display =
-                    "";
-
-                modalAction.textContent =
-                    "تسجيل الدخول";
-
-            }
-
-
-            setModalNote(
-                "سجّل الدخول إلى حساب WFESC."
-            );
-
-
-            clearForm();
-
-            openModal();
-
-        }
-
-
-        /* =================================================
-           REGISTER MODE
-           ================================================= */
-
-        function setRegisterMode() {
-
-            modalMode =
-                "register";
-
-
-            if (modalTitle) {
-
-                modalTitle.textContent =
-                    "إنشاء حساب";
-
-            }
-
-
-            if (accountUsername) {
-
-                const parent =
-                    accountUsername.parentElement;
-
-
-                if (parent) {
-
-                    parent.style.display =
-                        "";
-
-                }
-
-            }
-
-
-            if (passwordGroup) {
-
-                passwordGroup.style.display =
-                    "";
-
-            }
-
-
-            if (confirmPasswordGroup) {
-
-                confirmPasswordGroup.style.display =
-                    "";
-
-            }
-
-
-            if (accountForm) {
-
-                accountForm.style.display =
-                    "";
-
-            }
-
-
-            if (modalAction) {
-
-                modalAction.style.display =
-                    "";
-
-                modalAction.textContent =
-                    "إنشاء الحساب";
-
-            }
-
-
-            setModalNote(
-                "أنشئ حساب WFESC جديد."
-            );
-
-
-            clearForm();
-
-            openModal();
-
-        }
-
-
-        /* =================================================
-           VERIFY EMAIL MESSAGE
-           ================================================= */
-
-        function showVerifyMessage() {
-
-            if (accountForm) {
-
-                accountForm.style.display =
-                    "none";
-
-            }
-
-
-            if (modalTitle) {
-
-                modalTitle.textContent =
-                    "تحقق من بريدك الإلكتروني";
-
-            }
-
-
-            if (modalAction) {
-
-                modalAction.style.display =
-                    "none";
-
-            }
-
-
-            setModalNote(
-                "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني أو الرسائل غير المرغوب فيها."
-            );
-
-
-            setStatus(
-                "تم إنشاء الحساب. تحقق من بريدك الإلكتروني.",
-                "success"
-            );
-
-
-            const verifyMessage =
-                document.getElementById(
-                    "verifyMessage"
-                ) ||
-                document.getElementById(
-                    "verify-message"
-                );
-
-
-            if (verifyMessage) {
-
-                verifyMessage.style.display =
-                    "";
-
-                verifyMessage.textContent =
-                    "تم إنشاء الحساب. افتح بريدك الإلكتروني واضغط على رابط التحقق لإكمال التسجيل.";
-
-            }
-
-
-            openModal();
-
-        }
-
-
-        /* =================================================
-           LOGGED IN UI
-           ================================================= */
-
-        function showLoggedInUI(
-            user,
-            profile
+           معالجة Submit
+        ================================================= */
+
+        async function handleSubmit(
+            event
         ) {
 
-            if (accountButtons) {
-
-                accountButtons.style.display =
-                    "none";
-
-            }
-
-
-            if (loggedInAccount) {
-
-                loggedInAccount.style.display =
-                    "";
-
-            }
-
-
-            const username =
-                (
-                    profile &&
-                    profile.username
-                )
-                    ? profile.username
-                    : (
-                        user &&
-                        user.user_metadata &&
-                        user.user_metadata.username
-                    )
-                        ? user.user_metadata.username
-                        : (
-                            user &&
-                            user.email
-                        )
-                            ? user.email.split("@")[0]
-                            : "WFESC";
-
-
-            if (loggedInUsername) {
-
-                loggedInUsername.textContent =
-                    username;
-
-            }
-
-
-            const avatar =
-                profile &&
-                profile.avatar_url
-                    ? profile.avatar_url
-                    : null;
+            event.preventDefault();
 
 
             if (
-                loggedInAvatar &&
-                loggedInAvatarFallback
+                currentMode ===
+                "register"
             ) {
 
-                if (avatar) {
+                await handleRegister();
 
-                    loggedInAvatar.src =
-                        avatar;
-
-                    loggedInAvatar.style.display =
-                        "";
-
-                    loggedInAvatarFallback.style.display =
-                        "none";
-
-                } else {
-
-                    loggedInAvatar.removeAttribute(
-                        "src"
-                    );
-
-                    loggedInAvatar.style.display =
-                        "none";
-
-                    loggedInAvatarFallback.style.display =
-                        "";
-
-                    loggedInAvatarFallback.textContent =
-                        String(
-                            username || "W"
-                        )
-                        .charAt(0)
-                        .toUpperCase();
-
-                }
+                return;
 
             }
 
 
-            setStatus(
-                "تم تسجيل الدخول بنجاح.",
-                "success"
-            );
+            if (
+                currentMode ===
+                "login"
+            ) {
+
+                await handleLogin();
+
+                return;
+
+            }
+
+
+            if (
+                currentMode ===
+                "forgot"
+            ) {
+
+                await handleForgotPassword();
+
+            }
 
         }
 
 
         /* =================================================
-           LOGGED OUT UI
-           ================================================= */
+           إنشاء الحساب
+        ================================================= */
 
-        function showLoggedOutUI() {
+        async function handleRegister() {
 
-            if (accountButtons) {
-
-                accountButtons.style.display =
-                    "";
-
-            }
+            const usernameResult =
+                validateUsername();
 
 
-            if (loggedInAccount) {
+            if (!usernameResult.valid) {
 
-                loggedInAccount.style.display =
-                    "none";
-
-            }
-
-
-            if (loggedInUsername) {
-
-                loggedInUsername.textContent =
-                    "";
-
-            }
-
-
-            if (loggedInAvatar) {
-
-                loggedInAvatar.removeAttribute(
-                    "src"
+                showStatus(
+                    usernameResult.message
                 );
 
-                loggedInAvatar.style.display =
-                    "none";
+                return;
 
             }
 
 
-            if (loggedInAvatarFallback) {
-
-                loggedInAvatarFallback.style.display =
-                    "";
-
-                loggedInAvatarFallback.textContent =
-                    "W";
-
-            }
-
-        }
+            const email =
+                emailInput?.value.trim() ||
+                "";
 
 
-        /* =================================================
-           REFRESH UI
-           ================================================= */
+            const password =
+                passwordInput?.value ||
+                "";
 
-        function refreshUI(
-            user,
-            profile
-        ) {
 
-            if (user) {
+            if (
+                typeof AUTH.isValidEmail ===
+                "function" &&
+                !AUTH.isValidEmail(email)
+            ) {
 
-                showLoggedInUI(
-                    user,
-                    profile
+                showStatus(
+                    "يرجى إدخال بريد إلكتروني صحيح."
                 );
 
-            } else {
-
-                showLoggedOutUI();
+                return;
 
             }
 
-        }
 
+            const passwordResult =
+                validatePassword();
 
-        /* =================================================
-           CREATE ACCOUNT BUTTON
-           ================================================= */
 
-        if (createAccountButton) {
+            if (!passwordResult.valid) {
 
-            createAccountButton.addEventListener(
-                "click",
-                function () {
-
-                    if (busy) {
-                        return;
-                    }
-
-                    setRegisterMode();
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           LOGIN BUTTON
-           ================================================= */
-
-        if (loginButton) {
-
-            loginButton.addEventListener(
-                "click",
-                function () {
-
-                    if (busy) {
-                        return;
-                    }
-
-                    setLoginMode();
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           CLOSE MODAL
-           ================================================= */
-
-        if (closeModalButton) {
-
-            closeModalButton.addEventListener(
-                "click",
-                function () {
-
-                    if (busy) {
-                        return;
-                    }
-
-                    closeModal();
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           إغلاق بالنقر خارج المودال
-           ================================================= */
-
-        if (accountModal) {
-
-            accountModal.addEventListener(
-                "click",
-                function (event) {
-
-                    if (
-                        event.target ===
-                        accountModal
-                    ) {
-
-                        if (!busy) {
-
-                            closeModal();
-
-                        }
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           MANAGE ACCOUNT
-           ================================================= */
-
-        if (manageAccountButton) {
-
-            manageAccountButton.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        typeof AUTH.getUser ===
-                        "function" &&
-                        AUTH.getUser()
-                    ) {
-
-                        window.location.href =
-                            "profile.html";
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           FORGOT PASSWORD
-           ================================================= */
-
-        if (forgotPasswordButton) {
-
-            forgotPasswordButton.addEventListener(
-                "click",
-                async function () {
-
-                    if (busy) {
-                        return;
-                    }
-
-
-                    const email =
-                        accountEmail
-                            ? accountEmail.value.trim()
-                            : "";
-
-
-                    if (!email) {
-
-                        setStatus(
-                            "اكتب بريدك الإلكتروني أولاً.",
-                            "error"
-                        );
-
-                        if (accountEmail) {
-                            accountEmail.focus();
-                        }
-
-                        return;
-
-                    }
-
-
-                    setLoading(true);
-
-
-                    setStatus(
-                        "جاري إرسال رابط إعادة تعيين كلمة المرور...",
-                        "info"
-                    );
-
-
-                    const result =
-                        await AUTH.resetPassword(
-                            email
-                        );
-
-
-                    setLoading(false);
-
-
-                    if (result.error) {
-
-                        setStatus(
-                            getAuthErrorMessage(
-                                result.error
-                            ),
-                            "error"
-                        );
-
-                        return;
-
-                    }
-
-
-                    setStatus(
-                        "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
-                        "success"
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           FORM SUBMIT
-           ================================================= */
-
-        if (accountForm) {
-
-            accountForm.addEventListener(
-                "submit",
-                async function (event) {
-
-                    event.preventDefault();
-
-
-                    if (busy) {
-                        return;
-                    }
-
-
-                    const email =
-                        accountEmail
-                            ? accountEmail.value.trim()
-                            : "";
-
-
-                    const password =
-                        accountPassword
-                            ? accountPassword.value
-                            : "";
-
-
-               
-                    /* =====================================
-                       LOGIN
-                       ===================================== */
-
-                    if (
-                        modalMode ===
-                        "login"
-                    ) {
-
-                        if (!email) {
-
-                            setStatus(
-                                "يرجى إدخال البريد الإلكتروني.",
-                                "error"
-                            );
-
-                            if (accountEmail) {
-                                accountEmail.focus();
-                            }
-
-                            return;
-
-                        }
-
-
-                        if (!password) {
-
-                            setStatus(
-                                "يرجى إدخال كلمة المرور.",
-                                "error"
-                            );
-
-                            if (accountPassword) {
-                                accountPassword.focus();
-                            }
-
-                            return;
-
-                        }
-
-
-                        if (
-                            password.length <
-                            passwordMin
-                        ) {
-
-                            setStatus(
-                                "كلمة المرور يجب أن تكون 6 أحرف أو أكثر.",
-                                "error"
-                            );
-
-                            if (accountPassword) {
-                                accountPassword.focus();
-                            }
-
-                            return;
-
-                        }
-
-
-                        if (
-                            password.length >
-                            passwordMax
-                        ) {
-
-                            setStatus(
-                                "كلمة المرور يجب ألا تتجاوز 16 حرفًا.",
-                                "error"
-                            );
-
-                            if (accountPassword) {
-                                accountPassword.focus();
-                            }
-
-                            return;
-
-                        }
-
-
-                        setLoading(true);
-
-
-                        setStatus(
-                            "جاري تسجيل الدخول...",
-                            "info"
-                        );
-
-
-                        const result =
-                            await AUTH.signIn(
-                                email,
-                                password
-                            );
-
-
-                        setLoading(false);
-
-
-                        if (result.error) {
-
-                            setStatus(
-                                getAuthErrorMessage(
-                                    result.error
-                                ),
-                                "error"
-                            );
-
-                            return;
-
-                        }
-
-
-                        const user =
-                            result.data &&
-                            result.data.user
-                                ? result.data.user
-                                : AUTH.getUser();
-
-
-                        const session =
-                            result.data &&
-                            result.data.session
-                                ? result.data.session
-                                : AUTH.getSession();
-
-
-                        if (!user || !session) {
-
-                            setStatus(
-                                "تعذر إكمال تسجيل الدخول. حاول مرة أخرى.",
-                                "error"
-                            );
-
-                            return;
-
-                        }
-
-
-                        refreshUI(
-                            user,
-                            AUTH.getProfile()
-                        );
-
-
-                        closeModal();
-
-                        return;
-
-                    }
-
-
-                    /* =====================================
-                       REGISTER
-                       ===================================== */
-
-                    /* -------------------------------------
-                       Username
-                       ------------------------------------- */
-
-                    if (
-                        !validateUsernameInput(
-                            true
-                        )
-                    ) {
-
-                        setStatus(
-                            "يرجى تصحيح اسم المستخدم.",
-                            "error"
-                        );
-
-                        if (accountUsername) {
-                            accountUsername.focus();
-                        }
-
-                        return;
-
-                    }
-
-
-                    /* -------------------------------------
-                       Email
-                       ------------------------------------- */
-
-                    if (!email) {
-
-                        setStatus(
-                            "يرجى إدخال البريد الإلكتروني.",
-                            "error"
-                        );
-
-                        if (accountEmail) {
-                            accountEmail.focus();
-                        }
-
-                        return;
-
-                    }
-
-
-                    /* -------------------------------------
-                       Password
-                       ------------------------------------- */
-
-                    if (
-                        !validatePasswordInput(
-                            accountPassword,
-                            true
-                        )
-                    ) {
-
-                        setStatus(
-                            "يرجى تصحيح كلمة المرور.",
-                            "error"
-                        );
-
-                        if (accountPassword) {
-                            accountPassword.focus();
-                        }
-
-                        return;
-
-                    }
-
-
-                    /* -------------------------------------
-                       Password Confirmation
-                       ------------------------------------- */
-
-                    if (
-                        !validatePasswordMatch(
-                            true
-                        )
-                    ) {
-
-                        setStatus(
-                            "كلمة المرور غير متطابقة.",
-                            "error"
-                        );
-
-                        if (accountPasswordConfirm) {
-                            accountPasswordConfirm.focus();
-                        }
-
-                        return;
-
-                    }
-
-
-                    /* -------------------------------------
-                       إنشاء الحساب
-                       ------------------------------------- */
-
-                    setLoading(true);
-
-
-                    setStatus(
-                        "جاري إنشاء الحساب...",
-                        "info"
-                    );
-
-
-                    const username =
-                        accountUsername
-                            ? accountUsername.value.trim()
-                            : "";
-
-
-                    const result =
-                        await AUTH.signUp(
-                            email,
-                            password,
-                            username
-                        );
-
-
-                    setLoading(false);
-
-
-                    if (result.error) {
-
-                        setStatus(
-                            getAuthErrorMessage(
-                                result.error
-                            ),
-                            "error"
-                        );
-
-                        return;
-
-                    }
-
-
-                    const user =
-                        result.data &&
-                        result.data.user
-                            ? result.data.user
-                            : null;
-
-
-                    const session =
-                        result.data &&
-                        result.data.session
-                            ? result.data.session
-                            : null;
-
-
-                    /* -------------------------------------
-                       تأكيد البريد مطلوب
-                       ------------------------------------- */
-
-                    if (
-                        user &&
-                        !session
-                    ) {
-
-                        showVerifyMessage();
-
-                        return;
-
-                    }
-
-
-                    /* -------------------------------------
-                       Session موجودة
-                       ------------------------------------- */
-
-                    if (
-                        user &&
-                        session
-                    ) {
-
-                        refreshUI(
-                            user,
-                            AUTH.getProfile()
-                        );
-
-
-                        setStatus(
-                            "تم إنشاء الحساب وتسجيل الدخول بنجاح.",
-                            "success"
-                        );
-
-
-                        setTimeout(
-                            function () {
-
-                                closeModal();
-
-                            },
-                            350
-                        );
-
-
-                        return;
-
-                    }
-
-
-                    setStatus(
-                        "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لإكمال التسجيل.",
-                        "success"
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           USERNAME INPUT
-           ================================================= */
-
-        if (accountUsername) {
-
-            accountUsername.addEventListener(
-                "input",
-                function () {
-
-                    let cleaned =
-                        String(
-                            accountUsername.value || ""
-                        );
-
-
-                    /*
-                     * أحرف إنجليزية فقط
-                     */
-                    cleaned =
-                        cleaned.replace(
-                            /[^A-Za-z]/g,
-                            ""
-                        );
-
-
-                    /*
-                     * الحد الأقصى 9
-                     *
-                     * وليس 3
-                     */
-                    cleaned =
-                        cleaned.slice(
-                            0,
-                            usernameMax
-                        );
-
-
-                    accountUsername.value =
-                        cleaned;
-
-
-                    if (
-                        cleaned.length >=
-                        usernameMin &&
-                        cleaned.length <=
-                        usernameMax
-                    ) {
-
-                        clearFieldError(
-                            accountUsername
-                        );
-
-                    }
-
-                }
-            );
-
-
-            accountUsername.addEventListener(
-                "blur",
-                function () {
-
-                    validateUsernameInput(
-                        true
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           PASSWORD EYES
-           ================================================= */
-
-        setupPasswordEyes();
-
-
-        /* =================================================
-           PASSWORD INPUTS
-           ================================================= */
-
-        setupPasswordInputs();
-
-
-        /* =================================================
-           LOGOUT
-           ================================================= */
-
-        if (logoutAccountButton) {
-
-            logoutAccountButton.addEventListener(
-                "click",
-                async function () {
-
-                    if (busy) {
-                        return;
-                    }
-
-
-                    setLoading(true);
-
-
-                    const result =
-                        await AUTH.signOut();
-
-
-                    setLoading(false);
-
-
-                    if (result.error) {
-
-                        setStatus(
-                            getAuthErrorMessage(
-                                result.error
-                            ),
-                            "error"
-                        );
-
-                        return;
-
-                    }
-
-
-                    showLoggedOutUI();
-
-
-                    setStatus(
-                        "تم تسجيل الخروج.",
-                        "success"
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           AUTH STATE CHANGED
-           ================================================= */
-
-        window.addEventListener(
-            "WFESCAuthChanged",
-            function (event) {
-
-                const detail =
-                    event &&
-                    event.detail
-                        ? event.detail
-                        : {};
-
-
-                refreshUI(
-                    detail.user ||
-                    null,
-                    AUTH.getProfile()
+                showStatus(
+                    passwordResult.message
                 );
 
-            }
-        );
-
-
-        /* =================================================
-           PROFILE UPDATED
-           ================================================= */
-
-        window.addEventListener(
-            "WFESCProfileUpdated",
-            function (event) {
-
-                const profile =
-                    event &&
-                    event.detail
-                        ? event.detail
-                        : AUTH.getProfile();
-
-
-                const user =
-                    AUTH.getUser();
-
-
-                if (user) {
-
-                    showLoggedInUI(
-                        user,
-                        profile
-                    );
-
-                }
+                return;
 
             }
-        );
 
 
-        /* =================================================
-           EMAIL VERIFIED
-           ================================================= */
+            const matchResult =
+                validatePasswordMatch();
 
-        window.addEventListener(
-            "WFESCEmailVerified",
-            function () {
 
-                setStatus(
-                    "تم التحقق بنجاح واكتمال التسجيل.",
-                    "success"
+            if (!matchResult.valid) {
+
+                showStatus(
+                    matchResult.message
                 );
 
-                setModalNote(
-                    "تم التحقق من بريدك الإلكتروني بنجاح واكتمل تسجيل حساب WFESC."
-                );
-
-            }
-        );
-
-
-        /* =================================================
-           AUTH ERROR TRANSLATION
-           ================================================= */
-
-        function getAuthErrorMessage(
-            error
-        ) {
-
-            if (!error) {
-
-                return "حدث خطأ غير معروف.";
+                return;
 
             }
 
 
-            const message =
-                String(
-                    error.message || ""
-                ).toLowerCase();
-
-
-            if (
-                message.includes(
-                    "invalid login credentials"
-                )
-            ) {
-
-                return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-
-            }
-
-
-            if (
-                message.includes(
-                    "email not confirmed"
-                )
-            ) {
-
-                return "يجب تأكيد بريدك الإلكتروني أولاً.";
-
-            }
-
-
-            if (
-                message.includes(
-                    "user already registered"
-                )
-            ) {
-
-                return "هذا البريد الإلكتروني مسجل مسبقًا.";
-
-            }
-
-
-            if (
-                message.includes(
-                    "password should be at least"
-                )
-            ) {
-
-                return "كلمة المرور يجب أن تكون 6 أحرف أو أكثر.";
-
-            }
-
-
-            if (
-                message.includes(
-                    "password"
-                ) &&
-                message.includes(
-                    "16"
-                )
-            ) {
-
-                return "كلمة المرور يجب ألا تتجاوز 16 حرفًا.";
-
-            }
-
-
-            if (
-                message.includes(
-                    "invalid email"
-                )
-            ) {
-
-                return "يرجى إدخال بريد إلكتروني صحيح.";
-
-            }
-
-
-            if (
-                message.includes(
-                    "rate limit"
-                )
-            ) {
-
-                return "تم تجاوز عدد المحاولات. حاول لاحقًا.";
-
-            }
-
-
-            return (
-                error.message ||
-                "حدث خطأ أثناء تنفيذ العملية."
+            setActionLoading(
+                true,
+                "جاري إنشاء الحساب..."
             );
 
-        }
-
-
-        /* =================================================
-           RESTORE SESSION
-           ================================================= */
-
-        async function restore() {
 
             try {
 
                 const result =
-                    await AUTH.restoreSession();
+                    await AUTH.signUp(
+                        email,
+                        password,
+                        usernameResult.value
+                    );
 
 
                 if (
                     result &&
-                    result.error
+                    result.user
                 ) {
 
-                    console.warn(
-                        "WFESC Auth UI: تعذر استعادة الجلسة:",
-                        result.error
-                    );
-
-                    showLoggedOutUI();
+                    showVerifyMessage();
 
                     return;
 
                 }
 
 
-                const user =
-                    AUTH.getUser();
-
-
-                const profile =
-                    AUTH.getProfile();
-
-
-                refreshUI(
-                    user,
-                    profile
+                showStatus(
+                    "تم إنشاء الحساب بنجاح."
                 );
+
 
             } catch (error) {
 
                 console.error(
-                    "WFESC Auth UI: خطأ أثناء استعادة الجلسة:",
+                    "WFESC Sign Up Error:",
                     error
                 );
 
 
-                showLoggedOutUI();
+                showStatus(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+            } finally {
+
+                setActionLoading(
+                    false
+                );
 
             }
 
@@ -2560,36 +1600,873 @@ function setupPasswordEyes() {
 
 
         /* =================================================
-           START
-           ================================================= */
+           تسجيل الدخول
+        ================================================= */
 
-        restore();
+        async function handleLogin() {
 
-    }
+            const email =
+                emailInput?.value.trim() ||
+                "";
 
 
-    /* =====================================================
-       DOM READY
-       ===================================================== */
+            const password =
+                passwordInput?.value ||
+                "";
 
-    if (
-        document.readyState ===
-        "loading"
-    ) {
 
-        document.addEventListener(
-            "DOMContentLoaded",
-            start,
-            {
-                once: true
+            if (
+                !email
+            ) {
+
+                showStatus(
+                    "يرجى إدخال البريد الإلكتروني."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                !password
+            ) {
+
+                showStatus(
+                    "يرجى إدخال كلمة المرور."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                password.length >
+                passwordMax
+            ) {
+
+                showStatus(
+                    "كلمة المرور يجب ألا تتجاوز 16 حرفًا."
+                );
+
+                return;
+
+            }
+
+
+            setActionLoading(
+                true,
+                "جاري تسجيل الدخول..."
+            );
+
+
+            try {
+
+                await AUTH.signIn(
+                    email,
+                    password
+                );
+
+
+                closeModal();
+
+                await renderAccount();
+
+                showStatus(
+                    "تم تسجيل الدخول بنجاح."
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "WFESC Sign In Error:",
+                    error
+                );
+
+
+                showStatus(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+            } finally {
+
+                setActionLoading(
+                    false
+                );
+
+            }
+
+        }
+
+
+        /* =================================================
+           نسيت كلمة المرور
+        ================================================= */
+
+        async function handleForgotPassword() {
+
+            const email =
+                emailInput?.value.trim() ||
+                "";
+
+
+            if (!email) {
+
+                showStatus(
+                    "يرجى إدخال بريدك الإلكتروني."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                typeof AUTH.isValidEmail ===
+                "function" &&
+                !AUTH.isValidEmail(email)
+            ) {
+
+                showStatus(
+                    "يرجى إدخال بريد إلكتروني صحيح."
+                );
+
+                return;
+
+            }
+
+
+            setActionLoading(
+                true,
+                "جاري إرسال الرابط..."
+            );
+
+
+            try {
+
+                await AUTH.resetPassword(
+                    email
+                );
+
+
+                showStatus(
+                    "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني."
+                );
+
+
+                closeModal();
+
+
+            } catch (error) {
+
+                console.error(
+                    "WFESC Reset Password Error:",
+                    error
+                );
+
+
+                showStatus(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+            } finally {
+
+                setActionLoading(
+                    false
+                );
+
+            }
+
+        }
+
+
+        /* =================================================
+           رسالة التحقق من البريد
+        ================================================= */
+
+        function showVerifyMessage() {
+
+            closeModal();
+
+
+            app.innerHTML = `
+                <div
+                    class="account-buttons"
+                    style="
+                        padding:20px;
+                        text-align:center;
+                    "
+                >
+
+                    <div
+                        style="
+                            font-size:34px;
+                            margin-bottom:12px;
+                        "
+                    >
+                        ✉️
+                    </div>
+
+                    <div
+                        style="
+                            font-size:17px;
+                            font-weight:bold;
+                            margin-bottom:8px;
+                        "
+                    >
+                        تم إنشاء حسابك بنجاح
+                    </div>
+
+                    <div
+                        style="
+                            color:#999;
+                            font-size:13px;
+                            line-height:1.7;
+                        "
+                    >
+                        تحقق من بريدك الإلكتروني لإكمال التسجيل.
+                        <br>
+                        إذا لم تجد الرسالة، تحقق من الرسائل غير المرغوب فيها.
+                    </div>
+
+                </div>
+            `;
+
+
+            showStatus(
+                "تم إنشاء الحساب. تحقق من بريدك الإلكتروني."
+            );
+
+        }
+
+
+        /* =================================================
+           واجهة الحساب بعد الدخول
+        ================================================= */
+
+        async function renderAccount() {
+
+            const user =
+                typeof AUTH.getUser ===
+                "function"
+                    ? AUTH.getUser()
+                    : null;
+
+
+            if (!user) {
+
+                createAccountInterface();
+
+                return;
+
+            }
+
+
+            let profile = null;
+
+
+            try {
+
+                if (
+                    typeof AUTH.getProfile ===
+                    "function"
+                ) {
+
+                    profile =
+                        AUTH.getProfile();
+
+                }
+
+
+                if (
+                    !profile &&
+                    typeof AUTH.fetchProfile ===
+                    "function"
+                ) {
+
+                    profile =
+                        await AUTH.fetchProfile(
+                            user.id
+                        );
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC Profile:",
+                    error
+                );
+
+            }
+
+
+            const username =
+                profile?.username ||
+                user.user_metadata?.username ||
+                user.email?.split("@")[0] ||
+                "مستخدم WFESC";
+
+
+            const avatarUrl =
+                profile?.avatar_url ||
+                user.user_metadata?.avatar_url ||
+                "";
+
+
+            const firstLetter =
+                String(username)
+                    .charAt(0)
+                    .toUpperCase() ||
+                "W";
+
+
+            app.innerHTML = `
+                <div
+                    class="logged-in-account"
+                    id="loggedInAccount"
+                    style="display:block;"
+                >
+
+                    <div class="logged-in-profile">
+
+                        <div class="logged-in-avatar-wrap">
+
+                            <img
+                                class="logged-in-avatar"
+                                id="loggedInAvatar"
+                                alt="صورة الحساب"
+                                ${avatarUrl
+                                    ? `src="${escapeAttribute(avatarUrl)}"`
+                                    : ""}
+                                style="
+                                    display:${avatarUrl ? "block" : "none"};
+                                "
+                            >
+
+                            <div
+                                class="logged-in-avatar-fallback"
+                                id="loggedInAvatarFallback"
+                                style="
+                                    display:${avatarUrl ? "none" : "flex"};
+                                "
+                            >
+                                ${escapeHtml(firstLetter)}
+                            </div>
+
+                        </div>
+
+
+                        <div class="logged-in-info">
+
+                            <div
+                                class="logged-in-username"
+                                id="loggedInUsername"
+                            >
+                                ${escapeHtml(username)}
+                            </div>
+
+                            <div class="logged-in-status">
+                                أنت مسجل الدخول حاليًا
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="account-button"
+                        id="manageAccountButton"
+                        type="button"
+                    >
+                        إدارة الحساب
+                    </button>
+
+
+                    <button
+                        class="account-button"
+                        id="logoutAccountButton"
+                        type="button"
+                    >
+                        تسجيل الخروج
+                    </button>
+
+                </div>
+            `;
+
+
+            const manageButton =
+                document.getElementById(
+                    "manageAccountButton"
+                );
+
+
+            const logoutButton =
+                document.getElementById(
+                    "logoutAccountButton"
+                );
+
+
+            if (manageButton) {
+
+                manageButton.addEventListener(
+                    "click",
+                    function () {
+
+                        window.location.href =
+                            "profile.html";
+
+                    }
+                );
+
+            }
+
+
+            if (logoutButton) {
+
+                logoutButton.addEventListener(
+                    "click",
+                    handleLogout
+                );
+
+            }
+
+        }
+
+
+        /* =================================================
+           تسجيل الخروج
+        ================================================= */
+
+        async function handleLogout() {
+
+            const button =
+                document.getElementById(
+                    "logoutAccountButton"
+                );
+
+
+            if (button) {
+
+                button.disabled =
+                    true;
+
+                button.textContent =
+                    "جاري تسجيل الخروج...";
+
+            }
+
+
+            try {
+
+                await AUTH.signOut();
+
+
+                createAccountInterface();
+
+
+                showStatus(
+                    "تم تسجيل الخروج بنجاح."
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "WFESC Logout Error:",
+                    error
+                );
+
+
+                showStatus(
+                    getAuthErrorMessage(
+                        error
+                    )
+                );
+
+
+                if (button) {
+
+                    button.disabled =
+                        false;
+
+                    button.textContent =
+                        "تسجيل الخروج";
+
+                }
+
+            }
+
+        }
+
+
+        /* =================================================
+           Email Verification
+        ================================================= */
+
+        function showVerifiedMessage() {
+
+            app.innerHTML = `
+                <div
+                    class="account-buttons"
+                    style="
+                        padding:20px;
+                        text-align:center;
+                    "
+                >
+
+                    <div
+                        style="
+                            font-size:34px;
+                            margin-bottom:12px;
+                        "
+                    >
+                        ✅
+                    </div>
+
+                    <div
+                        style="
+                            font-size:17px;
+                            font-weight:bold;
+                            margin-bottom:8px;
+                        "
+                    >
+                        تم التحقق بنجاح
+                    </div>
+
+                    <div
+                        style="
+                            color:#999;
+                            font-size:13px;
+                            line-height:1.7;
+                        "
+                    >
+                        تم إكمال تسجيل حساب WFESC بنجاح.
+                    </div>
+
+                </div>
+            `;
+
+
+            showStatus(
+                "تم التحقق بنجاح وإكمال التسجيل."
+            );
+
+
+            setTimeout(
+                function () {
+
+                    renderAccount();
+
+                },
+                2500
+            );
+
+        }
+
+
+        /* =================================================
+           Auth Error
+        ================================================= */
+
+        function getAuthErrorMessage(
+            error
+        ) {
+
+            const message =
+                String(
+                    error?.message ||
+                    error ||
+                    ""
+                );
+
+
+            const lower =
+                message.toLowerCase();
+
+
+            if (
+                lower.includes(
+                    "invalid login credentials"
+                )
+            ) {
+
+                return (
+                    CONFIG.messages?.wrongPassword ||
+                    "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+                );
+
+            }
+
+
+            if (
+                lower.includes(
+                    "user already registered"
+                )
+            ) {
+
+                return (
+                    CONFIG.messages?.alreadyRegistered ||
+                    "أنت مسجل بالفعل."
+                );
+
+            }
+
+
+            if (
+                lower.includes(
+                    "email not confirmed"
+                )
+            ) {
+
+                return (
+                    "يرجى التحقق من بريدك الإلكتروني أولًا."
+                );
+
+            }
+
+
+            if (
+                lower.includes(
+                    "invalid api key"
+                )
+            ) {
+
+                return (
+                    "مشكلة في مفتاح Supabase."
+                );
+
+            }
+
+
+            if (
+                lower.includes(
+                    "rate limit"
+                )
+            ) {
+
+                return (
+                    "تم تجاوز عدد المحاولات، حاول لاحقًا."
+                );
+
+            }
+
+
+            return (
+                message ||
+                "حدث خطأ، حاول مرة أخرى."
+            );
+
+        }
+
+
+        /* =================================================
+           Loading
+        ================================================= */
+
+        function setActionLoading(
+            loading,
+            text
+        ) {
+
+            if (!modalAction) {
+                return;
+            }
+
+
+            modalAction.disabled =
+                loading;
+
+
+            if (loading) {
+
+                modalAction.dataset.originalText =
+                    modalAction.textContent;
+
+
+                modalAction.textContent =
+                    text ||
+                    "جاري التنفيذ...";
+
+            } else {
+
+                const original =
+                    modalAction.dataset.originalText;
+
+
+                if (original) {
+
+                    modalAction.textContent =
+                        original;
+
+                } else {
+
+                    setMode(
+                        currentMode
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        /* =================================================
+           Escape HTML
+        ================================================= */
+
+        function escapeHtml(
+            value
+        ) {
+
+            return String(value)
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+
+        }
+
+
+        function escapeAttribute(
+            value
+        ) {
+
+            return escapeHtml(
+                value
+            );
+
+        }
+
+
+        /* =================================================
+           Auth Events
+        ================================================= */
+
+        window.addEventListener(
+            "WFESCAuthChanged",
+            function () {
+
+                renderAccount();
+
             }
         );
 
-    } else {
 
-        start();
+        window.addEventListener(
+            "WFESCProfileUpdated",
+            function () {
+
+                renderAccount();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "WFESCEmailVerified",
+            function () {
+
+                showVerifiedMessage();
+
+            }
+        );
+
+
+        /* =================================================
+           تشغيل أولي
+        ================================================= */
+
+        createAccountInterface();
+
+        createModal();
+
+
+        if (
+            typeof AUTH.restoreSession ===
+            "function"
+        ) {
+
+            Promise.resolve(
+                AUTH.restoreSession()
+            )
+            .then(
+                function () {
+
+                    const user =
+                        typeof AUTH.getUser ===
+                        "function"
+                            ? AUTH.getUser()
+                            : null;
+
+
+                    if (user) {
+
+                        renderAccount();
+
+                    }
+
+                }
+            )
+            .catch(
+                function (error) {
+
+                    console.warn(
+                        "WFESC Restore Session:",
+                        error
+                    );
+
+                    createAccountInterface();
+
+                }
+            );
+
+        } else {
+
+            renderAccount();
+
+        }
+
+
+        /* =================================================
+           إعداد الحقول بعد إنشاء Modal
+        ================================================= */
+
+        setupUsernameInput();
 
     }
 
 
+    /* =================================================
+       بدء النظام
+    ================================================= */
+
+    start();
+
+
 })();
+   
