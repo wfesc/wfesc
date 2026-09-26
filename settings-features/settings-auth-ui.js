@@ -8,430 +8,441 @@
     "use strict";
 
 
-    /* -----------------------------------------------------
-       منع تشغيل الملف أكثر من مرة
-    ----------------------------------------------------- */
+    /* =====================================================
+       منع التحميل أكثر من مرة
+    ===================================================== */
 
     if (window.WFESCSettingsAuthUI) {
         return;
     }
 
+
     window.WFESCSettingsAuthUI = true;
 
 
-    /* -----------------------------------------------------
-       التأكد من نظام الحساب
-    ----------------------------------------------------- */
+    /* =====================================================
+       انتظار جاهزية الصفحة
+    ===================================================== */
 
-    if (!window.WFESCSettingsAuth) {
+    function start() {
 
-        console.error(
-            "WFESC Settings Auth UI: settings-auth.js غير محمل."
-        );
+        if (
+            !window.WFESCSettingsAuth
+        ) {
 
-        return;
-    }
+            console.error(
+                "WFESC Auth UI: settings-auth.js غير محمّل."
+            );
 
-
-    const AUTH =
-        window.WFESCSettingsAuth;
-
-    const CONFIG =
-        window.WFESCSettingsAuthConfig || {};
-
-
-    /* -----------------------------------------------------
-       عناصر الصفحة
-    ----------------------------------------------------- */
-
-    const createAccountButton =
-        document.getElementById("createAccountButton");
-
-    const loginButton =
-        document.getElementById("loginButton");
-
-    const forgotPasswordButton =
-        document.getElementById("forgotPasswordButton");
-
-    const settingsStatus =
-        document.getElementById("settingsStatus");
-
-    const accountModal =
-        document.getElementById("accountModal");
-
-    const modalTitle =
-        document.getElementById("modalTitle");
-
-    const closeModal =
-        document.getElementById("closeModal");
-
-    const accountForm =
-        document.getElementById("accountForm");
-
-    const accountUsername =
-        document.getElementById("accountUsername");
-
-    const accountEmail =
-        document.getElementById("accountEmail");
-
-    const passwordGroup =
-        document.getElementById("passwordGroup");
-
-    const accountPassword =
-        document.getElementById("accountPassword");
-
-    const confirmPasswordGroup =
-        document.getElementById("confirmPasswordGroup");
-
-    const accountPasswordConfirm =
-        document.getElementById("accountPasswordConfirm");
-
-    const modalAction =
-        document.getElementById("modalAction");
-
-    const modalNote =
-        document.getElementById("modalNote");
-
-
-    /* -----------------------------------------------------
-       حالة النافذة
-    ----------------------------------------------------- */
-
-    let currentMode = null;
-
-
-    /* -----------------------------------------------------
-       أدوات
-    ----------------------------------------------------- */
-
-    function getMessages() {
-
-        return CONFIG.messages || {};
-
-    }
-
-
-    function showStatus(
-        message,
-        type = "normal",
-        duration = 0
-    ) {
-
-        if (!settingsStatus) {
             return;
-        }
-
-        settingsStatus.textContent =
-            message;
-
-        settingsStatus.dataset.type =
-            type;
-
-        settingsStatus.style.display =
-            "block";
-
-        settingsStatus.style.opacity =
-            "1";
-
-
-        clearTimeout(
-            window.__wfescAuthStatusTimer
-        );
-
-
-        if (duration > 0) {
-
-            window.__wfescAuthStatusTimer =
-                setTimeout(function () {
-
-                    if (!settingsStatus) {
-                        return;
-                    }
-
-                    settingsStatus.style.opacity =
-                        "0";
-
-
-                    setTimeout(function () {
-
-                        if (
-                            settingsStatus &&
-                            settingsStatus.textContent === message
-                        ) {
-
-                            settingsStatus.textContent =
-                                "";
-
-                            settingsStatus.style.display =
-                                "none";
-
-                        }
-
-                    }, 300);
-
-                }, duration);
-
-        }
-
-    }
-
-
-    function clearStatus() {
-
-        if (!settingsStatus) {
-            return;
-        }
-
-        clearTimeout(
-            window.__wfescAuthStatusTimer
-        );
-
-        settingsStatus.textContent =
-            "";
-
-        settingsStatus.style.opacity =
-            "0";
-
-        settingsStatus.style.display =
-            "none";
-
-    }
-
-
-    /* -----------------------------------------------------
-       التحقق من البريد
-    ----------------------------------------------------- */
-
-    function isValidEmail(email) {
-
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-            email
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       التحقق من اسم المستخدم
-       الحد الأقصى 3 أحرف
-    ----------------------------------------------------- */
-
-    function isValidUsername(username) {
-
-        const limits =
-            CONFIG.username || {};
-
-        const min =
-            Number(limits.minLength || 1);
-
-        const max =
-            Number(limits.maxLength || 3);
-
-        const length =
-            [...username].length;
-
-        return (
-            length >= min &&
-            length <= max
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       تحويل أخطاء Supabase
-    ----------------------------------------------------- */
-
-    function getErrorMessage(error) {
-
-        if (!error) {
-
-            return "حدث خطأ غير معروف.";
 
         }
 
 
-        const rawMessage =
-            String(
-                error.message ||
-                error.error_description ||
-                ""
+        const AUTH =
+            window.WFESCSettingsAuth;
+
+
+        const CONFIG =
+            AUTH.config || {};
+
+
+        /* =================================================
+           ELEMENTS
+        ================================================= */
+
+        const createAccountButton =
+            document.getElementById(
+                "createAccountButton"
             );
 
-        const message =
-            rawMessage.toLowerCase();
+
+        const loginButton =
+            document.getElementById(
+                "loginButton"
+            );
 
 
-        if (
-            message.includes("user already registered") ||
-            message.includes("already registered") ||
-            message.includes("already exists")
+        const forgotPasswordButton =
+            document.getElementById(
+                "forgotPasswordButton"
+            );
+
+
+        const settingsStatus =
+            document.getElementById(
+                "settingsStatus"
+            );
+
+
+        const accountModal =
+            document.getElementById(
+                "accountModal"
+            );
+
+
+        const modalTitle =
+            document.getElementById(
+                "modalTitle"
+            );
+
+
+        const closeModalButton =
+            document.getElementById(
+                "closeModal"
+            );
+
+
+        const accountForm =
+            document.getElementById(
+                "accountForm"
+            );
+
+
+        const accountUsername =
+            document.getElementById(
+                "accountUsername"
+            );
+
+
+        const accountEmail =
+            document.getElementById(
+                "accountEmail"
+            );
+
+
+        const passwordGroup =
+            document.getElementById(
+                "passwordGroup"
+            );
+
+
+        const accountPassword =
+            document.getElementById(
+                "accountPassword"
+            );
+
+
+        const confirmPasswordGroup =
+            document.getElementById(
+                "confirmPasswordGroup"
+            );
+
+
+        const accountPasswordConfirm =
+            document.getElementById(
+                "accountPasswordConfirm"
+            );
+
+
+        const modalAction =
+            document.getElementById(
+                "modalAction"
+            );
+
+
+        const modalNote =
+            document.getElementById(
+                "modalNote"
+            );
+
+
+        const accountButtons =
+            document.getElementById(
+                "accountButtons"
+            );
+
+
+        const loggedInAccount =
+            document.getElementById(
+                "loggedInAccount"
+            );
+
+
+        const loggedInAvatar =
+            document.getElementById(
+                "loggedInAvatar"
+            );
+
+
+        const loggedInAvatarFallback =
+            document.getElementById(
+                "loggedInAvatarFallback"
+            );
+
+
+        const loggedInUsername =
+            document.getElementById(
+                "loggedInUsername"
+            );
+
+
+        const manageAccountButton =
+            document.getElementById(
+                "manageAccountButton"
+            );
+
+
+        const logoutAccountButton =
+            document.getElementById(
+                "logoutAccountButton"
+            );
+
+
+        /* =================================================
+           STATE
+        ================================================= */
+
+        let modalMode =
+            "login";
+
+
+        let busy =
+            false;
+
+
+        /* =================================================
+           HELPERS
+        ================================================= */
+
+        function setStatus(
+            message,
+            type
         ) {
 
-            return (
-                getMessages().alreadyRegistered ||
-                "أنت مسجل بالفعل، تابع من صفحة لدي حساب."
+            if (!settingsStatus) {
+                return;
+            }
+
+
+            settingsStatus.textContent =
+                message || "";
+
+
+            settingsStatus.dataset.type =
+                type || "";
+
+        }
+
+
+        function setModalNote(
+            message
+        ) {
+
+            if (!modalNote) {
+                return;
+            }
+
+
+            modalNote.textContent =
+                message || "";
+
+        }
+
+
+        function openModal() {
+
+            if (!accountModal) {
+                return;
+            }
+
+
+            accountModal.classList.add(
+                "show"
             );
 
         }
 
 
-        if (
-            message.includes("invalid login credentials") ||
-            message.includes("invalid credentials")
-        ) {
+        function closeModal() {
 
-            return (
-                getMessages().wrongPassword ||
-                "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+            if (!accountModal) {
+                return;
+            }
+
+
+            accountModal.classList.remove(
+                "show"
             );
 
         }
 
 
-        if (
-            message.includes("email not confirmed") ||
-            message.includes("email_not_confirmed")
+        function clearForm() {
+
+            if (accountForm) {
+
+                accountForm.reset();
+
+            }
+
+
+            if (accountPassword) {
+
+                accountPassword.value =
+                    "";
+
+            }
+
+
+            if (accountPasswordConfirm) {
+
+                accountPasswordConfirm.value =
+                    "";
+
+            }
+
+        }
+
+
+        function setLoading(
+            loading
         ) {
 
-            return "يجب تأكيد بريدك الإلكتروني أولاً.";
-
-        }
-
-
-        if (
-            message.includes("invalid email") ||
-            message.includes("email_address_invalid")
-        ) {
-
-            return (
-                getMessages().invalidEmail ||
-                "يرجى إدخال بريد إلكتروني صحيح."
-            );
-
-        }
+            busy =
+                Boolean(loading);
 
 
-        if (
-            message.includes("password") &&
-            (
-                message.includes("6") ||
-                message.includes("weak")
-            )
-        ) {
+            if (modalAction) {
 
-            return (
-                getMessages().invalidPassword ||
-                "كلمة المرور يجب أن تكون 6 أحرف أو أكثر."
-            );
-
-        }
+                modalAction.disabled =
+                    busy;
 
 
-        if (
-            message.includes("rate limit") ||
-            message.includes("too many requests")
-        ) {
+                if (busy) {
 
-            return "تم إرسال طلبات كثيرة. حاول مرة أخرى بعد قليل.";
-
-        }
+                    modalAction.dataset.oldText =
+                        modalAction.textContent;
 
 
-        if (
-            message.includes("network") ||
-            message.includes("fetch")
-        ) {
+                    modalAction.textContent =
+                        "جاري المعالجة...";
 
-            return "تعذر الاتصال بالخادم. تأكد من اتصال الإنترنت.";
+                } else {
 
-        }
+                    modalAction.textContent =
+                        modalAction.dataset.oldText ||
+                        (
+                            modalMode === "register"
+                                ? "إنشاء الحساب"
+                                : "تسجيل الدخول"
+                        );
 
+                }
 
-        return (
-            rawMessage ||
-            "حدث خطأ، حاول مرة أخرى."
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       فتح نافذة الحساب
-    ----------------------------------------------------- */
-
-    function openModal(mode) {
-
-        if (!accountModal) {
-            return;
-        }
+            }
 
 
-        currentMode =
-            mode;
+            if (
+                createAccountButton
+            ) {
+
+                createAccountButton.disabled =
+                    busy;
+
+            }
 
 
-        clearStatus();
+            if (
+                loginButton
+            ) {
 
+                loginButton.disabled =
+                    busy;
 
-        if (accountForm) {
-            accountForm.reset();
-        }
-
-
-        if (modalAction) {
-
-            modalAction.style.display =
-                "";
-
-            modalAction.disabled =
-                false;
-
-            delete modalAction.dataset.oldText;
+            }
 
         }
 
 
         /* =================================================
-           إنشاء حساب
+           إظهار وضع تسجيل الدخول
         ================================================= */
 
-        if (mode === "register") {
+        function setLoginMode() {
+
+            modalMode =
+                "login";
+
 
             if (modalTitle) {
 
                 modalTitle.textContent =
-                    "إنشاء حساب WFESC";
+                    "تسجيل الدخول";
 
             }
 
 
             if (accountUsername) {
 
-                accountUsername.style.display =
-                    "";
-
-                accountUsername.disabled =
-                    false;
-
-                accountUsername.required =
-                    true;
-
-                accountUsername.maxLength =
-                    Number(
-                        CONFIG.username?.maxLength || 3
-                    );
+                accountUsername
+                    .parentElement
+                    .style.display =
+                    "none";
 
             }
 
 
-            if (accountEmail) {
+            if (passwordGroup) {
 
-                accountEmail.disabled =
-                    false;
+                passwordGroup.style.display =
+                    "";
 
-                accountEmail.required =
-                    true;
+            }
+
+
+            if (confirmPasswordGroup) {
+
+                confirmPasswordGroup.style.display =
+                    "none";
+
+            }
+
+
+            if (modalAction) {
+
+                modalAction.textContent =
+                    "تسجيل الدخول";
+
+            }
+
+
+            setModalNote(
+                "سجّل الدخول إلى حساب WFESC."
+            );
+
+
+            clearForm();
+
+            openModal();
+
+        }
+
+
+        /* =================================================
+           إظهار وضع إنشاء الحساب
+        ================================================= */
+
+        function setRegisterMode() {
+
+            modalMode =
+                "register";
+
+
+            if (modalTitle) {
+
+                modalTitle.textContent =
+                    "إنشاء حساب";
+
+            }
+
+
+            if (accountUsername) {
+
+                accountUsername
+                    .parentElement
+                    .style.display =
+                    "";
 
             }
 
@@ -448,22 +459,6 @@
 
                 confirmPasswordGroup.style.display =
                     "";
-
-            }
-
-
-            if (accountPassword) {
-
-                accountPassword.required =
-                    true;
-
-            }
-
-
-            if (accountPasswordConfirm) {
-
-                accountPasswordConfirm.required =
-                    true;
 
             }
 
@@ -476,10 +471,122 @@
             }
 
 
-            if (modalNote) {
+            setModalNote(
+                "أنشئ حساب WFESC جديد."
+            );
 
-                modalNote.textContent =
-                    "اسم المستخدم يجب ألا يتجاوز 3 أحرف. بعد إنشاء الحساب قد تحتاج إلى تأكيد بريدك الإلكتروني.";
+
+            clearForm();
+
+            openModal();
+
+        }
+
+
+        /* =================================================
+           إخفاء/إظهار واجهة الحساب
+        ================================================= */
+
+        function showLoggedInUI(
+            user,
+            profile
+        ) {
+
+            if (accountButtons) {
+
+                accountButtons.style.display =
+                    "none";
+
+            }
+
+
+            if (loggedInAccount) {
+
+                loggedInAccount.style.display =
+                    "";
+
+            }
+
+
+            const username =
+                (
+                    profile &&
+                    profile.username
+                )
+                    ? profile.username
+                    : (
+                        user &&
+                        user.user_metadata &&
+                        user.user_metadata.username
+                    )
+                        ? user.user_metadata.username
+                        : (
+                            user &&
+                            user.email
+                        )
+                            ? user.email.split("@")[0]
+                            : "WFESC";
+
+
+            if (loggedInUsername) {
+
+                loggedInUsername.textContent =
+                    username;
+
+            }
+
+
+            const avatar =
+                profile &&
+                profile.avatar_url
+                    ? profile.avatar_url
+                    : null;
+
+
+            if (
+                loggedInAvatar &&
+                loggedInAvatarFallback
+            ) {
+
+                if (avatar) {
+
+                    loggedInAvatar.src =
+                        avatar;
+
+                    loggedInAvatar.style.display =
+                        "";
+
+                    loggedInAvatarFallback.style.display =
+                        "none";
+
+                } else {
+
+                    loggedInAvatar.removeAttribute(
+                        "src"
+                    );
+
+                    loggedInAvatar.style.display =
+                        "none";
+
+                    loggedInAvatarFallback.style.display =
+                        "";
+
+                    loggedInAvatarFallback.textContent =
+                        String(
+                            username || "W"
+                        )
+                        .charAt(0)
+                        .toUpperCase();
+
+                }
+
+            }
+
+
+            if (settingsStatus) {
+
+                settingsStatus.textContent =
+                    "تم تسجيل الدخول بنجاح.";
 
             }
 
@@ -487,88 +594,54 @@
 
 
         /* =================================================
-           تسجيل الدخول
+           إخفاء واجهة الحساب
         ================================================= */
 
-        if (mode === "login") {
+        function showLoggedOutUI() {
 
-            if (modalTitle) {
+            if (accountButtons) {
 
-                modalTitle.textContent =
-                    "تسجيل الدخول";
-
-            }
-
-
-            if (accountUsername) {
-
-                accountUsername.style.display =
-                    "none";
-
-                accountUsername.disabled =
-                    true;
-
-                accountUsername.required =
-                    false;
-
-            }
-
-
-            if (accountEmail) {
-
-                accountEmail.disabled =
-                    false;
-
-                accountEmail.required =
-                    true;
-
-            }
-
-
-            if (passwordGroup) {
-
-                passwordGroup.style.display =
+                accountButtons.style.display =
                     "";
 
             }
 
 
-            if (confirmPasswordGroup) {
+            if (loggedInAccount) {
 
-                confirmPasswordGroup.style.display =
+                loggedInAccount.style.display =
                     "none";
 
             }
 
 
-            if (accountPassword) {
+            if (loggedInUsername) {
 
-                accountPassword.required =
-                    true;
-
-            }
-
-
-            if (accountPasswordConfirm) {
-
-                accountPasswordConfirm.required =
-                    false;
+                loggedInUsername.textContent =
+                    "";
 
             }
 
 
-            if (modalAction) {
+            if (loggedInAvatar) {
 
-                modalAction.textContent =
-                    "تسجيل الدخول";
+                loggedInAvatar.removeAttribute(
+                    "src"
+                );
+
+                loggedInAvatar.style.display =
+                    "none";
 
             }
 
 
-            if (modalNote) {
+            if (loggedInAvatarFallback) {
 
-                modalNote.textContent =
-                    "استخدم البريد الإلكتروني وكلمة المرور الخاصة بحسابك.";
+                loggedInAvatarFallback.style.display =
+                    "";
+
+                loggedInAvatarFallback.textContent =
+                    "W";
 
             }
 
@@ -576,88 +649,24 @@
 
 
         /* =================================================
-           نسيت كلمة المرور
+           فتح الحساب
         ================================================= */
 
-        if (mode === "forgot") {
+        function refreshUI(
+            user,
+            profile
+        ) {
 
-            if (modalTitle) {
+            if (user) {
 
-                modalTitle.textContent =
-                    "إعادة تعيين كلمة المرور";
+                showLoggedInUI(
+                    user,
+                    profile
+                );
 
-            }
+            } else {
 
-
-            if (accountUsername) {
-
-                accountUsername.style.display =
-                    "none";
-
-                accountUsername.disabled =
-                    true;
-
-                accountUsername.required =
-                    false;
-
-            }
-
-
-            if (accountEmail) {
-
-                accountEmail.disabled =
-                    false;
-
-                accountEmail.required =
-                    true;
-
-            }
-
-
-            if (passwordGroup) {
-
-                passwordGroup.style.display =
-                    "none";
-
-            }
-
-
-            if (confirmPasswordGroup) {
-
-                confirmPasswordGroup.style.display =
-                    "none";
-
-            }
-
-
-            if (accountPassword) {
-
-                accountPassword.required =
-                    false;
-
-            }
-
-
-            if (accountPasswordConfirm) {
-
-                accountPasswordConfirm.required =
-                    false;
-
-            }
-
-
-            if (modalAction) {
-
-                modalAction.textContent =
-                    "إرسال رابط الاستعادة";
-
-            }
-
-
-            if (modalNote) {
-
-                modalNote.textContent =
-                    "أدخل بريد حسابك وسيتم إرسال رابط لإعادة تعيين كلمة المرور.";
+                showLoggedOutUI();
 
             }
 
@@ -665,71 +674,574 @@
 
 
         /* =================================================
-           إدارة الحساب
+           CREATE ACCOUNT BUTTON
         ================================================= */
 
-        if (mode === "account") {
+        if (createAccountButton) {
 
-            const user =
-                AUTH.getUser();
+            createAccountButton
+                .addEventListener(
+                    "click",
+                    function () {
 
-            const profile =
-                AUTH.getProfile();
+                        if (busy) {
+                            return;
+                        }
+
+
+                        setRegisterMode();
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           LOGIN BUTTON
+        ================================================= */
+
+        if (loginButton) {
+
+            loginButton
+                .addEventListener(
+                    "click",
+                    function () {
+
+                        if (busy) {
+                            return;
+                        }
+
+
+                        setLoginMode();
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           CLOSE
+        ================================================= */
+
+        if (closeModalButton) {
+
+            closeModalButton
+                .addEventListener(
+                    "click",
+                    function () {
+
+                        if (busy) {
+                            return;
+                        }
+
+
+                        closeModal();
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           إغلاق بالنقر خارج المودال
+        ================================================= */
+
+        if (accountModal) {
+
+            accountModal
+                .addEventListener(
+                    "click",
+                    function (event) {
+
+                        if (
+                            event.target ===
+                            accountModal
+                        ) {
+
+                            if (!busy) {
+
+                                closeModal();
+
+                            }
+
+                        }
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           FORGOT PASSWORD
+        ================================================= */
+
+        if (forgotPasswordButton) {
+
+            forgotPasswordButton
+                .addEventListener(
+                    "click",
+                    async function () {
+
+                        if (busy) {
+                            return;
+                        }
+
+
+                        const email =
+                            accountEmail
+                                ? accountEmail.value.trim()
+                                : "";
+
+
+                        if (!email) {
+
+                            setStatus(
+                                "اكتب بريدك الإلكتروني أولاً.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        setLoading(true);
+
+
+                        setStatus(
+                            "جاري إرسال رابط إعادة تعيين كلمة المرور...",
+                            "info"
+                        );
+
+
+                        const result =
+                            await AUTH.resetPassword(
+                                email
+                            );
+
+
+                        setLoading(false);
+
+
+                        if (result.error) {
+
+                            setStatus(
+                                result.error.message ||
+                                "تعذر إرسال رابط إعادة التعيين.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        setStatus(
+                            "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+                            "success"
+                        );
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           FORM SUBMIT
+        ================================================= */
+
+        if (accountForm) {
+
+            accountForm
+                .addEventListener(
+                    "submit",
+                    async function (event) {
+
+                        event.preventDefault();
+
+
+                        if (busy) {
+                            return;
+                        }
+
+
+                        const email =
+                            accountEmail
+                                ? accountEmail.value.trim()
+                                : "";
+
+
+                        const password =
+                            accountPassword
+                                ? accountPassword.value
+                                : "";
+
+
+                        if (!email) {
+
+                            setStatus(
+                                "يرجى إدخال البريد الإلكتروني.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        if (!password) {
+
+                            setStatus(
+                                "يرجى إدخال كلمة المرور.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        /* =================================
+                           LOGIN
+                        ================================= */
+
+                        if (
+                            modalMode ===
+                            "login"
+                        ) {
+
+                            setLoading(true);
+
+
+                            setStatus(
+                                "جاري تسجيل الدخول...",
+                                "info"
+                            );
+
+
+                            const result =
+                                await AUTH.signIn(
+                                    email,
+                                    password
+                                );
+
+
+                            setLoading(false);
+
+
+                            if (result.error) {
+
+                                setStatus(
+                                    getAuthErrorMessage(
+                                        result.error
+                                    ),
+                                    "error"
+                                );
+
+                                return;
+
+                            }
+
+
+                            /*
+                             * هنا نعتمد على وجود
+                             * user/session الحقيقي.
+                             */
+
+                            const user =
+                                result.data &&
+                                result.data.user
+                                    ? result.data.user
+                                    : AUTH.getUser();
+
+
+                            const session =
+                                result.data &&
+                                result.data.session
+                                    ? result.data.session
+                                    : AUTH.getSession();
+
+
+                            if (
+                                !user ||
+                                !session
+                            ) {
+
+                                setStatus(
+                                    "تمت العملية، لكن لم يتم إنشاء جلسة تسجيل الدخول. تحقق من البريد الإلكتروني.",
+                                    "error"
+                                );
+
+                                return;
+
+                            }
+
+
+                            setStatus(
+                                "تم تسجيل الدخول بنجاح.",
+                                "success"
+                            );
+
+
+                            /*
+                             * تحديث الواجهة فوراً
+                             */
+
+                            refreshUI(
+                                user,
+                                AUTH.getProfile()
+                            );
+
+
+                            /*
+                             * إغلاق نافذة الدخول
+                             */
+
+                            setTimeout(
+                                function () {
+
+                                    closeModal();
+
+                                },
+                                350
+                            );
+
+
+                            return;
+
+                        }
+
+
+                        /* =================================
+                           REGISTER
+                        ================================= */
+
+                        const username =
+                            accountUsername
+                                ? accountUsername.value.trim()
+                                : "";
+
+
+                        const confirmPassword =
+                            accountPasswordConfirm
+                                ? accountPasswordConfirm.value
+                                : "";
+
+
+                        if (!username) {
+
+                            setStatus(
+                                "يرجى إدخال اسم المستخدم.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        if (
+                            password !==
+                            confirmPassword
+                        ) {
+
+                            setStatus(
+                                "كلمتا المرور غير متطابقتين.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        setLoading(true);
+
+
+                        setStatus(
+                            "جاري إنشاء الحساب...",
+                            "info"
+                        );
+
+
+                        const result =
+                            await AUTH.signUp(
+                                email,
+                                password,
+                                username
+                            );
+
+
+                        setLoading(false);
+
+
+                        if (result.error) {
+
+                            setStatus(
+                                getAuthErrorMessage(
+                                    result.error
+                                ),
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        const user =
+                            result.data &&
+                            result.data.user
+                                ? result.data.user
+                                : null;
+
+
+                        const session =
+                            result.data &&
+                            result.data.session
+                                ? result.data.session
+                                : null;
+
+
+                        /*
+                         * إذا كان تأكيد البريد مفعلاً
+                         * user موجود لكن session غير موجود.
+                         */
+
+                        if (
+                            user &&
+                            !session
+                        ) {
+
+                            showVerifyMessage();
+
+                            setStatus(
+                                "",
+                                ""
+                            );
+
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * إذا كانت الجلسة موجودة مباشرة
+                         */
+
+                        if (
+                            user &&
+                            session
+                        ) {
+
+                            await waitForProfile(
+                                user.id
+                            );
+
+
+                            refreshUI(
+                                user,
+                                AUTH.getProfile()
+                            );
+
+
+                            setStatus(
+                                "تم إنشاء الحساب وتسجيل الدخول بنجاح.",
+                                "success"
+                            );
+
+
+                            setTimeout(
+                                function () {
+
+                                    closeModal();
+
+                                },
+                                350
+                            );
+
+
+                            return;
+
+                        }
+
+
+                        setStatus(
+                            "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لإكمال التسجيل.",
+                            "success"
+                        );
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           VERIFY MESSAGE
+        ================================================= */
+
+        function showVerifyMessage() {
+
+            const verifyMessage =
+                document.getElementById(
+                    "verifyMessage"
+                );
+
+
+            if (verifyMessage) {
+
+                verifyMessage.classList.add(
+                    "show"
+                );
+
+            }
+
+
+            /*
+             * بعض نسخ HTML تستخدم verify-message
+             */
+
+            const alternate =
+                document.getElementById(
+                    "verify-message"
+                );
+
+
+            if (alternate) {
+
+                alternate.classList.add(
+                    "show"
+                );
+
+            }
+
+
+            if (accountForm) {
+
+                accountForm.style.display =
+                    "none";
+
+            }
 
 
             if (modalTitle) {
 
                 modalTitle.textContent =
-                    "حساب WFESC";
+                    "تحقق من بريدك الإلكتروني";
 
             }
 
 
-            if (accountUsername) {
-
-                accountUsername.style.display =
-                    "";
-
-                accountUsername.disabled =
-                    true;
-
-                accountUsername.required =
-                    false;
-
-                accountUsername.value =
-                    profile?.username ||
-                    user?.user_metadata?.username ||
-                    "";
-
-            }
-
-
-            if (accountEmail) {
-
-                accountEmail.value =
-                    user?.email ||
-                    "";
-
-                accountEmail.disabled =
-                    true;
-
-            }
-
-
-            if (passwordGroup) {
-
-                passwordGroup.style.display =
-                    "none";
-
-            }
-
-
-            if (confirmPasswordGroup) {
-
-                confirmPasswordGroup.style.display =
-                    "none";
-
-            }
+            setModalNote(
+                "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني أو الرسائل غير المرغوب فيها."
+            );
 
 
             if (modalAction) {
@@ -739,1020 +1251,400 @@
 
             }
 
-
-            if (modalNote) {
-
-                modalNote.textContent =
-                    "أنت مسجل الدخول حالياً بحساب WFESC.";
-
-            }
-
         }
 
 
-        accountModal.classList.add(
-            "show"
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       جعل فتح النافذة متاحًا للملفات الأخرى
-    ----------------------------------------------------- */
-
-    window.WFESCOpenAccountModal =
-        openModal;
-
-
-    /* -----------------------------------------------------
-       إغلاق النافذة
-    ----------------------------------------------------- */
-
-    function closeAccountModal() {
-
-        if (!accountModal) {
-            return;
-        }
-
-
-        accountModal.classList.remove(
-            "show"
-        );
-
-
-        currentMode =
-            null;
-
-
-        if (accountForm) {
-            accountForm.reset();
-        }
-
-
-        if (accountUsername) {
-
-            accountUsername.disabled =
-                false;
-
-        }
-
-
-        if (accountEmail) {
-
-            accountEmail.disabled =
-                false;
-
-        }
-
-
-        clearStatus();
-
-    }
-
-
-    /* -----------------------------------------------------
-       حالة التحميل
-    ----------------------------------------------------- */
-
-    function setLoading(
-        isLoading,
-        text
-    ) {
-
-        if (!modalAction) {
-            return;
-        }
-
-
-        if (isLoading) {
-
-            if (
-                !modalAction.dataset.oldText
-            ) {
-
-                modalAction.dataset.oldText =
-                    modalAction.textContent;
-
-            }
-
-
-            modalAction.disabled =
-                true;
-
-            modalAction.textContent =
-                text ||
-                "جاري المعالجة...";
-
-        } else {
-
-            modalAction.disabled =
-                false;
-
-
-            if (
-                modalAction.dataset.oldText
-            ) {
-
-                modalAction.textContent =
-                    modalAction.dataset.oldText;
-
-                delete modalAction.dataset.oldText;
-
-            }
-
-        }
-
-    }
-
-
-    /* -----------------------------------------------------
-       إنشاء الحساب
-    ----------------------------------------------------- */
-
-    async function handleRegister() {
-
-        const username =
-            accountUsername?.value.trim() ||
-            "";
-
-        const email =
-            accountEmail?.value.trim() ||
-            "";
-
-        const password =
-            accountPassword?.value ||
-            "";
-
-        const confirmPassword =
-            accountPasswordConfirm?.value ||
-            "";
-
-
-        if (!username) {
-
-            showStatus(
-                "اكتب اسم المستخدم.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!isValidUsername(username)) {
-
-            showStatus(
-                getMessages().invalidUsername ||
-                "اسم المستخدم يجب أن يكون من 1 إلى 3 أحرف.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!email) {
-
-            showStatus(
-                "اكتب البريد الإلكتروني.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!isValidEmail(email)) {
-
-            showStatus(
-                getMessages().invalidEmail ||
-                "يرجى إدخال بريد إلكتروني صحيح.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!password) {
-
-            showStatus(
-                "اكتب كلمة المرور.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (password.length < 6) {
-
-            showStatus(
-                "كلمة المرور يجب أن تكون 6 أحرف أو أكثر.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            password !==
-            confirmPassword
+        /* =================================================
+           انتظار Profile
+        ================================================= */
+
+        async function waitForProfile(
+            userId
         ) {
 
-            showStatus(
-                "كلمتا المرور غير متطابقتين.",
-                "error"
-            );
-
-            return;
-
-        }
+            if (!userId) {
+                return null;
+            }
 
 
-        try {
+            try {
 
-            setLoading(
-                true,
-                "جاري إنشاء الحساب..."
-            );
+                return await AUTH.fetchProfile(
+                    userId
+                );
 
+            } catch (error) {
 
-            const result =
-                await AUTH.signUp(
-                    email,
-                    password,
-                    username
+                console.warn(
+                    "WFESC Auth UI: تعذر جلب profile:",
+                    error
                 );
 
 
-            const user =
-                result?.user ||
-                AUTH.getUser();
-
-            const session =
-                result?.session ||
-                AUTH.getSession();
-
-
-            /*
-             * إذا لم توجد جلسة فهذا غالبًا يعني
-             * أن تأكيد البريد الإلكتروني مطلوب.
-             */
-
-            closeAccountModal();
-
-
-            if (
-                session &&
-                user
-            ) {
-
-                showStatus(
-                    "تم إنشاء حسابك وتسجيل الدخول بنجاح.",
-                    "success",
-                    5000
-                );
-
-            } else {
-
-                showStatus(
-                    "تم إنشاء الحساب. تحقق من بريدك الإلكتروني أو الرسائل غير المرغوب فيها لتفعيل حسابك.",
-                    "success",
-                    6000
-                );
+                return null;
 
             }
 
-        } catch (error) {
-
-            console.error(
-                "WFESC Register Error:",
-                error
-            );
-
-
-            showStatus(
-                getErrorMessage(error),
-                "error"
-            );
-
-        } finally {
-
-            setLoading(
-                false
-            );
-
-        }
-
-    }
-
-
-    /* -----------------------------------------------------
-       تسجيل الدخول
-    ----------------------------------------------------- */
-
-    async function handleLogin() {
-
-        const email =
-            accountEmail?.value.trim() ||
-            "";
-
-        const password =
-            accountPassword?.value ||
-            "";
-
-
-        if (!email) {
-
-            showStatus(
-                "اكتب البريد الإلكتروني.",
-                "error"
-            );
-
-            return;
-
         }
 
 
-        if (!isValidEmail(email)) {
+        /* =================================================
+           رسائل Supabase بالعربي
+        ================================================= */
 
-            showStatus(
-                getMessages().invalidEmail ||
-                "يرجى إدخال بريد إلكتروني صحيح.",
-                "error"
-            );
+        function getAuthErrorMessage(
+            error
+        ) {
 
-            return;
+            if (!error) {
 
-        }
+                return "حدث خطأ غير معروف.";
 
+            }
 
-        if (!password) {
-
-            showStatus(
-                "اكتب كلمة المرور.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        try {
-
-            setLoading(
-                true,
-                "جاري تسجيل الدخول..."
-            );
-
-
-            await AUTH.signIn(
-                email,
-                password
-            );
-
-
-            closeAccountModal();
-
-
-            showStatus(
-                getMessages().loginSuccess ||
-                "تم تسجيل الدخول بنجاح.",
-                "success",
-                5000
-            );
-
-        } catch (error) {
-
-            console.error(
-                "WFESC Login Error:",
-                error
-            );
-
-
-            /*
-             * لا نغلق النافذة عند الخطأ
-             * حتى يستطيع المستخدم تجربة كلمة مرور أخرى
-             * أو الانتقال لإعادة التعيين.
-             */
-
-            showStatus(
-                getErrorMessage(error),
-                "error"
-            );
-
-
-            /*
-             * إذا كان الخطأ متعلقًا ببيانات الدخول،
-             * نظهر خيار إعادة تعيين كلمة المرور.
-             */
 
             const message =
                 String(
-                    error?.message || ""
-                ).toLowerCase();
-
-
-            if (
-                message.includes("invalid login credentials") ||
-                message.includes("invalid credentials") ||
-                message.includes("wrong password")
-            ) {
-
-                showResetPasswordOption();
-
-            }
-
-        } finally {
-
-            setLoading(
-                false
-            );
-
-        }
-
-    }
-
-
-    /* -----------------------------------------------------
-       إعادة تعيين كلمة المرور
-    ----------------------------------------------------- */
-
-    async function handleForgotPassword() {
-
-        const email =
-            accountEmail?.value.trim() ||
-            "";
-
-
-        if (!email) {
-
-            showStatus(
-                "اكتب البريد الإلكتروني أولاً.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (!isValidEmail(email)) {
-
-            showStatus(
-                getMessages().invalidEmail ||
-                "يرجى إدخال بريد إلكتروني صحيح.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        try {
-
-            setLoading(
-                true,
-                "جاري إرسال الرابط..."
-            );
-
-
-            /*
-             * نستخدم نفس Supabase Client
-             * الموجود في نظام الحساب.
-             */
-
-            if (
-                !AUTH.client ||
-                !AUTH.client.auth
-            ) {
-
-                throw new Error(
-                    "تعذر الوصول إلى نظام المصادقة."
-                );
-
-            }
-
-
-            const redirectUrl =
-                window.location.origin +
-                window.location.pathname;
-
-
-            const result =
-                await AUTH.client.auth.resetPasswordForEmail(
-                    email,
-                    {
-                        redirectTo:
-                            redirectUrl
-                    }
+                    error.message || ""
                 );
 
 
-            if (result.error) {
+            const lower =
+                message.toLowerCase();
 
-                throw result.error;
+
+            if (
+                lower.includes(
+                    "invalid login credentials"
+                )
+            ) {
+
+                return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
 
             }
 
 
-            closeAccountModal();
+            if (
+                lower.includes(
+                    "email not confirmed"
+                )
+            ) {
+
+                return "يجب تأكيد بريدك الإلكتروني أولاً.";
+
+            }
 
 
-            showStatus(
-                getMessages().resetSent ||
-                "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
-                "success",
-                7000
-            );
+            if (
+                lower.includes(
+                    "user already registered"
+                )
+            ) {
 
-        } catch (error) {
+                return "هذا البريد الإلكتروني مسجل بالفعل.";
 
-            console.error(
-                "WFESC Password Reset Error:",
-                error
-            );
+            }
 
 
-            showStatus(
-                getErrorMessage(error),
-                "error"
-            );
+            if (
+                lower.includes(
+                    "invalid api key"
+                )
+            ) {
 
-        } finally {
+                return "تعذر الاتصال بخدمة الحساب. تحقق من إعدادات Supabase.";
 
-            setLoading(
-                false
-            );
+            }
+
+
+            if (
+                lower.includes(
+                    "password should be at least"
+                )
+            ) {
+
+                return "كلمة المرور قصيرة جدًا.";
+
+            }
+
+
+            if (
+                lower.includes(
+                    "rate limit"
+                )
+            ) {
+
+                return "تم تجاوز عدد المحاولات المسموح بها. حاول لاحقًا.";
+
+            }
+
+
+            return message ||
+                "حدث خطأ أثناء العملية.";
 
         }
 
-    }
+
+        /* =================================================
+           MANAGE ACCOUNT
+        ================================================= */
+
+        if (manageAccountButton) {
+
+            manageAccountButton
+                .addEventListener(
+                    "click",
+                    function () {
+
+                        const user =
+                            AUTH.getUser();
 
 
-    /* -----------------------------------------------------
-       إظهار خيار إعادة التعيين بعد خطأ كلمة المرور
-    ----------------------------------------------------- */
+                        if (!user) {
 
-    function showResetPasswordOption() {
+                            setLoginMode();
 
-        if (!modalNote) {
-            return;
-        }
+                            return;
+
+                        }
 
 
-        modalNote.innerHTML =
-            "كلمة المرور غير صحيحة.<br><button type=\"button\" id=\"wfescResetFromLogin\" style=\"margin-top:10px;\">إعادة تعيين كلمة المرور</button>";
-
-
-        const resetButton =
-            document.getElementById(
-                "wfescResetFromLogin"
-            );
-
-
-        if (resetButton) {
-
-            resetButton.addEventListener(
-                "click",
-                function () {
-
-                    const email =
-                        accountEmail?.value.trim() ||
-                        "";
-
-                    openModal("forgot");
-
-                    if (
-                        accountEmail &&
-                        email
-                    ) {
-
-                        accountEmail.value =
-                            email;
+                        setStatus(
+                            "أنت مسجل الدخول بالفعل.",
+                            "success"
+                        );
 
                     }
+                );
+
+        }
+
+
+        /* =================================================
+           LOGOUT
+        ================================================= */
+
+        if (logoutAccountButton) {
+
+            logoutAccountButton
+                .addEventListener(
+                    "click",
+                    async function () {
+
+                        if (busy) {
+                            return;
+                        }
+
+
+                        setLoading(true);
+
+
+                        setStatus(
+                            "جاري تسجيل الخروج...",
+                            "info"
+                        );
+
+
+                        const result =
+                            await AUTH.signOut();
+
+
+                        setLoading(false);
+
+
+                        if (result.error) {
+
+                            setStatus(
+                                result.error.message ||
+                                "تعذر تسجيل الخروج.",
+                                "error"
+                            );
+
+                            return;
+
+                        }
+
+
+                        showLoggedOutUI();
+
+
+                        setStatus(
+                            "تم تسجيل الخروج.",
+                            "success"
+                        );
+
+                    }
+                );
+
+        }
+
+
+        /* =================================================
+           AUTH CHANGED
+        ================================================= */
+
+        window.addEventListener(
+            "WFESCAuthChanged",
+            async function (event) {
+
+                const detail =
+                    event.detail || {};
+
+
+                const user =
+                    detail.user || null;
+
+
+                const session =
+                    detail.session || null;
+
+
+                /*
+                 * SIGNED_OUT
+                 */
+
+                if (
+                    detail.event ===
+                    "SIGNED_OUT"
+                ) {
+
+                    showLoggedOutUI();
+
+
+                    return;
 
                 }
-            );
-
-        }
-
-    }
 
 
-    /* -----------------------------------------------------
-       تسجيل الخروج
-    ----------------------------------------------------- */
+                /*
+                 * مستخدم + جلسة
+                 */
 
-    async function handleLogout() {
+                if (
+                    user &&
+                    session
+                ) {
 
-        try {
+                    let profile =
+                        AUTH.getProfile();
 
-            if (createAccountButton) {
-                createAccountButton.disabled =
-                    true;
+
+                    /*
+                     * إذا profile غير جاهز،
+                     * نحاول جلبه بدون تعطيل الواجهة.
+                     */
+
+                    if (!profile) {
+
+                        profile =
+                            await waitForProfile(
+                                user.id
+                            );
+
+                    }
+
+
+                    refreshUI(
+                        user,
+                        profile
+                    );
+
+
+                    return;
+
+                }
+
+
+                /*
+                 * لا توجد جلسة
+                 */
+
+                showLoggedOutUI();
+
             }
+        );
 
-            if (loginButton) {
-                loginButton.disabled =
-                    true;
+
+        /* =================================================
+           PROFILE UPDATED
+        ================================================= */
+
+        window.addEventListener(
+            "WFESCProfileUpdated",
+            function (event) {
+
+                const user =
+                    AUTH.getUser();
+
+
+                if (!user) {
+                    return;
+                }
+
+
+                refreshUI(
+                    user,
+                    event.detail || null
+                );
+
             }
-
-            if (forgotPasswordButton) {
-                forgotPasswordButton.disabled =
-                    true;
-            }
+        );
 
 
-            await AUTH.signOut();
+        /* =================================================
+           INITIAL STATE
+        ================================================= */
 
-
-            showStatus(
-                "تم تسجيل الخروج بنجاح.",
-                "success",
-                5000
-            );
-
-        } catch (error) {
-
-            console.error(
-                "WFESC Logout Error:",
-                error
-            );
-
-
-            showStatus(
-                getErrorMessage(error),
-                "error"
-            );
-
-        } finally {
-
-            if (createAccountButton) {
-                createAccountButton.disabled =
-                    false;
-            }
-
-            if (loginButton) {
-                loginButton.disabled =
-                    false;
-            }
-
-            if (forgotPasswordButton) {
-                forgotPasswordButton.disabled =
-                    false;
-            }
-
-        }
-
-    }
-
-
-    /* -----------------------------------------------------
-       تحديث أزرار الحساب
-    ----------------------------------------------------- */
-
-    function updateAccountUI() {
-
-        const user =
+        const initialUser =
             AUTH.getUser();
 
 
-        if (user) {
-
-            if (createAccountButton) {
-
-                createAccountButton.textContent =
-                    "إدارة الحساب";
-
-            }
+        const initialSession =
+            AUTH.getSession();
 
 
-            if (loginButton) {
+        if (
+            initialUser &&
+            initialSession
+        ) {
 
-                loginButton.textContent =
-                    "تسجيل الخروج";
-
-            }
-
-
-            if (forgotPasswordButton) {
-
-                forgotPasswordButton.textContent =
-                    "تغيير كلمة المرور";
-
-            }
+            refreshUI(
+                initialUser,
+                AUTH.getProfile()
+            );
 
         } else {
 
-            if (createAccountButton) {
-
-                createAccountButton.textContent =
-                    "إنشاء حساب";
-
-            }
-
-
-            if (loginButton) {
-
-                loginButton.textContent =
-                    "لدي حساب — تسجيل الدخول";
-
-            }
-
-
-            if (forgotPasswordButton) {
-
-                forgotPasswordButton.textContent =
-                    "نسيت كلمة المرور؟";
-
-            }
+            showLoggedOutUI();
 
         }
 
-    }
-
-
-    /* -----------------------------------------------------
-       زر إنشاء الحساب / إدارة الحساب
-    ----------------------------------------------------- */
-
-    if (createAccountButton) {
-
-        createAccountButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-                event.stopImmediatePropagation();
-
-
-                if (AUTH.getUser()) {
-
-                    openModal(
-                        "account"
-                    );
-
-                } else {
-
-                    openModal(
-                        "register"
-                    );
-
-                }
-
-            },
-            true
-        );
 
     }
 
 
-    /* -----------------------------------------------------
-       زر تسجيل الدخول / الخروج
-    ----------------------------------------------------- */
+    /* =====================================================
+       تشغيل بعد جاهزية DOM
+    ===================================================== */
 
-    if (loginButton) {
+    if (
+        document.readyState ===
+        "loading"
+    ) {
 
-        loginButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-                event.stopImmediatePropagation();
-
-
-                if (AUTH.getUser()) {
-
-                    handleLogout();
-
-                } else {
-
-                    openModal(
-                        "login"
-                    );
-
-                }
-
-            },
-            true
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       نسيت كلمة المرور
-    ----------------------------------------------------- */
-
-    if (forgotPasswordButton) {
-
-        forgotPasswordButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-                event.stopImmediatePropagation();
-
-
-                openModal(
-                    "forgot"
-                );
-
-            },
-            true
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       إغلاق النافذة
-    ----------------------------------------------------- */
-
-    if (closeModal) {
-
-        closeModal.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                closeAccountModal();
-
+        document.addEventListener(
+            "DOMContentLoaded",
+            start,
+            {
+                once: true
             }
         );
 
-    }
+    } else {
 
-
-    /* -----------------------------------------------------
-       الضغط على الخلفية
-    ----------------------------------------------------- */
-
-    if (accountModal) {
-
-        accountModal.addEventListener(
-            "click",
-            function (event) {
-
-                if (
-                    event.target ===
-                    accountModal
-                ) {
-
-                    closeAccountModal();
-
-                }
-
-            }
-        );
+        start();
 
     }
-
-
-    /* -----------------------------------------------------
-       زر Escape
-    ----------------------------------------------------- */
-
-    document.addEventListener(
-        "keydown",
-        function (event) {
-
-            if (
-                event.key === "Escape" &&
-                accountModal &&
-                accountModal.classList.contains("show")
-            ) {
-
-                closeAccountModal();
-
-            }
-
-        }
-    );
-
-
-    /* -----------------------------------------------------
-       إرسال النموذج
-    ----------------------------------------------------- */
-
-    if (accountForm) {
-
-        accountForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-                event.stopImmediatePropagation();
-
-
-                if (
-                    currentMode ===
-                    "register"
-                ) {
-
-                    handleRegister();
-
-                    return;
-
-                }
-
-
-                if (
-                    currentMode ===
-                    "login"
-                ) {
-
-                    handleLogin();
-
-                    return;
-
-                }
-
-
-                if (
-                    currentMode ===
-                    "forgot"
-                ) {
-
-                    handleForgotPassword();
-
-                    return;
-
-                }
-
-            },
-            true
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       مراقبة تغير الحساب
-    ----------------------------------------------------- */
-
-    window.addEventListener(
-        "WFESCAuthChanged",
-        function () {
-
-            updateAccountUI();
-
-        }
-    );
-
-
-    /* -----------------------------------------------------
-       مراقبة تحديث الملف الشخصي
-    ----------------------------------------------------- */
-
-    window.addEventListener(
-        "WFESCProfileUpdated",
-        function () {
-
-            updateAccountUI();
-
-        }
-    );
-
-
-    /* -----------------------------------------------------
-       تشغيل الجلسة الحالية
-    ----------------------------------------------------- */
-
-    (async function initialize() {
-
-        try {
-
-            await AUTH.restoreSession();
-
-        } catch (error) {
-
-            console.error(
-                "WFESC Auth Restore Error:",
-                error
-            );
-
-        }
-
-
-        updateAccountUI();
-
-    })();
 
 
 })();
- 
