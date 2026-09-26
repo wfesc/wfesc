@@ -697,7 +697,22 @@
             ).toLowerCase();
 
 
+        const code =
+            String(
+                error &&
+                error.code
+                    ? error.code
+                    : ""
+            ).toLowerCase();
+
+
         return (
+            code ===
+                "email_already_exists" ||
+
+            code ===
+                "user_already_exists" ||
+
             message.includes(
                 "already registered"
             ) ||
@@ -722,6 +737,74 @@
             message.includes(
                 "duplicate"
             )
+        );
+
+    }
+
+
+    /* =====================================================
+       التعرف على اسم المستخدم المأخوذ
+    ===================================================== */
+
+    function isUsernameTakenError(error) {
+
+        if (!error) {
+            return false;
+        }
+
+
+        const code =
+            String(
+                error.code || ""
+            ).toLowerCase();
+
+
+        const message =
+            getErrorText(
+                error
+            ).toLowerCase();
+
+
+        return (
+
+            code ===
+                "username_already_exists" ||
+
+            code ===
+                "username_exists" ||
+
+            code ===
+                "username_taken" ||
+
+            code ===
+                "23505" ||
+
+            message.includes(
+                "اسم المستخدم مأخوذ مسبقًا"
+            ) ||
+
+            message.includes(
+                "username already exists"
+            ) ||
+
+            message.includes(
+                "username already taken"
+            ) ||
+
+            message.includes(
+                "username_exists"
+            ) ||
+
+            (
+                message.includes("username") &&
+                (
+                    message.includes("already") ||
+                    message.includes("duplicate") ||
+                    message.includes("exists") ||
+                    message.includes("taken")
+                )
+            )
+
         );
 
     }
@@ -839,9 +922,16 @@
 
     /* =====================================================
        فحص وجود اسم المستخدم
-       
-       يتم استخدامه قبل إنشاء حساب جديد.
-       لا يتم إنشاء أي حساب إذا كان الاسم مأخوذًا.
+
+       مهم:
+       يتم الفحص قبل إنشاء الحساب.
+
+       النتيجة تكون:
+       exists = true
+       إذا كان الاسم موجودًا.
+
+       وفي حال حدوث تعارض:
+       error.code = USERNAME_CHECK_FAILED
     ===================================================== */
 
     async function usernameExists(username) {
@@ -879,7 +969,9 @@
                     .from(
                         CONFIG.profilesTable
                     )
-                    .select("id")
+                    .select(
+                        "id,username"
+                    )
                     .eq(
                         "username",
                         username
@@ -909,24 +1001,61 @@
                 result.error
             );
 
+            const checkError =
+                new Error(
+                    "تعذر التحقق من توفر اسم المستخدم حاليًا."
+                );
+
+
+            checkError.code =
+                "USERNAME_CHECK_FAILED";
+
+
+            checkError.originalError =
+                result.error;
+
+
             return {
                 exists: false,
                 error:
-                    result.error
+                    checkError
             };
 
         }
 
 
+        const rows =
+            Array.isArray(
+                result.data
+            )
+                ? result.data
+                : [];
+
+
+        const exists =
+            rows.some(
+                function (row) {
+
+                    return String(
+                        row &&
+                        row.username
+                            ? row.username
+                            : ""
+                    ).toLowerCase() ===
+                        username.toLowerCase();
+
+                }
+            );
+
+
         return {
+
             exists:
-                Array.isArray(
-                    result.data
-                ) &&
-                result.data.length > 0,
+                exists,
 
             error:
                 null
+
         };
 
     }
@@ -1130,6 +1259,70 @@
             }
 
 
+            /*
+             * إذا كان الاسم مختلفًا عن الاسم الحالي
+             * نفحص توفره قبل التحديث.
+             */
+
+            const currentUsername =
+                currentProfile &&
+                currentProfile.username
+                    ? String(
+                        currentProfile.username
+                    ).toLowerCase()
+                    : "";
+
+
+            if (
+                username.toLowerCase() !==
+                currentUsername
+            ) {
+
+                const usernameCheck =
+                    await usernameExists(
+                        username
+                    );
+
+
+                if (
+                    usernameCheck.error
+                ) {
+
+                    return {
+                        data: null,
+
+                        error:
+                            usernameCheck.error
+                    };
+
+                }
+
+
+                if (
+                    usernameCheck.exists
+                ) {
+
+                    const usernameError =
+                        new Error(
+                            "اسم المستخدم مأخوذ مسبقًا"
+                        );
+
+                    usernameError.code =
+                        "USERNAME_ALREADY_EXISTS";
+
+
+                    return {
+                        data: null,
+
+                        error:
+                            usernameError
+                    };
+
+                }
+
+            }
+
+
             allowedUpdates.username =
                 username;
 
@@ -1223,6 +1416,49 @@
 
 
         if (result.error) {
+
+            /*
+             * حماية إضافية من تعارض username
+             */
+
+            if (
+                String(
+                    result.error.code || ""
+                ) === "23505"
+            ) {
+
+                const message =
+                    getErrorText(
+                        result.error
+                    ).toLowerCase();
+
+
+                if (
+                    message.includes(
+                        "username"
+                    )
+                ) {
+
+                    const usernameError =
+                        new Error(
+                            "اسم المستخدم مأخوذ مسبقًا"
+                        );
+
+                    usernameError.code =
+                        "USERNAME_ALREADY_EXISTS";
+
+
+                    return {
+                        data: null,
+
+                        error:
+                            usernameError
+                    };
+
+                }
+
+            }
+
 
             console.error(
                 "WFESC Auth: فشل تحديث profile:",
@@ -1488,10 +1724,10 @@
     /* =====================================================
        إنشاء الحساب
 
-       يدعم الشكل الجديد:
+       يدعم:
        signUp(name, email, password, username)
 
-       ويدعم الشكل القديم:
+       و:
        signUp(email, password, username)
     ===================================================== */
 
@@ -1654,13 +1890,16 @@
             usernameCheck.error
         ) {
 
+            /*
+             * لا ننشئ الحساب إذا لم نستطع
+             * التأكد من توفر الاسم.
+             */
+
             return {
                 data: null,
 
                 error:
-                    new Error(
-                        "تعذر التحقق من توفر اسم المستخدم حاليًا."
-                    )
+                    usernameCheck.error
             };
 
         }
@@ -1675,8 +1914,13 @@
                     "اسم المستخدم مأخوذ مسبقًا"
                 );
 
+
             usernameError.code =
                 "USERNAME_ALREADY_EXISTS";
+
+
+            usernameError.status =
+                409;
 
 
             return {
@@ -1776,9 +2020,6 @@
 
             /*
              * Username conflict
-             *
-             * حماية إضافية في حال حصل تعارض
-             * بين الفحص السابق وإنشاء الحساب.
              */
 
             if (
@@ -1806,6 +2047,9 @@
 
                     finalError.code =
                         "USERNAME_ALREADY_EXISTS";
+
+                    finalError.status =
+                        409;
 
                 }
 
@@ -2022,13 +2266,12 @@
                 );
 
 
-            /*
-             * نحتفظ بالكود الأصلي أيضًا
-             * حتى تستطيع الواجهة التعرف عليه.
-             */
-
             finalError.code =
                 result.error.code || "";
+
+
+            finalError.originalError =
+                result.error;
 
 
             console.error(
@@ -2305,7 +2548,6 @@
     /* =====================================================
        حذف الحساب
 
-       مهم:
        لا نضع Service Role Key داخل JavaScript.
 
        الحذف الكامل من auth.users يحتاج:
@@ -2328,11 +2570,6 @@
 
         }
 
-
-        /*
-         * لا نحاول حذف المستخدم مباشرة من المتصفح
-         * لأن ذلك غير آمن مع الحسابات.
-         */
 
         return {
             data: null,
@@ -2417,9 +2654,6 @@
 
     /* =====================================================
        فحص رابط Auth
-
-       نستخدم URL فقط لمعرفة أن الصفحة
-       جاءت من عملية تحقق/استرداد.
     ===================================================== */
 
     function hasAuthCodeInUrl() {
@@ -2583,11 +2817,6 @@
 
         }
 
-
-        /*
-         * إذا كانت الصفحة عائدة من رابط Auth
-         * والـ user موجود، نرسل حدث التحقق.
-         */
 
         if (
             currentUser &&
