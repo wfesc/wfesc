@@ -34,11 +34,6 @@
     const PASSWORD_MIN = 6;
     const PASSWORD_MAX = 16;
 
-    /*
-     * الزجاج السائل:
-     * مفعّل افتراضيًا.
-     */
-
     let liquidGlassEnabled = true;
 
     let root = null;
@@ -147,10 +142,6 @@
      * ============================================================
      * REAL USER CHECK
      * ============================================================
-     *
-     * مهم:
-     * لا نعتبر أي object مستخدمًا.
-     * يجب أن يكون عندنا user.id حقيقي.
      */
 
     function isRealUser(user) {
@@ -181,11 +172,6 @@
             return null;
         }
 
-        /*
-         * الشكل:
-         * { user: {...} }
-         */
-
         if (
             isRealUser(
                 result.user
@@ -194,11 +180,6 @@
             return result.user;
         }
 
-        /*
-         * الشكل:
-         * { data: { user: {...} } }
-         */
-
         if (
             isRealUser(
                 result.data?.user
@@ -206,11 +187,6 @@
         ) {
             return result.data.user;
         }
-
-        /*
-         * لا نستخدم result نفسه
-         * حتى لا يتحول Error object إلى حساب.
-         */
 
         if (
             isRealUser(result)
@@ -243,16 +219,41 @@
                 error.message ||
                 error.error_description ||
                 error.msg ||
+                error.details ||
+                error.hint ||
                 ""
             ).toLowerCase();
 
         /*
-         * الخطأ القادم من settings-auth.js
+         * أكواد settings-auth.js
+         */
+
+        if (
+            code === "username_already_exists" ||
+            code === "username_exists" ||
+            code === "username_taken" ||
+            code === "usernametaken" ||
+            code === "duplicate_username"
+        ) {
+            return true;
+        }
+
+        /*
+         * رسالة WFESC العربية
          */
 
         if (
             message.includes(
                 "اسم المستخدم مأخوذ مسبقًا"
+            ) ||
+            message.includes(
+                "اسم المستخدم ماخوذ مسبقا"
+            ) ||
+            message.includes(
+                "اسم المستخدم مستخدم مسبقًا"
+            ) ||
+            message.includes(
+                "اسم المستخدم مستخدم مسبقا"
             )
         ) {
             return true;
@@ -260,27 +261,40 @@
 
         /*
          * PostgreSQL unique violation
-         * الخاصة بعمود username.
          */
 
         if (
             code === "23505" &&
-            message.includes("username")
-        ) {
-            return true;
-        }
-
-        if (
-            message.includes(
-                "username already exists"
+            (
+                message.includes("username") ||
+                message.includes("profiles_username")
             )
         ) {
             return true;
         }
 
+        /*
+         * رسائل إنجليزية محتملة
+         */
+
         if (
             message.includes(
+                "username already exists"
+            ) ||
+            message.includes(
+                "username already registered"
+            ) ||
+            message.includes(
+                "username is already taken"
+            ) ||
+            message.includes(
                 "duplicate username"
+            ) ||
+            message.includes(
+                "username_taken"
+            ) ||
+            message.includes(
+                "username_exists"
             )
         ) {
             return true;
@@ -305,11 +319,14 @@
                 error.message ||
                 error.error_description ||
                 error.msg ||
+                error.details ||
                 ""
             ).toLowerCase();
 
         if (
-            code === "existing_email"
+            code === "existing_email" ||
+            code === "email_already_exists" ||
+            code === "user_already_exists"
         ) {
             return true;
         }
@@ -334,15 +351,13 @@
             ) ||
             message.includes(
                 "email_exists"
+            ) ||
+            message.includes(
+                "email already exists"
             )
         ) {
             return true;
         }
-
-        /*
-         * لا نعتبر duplicate key وحده بريدًا موجودًا،
-         * لأن 23505 قد يكون خاصًا باسم المستخدم.
-         */
 
         if (
             code === "23505" &&
@@ -436,12 +451,6 @@
             safeText(raw)
                 .toLowerCase();
 
-        /*
-         * تسجيل الدخول:
-         * Supabase يستخدم نفس الخطأ عادةً
-         * للبريد غير الموجود وكلمة المرور الخطأ.
-         */
-
         if (
             text.includes(
                 "invalid login credentials"
@@ -458,10 +467,6 @@
         ) {
             return "كلمة المرور خطأ.";
         }
-
-        /*
-         * البريد موجود مسبقًا أثناء التسجيل.
-         */
 
         if (
             text.includes(
@@ -1820,8 +1825,6 @@
                     class="wfesc-auth-verification"
                 ></div>
 
-                <!-- GUEST -->
-
                 <div
                     id="wfesc-auth-guest"
                     class="wfesc-auth-account"
@@ -1846,8 +1849,6 @@
                         </button>
 
                     </div>
-
-                    <!-- LOGIN -->
 
                     <div
                         id="wfesc-login-panel"
@@ -1933,8 +1934,6 @@
                         ></div>
 
                     </div>
-
-                    <!-- REGISTER -->
 
                     <div
                         id="wfesc-register-panel"
@@ -2096,8 +2095,6 @@
 
                     </div>
 
-                    <!-- FORGOT -->
-
                     <div
                         id="wfesc-forgot-panel"
                         class="wfesc-auth-panel"
@@ -2150,8 +2147,6 @@
                     </div>
 
                 </div>
-
-                <!-- LOGGED -->
 
                 <div
                     id="wfesc-logged-account"
@@ -2264,8 +2259,6 @@
 
                 </div>
 
-                <!-- CHANGE PASSWORD -->
-
                 <div
                     id="wfesc-change-password-modal"
                     class="modal"
@@ -2368,8 +2361,6 @@
 
                 </div>
 
-                <!-- RECOVERY -->
-
                 <div
                     id="wfesc-recovery-modal"
                     class="modal"
@@ -2462,8 +2453,6 @@
 
                 </div>
 
-                <!-- DELETE WARNING -->
-
                 <div
                     id="wfesc-delete-warning-modal"
                     class="modal"
@@ -2531,8 +2520,6 @@
                     </div>
 
                 </div>
-
-                <!-- DELETE FINAL -->
 
                 <div
                     id="wfesc-delete-final-modal"
@@ -3448,11 +3435,6 @@
             E.loginEmail.value
                 .trim();
 
-        /*
-         * لا نلمس كلمة المرور.
-         * تبقى كما كتبها المستخدم حتى عند الخطأ.
-         */
-
         const password =
             E.loginPassword.value;
 
@@ -3515,11 +3497,6 @@
                     password
                 );
 
-            /*
-             * إذا رجع settings-auth.js
-             * خطأ داخل result.error فلا نعتبر العملية نجاحًا.
-             */
-
             if (
                 result?.error
             ) {
@@ -3579,11 +3556,6 @@
                 "success"
             );
 
-            /*
-             * نمسح كلمة المرور فقط
-             * بعد نجاح الدخول.
-             */
-
             E.loginPassword.value =
                 "";
 
@@ -3603,11 +3575,6 @@
             currentProfile = null;
 
             showGuest();
-
-            /*
-             * كلمة المرور الخطأ:
-             * تبقى موجودة + اهتزاز.
-             */
 
             if (
                 isWrongPasswordError(error) ||
@@ -3656,6 +3623,23 @@
      */
 
     async function register() {
+
+        if (
+            !E ||
+            !E.registerSubmit
+        ) {
+            return;
+        }
+
+        /*
+         * منع الضغط المتكرر
+         */
+
+        if (
+            E.registerSubmit.disabled
+        ) {
+            return;
+        }
 
         clearRegisterErrors();
 
@@ -3739,13 +3723,13 @@
             fieldError(
                 E.registerPassword,
                 E.registerPasswordError,
-                "كلمة المرور غير متطابقة."
+                "كلمة المرور غير متطابقة"
             );
 
             fieldError(
                 E.registerConfirm,
                 E.registerConfirmError,
-                "كلمة المرور غير متطابقة."
+                "كلمة المرور غير متطابقة"
             );
 
             shakeMany([
@@ -3764,14 +3748,36 @@
             getAuth();
 
         if (
-            !auth ||
+            !auth
+        ) {
+
+            setMessage(
+                E.registerMessage,
+                "تعذر الوصول إلى نظام الحساب.",
+                "error"
+            );
+
+            showStatus(
+                "تعذر الوصول إلى نظام الحساب.",
+                "error"
+            );
+
+            return;
+        }
+
+        if (
             typeof auth.signUp !==
             "function"
         ) {
 
             setMessage(
                 E.registerMessage,
-                "تعذر الوصول إلى نظام الحساب.",
+                "دالة إنشاء الحساب غير موجودة في settings-auth.js.",
+                "error"
+            );
+
+            showStatus(
+                "دالة إنشاء الحساب غير موجودة.",
                 "error"
             );
 
@@ -3781,7 +3787,7 @@
         setButtonLoading(
             E.registerSubmit,
             true,
-            "جارٍ إنشاء الحساب..."
+            "جارٍ التحقق..."
         );
 
         try {
@@ -3797,20 +3803,61 @@
                 "function"
             ) {
 
-                const usernameCheck =
-                    await auth.usernameExists(
-                        username
+                let usernameCheck;
+
+                try {
+
+                    usernameCheck =
+                        await auth.usernameExists(
+                            username
+                        );
+
+                } catch (usernameCheckError) {
+
+                    /*
+                     * لا نخلي الخطأ يختفي.
+                     */
+
+                    console.error(
+                        "WFESC username check exception:",
+                        usernameCheckError
                     );
 
-                if (
-                    usernameCheck?.error
-                ) {
-
-                    throw usernameCheck.error;
+                    throw usernameCheckError;
                 }
 
+                /*
+                 * بعض النسخ قد ترجع:
+                 *
+                 * { exists: true }
+                 *
+                 * أو:
+                 *
+                 * { data: { exists: true } }
+                 *
+                 * أو:
+                 *
+                 * { exists: true, error: null }
+                 */
+
+                const checkError =
+                    usernameCheck?.error ||
+                    usernameCheck?.data?.error ||
+                    null;
+
+                if (checkError) {
+
+                    throw checkError;
+                }
+
+                const usernameExistsValue =
+                    usernameCheck?.exists === true ||
+                    usernameCheck?.data?.exists === true ||
+                    usernameCheck?.taken === true ||
+                    usernameCheck?.data?.taken === true;
+
                 if (
-                    usernameCheck?.exists
+                    usernameExistsValue
                 ) {
 
                     const usernameError =
@@ -3819,14 +3866,25 @@
                         );
 
                     usernameError.code =
-                        "username_taken";
+                        "USERNAME_ALREADY_EXISTS";
+
+                    usernameError.status =
+                        409;
+
+                    usernameError.statusCode =
+                        409;
+
+                    usernameError.field =
+                        "username";
 
                     throw usernameError;
                 }
             }
 
             /*
-             * إنشاء الحساب.
+             * ====================================================
+             * إنشاء الحساب
+             * ====================================================
              */
 
             const result =
@@ -3838,9 +3896,8 @@
                 );
 
             /*
-             * مهم جدًا:
-             * settings-auth.js قد يرجع {error}
-             * بدل throw.
+             * مهم:
+             * بعض الدوال ترجع error بدل throw.
              */
 
             if (
@@ -3850,10 +3907,46 @@
                 throw result.error;
             }
 
+            if (
+                result?.data?.error
+            ) {
+
+                throw result.data.error;
+            }
+
             /*
-             * حماية إضافية:
-             * إذا رجع خطأ أو بيانات غير صحيحة
-             * لا نعتبر التسجيل ناجحًا.
+             * ====================================================
+             * حماية إضافية من duplicate username
+             * ====================================================
+             */
+
+            if (
+                isUsernameTakenError(
+                    result
+                ) ||
+                isUsernameTakenError(
+                    result?.data
+                ) ||
+                isUsernameTakenError(
+                    result?.error
+                )
+            ) {
+
+                const usernameError =
+                    new Error(
+                        "اسم المستخدم مأخوذ مسبقًا"
+                    );
+
+                usernameError.code =
+                    "USERNAME_ALREADY_EXISTS";
+
+                throw usernameError;
+            }
+
+            /*
+             * ====================================================
+             * التحقق من المستخدم
+             * ====================================================
              */
 
             const user =
@@ -3906,8 +3999,7 @@
             }
 
             /*
-             * إذا لم يكن البريد موثقًا:
-             * نبقى في التسجيل ونظهر رسالة التحقق.
+             * البريد يحتاج تأكيد.
              */
 
             showVerificationMessage();
@@ -3935,6 +4027,10 @@
                 isUsernameTakenError(error)
             ) {
 
+                /*
+                 * نضمن بقاء اليوزر الذي كتبه المستخدم.
+                 */
+
                 E.registerUsername.value =
                     username;
 
@@ -3953,6 +4049,14 @@
                 showStatus(
                     "اسم المستخدم مأخوذ مسبقًا",
                     "error"
+                );
+
+                /*
+                 * يبقى المستخدم داخل التسجيل.
+                 */
+
+                setMode(
+                    "register"
                 );
 
                 return;
@@ -3985,9 +4089,87 @@
                     "error"
                 );
 
-                /*
-                 * نبقى في صفحة التسجيل ولا نسجل الدخول.
-                 */
+                setMode(
+                    "register"
+                );
+
+                return;
+            }
+
+            /*
+             * ====================================================
+             * خطأ فحص اليوزر من قاعدة البيانات
+             * ====================================================
+             */
+
+            const errorCode =
+                safeText(
+                    error?.code
+                ).toLowerCase();
+
+            const errorMessage =
+                safeText(
+                    error?.message ||
+                    error?.error_description ||
+                    error?.msg ||
+                    ""
+                ).toLowerCase();
+
+            if (
+                errorCode ===
+                    "username_check_failed" ||
+                errorCode ===
+                    "username_check_error"
+            ) {
+
+                setMessage(
+                    E.registerMessage,
+                    "تعذر التحقق من توفر اسم المستخدم حاليًا. حاول مرة أخرى.",
+                    "error"
+                );
+
+                showStatus(
+                    "تعذر التحقق من توفر اسم المستخدم حاليًا.",
+                    "error"
+                );
+
+                return;
+            }
+
+            /*
+             * حماية إضافية في حال جاء الخطأ
+             * من Supabase بصيغة مختلفة.
+             */
+
+            if (
+                errorMessage.includes("username") &&
+                (
+                    errorMessage.includes("duplicate") ||
+                    errorMessage.includes("already") ||
+                    errorMessage.includes("unique") ||
+                    errorMessage.includes("taken")
+                )
+            ) {
+
+                E.registerUsername.value =
+                    username;
+
+                fieldError(
+                    E.registerUsername,
+                    E.registerUsernameError,
+                    "اسم المستخدم مأخوذ مسبقًا"
+                );
+
+                setMessage(
+                    E.registerMessage,
+                    "اسم المستخدم مأخوذ مسبقًا",
+                    "error"
+                );
+
+                showStatus(
+                    "اسم المستخدم مأخوذ مسبقًا",
+                    "error"
+                );
 
                 return;
             }
@@ -4822,10 +5004,6 @@
 
     function bindEvents() {
 
-        /*
-         * Tabs
-         */
-
         E.tabs.forEach(
             function (tab) {
 
@@ -4862,10 +5040,6 @@
             }
         );
 
-        /*
-         * Login
-         */
-
         E.loginSubmit.addEventListener(
             "click",
             login
@@ -4888,18 +5062,17 @@
             }
         );
 
-        /*
-         * Register
-         */
-
         E.registerSubmit.addEventListener(
             "click",
-            register
-        );
+            function (event) {
 
-        /*
-         * Forgot
-         */
+                if (event) {
+                    event.preventDefault();
+                }
+
+                register();
+            }
+        );
 
         E.forgotBack.addEventListener(
             "click",
@@ -4916,18 +5089,10 @@
             sendReset
         );
 
-        /*
-         * Profile
-         */
-
         E.profileButton.addEventListener(
             "click",
             openProfile
         );
-
-        /*
-         * Password
-         */
 
         E.changePasswordButton.addEventListener(
             "click",
@@ -4939,18 +5104,10 @@
             changePassword
         );
 
-        /*
-         * Logout
-         */
-
         E.logoutButton.addEventListener(
             "click",
             logout
         );
-
-        /*
-         * Delete
-         */
 
         E.deleteButton.addEventListener(
             "click",
@@ -4972,18 +5129,10 @@
             openSupport
         );
 
-        /*
-         * Recovery
-         */
-
         E.recoverySubmit.addEventListener(
             "click",
             recoveryPassword
         );
-
-        /*
-         * Close modals
-         */
 
         qsa(
             "[data-close-modal]"
@@ -5028,7 +5177,9 @@
         );
 
         /*
+         * ========================================================
          * USERNAME
+         * ========================================================
          */
 
         E.registerUsername.addEventListener(
@@ -5069,10 +5220,6 @@
             }
         );
 
-        /*
-         * NAME
-         */
-
         E.registerName.addEventListener(
             "input",
             function () {
@@ -5106,10 +5253,6 @@
             }
         );
 
-        /*
-         * EMAIL AUTO FILL
-         */
-
         E.registerEmail.addEventListener(
             "input",
             function () {
@@ -5130,10 +5273,6 @@
                 }
             }
         );
-
-        /*
-         * PASSWORD MATCH
-         */
 
         E.registerPassword.addEventListener(
             "input",
@@ -5189,10 +5328,6 @@
                 }
             }
         );
-
-        /*
-         * ENTER
-         */
 
         E.loginPassword.addEventListener(
             "keydown",
@@ -5287,15 +5422,7 @@
             "login"
         );
 
-        /*
-         * استعادة Recovery فقط.
-         */
-
         await handleRecoveryURL();
-
-        /*
-         * استعادة الجلسة الحالية.
-         */
 
         await restoreSession();
     }
