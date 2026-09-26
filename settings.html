@@ -21,9 +21,11 @@
             padding: 0;
         }
 
+
         html {
             scroll-behavior: smooth;
         }
+
 
         body {
             background: #050505;
@@ -362,7 +364,13 @@
 
         /* =================================================
            ACCOUNT
+           الواجهة يتم إنشاؤها من settings-auth-ui.js
         ================================================= */
+
+        #settingsAccountApp {
+            width: 100%;
+        }
+
 
         .account-buttons {
 
@@ -443,8 +451,6 @@
         ================================================= */
 
         .logged-in-account {
-
-            display: none;
 
             padding: 18px;
         }
@@ -606,6 +612,7 @@
 
         /* =================================================
            MODAL
+           يتم إنشاء الـModal من settings-auth-ui.js
         ================================================= */
 
         .modal {
@@ -1045,7 +1052,9 @@
     </style>
 
 
-    <!-- تطبيق الوضع المحفوظ قبل ظهور الصفحة -->
+    <!-- =================================================
+         تطبيق الوضع المحفوظ قبل ظهور الصفحة
+    ================================================== -->
 
     <script>
 
@@ -1099,6 +1108,10 @@
 <main class="settings-page">
 
 
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
     <header class="settings-header">
 
         <h1>
@@ -1116,6 +1129,7 @@
          المظهر
     ================================================== -->
 
+    
     <section class="settings-section">
 
         <div class="section-title">
@@ -1140,6 +1154,7 @@
                     <div class="setting-name">
                         الأنميشن المعزز
                     </div>
+
 
                     <div class="setting-description">
                         تشغيل الانتقالات والحركات بشكل سلس
@@ -1177,6 +1192,7 @@
                     <div class="setting-name">
                         مظهر الموقع
                     </div>
+
 
                     <div class="setting-description">
                         اختر الوضع المناسب لك وسيتم حفظ اختيارك
@@ -1231,6 +1247,7 @@
 
     <!-- =================================================
          الحساب
+         settings-auth-ui.js مسؤول عن إنشاء المحتوى هنا
     ================================================== -->
 
     <section class="settings-section">
@@ -1242,109 +1259,7 @@
 
         <div class="settings-card">
 
-
-            <!-- LOGGED OUT -->
-
-            <div
-                class="account-buttons"
-                id="accountButtons"
-            >
-
-                <button
-                    class="account-button primary"
-                    id="createAccountButton"
-                    type="button"
-                >
-                    إنشاء حساب
-                </button>
-
-
-                <button
-                    class="account-button"
-                    id="loginButton"
-                    type="button"
-                >
-                    لدي حساب — تسجيل الدخول
-                </button>
-
-
-                <button
-                    class="account-button forgot"
-                    id="forgotPasswordButton"
-                    type="button"
-                >
-                    نسيت كلمة المرور؟
-                </button>
-
-            </div>
-
-
-            <!-- LOGGED IN -->
-
-            <div
-                class="logged-in-account"
-                id="loggedInAccount"
-            >
-
-                <div class="logged-in-profile">
-
-
-                    <div class="logged-in-avatar-wrap">
-
-                        <img
-                            class="logged-in-avatar"
-                            id="loggedInAvatar"
-                            alt="صورة الحساب"
-                        >
-
-
-                        <div
-                            class="logged-in-avatar-fallback"
-                            id="loggedInAvatarFallback"
-                        >
-                            W
-                        </div>
-
-                    </div>
-
-
-                    <div class="logged-in-info">
-
-                        <div
-                            class="logged-in-username"
-                            id="loggedInUsername"
-                        >
-                            مستخدم WFESC
-                        </div>
-
-
-                        <div class="logged-in-status">
-                            أنت مسجل الدخول حاليًا
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <button
-                    class="account-button"
-                    id="manageAccountButton"
-                    type="button"
-                >
-                    إدارة الحساب
-                </button>
-
-
-                <button
-                    class="account-button"
-                    id="logoutAccountButton"
-                    type="button"
-                >
-                    تسجيل الخروج
-                </button>
-
-            </div>
+            <div id="settingsAccountApp"></div>
 
         </div>
 
@@ -1401,155 +1316,6 @@
     class="settings-status"
     id="settingsStatus"
 ></div>
-
-
-<!-- =================================================
-     ACCOUNT MODAL
-================================================== -->
-
-<div
-    class="modal"
-    id="accountModal"
-    aria-hidden="true"
->
-
-    <div class="modal-box">
-
-
-        <div class="modal-header">
-
-            <h2 id="modalTitle">
-                حساب WFESC
-            </h2>
-
-
-            <button
-                class="close-modal"
-                id="closeModal"
-                type="button"
-                aria-label="إغلاق"
-            >
-                ×
-            </button>
-
-        </div>
-
-
-        <form id="accountForm">
-
-
-            <!-- USERNAME -->
-
-            <div
-                class="form-group"
-                id="usernameGroup"
-            >
-
-                <label for="accountUsername">
-                    اسم المستخدم
-                </label>
-
-
-                <input
-                    class="form-input"
-                    id="accountUsername"
-                    type="text"
-                    maxlength="3"
-                    autocomplete="username"
-                    placeholder="اسم المستخدم"
-                >
-
-            </div>
-
-
-            <!-- EMAIL -->
-
-            <div class="form-group">
-
-                <label for="accountEmail">
-                    البريد الإلكتروني
-                </label>
-
-
-                <input
-                    class="form-input"
-                    id="accountEmail"
-                    type="email"
-                    autocomplete="email"
-                    placeholder="البريد الإلكتروني"
-                >
-
-            </div>
-
-
-            <!-- PASSWORD -->
-
-            <div
-                class="form-group"
-                id="passwordGroup"
-            >
-
-                <label for="accountPassword">
-                    كلمة المرور
-                </label>
-
-
-                <input
-                    class="form-input"
-                    id="accountPassword"
-                    type="password"
-                    autocomplete="current-password"
-                    placeholder="كلمة المرور"
-                >
-
-            </div>
-
-
-            <!-- CONFIRM PASSWORD -->
-
-            <div
-                class="form-group"
-                id="confirmPasswordGroup"
-            >
-
-                <label for="accountPasswordConfirm">
-                    تأكيد كلمة المرور
-                </label>
-
-
-                <input
-                    class="form-input"
-                    id="accountPasswordConfirm"
-                    type="password"
-                    autocomplete="new-password"
-                    placeholder="أعد كتابة كلمة المرور"
-                >
-
-            </div>
-
-
-            <button
-                class="modal-action"
-                id="modalAction"
-                type="submit"
-            >
-                إنشاء الحساب
-            </button>
-
-
-            <div
-                class="modal-note"
-                id="modalNote"
-            >
-                اسم المستخدم يجب ألا يتجاوز 3 أحرف.
-            </div>
-
-
-        </form>
-
-    </div>
-
-</div>
 
 
 <!-- =================================================
@@ -1877,356 +1643,6 @@
 
         }
     );
-
-
-})();
-
-</script>
-
-
-<!-- =================================================
-     LOGGED-IN ACCOUNT UI
-================================================== -->
-
-<script>
-
-(function () {
-
-    "use strict";
-
-
-    function updateAccountCard() {
-
-        const AUTH =
-            window.WFESCSettingsAuth;
-
-
-        if (!AUTH) {
-
-            setTimeout(
-                updateAccountCard,
-                150
-            );
-
-            return;
-
-        }
-
-
-        const user =
-            AUTH.getUser();
-
-
-        const accountButtons =
-            document.getElementById(
-                "accountButtons"
-            );
-
-
-        const loggedInAccount =
-            document.getElementById(
-                "loggedInAccount"
-            );
-
-
-        const usernameElement =
-            document.getElementById(
-                "loggedInUsername"
-            );
-
-
-        const avatar =
-            document.getElementById(
-                "loggedInAvatar"
-            );
-
-
-        const avatarFallback =
-            document.getElementById(
-                "loggedInAvatarFallback"
-            );
-
-
-        if (!user) {
-
-            if (accountButtons) {
-
-                accountButtons.style.display =
-                    "grid";
-
-            }
-
-
-            if (loggedInAccount) {
-
-                loggedInAccount.style.display =
-                    "none";
-
-            }
-
-
-            return;
-
-        }
-
-
-        let profile =
-            AUTH.getProfile();
-
-
-        const showProfile =
-            function () {
-
-                profile =
-                    AUTH.getProfile();
-
-
-                const username =
-                    profile?.username ||
-                    user?.user_metadata?.username ||
-                    "مستخدم WFESC";
-
-
-                if (usernameElement) {
-
-                    usernameElement.textContent =
-                        username;
-
-                }
-
-
-                const avatarUrl =
-                    profile?.avatar_url ||
-                    user?.user_metadata?.avatar_url ||
-                    "";
-
-
-                if (
-                    avatar &&
-                    avatarFallback
-                ) {
-
-                    if (avatarUrl) {
-
-                        avatar.src =
-                            avatarUrl;
-
-                        avatar.style.display =
-                            "block";
-
-                        avatarFallback.style.display =
-                            "none";
-
-                    } else {
-
-                        avatar.removeAttribute(
-                            "src"
-                        );
-
-                        avatar.style.display =
-                            "none";
-
-
-                        avatarFallback.textContent =
-                            [...String(username)]
-                            .slice(0,1)
-                            .join("")
-                            .toUpperCase() ||
-                            "W";
-
-
-                        avatarFallback.style.display =
-                            "flex";
-
-                    }
-
-                }
-
-            };
-
-
-        showProfile();
-
-
-        if (accountButtons) {
-
-            accountButtons.style.display =
-                "none";
-
-        }
-
-
-        if (loggedInAccount) {
-
-            loggedInAccount.style.display =
-                "block";
-
-        }
-
-
-        if (
-            !profile &&
-            typeof AUTH.fetchProfile ===
-            "function"
-        ) {
-
-            AUTH.fetchProfile(
-                user.id
-            ).then(
-                function () {
-
-                    showProfile();
-
-                }
-            ).catch(
-                function () {}
-            );
-
-        }
-
-    }
-
-
-    /* =================================================
-       إدارة الحساب
-    ================================================== */
-
-    document.addEventListener(
-        "click",
-        function (event) {
-
-            const button =
-                event.target.closest(
-                    "#manageAccountButton"
-                );
-
-
-            if (!button) {
-                return;
-            }
-
-
-            if (
-                typeof window.WFESCOpenAccountModal ===
-                "function"
-            ) {
-
-                window.WFESCOpenAccountModal(
-                    "account"
-                );
-
-            }
-
-        }
-    );
-
-
-    /* =================================================
-       تسجيل الخروج
-    ================================================== */
-
-    document.addEventListener(
-        "click",
-        async function (event) {
-
-            const button =
-                event.target.closest(
-                    "#logoutAccountButton"
-                );
-
-
-            if (!button) {
-                return;
-            }
-
-
-            const AUTH =
-                window.WFESCSettingsAuth;
-
-
-            if (!AUTH) {
-                return;
-            }
-
-
-            button.disabled =
-                true;
-
-
-            try {
-
-                await AUTH.signOut();
-
-                updateAccountCard();
-
-            } catch (error) {
-
-                console.error(
-                    "WFESC Logout Error:",
-                    error
-                );
-
-            }
-
-
-            button.disabled =
-                false;
-
-        }
-    );
-
-
-    /* =================================================
-       مراقبة الحساب
-    ================================================== */
-
-    
-    window.addEventListener(
-        "WFESCAuthChanged",
-        function () {
-
-            updateAccountCard();
-
-        }
-    );
-
-
-    window.addEventListener(
-        "WFESCProfileUpdated",
-        function () {
-
-            updateAccountCard();
-
-        }
-    );
-
-
-    /* =================================================
-       تشغيل
-    ================================================== */
-
-    function waitForAuth() {
-
-        if (
-            window.WFESCSettingsAuth
-        ) {
-
-            updateAccountCard();
-
-            return;
-
-        }
-
-
-        setTimeout(
-            waitForAuth,
-            100
-        );
-
-    }
-
-
-    waitForAuth();
 
 
 })();
