@@ -123,7 +123,6 @@
             if (
                 pageFile.toLowerCase() === currentPage
             ) {
-
                 item.classList.add(
                     "wfesc-navigation-active"
                 );
@@ -132,7 +131,6 @@
                     "aria-current",
                     "page"
                 );
-
             }
 
             const icon = document.createElement("span");
@@ -152,11 +150,6 @@
             item.appendChild(icon);
             item.appendChild(title);
 
-
-            /* =================================================
-               NAVIGATION CLICK
-               ================================================= */
-
             item.addEventListener(
                 "click",
                 function (event) {
@@ -168,18 +161,17 @@
                     if (
                         pageFile.toLowerCase() === currentPage
                     ) {
-
                         event.preventDefault();
                         return;
-
                     }
 
                     /*
-                     * لا توجد شاشة تحميل خاصة بالتنقل.
+                     * لا تظهر شاشة "جاري الانتقال..."
                      *
-                     * نترك الصفحة الجديدة تنتقل مباشرة
-                     * حتى يظهر Loader الخاص بالصفحة نفسها
-                     * إذا كانت تحتوي عليه.
+                     * يتم الانتقال مباشرة إلى الصفحة.
+                     * شاشة "جاري التحميل..." الموجودة في
+                     * navigation-loader.js ستظهر عند تحميل
+                     * الصفحة الجديدة.
                      */
 
                 }
@@ -198,7 +190,6 @@
         );
 
     }
-
 
     function refreshActiveButton() {
 
@@ -247,7 +238,6 @@
 
     }
 
-
     function init() {
 
         if (document.body) {
@@ -259,7 +249,6 @@
         }
 
     }
-
 
     window.WFESCNavigationInit = init;
 
