@@ -3393,3 +3393,569 @@
                 /* =========================================
                    SPECIAL VIEWS
                    ========================================= */
+
+                .wfesc-special-view {
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    text-align: center;
+
+                    gap: 10px;
+
+                    min-height: 170px;
+
+                    padding: 15px;
+
+                }
+
+
+                .wfesc-special-icon {
+
+                    font-size: 42px;
+
+                    animation:
+                        wfescIconAppear
+                        .5s ease;
+
+                }
+
+
+                .wfesc-special-view h2 {
+
+                    margin: 0;
+
+                }
+
+
+                .wfesc-special-view p {
+
+                    margin: 0;
+
+                    opacity: .78;
+
+                    line-height: 1.7;
+
+                }
+
+
+                .wfesc-special-view strong {
+
+                    word-break: break-word;
+
+                    max-width: 100%;
+
+                }
+
+
+                .wfesc-special-small {
+
+                    font-size: 13px;
+
+                    opacity: .62 !important;
+
+                }
+
+
+                .wfesc-special-loader {
+
+                    width: 25px;
+
+                    height: 25px;
+
+                    border:
+                        2px solid
+                        rgba(255,255,255,.13);
+
+                    border-top-color:
+                        currentColor;
+
+                    border-radius: 50%;
+
+                    margin-top: 8px;
+
+                    animation:
+                        wfescSpin
+                        .75s linear infinite;
+
+                }
+
+
+                .wfesc-success-check {
+
+                    width: 58px;
+
+                    height: 58px;
+
+                    border-radius: 50%;
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    border:
+                        1px solid
+                        currentColor;
+
+                    font-size: 30px;
+
+                    animation:
+                        wfescSuccessPop
+                        .45s ease;
+
+                }
+
+
+                /* =========================================
+                   RESET PASSWORD
+                   ========================================= */
+
+                .wfesc-reset-view {
+
+                    display: flex;
+
+                    justify-content: center;
+
+                    padding: 8px 0;
+
+                }
+
+
+                .wfesc-reset-card {
+
+                    width: 100%;
+
+                    max-width: 440px;
+
+                    padding: 22px;
+
+                    border-radius: 18px;
+
+                    background:
+                        rgba(255,255,255,.035);
+
+                    border:
+                        1px solid
+                        rgba(255,255,255,.09);
+
+                    text-align: center;
+
+                }
+
+
+                .wfesc-reset-icon {
+
+                    font-size: 39px;
+
+                    margin-bottom: 8px;
+
+                }
+
+
+                .wfesc-reset-card h2 {
+
+                    margin:
+                        0 0 8px;
+
+                }
+
+
+                .wfesc-reset-description {
+
+                    margin:
+                        0 0 16px;
+
+                    opacity: .7;
+
+                    line-height: 1.7;
+
+                    font-size: 14px;
+
+                }
+
+
+                .wfesc-reset-account {
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    gap: 5px;
+
+                    padding: 12px;
+
+                    margin-bottom: 18px;
+
+                    border-radius: 12px;
+
+                    background:
+                        rgba(255,255,255,.035);
+
+                    border:
+                        1px solid
+                        rgba(255,255,255,.07);
+
+                }
+
+
+                .wfesc-reset-account span {
+
+                    font-size: 12px;
+
+                    opacity: .55;
+
+                }
+
+
+                .wfesc-reset-account strong {
+
+                    font-size: 14px;
+
+                    word-break: break-word;
+
+                }
+
+
+                .wfesc-reset-field {
+
+                    text-align: right;
+
+                    margin-bottom: 15px;
+
+                }
+
+
+                .wfesc-reset-field label {
+
+                    display: block;
+
+                    margin-bottom: 7px;
+
+                    font-size: 14px;
+
+                }
+
+
+                .wfesc-reset-field input {
+
+                    width: 100%;
+
+                    box-sizing: border-box;
+
+                }
+
+
+                .wfesc-reset-field small {
+
+                    display: block;
+
+                    color:
+                        #ff7777;
+
+                    font-size: 12px;
+
+                    margin-top: 5px;
+
+                    min-height: 17px;
+
+                }
+
+
+                .wfesc-save-password {
+
+                    width: 100%;
+
+                    margin-top: 4px;
+
+                }
+
+
+                /* =========================================
+                   ACCOUNT ACTIONS
+                   ========================================= */
+
+                .wfesc-account-view {
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    align-items: center;
+
+                    gap: 12px;
+
+                    text-align: center;
+
+                }
+
+
+                .wfesc-account-avatar {
+
+                    width: 65px;
+
+                    height: 65px;
+
+                    border-radius: 50%;
+
+                    overflow: hidden;
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    background:
+                        rgba(255,255,255,.08);
+
+                    border:
+                        1px solid
+                        rgba(255,255,255,.1);
+
+                    font-size: 24px;
+
+                }
+
+
+                .wfesc-account-avatar img {
+
+                    width: 100%;
+
+                    height: 100%;
+
+                    object-fit: cover;
+
+                }
+
+
+                .wfesc-account-info {
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    gap: 3px;
+
+                }
+
+
+                .wfesc-account-info strong {
+
+                    font-size: 17px;
+
+                }
+
+
+                .wfesc-account-info span {
+
+                    font-size: 12px;
+
+                    opacity: .6;
+
+                    word-break: break-word;
+
+                }
+
+
+                .wfesc-account-actions {
+
+                    display: flex;
+
+                    flex-wrap: wrap;
+
+                    justify-content: center;
+
+                    gap: 8px;
+
+                    margin-top: 5px;
+
+                }
+
+
+                /* =========================================
+                   KEYFRAMES
+                   ========================================= */
+
+                @keyframes wfescSpin {
+
+                    from {
+                        transform: rotate(0deg);
+                    }
+
+                    to {
+                        transform: rotate(360deg);
+                    }
+
+                }
+
+
+                @keyframes wfescLoadingAppear {
+
+                    from {
+
+                        opacity: 0;
+
+                        transform:
+                            translateY(5px);
+
+                    }
+
+                    to {
+
+                        opacity: 1;
+
+                        transform:
+                            translateY(0);
+
+                    }
+
+                }
+
+
+                @keyframes wfescModalShake {
+
+                    0%,100% {
+                        transform: translateX(0);
+                    }
+
+                    20% {
+                        transform: translateX(-7px);
+                    }
+
+                    40% {
+                        transform: translateX(7px);
+                    }
+
+                    60% {
+                        transform: translateX(-5px);
+                    }
+
+                    80% {
+                        transform: translateX(5px);
+                    }
+
+                }
+
+
+                @keyframes wfescFieldShake {
+
+                    0%,100% {
+                        transform: translateX(0);
+                    }
+
+                    25% {
+                        transform: translateX(-4px);
+                    }
+
+                    50% {
+                        transform: translateX(4px);
+                    }
+
+                    75% {
+                        transform: translateX(-3px);
+                    }
+
+                }
+
+
+                @keyframes wfescIconAppear {
+
+                    from {
+
+                        opacity: 0;
+
+                        transform:
+                            scale(.7);
+
+                    }
+
+                    to {
+
+                        opacity: 1;
+
+                        transform:
+                            scale(1);
+
+                    }
+
+                }
+
+
+                @keyframes wfescSuccessPop {
+
+                    0% {
+
+                        opacity: 0;
+
+                        transform:
+                            scale(.5);
+
+                    }
+
+                    70% {
+
+                        transform:
+                            scale(1.08);
+
+                    }
+
+                    100% {
+
+                        opacity: 1;
+
+                        transform:
+                            scale(1);
+
+                    }
+
+                }
+
+
+                /* =========================================
+                   REDUCED MOTION
+                   ========================================= */
+
+                @media
+                (prefers-reduced-motion: reduce) {
+
+                    .wfesc-auth-view,
+                    .wfesc-account-view,
+                    .wfesc-special-view,
+                    .wfesc-reset-view,
+                    .wfesc-auth-modal,
+                    .wfesc-auth-modal-box {
+
+                        transition: none !important;
+
+                        animation: none !important;
+
+                    }
+
+                    .wfesc-loading-spinner,
+                    .wfesc-special-loader,
+                    .wfesc-button-spinner {
+
+                        animation: none !important;
+
+                    }
+
+                }
+
+            `;
+
+
+            document.head.appendChild(
+                style
+            );
+        }
+
+    }
+
+})();
