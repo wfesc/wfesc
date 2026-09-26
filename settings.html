@@ -118,6 +118,10 @@
         }
 
 
+        /* =================================================
+           SETTINGS CARD
+        ================================================= */
+
         .settings-card {
 
             background: #111;
@@ -138,7 +142,10 @@
 
             transition:
                 background .3s ease,
-                border-color .3s ease;
+                border-color .3s ease,
+                box-shadow .3s ease,
+                backdrop-filter .3s ease,
+                -webkit-backdrop-filter .3s ease;
         }
 
 
@@ -163,6 +170,10 @@
             border-bottom:
                 1px solid
                 #222;
+
+            transition:
+                background .3s ease,
+                border-color .3s ease;
         }
 
 
@@ -188,6 +199,11 @@
             justify-content: center;
 
             font-size: 20px;
+
+            transition:
+                background .3s ease,
+                border .3s ease,
+                box-shadow .3s ease;
         }
 
 
@@ -220,7 +236,7 @@
 
 
         /* =================================================
-           ANIMATION SWITCH
+           SWITCH
         ================================================= */
 
         .switch {
@@ -325,7 +341,11 @@
 
             cursor: pointer;
 
-            transition: .25s ease;
+            transition:
+                .25s ease,
+                background .3s ease,
+                border .3s ease,
+                color .3s ease;
         }
 
 
@@ -364,7 +384,6 @@
 
         /* =================================================
            ACCOUNT
-           الواجهة يتم إنشاؤها من settings-auth-ui.js
         ================================================= */
 
         #settingsAccountApp {
@@ -404,7 +423,10 @@
 
             font-weight: bold;
 
-            transition: .25s ease;
+            transition:
+                .25s ease,
+                background .3s ease,
+                border .3s ease;
         }
 
 
@@ -612,7 +634,6 @@
 
         /* =================================================
            MODAL
-           يتم إنشاء الـModal من settings-auth-ui.js
         ================================================= */
 
         .modal {
@@ -831,6 +852,364 @@
 
 
         /* =================================================
+           ABOUT
+        ================================================= */
+
+        .about-card {
+            text-align: center;
+        }
+
+
+        .about-image-wrap {
+
+            padding:
+                25px
+                20px
+                18px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+        }
+
+
+        .about-image {
+
+            width: 110px;
+            height: 110px;
+
+            object-fit: cover;
+
+            border-radius: 50%;
+
+            display: block;
+
+            border:
+                1px solid
+                #292929;
+
+            box-shadow:
+                0
+                8px
+                30px
+                rgba(0,0,0,.3);
+        }
+
+
+        .about-name {
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            margin-bottom: 7px;
+        }
+
+
+        .about-rights {
+
+            padding:
+                0
+                20px
+                22px;
+
+            color: #888;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+
+        /* =================================================
+           LIQUID GLASS
+        ================================================= */
+
+        html.wfesc-liquid-glass {
+
+            --wfesc-glass-bg:
+                rgba(255,255,255,.055);
+
+            --wfesc-glass-border:
+                rgba(255,255,255,.13);
+
+            --wfesc-glass-highlight:
+                rgba(255,255,255,.08);
+
+            --wfesc-glass-shadow:
+                rgba(0,0,0,.30);
+        }
+
+
+        html.wfesc-liquid-glass
+        .settings-card {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.075),
+                    rgba(255,255,255,.025)
+                );
+
+            border-color:
+                rgba(255,255,255,.13);
+
+            box-shadow:
+                0
+                12px
+                40px
+                rgba(0,0,0,.28),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.08);
+
+            backdrop-filter:
+                blur(24px)
+                saturate(150%);
+
+            -webkit-backdrop-filter:
+                blur(24px)
+                saturate(150%);
+        }
+
+
+        html.wfesc-liquid-glass
+        .setting-row {
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,.025),
+                    transparent
+                );
+
+            border-color:
+                rgba(255,255,255,.08);
+        }
+
+
+        html.wfesc-liquid-glass
+        .setting-icon {
+
+            background:
+                rgba(255,255,255,.065);
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.07);
+        }
+
+
+        html.wfesc-liquid-glass
+        .theme-button,
+        html.wfesc-liquid-glass
+        .account-button {
+
+            background:
+                rgba(255,255,255,.045);
+
+            border-color:
+                rgba(255,255,255,.12);
+
+            backdrop-filter:
+                blur(18px)
+                saturate(145%);
+
+            -webkit-backdrop-filter:
+                blur(18px)
+                saturate(145%);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.06);
+        }
+
+
+        html.wfesc-liquid-glass
+        .theme-button:hover,
+        html.wfesc-liquid-glass
+        .account-button:hover {
+
+            background:
+                rgba(255,255,255,.085);
+
+            border-color:
+                rgba(255,255,255,.17);
+        }
+
+
+        html.wfesc-liquid-glass
+        .account-button.primary,
+        html.wfesc-liquid-glass
+        .modal-action {
+
+            background:
+                rgba(255,255,255,.88);
+
+            color: #050505;
+
+            border-color:
+                rgba(255,255,255,.8);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.8),
+                0
+                8px
+                25px
+                rgba(0,0,0,.2);
+        }
+
+
+        html.wfesc-liquid-glass
+        .form-input {
+
+            background:
+                rgba(255,255,255,.045);
+
+            border-color:
+                rgba(255,255,255,.13);
+
+            backdrop-filter:
+                blur(16px);
+
+            -webkit-backdrop-filter:
+                blur(16px);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.05);
+        }
+
+
+        html.wfesc-liquid-glass
+        .logged-in-avatar-wrap {
+
+            background:
+                rgba(255,255,255,.055);
+
+            border-color:
+                rgba(255,255,255,.15);
+
+            box-shadow:
+                0
+                8px
+                25px
+                rgba(0,0,0,.25),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.08);
+        }
+
+
+        html.wfesc-liquid-glass
+        .modal-box {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(25,25,25,.88),
+                    rgba(10,10,10,.82)
+                );
+
+            border-color:
+                rgba(255,255,255,.14);
+
+            box-shadow:
+                0
+                25px
+                70px
+                rgba(0,0,0,.5),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.08);
+
+            backdrop-filter:
+                blur(30px)
+                saturate(155%);
+
+            -webkit-backdrop-filter:
+                blur(30px)
+                saturate(155%);
+        }
+
+
+        html.wfesc-liquid-glass
+        .close-modal {
+
+            background:
+                rgba(255,255,255,.07);
+
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+        }
+
+
+        html.wfesc-liquid-glass
+        .settings-status {
+
+            background:
+                rgba(245,245,245,.88);
+
+            box-shadow:
+                0
+                10px
+                35px
+                rgba(0,0,0,.3);
+
+            backdrop-filter:
+                blur(20px);
+
+            -webkit-backdrop-filter:
+                blur(20px);
+        }
+
+
+        html.wfesc-liquid-glass
+        .about-image {
+
+            border-color:
+                rgba(255,255,255,.18);
+
+            box-shadow:
+                0
+                12px
+                35px
+                rgba(0,0,0,.35),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.12);
+        }
+
+
+        /* =================================================
            LIGHT MODE
         ================================================= */
 
@@ -842,17 +1221,20 @@
         }
 
 
-        html.wfesc-light-mode .settings-header p {
+        html.wfesc-light-mode
+        .settings-header p {
             color: #666;
         }
 
 
-        html.wfesc-light-mode .section-title {
+        html.wfesc-light-mode
+        .section-title {
             color: #666;
         }
 
 
-        html.wfesc-light-mode .settings-card {
+        html.wfesc-light-mode
+        .settings-card {
 
             background: #fff;
 
@@ -866,23 +1248,28 @@
         }
 
 
-        html.wfesc-light-mode .setting-row {
+        html.wfesc-light-mode
+        .setting-row {
             border-color: #e8e8e8;
         }
 
 
-        html.wfesc-light-mode .setting-icon {
+        html.wfesc-light-mode
+        .setting-icon {
             background: #f0f0f0;
         }
 
 
-        html.wfesc-light-mode .setting-description {
+        html.wfesc-light-mode
+        .setting-description {
             color: #777;
         }
 
 
-        html.wfesc-light-mode .theme-button,
-        html.wfesc-light-mode .account-button {
+        html.wfesc-light-mode
+        .theme-button,
+        html.wfesc-light-mode
+        .account-button {
 
             background: #f5f5f5;
 
@@ -892,13 +1279,16 @@
         }
 
 
-        html.wfesc-light-mode .theme-button:hover,
-        html.wfesc-light-mode .account-button:hover {
+        html.wfesc-light-mode
+        .theme-button:hover,
+        html.wfesc-light-mode
+        .account-button:hover {
             background: #e9e9e9;
         }
 
 
-        html.wfesc-light-mode .theme-button.active {
+        html.wfesc-light-mode
+        .theme-button.active {
 
             background: #111;
 
@@ -908,7 +1298,8 @@
         }
 
 
-        html.wfesc-light-mode .account-button.primary {
+        html.wfesc-light-mode
+        .account-button.primary {
 
             background: #111;
 
@@ -918,7 +1309,8 @@
         }
 
 
-        html.wfesc-light-mode .modal-box {
+        html.wfesc-light-mode
+        .modal-box {
 
             background: #fff;
 
@@ -928,7 +1320,8 @@
         }
 
 
-        html.wfesc-light-mode .close-modal {
+        html.wfesc-light-mode
+        .close-modal {
 
             background: #eee;
 
@@ -936,7 +1329,8 @@
         }
 
 
-        html.wfesc-light-mode .form-input {
+        html.wfesc-light-mode
+        .form-input {
 
             background: #f5f5f5;
 
@@ -946,12 +1340,14 @@
         }
 
 
-        html.wfesc-light-mode .form-group label {
+        html.wfesc-light-mode
+        .form-group label {
             color: #666;
         }
 
 
-        html.wfesc-light-mode .logged-in-avatar-wrap {
+        html.wfesc-light-mode
+        .logged-in-avatar-wrap {
 
             background: #f0f0f0;
 
@@ -959,8 +1355,124 @@
         }
 
 
-        html.wfesc-light-mode .logged-in-avatar-fallback {
+        html.wfesc-light-mode
+        .logged-in-avatar-fallback {
             color: #111;
+        }
+
+
+        /* =================================================
+           LIGHT + LIQUID GLASS
+        ================================================= */
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .settings-card {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.72),
+                    rgba(255,255,255,.48)
+                );
+
+            border-color:
+                rgba(0,0,0,.10);
+
+            box-shadow:
+                0
+                12px
+                40px
+                rgba(0,0,0,.10),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.9);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .setting-row {
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,.28),
+                    transparent
+                );
+
+            border-color:
+                rgba(0,0,0,.07);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .setting-icon {
+
+            background:
+                rgba(255,255,255,.45);
+
+            border-color:
+                rgba(0,0,0,.07);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .theme-button,
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .account-button {
+
+            background:
+                rgba(255,255,255,.45);
+
+            border-color:
+                rgba(0,0,0,.10);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.8);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .form-input {
+
+            background:
+                rgba(255,255,255,.42);
+
+            color: #111;
+
+            border-color:
+                rgba(0,0,0,.10);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .modal-box {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.88),
+                    rgba(245,245,245,.78)
+                );
+
+            border-color:
+                rgba(0,0,0,.10);
+
+            box-shadow:
+                0
+                25px
+                70px
+                rgba(0,0,0,.18),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.95);
         }
 
 
@@ -1047,13 +1559,20 @@
                 font-size: 16px;
             }
 
+
+            .about-image {
+
+                width: 95px;
+                height: 95px;
+            }
+
         }
 
     </style>
 
 
     <!-- =================================================
-         تطبيق الوضع المحفوظ قبل ظهور الصفحة
+         تطبيق الإعدادات المحفوظة قبل ظهور الصفحة
     ================================================== -->
 
     <script>
@@ -1085,12 +1604,38 @@
 
                 }
 
+
+                const glass =
+                    localStorage.getItem(
+                        "wfesc-liquid-glass"
+                    );
+
+
+                if (
+                    glass === null ||
+                    glass === "on"
+                ) {
+
+                    document.documentElement
+                        .classList
+                        .add(
+                            "wfesc-liquid-glass"
+                        );
+
+                }
+
             } catch (error) {
 
                 document.documentElement
                     .classList
                     .add(
                         "wfesc-dark-mode"
+                    );
+
+                document.documentElement
+                    .classList
+                    .add(
+                        "wfesc-liquid-glass"
                     );
 
             }
@@ -1129,7 +1674,6 @@
          المظهر
     ================================================== -->
 
-    
     <section class="settings-section">
 
         <div class="section-title">
@@ -1168,6 +1712,44 @@
                     <input
                         type="checkbox"
                         id="animationToggle"
+                        checked
+                    >
+
+                    <span class="slider"></span>
+
+                </label>
+
+            </div>
+
+
+            <!-- LIQUID GLASS -->
+
+            <div class="setting-row">
+
+                <div class="setting-icon">
+                    🫧
+                </div>
+
+
+                <div class="setting-info">
+
+                    <div class="setting-name">
+                        الزجاج السائل
+                    </div>
+
+
+                    <div class="setting-description">
+                        تفعيل تأثير الزجاج السائل على واجهة WFESC
+                    </div>
+
+                </div>
+
+
+                <label class="switch">
+
+                    <input
+                        type="checkbox"
+                        id="liquidGlassToggle"
                         checked
                     >
 
@@ -1247,7 +1829,6 @@
 
     <!-- =================================================
          الحساب
-         settings-auth-ui.js مسؤول عن إنشاء المحتوى هنا
     ================================================== -->
 
     <section class="settings-section">
@@ -1277,33 +1858,34 @@
         </div>
 
 
-        <div class="settings-card">
-
-            <div class="setting-row">
-
-                <div class="setting-icon">
-                    𝑾
-                </div>
+        <div class="settings-card about-card">
 
 
-                <div class="setting-info">
+            <div class="about-image-wrap">
 
-                    <div class="setting-name">
-                        WFESC
-                    </div>
-
-
-                    <div class="setting-description">
-                        ذاكرة العراق... بصورة مختلفة
-                    </div>
-
-                </div>
+                <img
+                    src="sorg.jpg"
+                    alt="WFESC"
+                    class="about-image"
+                >
 
             </div>
+
+
+            <div class="about-name">
+                WFESC
+            </div>
+
+
+            <div class="about-rights">
+                جميع الحقوق محفوظة لدينا
+            </div>
+
 
         </div>
 
     </section>
+
 
 </main>
 
@@ -1328,29 +1910,19 @@
 
 
 <!-- =================================================
-     WFESC AUTH CONFIG
+     WFESC AUTH
 ================================================== -->
 
 <script
-    src="settings-features/settings-auth-config.js"
+    src="./settings-features/settings-auth-config.js"
 ></script>
 
-
-<!-- =================================================
-     WFESC AUTH CORE
-================================================== -->
-
 <script
-    src="settings-features/settings-auth.js"
+    src="./settings-features/settings-auth.js"
 ></script>
 
-
-<!-- =================================================
-     WFESC AUTH UI
-================================================== -->
-
 <script
-    src="settings-features/settings-auth-ui.js"
+    src="./settings-features/settings-auth-ui.js"
 ></script>
 
 
@@ -1650,21 +2222,170 @@
 </script>
 
 
-    <!-- =================================================
-     SETTINGS AUTH
+<!-- =================================================
+     LIQUID GLASS SETTING
 ================================================== -->
 
-<script
-    src="./settings-features/settings-auth-config.js"
-></script>
+<script>
 
-<script
-    src="./settings-features/settings-auth.js"
-></script>
+(function () {
 
-<script
-    src="./settings-features/settings-auth-ui.js"
-></script>
+    "use strict";
+
+
+    const GLASS_KEY =
+        "wfesc-liquid-glass";
+
+
+    const toggle =
+        document.getElementById(
+            "liquidGlassToggle"
+        );
+
+
+    if (!toggle) {
+        return;
+    }
+
+
+    function getGlassState() {
+
+        try {
+
+            const saved =
+                localStorage.getItem(
+                    GLASS_KEY
+                );
+
+
+            if (saved === "off") {
+                return false;
+            }
+
+        } catch (error) {}
+
+
+        return true;
+
+    }
+
+
+    function applyLiquidGlass(enabled) {
+
+        const html =
+            document.documentElement;
+
+
+        html.classList.toggle(
+            "wfesc-liquid-glass",
+            enabled
+        );
+
+
+        toggle.checked =
+            enabled;
+
+
+        try {
+
+            localStorage.setItem(
+                GLASS_KEY,
+                enabled
+                    ? "on"
+                    : "off"
+            );
+
+        } catch (error) {}
+
+
+        /*
+         * إرسال الحالة إلى نظام الحساب
+         * settings-auth-ui.js
+         */
+
+        if (
+            typeof window.WFESCSetAuthLiquidGlass ===
+            "function"
+        ) {
+
+            try {
+
+                window.WFESCSetAuthLiquidGlass(
+                    enabled
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC Liquid Glass Auth:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "WFESCLiquidGlassChanged",
+                {
+                    detail: {
+                        enabled: enabled
+                    }
+                }
+            )
+        );
+
+    }
+
+
+    const initialState =
+        getGlassState();
+
+
+    toggle.checked =
+        initialState;
+
+
+    applyLiquidGlass(
+        initialState
+    );
+
+
+    toggle.addEventListener(
+        "change",
+        function () {
+
+            applyLiquidGlass(
+                toggle.checked
+            );
+
+        }
+    );
+
+
+    window.WFESCGetLiquidGlass =
+        function () {
+
+            return getGlassState();
+
+        };
+
+
+    window.WFESCSetLiquidGlass =
+        function (enabled) {
+
+            applyLiquidGlass(
+                Boolean(enabled)
+            );
+
+        };
+
+
+})();
+
+</script>
 
 
 <!-- =================================================
@@ -1672,7 +2393,7 @@
 ================================================== -->
 
 <script
-    src="navigation/navigation-loader.js"
+    src="./navigation/navigation-loader.js"
 ></script>
 
 
