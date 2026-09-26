@@ -10,31 +10,105 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <meta
-        name="theme-color"
-        content="#050505"
-    >
-
-    <title>الملف الشخصي | WFESC</title>
+    <title>الملف الشخصي - WFESC</title>
 
 
-    <!-- =========================================
-         نظام الحساب
-         ========================================= -->
+    <!-- =================================================
+         APPLY WFESC SETTINGS BEFORE PAGE LOAD
+    ================================================== -->
 
-    <!-- تمت إضافة مكتبة Supabase هنا فقط -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
 
-    <script src="./settings-features/settings-auth-config.js"></script>
-    <script src="./settings-features/settings-auth.js"></script>
+        (function () {
+
+            "use strict";
+
+            try {
+
+                const theme =
+                    localStorage.getItem(
+                        "wfesc-theme"
+                    );
+
+                if (theme === "light") {
+
+                    document.documentElement
+                        .classList
+                        .add("wfesc-light-mode");
+
+                } else {
+
+                    document.documentElement
+                        .classList
+                        .add("wfesc-dark-mode");
+
+                }
 
 
-    <!-- نظام التنقل -->
+                const animation =
+                    localStorage.getItem(
+                        "wfesc-animation"
+                    );
 
-    <script src="./navigation/navigation-loader.js"></script>
+                if (animation !== "off") {
+
+                    document.documentElement
+                        .classList
+                        .remove("wfesc-animation-off");
+
+                } else {
+
+                    document.documentElement
+                        .classList
+                        .add("wfesc-animation-off");
+
+                }
+
+
+                const glass =
+                    localStorage.getItem(
+                        "wfesc-liquid-glass"
+                    );
+
+                if (
+                    glass === null ||
+                    glass === "on"
+                ) {
+
+                    document.documentElement
+                        .classList
+                        .add("wfesc-liquid-glass");
+
+                } else {
+
+                    document.documentElement
+                        .classList
+                        .remove("wfesc-liquid-glass");
+
+                }
+
+            } catch (error) {
+
+                document.documentElement
+                    .classList
+                    .add("wfesc-dark-mode");
+
+                document.documentElement
+                    .classList
+                    .add("wfesc-liquid-glass");
+
+            }
+
+        })();
+
+    </script>
 
 
     <style>
+
+        /* =================================================
+           RESET
+        ================================================= */
 
         * {
             box-sizing: border-box;
@@ -52,15 +126,9 @@
 
             min-height: 100vh;
 
-            background:
-                radial-gradient(
-                    circle at top,
-                    #171717 0%,
-                    #080808 45%,
-                    #030303 100%
-                );
+            background: #050505;
 
-            color: #ffffff;
+            color: #eee;
 
             font-family:
                 Arial,
@@ -68,309 +136,300 @@
                 sans-serif;
 
             padding-bottom: 100px;
+
+            transition:
+                background .3s ease,
+                color .3s ease;
         }
 
 
         button,
         input,
         textarea {
-            font-family:
-                Arial,
-                Tahoma,
-                sans-serif;
+
+            font-family: inherit;
         }
 
 
         button {
-            -webkit-tap-highlight-color: transparent;
+
+            -webkit-tap-highlight-color:
+                transparent;
         }
 
 
-        /* =========================================
-           الصفحة
-           ========================================= */
+        /* =================================================
+           PAGE
+        ================================================= */
 
         .profile-page {
 
-            width: 100%;
+            width:
+                min(
+                    100%,
+                    760px
+                );
 
-            min-height: 100vh;
+            margin: auto;
 
             padding:
-                25px 14px 115px;
+                20px
+                14px
+                40px;
         }
 
 
-        .profile-container {
-
-            width: 100%;
-
-            max-width: 700px;
-
-            margin: 0 auto;
-        }
-
-
-        /* =========================================
-           البطاقة
-           ========================================= */
+        /* =================================================
+           COVER
+        ================================================= */
 
         .profile-card {
 
-            width: 100%;
+            position: relative;
 
             overflow: hidden;
 
-            border-radius: 24px;
-
-            background:
-                rgba(255,255,255,0.045);
+            background: #111;
 
             border:
                 1px solid
-                rgba(255,255,255,0.075);
+                #252525;
+
+            border-radius: 24px;
 
             box-shadow:
-                0 20px 70px
-                rgba(0,0,0,0.35);
+                0
+                15px
+                45px
+                rgba(0,0,0,.28);
+
+            transition:
+                background .3s ease,
+                border-color .3s ease,
+                box-shadow .3s ease,
+                backdrop-filter .3s ease;
         }
 
-
-        /* =========================================
-           الغلاف
-           ========================================= */
 
         .profile-cover {
 
             position: relative;
 
-            height: 145px;
+            width: 100%;
+
+            height: 210px;
 
             background:
-                radial-gradient(
-                    circle at 50% 20%,
-                    #333333 0%,
-                    #151515 40%,
-                    #070707 100%
+                linear-gradient(
+                    135deg,
+                    #171717,
+                    #080808
                 );
 
             overflow: hidden;
-
-            background-size: cover;
-
-            background-position: center;
-
-            cursor: pointer;
         }
 
 
-        .profile-cover::before {
+        .profile-cover-image {
 
-            content: "";
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            display: none;
+        }
+
+
+        .profile-cover-default {
+
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color: #333;
+
+            font-size: 55px;
+
+            font-weight: 900;
+
+            letter-spacing: 5px;
+
+            user-select: none;
+        }
+
+
+        .cover-edit {
 
             position: absolute;
 
-            width: 220px;
+            left: 14px;
+            bottom: 14px;
 
-            height: 220px;
-
-            top: -120px;
-
-            right: -50px;
-
-            border-radius: 50%;
+            width: 43px;
+            height: 43px;
 
             border:
                 1px solid
-                rgba(255,255,255,0.08);
-        }
-
-
-        .profile-cover::after {
-
-            content: "";
-
-            position: absolute;
-
-            width: 180px;
-
-            height: 180px;
-
-            bottom: -120px;
-
-            left: -50px;
+                rgba(255,255,255,.14);
 
             border-radius: 50%;
-
-            border:
-                1px solid
-                rgba(255,255,255,0.06);
-        }
-
-
-        .cover-change-label {
-
-            position: absolute;
-
-            left: 12px;
-
-            top: 12px;
-
-            z-index: 5;
-
-            padding:
-                7px 11px;
-
-            border-radius: 10px;
 
             background:
-                rgba(0,0,0,0.55);
+                rgba(0,0,0,.55);
 
-            border:
-                1px solid
-                rgba(255,255,255,0.12);
+            color: #fff;
 
-            color: #ffffff;
+            cursor: pointer;
 
-            font-size: 11px;
+            backdrop-filter:
+                blur(15px);
 
-            opacity: 0;
+            -webkit-backdrop-filter:
+                blur(15px);
 
-            transition:
-                opacity 0.2s ease;
+            font-size: 18px;
+
+            transition: .25s ease;
         }
 
 
-        .profile-cover:hover .cover-change-label {
+        .cover-edit:hover {
 
-            opacity: 1;
+            transform:
+                scale(1.06);
+
+            background:
+                rgba(255,255,255,.12);
         }
 
 
-        /* =========================================
-           المحتوى
-           ========================================= */
+        /* =================================================
+           PROFILE CONTENT
+        ================================================= */
 
         .profile-content {
 
             position: relative;
 
             padding:
-                0 18px 22px;
+                0
+                20px
+                25px;
         }
 
 
-        /* =========================================
-           الصورة الشخصية
-           ========================================= */
-
-        .profile-avatar-wrap {
+        .avatar-wrap {
 
             position: relative;
 
-            width: 105px;
+            width: 112px;
+            height: 112px;
 
-            height: 105px;
+            margin-top: -56px;
 
-            margin-top: -52px;
+            margin-bottom: 13px;
 
-            z-index: 5;
+            border-radius: 50%;
+
+            background: #111;
+
+            border:
+                4px solid
+                #111;
+
+            overflow: visible;
+
+            z-index: 3;
+
+            box-shadow:
+                0
+                8px
+                30px
+                rgba(0,0,0,.4);
         }
 
 
         .profile-avatar {
 
-            width: 105px;
-
-            height: 105px;
+            width: 100%;
+            height: 100%;
 
             border-radius: 50%;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            overflow: hidden;
-
-            position: relative;
-
-            background:
-                linear-gradient(
-                    145deg,
-                    #2c2c2c,
-                    #090909
-                );
-
-            border:
-                4px solid
-                #0a0a0a;
-
-            box-shadow:
-                0 10px 35px
-                rgba(0,0,0,0.5);
-
-            font-size: 36px;
-
-            font-weight: 800;
-
-            color: #ffffff;
-        }
-
-
-        .profile-avatar img {
-
-            width: 100%;
-
-            height: 100%;
 
             object-fit: cover;
 
-            display: block;
+            display: none;
         }
 
 
-        .avatar-edit-button {
+        .avatar-fallback {
 
-            position: absolute;
-
-            left: -3px;
-
-            bottom: 1px;
-
-            width: 31px;
-
-            height: 31px;
+            width: 100%;
+            height: 100%;
 
             border-radius: 50%;
-
-            border:
-                2px solid
-                #0a0a0a;
-
-            background:
-                #ffffff;
-
-            color: #050505;
 
             display: flex;
 
             align-items: center;
-
             justify-content: center;
 
-            font-size: 14px;
+            background:
+                linear-gradient(
+                    135deg,
+                    #222,
+                    #0b0b0b
+                );
 
-            cursor: pointer;
+            color: #eee;
 
-            z-index: 10;
+            font-size: 38px;
+
+            font-weight: bold;
         }
 
 
-        /* =========================================
-           الاسم
-           ========================================= */
+        .avatar-edit {
+
+            position: absolute;
+
+            left: -4px;
+            bottom: -4px;
+
+            width: 35px;
+            height: 35px;
+
+            border:
+                2px solid
+                #111;
+
+            border-radius: 50%;
+
+            background: #eee;
+
+            color: #050505;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            font-size: 15px;
+
+            z-index: 5;
+        }
+
+
+        /* =================================================
+           NAME
+        ================================================= */
 
         .profile-name-row {
 
@@ -378,9 +437,11 @@
 
             align-items: center;
 
+            flex-wrap: wrap;
+
             gap: 7px;
 
-            margin-top: 13px;
+            margin-bottom: 5px;
         }
 
 
@@ -388,104 +449,199 @@
 
             font-size: 25px;
 
-            font-weight: 800;
+            font-weight: 900;
 
             word-break: break-word;
         }
 
 
+        /* VERIFIED IS HIDDEN UNTIL ACCOUNT IS VERIFIED */
+
         .profile-verified {
 
-            width: 19px;
-
-            height: 19px;
-
-            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
 
             border-radius: 50%;
 
-            display: flex;
+            display: inline-flex;
 
             align-items: center;
-
             justify-content: center;
 
-            background: #ffffff;
+            background: #22c55e;
 
-            color: #050505;
+            color: #fff;
 
             font-size: 11px;
 
             font-weight: 900;
+
+            box-shadow:
+                0
+                0
+                13px
+                rgba(34,197,94,.35);
+        }
+
+
+        .profile-verified[hidden] {
+
+            display: none;
         }
 
 
         .profile-username {
 
-            color: #888888;
+            color: #888;
 
-            font-size: 13px;
+            font-size: 14px;
 
-            margin-top: 4px;
-
-            direction: ltr;
-
-            text-align: right;
+            margin-bottom: 14px;
         }
 
 
-        /* =========================================
-           الوصف
-           ========================================= */
+        /* =================================================
+           BIO
+        ================================================= */
 
         .profile-bio {
 
-            color: #b0b0b0;
+            color: #ccc;
 
-            font-size: 13px;
+            font-size: 14px;
 
-            line-height: 1.8;
+            line-height: 1.7;
 
-            margin-top: 14px;
+            max-width: 620px;
 
             white-space: pre-wrap;
 
             word-break: break-word;
+
+            margin-bottom: 18px;
         }
 
 
-        /* =========================================
-           الإحصائيات
-           ========================================= */
+        .profile-bio.empty {
+
+            color: #777;
+
+            font-style: italic;
+        }
+
+
+        /* =================================================
+           ACTIONS
+        ================================================= */
+
+        .profile-actions {
+
+            display: flex;
+
+            gap: 9px;
+
+            flex-wrap: wrap;
+
+            margin-bottom: 20px;
+        }
+
+
+        .profile-action {
+
+            min-height: 44px;
+
+            padding:
+                0
+                17px;
+
+            border:
+                1px solid
+                #292929;
+
+            border-radius: 12px;
+
+            background: #171717;
+
+            color: #eee;
+
+            cursor: pointer;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            transition: .25s ease;
+        }
+
+
+        .profile-action:hover {
+
+            background: #222;
+
+            border-color: #444;
+        }
+
+
+        .profile-action.primary {
+
+            background: #eee;
+
+            color: #050505;
+
+            border-color: #eee;
+        }
+
+
+        .profile-action.primary:hover {
+
+            background: #fff;
+        }
+
+
+        /* =================================================
+           STATS
+        ================================================= */
 
         .profile-stats {
 
             display: grid;
 
             grid-template-columns:
-                repeat(3, 1fr);
+                repeat(
+                    3,
+                    1fr
+                );
 
-            gap: 8px;
+            border:
+                1px solid
+                #242424;
 
-            margin-top: 20px;
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            margin-bottom: 20px;
         }
 
 
         .profile-stat {
 
+            padding:
+                15px
+                10px;
+
             text-align: center;
 
-            padding:
-                13px 7px;
-
-            border-radius: 15px;
-
-            background:
-                rgba(255,255,255,0.04);
-
-            border:
+            border-left:
                 1px solid
-                rgba(255,255,255,0.05);
+                #242424;
+        }
+
+
+        .profile-stat:last-child {
+
+            border-left: none;
         }
 
 
@@ -493,117 +649,177 @@
 
             display: block;
 
-            color: #ffffff;
+            font-size: 18px;
 
-            font-size: 17px;
+            font-weight: 900;
 
-            font-weight: 800;
+            margin-bottom: 4px;
         }
 
 
         .profile-stat-label {
 
-            display: block;
+            color: #777;
 
-            color: #777777;
-
-            font-size: 10px;
-
-            margin-top: 4px;
+            font-size: 12px;
         }
 
 
-        /* =========================================
-           أزرار الملف
-           ========================================= */
+        /* =================================================
+           ACCOUNT INFO
+        ================================================= */
 
-        .profile-actions {
+        .account-info {
 
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 9px;
-
-            margin-top: 15px;
-        }
-
-
-        .profile-action {
-
-            height: 46px;
-
-            border-radius: 13px;
-
-            border:
+            border-top:
                 1px solid
-                rgba(255,255,255,0.09);
+                #222;
 
-            background:
-                rgba(255,255,255,0.055);
+            padding-top: 18px;
+        }
 
-            color: #ffffff;
+
+        .account-info-title {
+
+            color: #888;
 
             font-size: 13px;
 
-            font-weight: 700;
-
-            cursor: pointer;
-
-            transition:
-                transform 0.2s ease,
-                background 0.2s ease;
+            margin-bottom: 12px;
         }
 
 
-        .profile-action:hover {
+        .account-info-row {
 
-            background:
-                rgba(255,255,255,0.09);
-        }
+            display: flex;
 
+            justify-content: space-between;
 
-        .profile-action:active {
-
-            transform:
-                scale(0.97);
-        }
-
-
-        /* =========================================
-           معلومات الحساب
-           ========================================= */
-
-        .profile-info {
-
-            margin-top: 12px;
+            gap: 15px;
 
             padding:
-                17px;
+                9px
+                0;
 
-            border-radius: 18px;
+            font-size: 13px;
+        }
+
+
+        .account-info-label {
+
+            color: #777;
+        }
+
+
+        .account-info-value {
+
+            color: #ddd;
+
+            text-align: left;
+
+            direction: ltr;
+
+            overflow-wrap: anywhere;
+        }
+
+
+        /* =================================================
+           EDIT MODAL
+        ================================================= */
+
+        .modal {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 30000;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 15px;
 
             background:
-                rgba(255,255,255,0.035);
+                rgba(0,0,0,.72);
+
+            backdrop-filter:
+                blur(10px);
+
+            -webkit-backdrop-filter:
+                blur(10px);
+
+            opacity: 0;
+
+            visibility: hidden;
+
+            pointer-events: none;
+
+            transition: .25s ease;
+        }
+
+
+        .modal.show {
+
+            opacity: 1;
+
+            visibility: visible;
+
+            pointer-events: auto;
+        }
+
+
+        .modal-box {
+
+            width:
+                min(
+                    100%,
+                    500px
+                );
+
+            max-height:
+                calc(
+                    100vh - 30px
+                );
+
+            overflow-y: auto;
+
+            padding: 20px;
 
             border:
                 1px solid
-                rgba(255,255,255,0.06);
+                #292929;
+
+            border-radius: 22px;
+
+            background: #111;
+
+            box-shadow:
+                0
+                25px
+                70px
+                rgba(0,0,0,.55);
+
+            transform:
+                translateY(18px)
+                scale(.97);
+
+            transition: .25s ease;
         }
 
 
-        .profile-info-title {
+        .modal.show .modal-box {
 
-            font-size: 14px;
-
-            font-weight: 800;
-
-            margin-bottom: 13px;
+            transform:
+                translateY(0)
+                scale(1);
         }
 
 
-        .profile-info-row {
+        .modal-header {
 
             display: flex;
 
@@ -611,501 +827,1057 @@
 
             justify-content: space-between;
 
-            gap: 15px;
+            gap: 10px;
+
+            margin-bottom: 18px;
+        }
+
+
+        .modal-header h2 {
+
+            font-size: 21px;
+        }
+
+
+        .close-modal {
+
+            width: 38px;
+            height: 38px;
+
+            border: 0;
+
+            border-radius: 50%;
+
+            background: #222;
+
+            color: #fff;
+
+            cursor: pointer;
+
+            font-size: 18px;
+        }
+
+
+        /* =================================================
+           EDIT SECTION
+        ================================================= */
+
+        .edit-section {
 
             padding:
-                11px 0;
-
-            border-bottom:
-                1px solid
-                rgba(255,255,255,0.05);
-        }
-
-
-        .profile-info-row:last-child {
-
-            border-bottom: 0;
-
-            padding-bottom: 0;
-        }
-
-
-        .profile-info-label {
-
-            color: #777777;
-
-            font-size: 12px;
-        }
-
-
-        .profile-info-value {
-
-            color: #dddddd;
-
-            font-size: 12px;
-
-            text-align: left;
-
-            word-break: break-word;
-        }
-
-
-        /* =========================================
-           الرسائل
-           ========================================= */
-
-        .profile-message {
-
-            display: none;
-
-            margin-top: 12px;
-
-            padding:
-                11px 13px;
-
-            border-radius: 12px;
-
-            background:
-                rgba(255,255,255,0.055);
-
-            border:
-                1px solid
-                rgba(255,255,255,0.08);
-
-            color: #eeeeee;
-
-            font-size: 12px;
-
-            line-height: 1.7;
-
-            text-align: center;
-        }
-
-
-        .profile-message.show {
-
-            display: block;
-        }
-
-
-        .profile-message.error {
-
-            border-color:
-                rgba(255,90,90,0.35);
-
-            color: #ffb4b4;
-        }
-
-
-        .profile-message.success {
-
-            border-color:
-                rgba(130,255,170,0.3);
-
-            color: #c9ffd8;
-        }
-
-
-        /* =========================================
-           النوافذ
-           ========================================= */
-
-        .profile-modal {
-
-            position: fixed;
-
-            inset: 0;
-
-            z-index: 99995;
-
-            display: none;
-
-            align-items: center;
-
-            justify-content: center;
-
-            padding: 20px;
-
-            background:
-                rgba(0,0,0,0.72);
-
-            backdrop-filter: blur(8px);
-
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-
-        .profile-modal.show {
-
-            display: flex;
-        }
-
-
-        .profile-modal-box {
-
-            width: 100%;
-
-            max-width: 430px;
-
-            max-height: 92vh;
-
-            overflow-y: auto;
-
-            border-radius: 22px;
-
-            padding: 21px;
-
-            background:
-                #111111;
-
-            border:
-                1px solid
-                rgba(255,255,255,0.09);
-
-            box-shadow:
-                0 25px 80px
-                rgba(0,0,0,0.6);
-        }
-
-
-        .profile-modal-title {
-
-            font-size: 19px;
-
-            font-weight: 800;
-
-            margin-bottom: 17px;
-        }
-
-
-        .profile-input {
-
-            width: 100%;
-
-            min-height: 47px;
+                15px;
 
             margin-bottom: 10px;
 
-            padding:
-                0 14px;
+            border:
+                1px solid
+                #242424;
 
-            border-radius: 13px;
+            border-radius: 16px;
 
-            outline: none;
+            background:
+                rgba(255,255,255,.025);
+
+            transition:
+                opacity .25s ease,
+                transform .25s ease;
+        }
+
+
+        .edit-section.saved {
+
+            opacity: .65;
+        }
+
+
+        .edit-section-title {
+
+            font-size: 15px;
+
+            font-weight: bold;
+
+            margin-bottom: 6px;
+        }
+
+
+        .edit-section-description {
+
+            color: #777;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+
+            margin-bottom: 10px;
+        }
+
+
+        .form-input,
+        .form-textarea {
+
+            width: 100%;
 
             border:
                 1px solid
-                rgba(255,255,255,0.08);
-
-            background:
-                rgba(255,255,255,0.05);
-
-            color: #ffffff;
-
-            font-size: 14px;
-        }
-
-
-        .profile-input:focus {
-
-            border-color:
-                rgba(255,255,255,0.22);
-        }
-
-
-        .profile-input[dir="ltr"] {
-
-            text-align: left;
-        }
-
-
-        .field-note {
-
-            color: #777777;
-
-            font-size: 10px;
-
-            margin:
-                -4px 3px 10px;
-
-            line-height: 1.6;
-        }
-
-
-        .change-limit {
-
-            color: #888888;
-
-            font-size: 10px;
-
-            margin:
-                -3px 3px 10px;
-
-            line-height: 1.6;
-        }
-
-
-        .profile-modal-actions {
-
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 8px;
-
-            margin-top: 7px;
-        }
-
-
-        .profile-modal-button {
-
-            min-height: 44px;
+                #292929;
 
             border-radius: 12px;
 
-            border:
-                1px solid
-                rgba(255,255,255,0.08);
+            outline: none;
 
-            background:
-                rgba(255,255,255,0.06);
+            background: #181818;
 
-            color: #ffffff;
+            color: #fff;
 
-            font-weight: 700;
+            font-size: 14px;
 
-            cursor: pointer;
+            transition:
+                border-color .2s ease,
+                background .2s ease;
         }
 
 
-        .profile-modal-button.primary {
+        .form-input {
 
-            background:
-                #ffffff;
+            height: 48px;
+
+            padding:
+                0
+                13px;
+        }
+
+
+        .form-textarea {
+
+            min-height: 100px;
+
+            resize: vertical;
+
+            padding:
+                12px
+                13px;
+
+            line-height: 1.6;
+        }
+
+
+        .form-input:focus,
+        .form-textarea:focus {
+
+            border-color: #555;
+        }
+
+
+        .form-input.error,
+        .form-textarea.error {
+
+            border-color: #ef4444 !important;
+
+            box-shadow:
+                0
+                0
+                0
+                3px
+                rgba(239,68,68,.10);
+        }
+
+
+        .field-message {
+
+            min-height: 18px;
+
+            margin-top: 6px;
+
+            color: #ef4444;
+
+            font-size: 12px;
+        }
+
+
+        .field-message.success {
+
+            color: #22c55e;
+        }
+
+
+        .save-button {
+
+            width: 100%;
+
+            min-height: 45px;
+
+            margin-top: 8px;
+
+            border: 0;
+
+            border-radius: 12px;
+
+            background: #eee;
 
             color: #050505;
+
+            cursor: pointer;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            transition: .2s ease;
         }
 
 
-        .profile-modal-button:disabled {
+        .save-button:hover {
 
-            opacity: 0.45;
+            background: #fff;
+        }
+
+
+        .save-button:disabled {
+
+            opacity: .5;
 
             cursor: not-allowed;
         }
 
 
-        /* =========================================
-           نافذة الصور
-           ========================================= */
+        .timer {
+
+            color: #777;
+
+            font-size: 11px;
+
+            margin-top: 7px;
+
+            text-align: center;
+        }
+
+
+        .timer.ready {
+
+            color: #22c55e;
+        }
+
+
+        /* =================================================
+           SHAKE
+        ================================================= */
+
+        @keyframes wfescShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(7px);
+            }
+
+            40% {
+                transform: translateX(-7px);
+            }
+
+            60% {
+                transform: translateX(5px);
+            }
+
+            80% {
+                transform: translateX(-5px);
+            }
+        }
+
+
+        .shake {
+
+            animation:
+                wfescShake
+                .38s
+                ease;
+        }
+
+
+        /* =================================================
+           IMAGE MODAL
+        ================================================= */
 
         .image-editor {
 
-            position: relative;
+            text-align: center;
+        }
+
+
+        .image-preview {
+
+            width: 180px;
+            height: 180px;
+
+            margin:
+                0
+                auto
+                15px;
+
+            border-radius: 50%;
+
+            object-fit: cover;
+
+            display: none;
+
+            border:
+                2px solid
+                #333;
+        }
+
+
+        .image-preview.cover-preview {
 
             width: 100%;
 
-            overflow: hidden;
+            height: 170px;
 
-            background:
-                #050505;
+            border-radius: 15px;
+
+            object-fit: cover;
+        }
+
+
+        .image-file {
+
+            width: 100%;
+
+            color: #aaa;
+
+            font-size: 13px;
+
+            margin-bottom: 10px;
+        }
+
+
+        .delete-image {
+
+            width: 100%;
+
+            min-height: 43px;
 
             border:
                 1px solid
-                rgba(255,255,255,0.08);
+                #442020;
 
-            margin-bottom: 15px;
+            background:
+                #241010;
 
-            touch-action: none;
-        }
-
-
-        .image-editor.avatar-editor {
-
-            aspect-ratio: 1 / 1;
-
-            border-radius: 50%;
-        }
-
-
-        .image-editor.cover-editor {
-
-            aspect-ratio: 16 / 5;
-
-            border-radius: 14px;
-        }
-
-
-        .image-editor img {
-
-            position: absolute;
-
-            max-width: none;
-
-            user-select: none;
-
-            -webkit-user-drag: none;
-
-            transform-origin: center center;
-
-            pointer-events: none;
-        }
-
-
-        .editor-hint {
-
-            color: #888888;
-
-            font-size: 11px;
-
-            line-height: 1.7;
-
-            text-align: center;
-
-            margin-bottom: 12px;
-        }
-
-
-        .editor-control {
-
-            margin-bottom: 12px;
-        }
-
-
-        .editor-control label {
-
-            display: block;
-
-            color: #aaaaaa;
-
-            font-size: 11px;
-
-            margin-bottom: 5px;
-        }
-
-
-        .editor-control input[type="range"] {
-
-            width: 100%;
-        }
-
-
-        .image-editor-buttons {
-
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 8px;
-        }
-
-
-        .editor-button {
-
-            min-height: 44px;
+            color: #ff7777;
 
             border-radius: 12px;
 
-            border:
-                1px solid
-                rgba(255,255,255,0.08);
-
-            background:
-                rgba(255,255,255,0.06);
-
-            color: #ffffff;
-
-            font-weight: 700;
-
             cursor: pointer;
+
+            margin-top: 8px;
         }
 
 
-        .editor-button.primary {
+        /* =================================================
+           STATUS
+        ================================================= */
 
-            background: #ffffff;
+        .profile-status {
 
-            color: #050505;
-        }
+            position: fixed;
 
+            left: 50%;
 
-        /* =========================================
-           حالة التحميل
-           ========================================= */
+            bottom: 25px;
 
-        .profile-loading {
+            z-index: 50000;
+
+            max-width:
+                calc(
+                    100% - 30px
+                );
 
             padding:
-                50px 20px;
+                11px
+                17px;
+
+            border-radius: 12px;
+
+            background: #eee;
+
+            color: #050505;
 
             text-align: center;
 
-            color: #888888;
-
             font-size: 13px;
+
+            opacity: 0;
+
+            pointer-events: none;
+
+            transform:
+                translate(
+                    -50%,
+                    18px
+                );
+
+            transition: .3s ease;
         }
 
 
-        /* =========================================
-           الموبايل
-           ========================================= */
+        .profile-status.show {
 
-        @media (max-width: 600px) {
+            opacity: 1;
+
+            transform:
+                translate(
+                    -50%,
+                    0
+                );
+        }
+
+
+        .profile-status.error {
+
+            background: #ef4444;
+
+            color: #fff;
+        }
+
+
+        .profile-status.success {
+
+            background: #22c55e;
+
+            color: #fff;
+        }
+
+
+        /* =================================================
+           LIQUID GLASS
+        ================================================= */
+
+        html.wfesc-liquid-glass
+        .profile-card {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.075),
+                    rgba(255,255,255,.025)
+                );
+
+            border-color:
+                rgba(255,255,255,.13);
+
+            box-shadow:
+                0
+                15px
+                45px
+                rgba(0,0,0,.30),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.08);
+
+            backdrop-filter:
+                blur(24px)
+                saturate(150%);
+
+            -webkit-backdrop-filter:
+                blur(24px)
+                saturate(150%);
+        }
+
+
+        html.wfesc-liquid-glass
+        .profile-cover {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.08),
+                    rgba(255,255,255,.025)
+                );
+        }
+
+
+        html.wfesc-liquid-glass
+        .avatar-wrap {
+
+            background:
+                rgba(255,255,255,.055);
+
+            border-color:
+                rgba(255,255,255,.15);
+
+            box-shadow:
+                0
+                8px
+                30px
+                rgba(0,0,0,.35),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.10);
+        }
+
+
+        html.wfesc-liquid-glass
+        .profile-action {
+
+            background:
+                rgba(255,255,255,.045);
+
+            border-color:
+                rgba(255,255,255,.12);
+
+            backdrop-filter:
+                blur(18px)
+                saturate(145%);
+
+            -webkit-backdrop-filter:
+                blur(18px)
+                saturate(145%);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.06);
+        }
+
+
+        html.wfesc-liquid-glass
+        .profile-action:hover {
+
+            background:
+                rgba(255,255,255,.085);
+
+            border-color:
+                rgba(255,255,255,.17);
+        }
+
+
+        html.wfesc-liquid-glass
+        .profile-action.primary {
+
+            background:
+                rgba(255,255,255,.88);
+
+            color: #050505;
+
+            border-color:
+                rgba(255,255,255,.8);
+        }
+
+
+        html.wfesc-liquid-glass
+        .profile-stats {
+
+            border-color:
+                rgba(255,255,255,.12);
+
+            background:
+                rgba(255,255,255,.025);
+        }
+
+
+        html.wfesc-liquid-glass
+        .profile-stat {
+
+            border-color:
+                rgba(255,255,255,.09);
+        }
+
+
+        html.wfesc-liquid-glass
+        .edit-section {
+
+            background:
+                rgba(255,255,255,.035);
+
+            border-color:
+                rgba(255,255,255,.11);
+
+            backdrop-filter:
+                blur(18px)
+                saturate(145%);
+
+            -webkit-backdrop-filter:
+                blur(18px)
+                saturate(145%);
+        }
+
+
+        html.wfesc-liquid-glass
+        .modal-box {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(25,25,25,.88),
+                    rgba(10,10,10,.82)
+                );
+
+            border-color:
+                rgba(255,255,255,.14);
+
+            box-shadow:
+                0
+                25px
+                70px
+                rgba(0,0,0,.5),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.08);
+
+            backdrop-filter:
+                blur(30px)
+                saturate(155%);
+
+            -webkit-backdrop-filter:
+                blur(30px)
+                saturate(155%);
+        }
+
+
+        html.wfesc-liquid-glass
+        .form-input,
+        html.wfesc-liquid-glass
+        .form-textarea {
+
+            background:
+                rgba(255,255,255,.045);
+
+            border-color:
+                rgba(255,255,255,.13);
+
+            backdrop-filter:
+                blur(16px);
+
+            -webkit-backdrop-filter:
+                blur(16px);
+
+            box-shadow:
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.05);
+        }
+
+
+        html.wfesc-liquid-glass
+        .cover-edit {
+
+            background:
+                rgba(0,0,0,.38);
+
+            border-color:
+                rgba(255,255,255,.15);
+        }
+
+
+        /* =================================================
+           LIGHT MODE
+        ================================================= */
+
+        html.wfesc-light-mode body {
+
+            background: #f3f3f3;
+
+            color: #111;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-card {
+
+            background: #fff;
+
+            border-color: #ddd;
+
+            box-shadow:
+                0
+                15px
+                45px
+                rgba(0,0,0,.08);
+        }
+
+
+        html.wfesc-light-mode
+        .profile-cover {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eee,
+                    #ddd
+                );
+        }
+
+
+        html.wfesc-light-mode
+        .avatar-wrap {
+
+            background: #fff;
+
+            border-color: #fff;
+        }
+
+
+        html.wfesc-light-mode
+        .avatar-fallback {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eee,
+                    #ddd
+                );
+
+            color: #111;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-username {
+
+            color: #777;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-bio {
+
+            color: #444;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-bio.empty {
+
+            color: #888;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-action {
+
+            background: #f4f4f4;
+
+            color: #111;
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-action:hover {
+
+            background: #e9e9e9;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-action.primary {
+
+            background: #111;
+
+            color: #fff;
+
+            border-color: #111;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-stats {
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-stat {
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .profile-stat-label {
+
+            color: #777;
+        }
+
+
+        html.wfesc-light-mode
+        .account-info {
+
+            border-color: #e5e5e5;
+        }
+
+
+        html.wfesc-light-mode
+        .account-info-value {
+
+            color: #222;
+        }
+
+
+        html.wfesc-light-mode
+        .edit-section {
+
+            background: #fafafa;
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .modal-box {
+
+            background: #fff;
+
+            color: #111;
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .close-modal {
+
+            background: #eee;
+
+            color: #111;
+        }
+
+
+        html.wfesc-light-mode
+        .form-input,
+        html.wfesc-light-mode
+        .form-textarea {
+
+            background: #f6f6f6;
+
+            color: #111;
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .cover-edit {
+
+            background:
+                rgba(255,255,255,.75);
+
+            color: #111;
+
+            border-color: rgba(0,0,0,.10);
+        }
+
+
+        /* =================================================
+           LIGHT + GLASS
+        ================================================= */
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .profile-card {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.72),
+                    rgba(255,255,255,.48)
+                );
+
+            border-color:
+                rgba(0,0,0,.10);
+
+            box-shadow:
+                0
+                15px
+                45px
+                rgba(0,0,0,.10),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.9);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .edit-section {
+
+            background:
+                rgba(255,255,255,.42);
+
+            border-color:
+                rgba(0,0,0,.10);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .form-input,
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .form-textarea {
+
+            background:
+                rgba(255,255,255,.42);
+
+            color: #111;
+
+            border-color:
+                rgba(0,0,0,.10);
+        }
+
+
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .modal-box {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.88),
+                    rgba(245,245,245,.78)
+                );
+
+            border-color:
+                rgba(0,0,0,.10);
+
+            box-shadow:
+                0
+                25px
+                70px
+                rgba(0,0,0,.18),
+                inset
+                0
+                1px
+                0
+                rgba(255,255,255,.95);
+        }
+
+
+        /* =================================================
+           ANIMATION OFF
+        ================================================= */
+
+        html.wfesc-animation-off *,
+        html.wfesc-animation-off *::before,
+        html.wfesc-animation-off *::after {
+
+            animation-duration:
+                0s !important;
+
+            animation-delay:
+                0s !important;
+
+            transition-duration:
+                0s !important;
+
+            scroll-behavior:
+                auto !important;
+        }
+
+
+        /* =================================================
+           MOBILE
+        ================================================= */
+
+        @media (max-width: 500px) {
 
             .profile-page {
 
                 padding:
-                    18px 11px 110px;
+                    12px
+                    10px
+                    30px;
             }
 
 
             .profile-cover {
 
-                height: 125px;
+                height: 175px;
             }
 
 
-            .profile-avatar-wrap {
+            .profile-content {
 
-                width: 92px;
-
-                height: 92px;
-
-                margin-top: -46px;
+                padding:
+                    0
+                    15px
+                    22px;
             }
 
 
-            .profile-avatar {
+            .avatar-wrap {
 
-                width: 92px;
+                width: 94px;
+                height: 94px;
 
-                height: 92px;
+                margin-top: -47px;
+            }
+
+
+            .avatar-fallback {
+
+                font-size: 31px;
             }
 
 
             .profile-name {
 
-                font-size: 23px;
+                font-size: 22px;
+            }
+
+
+            .profile-actions {
+
+                display: grid;
+
+                grid-template-columns:
+                    1fr
+                    1fr;
+            }
+
+
+            .profile-action {
+
+                width: 100%;
             }
 
 
             .profile-stats {
 
-                gap: 6px;
+                border-radius: 13px;
             }
 
 
-            .profile-modal {
+            .profile-stat {
 
-                padding: 11px;
+                padding:
+                    12px
+                    6px;
             }
 
 
-            .profile-modal-box {
+            .modal {
 
-                padding: 17px;
+                padding: 10px;
+            }
+
+
+            .modal-box {
+
+                border-radius: 19px;
+
+                padding: 15px;
             }
 
         }
@@ -1118,1008 +1890,881 @@
 <body>
 
 
-    <main class="profile-page">
-
-        <div class="profile-container">
-
-            <section class="profile-card">
+<main class="profile-page">
 
 
-                <!-- =========================================
-                     الغلاف
-                     ========================================= -->
+    <section
+        class="profile-card"
+        id="profileCard"
+    >
 
-                <div
-                    id="profileCover"
-                    class="profile-cover"
+
+        <!-- =================================================
+             COVER
+        ================================================== -->
+
+        <div class="profile-cover">
+
+            <div
+                class="profile-cover-default"
+                id="coverDefault"
+            >
+                WFESC
+            </div>
+
+
+            <img
+                id="profileCoverImage"
+                class="profile-cover-image"
+                alt="غلاف الملف الشخصي"
+            >
+
+
+            <button
+                type="button"
+                class="cover-edit"
+                id="editCoverButton"
+                title="تغيير الغلاف"
+            >
+                ✎
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             PROFILE CONTENT
+        ================================================== -->
+
+        <div class="profile-content">
+
+
+            <div class="avatar-wrap">
+
+
+                <img
+                    id="profileAvatar"
+                    class="profile-avatar"
+                    alt="الصورة الشخصية"
                 >
 
-                    <span class="cover-change-label">
-                        اضغط لتغيير الغلاف
+
+                <div
+                    id="avatarFallback"
+                    class="avatar-fallback"
+                >
+                    W
+                </div>
+
+
+                <button
+                    type="button"
+                    class="avatar-edit"
+                    id="editAvatarButton"
+                    title="تغيير الصورة"
+                >
+                    ✎
+                </button>
+
+            </div>
+
+
+            <!-- NAME -->
+
+            <div class="profile-name-row">
+
+                <h1
+                    class="profile-name"
+                    id="profileName"
+                >
+                    WFESC
+                </h1>
+
+
+                <!-- يظهر فقط للحساب الموثق -->
+
+                <span
+                    id="profileVerified"
+                    class="profile-verified"
+                    title="حساب موثّق"
+                    hidden
+                >
+                    ✓
+                </span>
+
+            </div>
+
+
+            <div
+                class="profile-username"
+                id="profileUsername"
+            >
+                @wfesc
+            </div>
+
+
+            <!-- BIO -->
+
+            <div
+                class="profile-bio empty"
+                id="profileBio"
+            >
+                كيف حالك اليوم؟
+            </div>
+
+
+            <!-- ACTIONS -->
+
+            <div class="profile-actions">
+
+
+                <button
+                    type="button"
+                    class="profile-action primary"
+                    id="editProfileButton"
+                >
+                    تعديل الملف الشخصي
+                </button>
+
+
+                <button
+                    type="button"
+                    class="profile-action"
+                    id="shareProfileButton"
+                >
+                    مشاركة الملف
+                </button>
+
+            </div>
+
+
+            <!-- STATS -->
+
+            <div class="profile-stats">
+
+
+                <div class="profile-stat">
+
+                    <span
+                        class="profile-stat-number"
+                        id="followersCount"
+                    >
+                        0
+                    </span>
+
+                    <span class="profile-stat-label">
+                        المتابعون
                     </span>
 
                 </div>
 
 
-                <div class="profile-content">
+                <div class="profile-stat">
 
-
-                    <!-- =========================================
-                         الصورة
-                         ========================================= -->
-
-                    <div class="profile-avatar-wrap">
-
-                        <div
-                            id="profileAvatar"
-                            class="profile-avatar"
-                        >
-                            <span id="avatarFallback">
-                                W
-                            </span>
-                        </div>
-
-
-                        <button
-                            id="changeAvatarButton"
-                            class="avatar-edit-button"
-                            type="button"
-                            aria-label="تغيير الصورة"
-                        >
-                            ✏️
-                        </button>
-
-                    </div>
-
-
-                    <!-- =========================================
-                         الاسم
-                         ========================================= -->
-
-                    <div class="profile-name-row">
-
-                        <h1
-                            id="profileName"
-                            class="profile-name"
-                        >
-                            name
-                        </h1>
-
-                        <span
-                            class="profile-verified"
-                            title="حساب رسمي"
-                        >
-                            ✓
-                        </span>
-
-                    </div>
-
-
-                    <div
-                        id="profileUsername"
-                        class="profile-username"
+                    <span
+                        class="profile-stat-number"
+                        id="followingCount"
                     >
-                        @username
-                    </div>
+                        0
+                    </span>
 
-
-                    <!-- =========================================
-                         الوصف
-                         ========================================= -->
-
-                    <p
-                        id="profileBio"
-                        class="profile-bio"
-                    >
-                        المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪
-                        <br>
-                        تاريخ العراق وإنجازاته ومشاريعه وممتلكاته ونوادره.
-                    </p>
-
-
-                    <!-- =========================================
-                         الرسالة
-                         ========================================= -->
-
-                    <div
-                        id="profileMessage"
-                        class="profile-message"
-                        aria-live="polite"
-                    ></div>
-
-
-                    <!-- =========================================
-                         الإحصائيات
-                         ========================================= -->
-
-                    <div class="profile-stats">
-
-                        <div class="profile-stat">
-
-                            <span
-                                id="postsCount"
-                                class="profile-stat-number"
-                            >
-                                0
-                            </span>
-
-                            <span class="profile-stat-label">
-                                المنشورات
-                            </span>
-
-                        </div>
-
-
-                        <div class="profile-stat">
-
-                            <span
-                                id="followersCount"
-                                class="profile-stat-number"
-                            >
-                                0
-                            </span>
-
-                            <span class="profile-stat-label">
-                                المتابعون
-                            </span>
-
-                        </div>
-
-
-                        <div class="profile-stat">
-
-                            <span
-                                id="followingCount"
-                                class="profile-stat-number"
-                            >
-                                0
-                            </span>
-
-                            <span class="profile-stat-label">
-                                المتابَعون
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- =========================================
-                         الأزرار
-                         ========================================= -->
-
-                    <div class="profile-actions">
-
-                        <button
-                            id="editProfileButton"
-                            class="profile-action"
-                            type="button"
-                        >
-                            ✏️ تعديل الملف
-                        </button>
-
-
-                        <button
-                            id="shareProfileButton"
-                            class="profile-action"
-                            type="button"
-                        >
-                            🔗 مشاركة الملف
-                        </button>
-
-                    </div>
-
-
-                    <!-- =========================================
-                         معلومات الحساب
-                         ========================================= -->
-
-                    <section class="profile-info">
-
-                        <div class="profile-info-title">
-                            معلومات الحساب
-                        </div>
-
-
-                        <div class="profile-info-row">
-
-                            <span class="profile-info-label">
-                                اسم المستخدم
-                            </span>
-
-                            <span
-                                id="infoUsername"
-                                class="profile-info-value"
-                            >
-                                @username
-                            </span>
-
-                        </div>
-
-
-                        <div class="profile-info-row">
-
-                            <span class="profile-info-label">
-                                الحساب
-                            </span>
-
-                            <span
-                                id="infoEmail"
-                                class="profile-info-value"
-                            >
-                                —
-                            </span>
-
-                        </div>
-
-
-                        <div class="profile-info-row">
-
-                            <span class="profile-info-label">
-                                الحالة
-                            </span>
-
-                            <span class="profile-info-value">
-                                نشط
-                            </span>
-
-                        </div>
-
-                    </section>
-
+                    <span class="profile-stat-label">
+                        يتابع
+                    </span>
 
                 </div>
 
-            </section>
+
+                <div class="profile-stat">
+
+                    <span
+                        class="profile-stat-number"
+                        id="postsCount"
+                    >
+                        0
+                    </span>
+
+                    <span class="profile-stat-label">
+                        المنشورات
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACCOUNT INFO -->
+
+            <div class="account-info">
+
+
+                <div class="account-info-title">
+                    معلومات الحساب
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-info-label">
+                        البريد الإلكتروني
+                    </span>
+
+                    <span
+                        class="account-info-value"
+                        id="accountEmail"
+                    >
+                        —
+                    </span>
+
+                </div>
+
+
+                <div class="account-info-row">
+
+                    <span class="account-info-label">
+                        تاريخ إنشاء الحساب
+                    </span>
+
+                    <span
+                        class="account-info-value"
+                        id="accountCreated"
+                    >
+                        —
+                    </span>
+
+                </div>
+
+            </div>
 
         </div>
 
-    </main>
+    </section>
+
+</main>
 
 
-    <!-- =========================================
-         نافذة تعديل الملف
-         ========================================= -->
+<!-- =================================================
+     EDIT PROFILE MODAL
+================================================== -->
 
-    <div
-        id="profileModal"
-        class="profile-modal"
-    >
+<div
+    class="modal"
+    id="editProfileModal"
+>
 
-        <div class="profile-modal-box">
+    <div class="modal-box">
 
-            <div class="profile-modal-title">
+
+        <div class="modal-header">
+
+            <h2>
                 تعديل الملف الشخصي
+            </h2>
+
+
+            <button
+                type="button"
+                class="close-modal"
+                id="closeEditProfile"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             NAME
+        ================================================== -->
+
+        <section
+            class="edit-section"
+            id="nameEditSection"
+        >
+
+            <div class="edit-section-title">
+                تغيير الاسم
+            </div>
+
+
+            <div class="edit-section-description">
+                يمكنك تغيير اسم العرض كل ساعة.
             </div>
 
 
             <input
-                id="editName"
-                class="profile-input"
                 type="text"
-                placeholder="اسم الحساب"
+                class="form-input"
+                id="nameInput"
                 maxlength="15"
+                autocomplete="nickname"
+                placeholder="الاسم"
             >
 
 
             <div
-                id="nameChangeLimit"
-                class="change-limit"
+                class="field-message"
+                id="nameMessage"
             ></div>
 
 
-            <input
-                id="editUsername"
-                class="profile-input"
-                type="text"
-                placeholder="اسم المستخدم"
-                maxlength="9"
-                dir="ltr"
-                autocomplete="off"
+            <div
+                class="timer"
+                id="nameTimer"
+            ></div>
+
+
+            <button
+                type="button"
+                class="save-button"
+                id="saveNameButton"
             >
+                تغيير الاسم
+            </button>
+
+        </section>
 
 
-            <div class="field-note">
-                3 إلى 9 أحرف أو أرقام إنجليزية فقط.
+        <!-- =================================================
+             USERNAME
+        ================================================== -->
+
+        <section
+            class="edit-section"
+            id="usernameEditSection"
+        >
+
+            <div class="edit-section-title">
+                تغيير اليوزر
             </div>
 
 
+            <div class="edit-section-description">
+                3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل ساعة.
+            </div>
+
+
+            <input
+                type="text"
+                class="form-input"
+                id="usernameInput"
+                maxlength="9"
+                autocomplete="username"
+                spellcheck="false"
+                placeholder="اسم المستخدم"
+            >
+
+
             <div
-                id="usernameChangeLimit"
-                class="change-limit"
+                class="field-message"
+                id="usernameMessage"
             ></div>
+
+
+            <div
+                class="timer"
+                id="usernameTimer"
+            ></div>
+
+
+            <button
+                type="button"
+                class="save-button"
+                id="saveUsernameButton"
+            >
+                تغيير اليوزر
+            </button>
+
+        </section>
+
+
+        <!-- =================================================
+             BIO
+        ================================================== -->
+
+        <section
+            class="edit-section"
+            id="bioEditSection"
+        >
+
+            <div class="edit-section-title">
+                تغيير البايو
+            </div>
+
+
+            <div class="edit-section-description">
+                يمكنك كتابة نبذة عن نفسك، أو تركها فارغة.
+            </div>
 
 
             <textarea
-                id="editBio"
-                class="profile-input"
-                rows="4"
-                placeholder="نبذة عن الحساب"
-                maxlength="250"
-                style="
-                    height:100px;
-                    padding-top:13px;
-                    resize:none;
-                "
+                class="form-textarea"
+                id="bioInput"
+                maxlength="500"
+                placeholder="كيف حالك اليوم؟"
             ></textarea>
 
 
-            <div class="profile-modal-actions">
-
-                <button
-                    id="saveProfile"
-                    class="profile-modal-button primary"
-                    type="button"
-                >
-                    حفظ
-                </button>
+            <div
+                class="field-message"
+                id="bioMessage"
+            ></div>
 
 
-                <button
-                    id="closeProfileModal"
-                    class="profile-modal-button"
-                    type="button"
-                >
-                    إلغاء
-                </button>
+            <button
+                type="button"
+                class="save-button"
+                id="saveBioButton"
+            >
+                حفظ البايو
+            </button>
 
-            </div>
+        </section>
+
+
+    </div>
+
+</div>
+
+
+<!-- =================================================
+     IMAGE MODAL
+================================================== -->
+
+<div
+    class="modal"
+    id="imageModal"
+>
+
+    <div class="modal-box">
+
+
+        <div class="modal-header">
+
+            <h2 id="imageModalTitle">
+                تغيير الصورة
+            </h2>
+
+
+            <button
+                type="button"
+                class="close-modal"
+                id="closeImageModal"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="image-editor">
+
+
+            <img
+                id="imagePreview"
+                class="image-preview"
+                alt="معاينة الصورة"
+            >
+
+
+            <input
+                type="file"
+                id="imageFile"
+                class="image-file"
+                accept="image/*"
+            >
+
+
+            <button
+                type="button"
+                class="save-button"
+                id="saveImageButton"
+            >
+                حفظ الصورة
+            </button>
+
+
+            <button
+                type="button"
+                class="delete-image"
+                id="deleteImageButton"
+            >
+                حذف الصورة
+            </button>
 
         </div>
 
     </div>
 
+</div>
 
-    <!-- =========================================
-         اختيار صورة الملف
-         ========================================= -->
 
-    <input
-        id="avatarFileInput"
-        type="file"
-        accept="image/*"
-        hidden
-    >
+<!-- =================================================
+     STATUS
+================================================== -->
 
+<div
+    class="profile-status"
+    id="profileStatus"
+    aria-live="polite"
+></div>
 
-    <!-- =========================================
-         اختيار صورة الغلاف
-         ========================================= -->
 
-    <input
-        id="coverFileInput"
-        type="file"
-        accept="image/*"
-        hidden
-    >
+<!-- =================================================
+     SUPABASE
+================================================== -->
 
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
 
-    <!-- =========================================
-         محرر الصورة
-         ========================================= -->
 
-    <div
-        id="imageEditorModal"
-        class="profile-modal"
-    >
+<!-- =================================================
+     WFESC AUTH
+================================================== -->
 
-        <div class="profile-modal-box">
+<script
+    src="./settings-features/settings-auth-config.js"
+></script>
 
-            <div
-                id="imageEditorTitle"
-                class="profile-modal-title"
-            >
-                تعديل الصورة
-            </div>
+<script
+    src="./settings-features/settings-auth.js"
+></script>
 
 
-            <div
-                id="imageEditor"
-                class="image-editor avatar-editor"
-            >
+<!-- =================================================
+     PROFILE SYSTEM
+================================================== -->
 
-                <img
-                    id="editorImage"
-                    alt="معاينة الصورة"
-                >
+<script>
 
-            </div>
+(function () {
 
+    "use strict";
 
-            <div class="editor-hint">
-                اسحب الصورة للتحريك، واستخدم التكبير لضبط موضعها.
-            </div>
 
+    if (window.WFESCProfileStarted) {
+        return;
+    }
 
-            <div class="editor-control">
+    window.WFESCProfileStarted = true;
 
-                <label for="zoomRange">
-                    التكبير
-                </label>
 
-                <input
-                    id="zoomRange"
-                    type="range"
-                    min="1"
-                    max="3"
-                    step="0.01"
-                    value="1"
-                >
+    /* =================================================
+       CONFIG
+    ================================================= */
 
-            </div>
+    const CONFIG =
+        window.WFESCSettingsAuthConfig || {};
 
 
-            <div class="editor-control">
+    const auth =
+        window.WFESCSettingsAuth;
 
-                <label for="positionXRange">
-                    يمين / يسار
-                </label>
 
-                <input
-                    id="positionXRange"
-                    type="range"
-                    min="-100"
-                    max="100"
-                    step="1"
-                    value="0"
-                >
+    const HOUR =
+        60 * 60 * 1000;
 
-            </div>
 
+    const DEFAULT_NAME =
+        "WFESC";
 
-            <div class="editor-control">
 
-                <label for="positionYRange">
-                    فوق / جوه
-                </label>
+    const DEFAULT_USERNAME =
+        "wfesc";
 
-                <input
-                    id="positionYRange"
-                    type="range"
-                    min="-100"
-                    max="100"
-                    step="1"
-                    value="0"
-                >
 
-            </div>
+    const DEFAULT_BIO =
+        "كيف حالك اليوم?";
 
 
-            <div class="image-editor-buttons">
+    let currentUser = null;
 
-                <button
-                    id="saveEditedImage"
-                    class="editor-button primary"
-                    type="button"
-                >
-                    حفظ الصورة
-                </button>
+    let currentProfile = {};
 
+    let imageType = "avatar";
 
-                <button
-                    id="cancelEditedImage"
-                    class="editor-button"
-                    type="button"
-                >
-                    إلغاء
-                </button>
+    let selectedImageData = null;
 
-            </div>
+    let timerInterval = null;
 
-        </div>
 
-    </div>
+    /* =================================================
+       ELEMENTS
+    ================================================= */
 
+    const profileName =
+        document.getElementById(
+            "profileName"
+        );
 
-    <script>
 
-        (() => {
+    const profileUsername =
+        document.getElementById(
+            "profileUsername"
+        );
 
-            "use strict";
 
+    const profileBio =
+        document.getElementById(
+            "profileBio"
+        );
 
-            /* =========================================
-               الإعدادات
-               ========================================= */
 
-            const CONFIG =
-                window.WFESCSettingsAuthConfig || {};
+    const profileVerified =
+        document.getElementById(
+            "profileVerified"
+        );
 
 
-            const DEFAULT_AVATAR =
-                "./wf-default-avatar.jpg";
+    const profileAvatar =
+        document.getElementById(
+            "profileAvatar"
+        );
 
 
-            const DEFAULT_NAME =
-                "name";
+    const avatarFallback =
+        document.getElementById(
+            "avatarFallback"
+        );
 
 
-            const DEFAULT_USERNAME =
-                "username";
+    const profileCoverImage =
+        document.getElementById(
+            "profileCoverImage"
+        );
 
 
-            const DEFAULT_BIO =
-                "المحتوى مُدار من قبل اوفس 𝑾𝑭𝑬𝑺𝑪\nتاريخ العراق وإنجازاته ومشاريعه وممتلكاته ونوادره.";
+    const coverDefault =
+        document.getElementById(
+            "coverDefault"
+        );
 
 
-            const ONE_HOUR =
-                60 * 60 * 1000;
+    const accountEmail =
+        document.getElementById(
+            "accountEmail"
+        );
 
 
-            /* =========================================
-               العناصر
-               ========================================= */
+    const accountCreated =
+        document.getElementById(
+            "accountCreated"
+        );
 
-            const profileName =
-                document.getElementById(
-                    "profileName"
-                );
 
+    const followersCount =
+        document.getElementById(
+            "followersCount"
+        );
 
-            const profileUsername =
-                document.getElementById(
-                    "profileUsername"
-                );
 
+    const followingCount =
+        document.getElementById(
+            "followingCount"
+        );
 
-            const profileBio =
-                document.getElementById(
-                    "profileBio"
-                );
 
+    const postsCount =
+        document.getElementById(
+            "postsCount"
+        );
 
-            const profileAvatar =
-                document.getElementById(
-                    "profileAvatar"
-                );
 
+    const editProfileModal =
+        document.getElementById(
+            "editProfileModal"
+        );
 
-            const avatarFallback =
-                document.getElementById(
-                    "avatarFallback"
-                );
 
+    const imageModal =
+        document.getElementById(
+            "imageModal"
+        );
 
-            const profileCover =
-                document.getElementById(
-                    "profileCover"
-                );
 
+    const nameInput =
+        document.getElementById(
+            "nameInput"
+        );
 
-            const infoUsername =
-                document.getElementById(
-                    "infoUsername"
-                );
 
+    const usernameInput =
+        document.getElementById(
+            "usernameInput"
+        );
 
-            const infoEmail =
-                document.getElementById(
-                    "infoEmail"
-                );
 
+    const bioInput =
+        document.getElementById(
+            "bioInput"
+        );
 
-            const profileModal =
-                document.getElementById(
-                    "profileModal"
-                );
 
+    const nameMessage =
+        document.getElementById(
+            "nameMessage"
+        );
 
-            const editName =
-                document.getElementById(
-                    "editName"
-                );
 
+    const usernameMessage =
+        document.getElementById(
+            "usernameMessage"
+        );
 
-            const editUsername =
-                document.getElementById(
-                    "editUsername"
-                );
 
+    const bioMessage =
+        document.getElementById(
+            "bioMessage"
+        );
 
-            const editBio =
-                document.getElementById(
-                    "editBio"
-                );
 
+    const nameTimer =
+        document.getElementById(
+            "nameTimer"
+        );
 
-            const profileMessage =
-                document.getElementById(
-                    "profileMessage"
-                );
 
+    const usernameTimer =
+        document.getElementById(
+            "usernameTimer"
+        );
 
-            const usernameChangeLimit =
-                document.getElementById(
-                    "usernameChangeLimit"
-                );
 
+    const saveNameButton =
+        document.getElementById(
+            "saveNameButton"
+        );
 
-            const nameChangeLimit =
-                document.getElementById(
-                    "nameChangeLimit"
-                );
 
+    const saveUsernameButton =
+        document.getElementById(
+            "saveUsernameButton"
+        );
 
-            const imageEditorModal =
-                document.getElementById(
-                    "imageEditorModal"
-                );
 
+    const saveBioButton =
+        document.getElementById(
+            "saveBioButton"
+        );
 
-            const imageEditor =
-                document.getElementById(
-                    "imageEditor"
-                );
 
+    const profileStatus =
+        document.getElementById(
+            "profileStatus"
+        );
 
-            const editorImage =
-                document.getElementById(
-                    "editorImage"
-                );
 
+    const imagePreview =
+        document.getElementById(
+            "imagePreview"
+        );
 
-            const zoomRange =
-                document.getElementById(
-                    "zoomRange"
-                );
 
+    const imageFile =
+        document.getElementById(
+            "imageFile"
+        );
 
-            const positionXRange =
-                document.getElementById(
-                    "positionXRange"
-                );
 
+    const imageModalTitle =
+        document.getElementById(
+            "imageModalTitle"
+        );
 
-            const positionYRange =
-                document.getElementById(
-                    "positionYRange"
-                );
 
+    const saveImageButton =
+        document.getElementById(
+            "saveImageButton"
+        );
 
-            const avatarFileInput =
-                document.getElementById(
-                    "avatarFileInput"
-                );
 
+    const deleteImageButton =
+        document.getElementById(
+            "deleteImageButton"
+        );
 
-            const coverFileInput =
-                document.getElementById(
-                    "coverFileInput"
-                );
 
+    /* =================================================
+       STATUS
+    ================================================== */
 
-            const imageEditorTitle =
-                document.getElementById(
-                    "imageEditorTitle"
-                );
+    let statusTimer = null;
 
 
-            let currentUser =
-                null;
+    function showStatus(
+        message,
+        type = ""
+    ) {
 
+        if (!profileStatus) {
+            return;
+        }
 
-            let currentProfile =
-                null;
 
+        profileStatus.textContent =
+            message;
 
-            let editorType =
-                "avatar";
 
+        profileStatus.className =
+            "profile-status show";
 
-            let editorObjectUrl =
-                null;
 
+        if (type) {
 
-            let editorState = {
+            profileStatus.classList.add(
+                type
+            );
 
-                zoom: 1,
+        }
 
-                x: 0,
 
-                y: 0
+        clearTimeout(
+            statusTimer
+        );
 
-            };
 
+        statusTimer =
+            setTimeout(
+                function () {
 
-            let dragging =
-                false;
+                    profileStatus
+                        .classList
+                        .remove("show");
 
+                },
+                3000
+            );
 
-            let dragStartX =
-                0;
+    }
 
 
-            let dragStartY =
-                0;
+    /* =================================================
+       AUTH USER
+    ================================================== */
 
+    async function getCurrentUserSafe() {
 
-            let dragOriginalX =
-                0;
+        try {
 
-
-            let dragOriginalY =
-                0;
-
-
-            /* =========================================
-               الرسائل
-               ========================================= */
-
-            function showMessage(
-                message,
-                type = ""
+            if (
+                auth &&
+                typeof auth.getCurrentUser ===
+                "function"
             ) {
-
-                profileMessage.textContent =
-                    message;
-
-                profileMessage.className =
-                    "profile-message show " +
-                    type;
-
-            }
-
-
-            function hideMessage() {
-
-                profileMessage.className =
-                    "profile-message";
-
-                profileMessage.textContent =
-                    "";
-
-            }
-
-
-            /* =========================================
-               اسم المستخدم
-               ========================================= */
-
-            function sanitizeUsername(
-                value
-            ) {
-
-                return String(value || "")
-                    .toLowerCase()
-                    .replace(
-                        /[^a-z0-9]/g,
-                        ""
-                    )
-                    .slice(0, 9);
-
-            }
-
-
-            function formatRemaining(
-                timestamp
-            ) {
-
-                if (!timestamp) {
-                    return "";
-                }
-
-
-                const time =
-                    new Date(timestamp).getTime();
-
-
-                if (!Number.isFinite(time)) {
-                    return "";
-                }
-
-
-                const remaining =
-                    ONE_HOUR -
-                    (Date.now() - time);
-
-
-                if (remaining <= 0) {
-                    return "";
-                }
-
-
-                const minutes =
-                    Math.ceil(
-                        remaining / 60000
-                    );
-
-
-                if (minutes >= 60) {
-
-                    const hours =
-                        Math.floor(
-                            minutes / 60
-                        );
-
-                    const mins =
-                        minutes % 60;
-
-                    if (mins > 0) {
-
-                        return (
-                            "يمكنك التغيير بعد " +
-                            hours +
-                            " ساعة و" +
-                            mins +
-                            " دقيقة."
-                        );
-
-                    }
-
-                    return (
-                        "يمكنك التغيير بعد " +
-                        hours +
-                        " ساعة."
-                    );
-
-                }
-
-
-                return (
-                    "يمكنك التغيير بعد " +
-                    minutes +
-                    " دقيقة."
-                );
-
-            }
-
-
-            function isChangeLocked(
-                timestamp
-            ) {
-
-                if (!timestamp) {
-                    return false;
-                }
-
-
-                const time =
-                    new Date(timestamp).getTime();
-
-
-                if (!Number.isFinite(time)) {
-                    return false;
-                }
-
-
-                return (
-                    Date.now() - time <
-                    ONE_HOUR
-                );
-
-            }
-
-
-            function updateChangeMessages() {
-
-                if (!currentProfile) {
-                    return;
-                }
-
-
-                const usernameLimit =
-                    formatRemaining(
-                        currentProfile
-                            .last_username_change_at
-                    );
-
-
-                const nameLimit =
-                    formatRemaining(
-                        currentProfile
-                            .last_display_name_change_at
-                    );
-
-
-                usernameChangeLimit.textContent =
-                    usernameLimit;
-
-
-                nameChangeLimit.textContent =
-                    nameLimit;
-
-            }
-
-
-            /* =========================================
-               الصورة الافتراضية
-               ========================================= */
-
-            function setAvatar(
-                url
-            ) {
-
-                profileAvatar.innerHTML =
-                    "";
-
-
-                const image =
-                    document.createElement(
-                        "img"
-                    );
-
-
-                image.src =
-                    url || DEFAULT_AVATAR;
-
-
-                image.alt =
-                    "صورة الملف الشخصي";
-
-
-                image.onerror =
-                    function () {
-
-                        profileAvatar.innerHTML =
-                            "<span>W</span>";
-
-                    };
-
-
-                profileAvatar.appendChild(
-                    image
-                );
-
-            }
-
-
-            function setCover(
-                url
-            ) {
-
-                if (url) {
-
-                    profileCover.style.backgroundImage =
-                        "url(" +
-                        JSON.stringify(url) +
-                        ")";
-
-                    profileCover.style.backgroundSize =
-                        "cover";
-
-                    profileCover.style.backgroundPosition =
-                        "center";
-
-                } else {
-
-                    profileCover.style.backgroundImage =
-                        "";
-
-                    profileCover.style.backgroundSize =
-                        "";
-
-                    profileCover.style.backgroundPosition =
-                        "";
-
-                }
-
-            }
-
-
-            /* =========================================
-               قراءة المستخدم
-               ========================================= */
-
-            async function getCurrentUser() {
-
-                const auth =
-                    window.WFESCSettingsAuth;
-
-
-                if (
-                    !auth ||
-                    !auth.getCurrentUser
-                ) {
-
-                    throw new Error(
-                        "نظام الحساب غير محمل."
-                    );
-
-                }
-
 
                 const result =
                     await auth.getCurrentUser();
+
+
+                if (
+                    result &&
+                    result.user
+                ) {
+
+                    return result.user;
+
+                }
 
 
                 if (
@@ -2135,16 +2780,6 @@
 
                 if (
                     result &&
-                    result.user
-                ) {
-
-                    return result.user;
-
-                }
-
-
-                if (
-                    result &&
                     result.id
                 ) {
 
@@ -2152,100 +2787,2381 @@
 
                 }
 
-
-                return null;
-
             }
 
+        } catch (error) {
 
-            /* =========================================
-               قراءة profile
-               ========================================= */
+            console.warn(
+                "WFESC profile user:",
+                error
+            );
 
-            async function fetchProfile() {
+        }
 
-                const auth =
-                    window.WFESCSettingsAuth;
+
+        try {
+
+            if (
+                auth &&
+                typeof auth.getSession ===
+                "function"
+            ) {
+
+                const result =
+                    await auth.getSession();
 
 
                 if (
-                    auth &&
-                    auth.fetchProfile
+                    result &&
+                    result.session &&
+                    result.session.user
+                ) {
+
+                    return result.session.user;
+
+                }
+
+
+                if (
+                    result &&
+                    result.data &&
+                    result.data.session &&
+                    result.data.session.user
+                ) {
+
+                    return result.data.session.user;
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC profile session:",
+                error
+            );
+
+        }
+
+
+        try {
+
+            if (
+                window.supabase &&
+                typeof window.supabase.auth !==
+                "undefined"
+            ) {
+
+                /*
+                 * لا نعتمد على هذا الفرع إلا
+                 * إذا كان عميل Supabase متاحًا.
+                 */
+
+                if (
+                    window.WFESCSupabase &&
+                    window.WFESCSupabase.auth
                 ) {
 
                     const result =
-                        await auth.fetchProfile();
+                        await window
+                            .WFESCSupabase
+                            .auth
+                            .getUser();
 
 
                     if (
                         result &&
-                        result.data
+                        result.data &&
+                        result.data.user
                     ) {
 
-                        return result.data;
+                        return result.data.user;
+
+                    }
+
+                }
+
+            }
+
+        } catch (error) {}
+
+        return null;
+
+    }
+
+
+    /* =================================================
+       PROFILE
+    ================================================== */
+
+    async function getProfile(user) {
+
+        if (!auth) {
+            return {};
+        }
+
+
+        try {
+
+            if (
+                typeof auth.fetchProfile ===
+                "function"
+            ) {
+
+                const result =
+                    await auth.fetchProfile(
+                        user.id
+                    );
+
+
+                if (
+                    result &&
+                    result.data
+                ) {
+
+                    return result.data;
+
+                }
+
+
+                if (
+                    result &&
+                    result.profile
+                ) {
+
+                    return result.profile;
+
+                }
+
+
+                if (
+                    result &&
+                    typeof result === "object"
+                ) {
+
+                    return result;
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC profile fetch:",
+                error
+            );
+
+        }
+
+
+        return {};
+
+    }
+
+
+    /* =================================================
+       TEXT HELPERS
+    ================================================== */
+
+    function sanitizeUsername(
+        value
+    ) {
+
+        return String(
+            value || ""
+        )
+            .toLowerCase()
+            .replace(
+                /[^a-z0-9]/g,
+                ""
+            )
+            .slice(
+                0,
+                9
+            );
+
+    }
+
+
+    function getNameFromUser(
+        user,
+        profile
+    ) {
+
+        const metadata =
+            user &&
+            user.user_metadata
+                ? user.user_metadata
+                : {};
+
+
+        return String(
+            profile.name ||
+            profile.display_name ||
+            metadata.display_name ||
+            metadata.name ||
+            DEFAULT_NAME
+        )
+            .slice(
+                0,
+                15
+            );
+
+    }
+
+
+    function getUsernameFromProfile(
+        profile
+    ) {
+
+        const username =
+            sanitizeUsername(
+                profile.username
+            );
+
+
+        return username ||
+            DEFAULT_USERNAME;
+
+    }
+
+
+    /* =================================================
+       VERIFIED
+    ================================================== */
+
+    function applyVerification(
+        profile,
+        user
+    ) {
+
+        const verified =
+            Boolean(
+                profile.is_verified === true ||
+                profile.verified === true ||
+                user &&
+                user.user_metadata &&
+                (
+                    user.user_metadata.is_verified === true ||
+                    user.user_metadata.verified === true
+                )
+            );
+
+
+        if (profileVerified) {
+
+            profileVerified.hidden =
+                !verified;
+
+        }
+
+    }
+
+
+    /* =================================================
+       RENDER PROFILE
+    ================================================== */
+
+    function renderProfile() {
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        const metadata =
+            currentUser.user_metadata ||
+            {};
+
+
+        const name =
+            getNameFromUser(
+                currentUser,
+                currentProfile
+            );
+
+
+        const username =
+            getUsernameFromProfile(
+                currentProfile
+            );
+
+
+        const bio =
+            typeof currentProfile.bio ===
+            "string"
+                ? currentProfile.bio.trim()
+                : "";
+
+
+        profileName.textContent =
+            name;
+
+
+        profileUsername.textContent =
+            "@" + username;
+
+
+        if (bio) {
+
+            profileBio.textContent =
+                bio;
+
+            profileBio.classList
+                .remove("empty");
+
+        } else {
+
+            profileBio.textContent =
+                "كيف حالك اليوم؟";
+
+            profileBio.classList
+                .add("empty");
+
+        }
+
+
+        accountEmail.textContent =
+            currentUser.email ||
+            "—";
+
+
+        const created =
+            currentUser.created_at ||
+            metadata.created_at;
+
+
+        if (created) {
+
+            try {
+
+                accountCreated.textContent =
+                    new Date(
+                        created
+                    ).toLocaleDateString(
+                        "ar-IQ"
+                    );
+
+            } catch (error) {
+
+                accountCreated.textContent =
+                    "—";
+
+            }
+
+        } else {
+
+            accountCreated.textContent =
+                "—";
+
+        }
+
+
+        followersCount.textContent =
+            Number(
+                currentProfile.followers_count ||
+                0
+            );
+
+
+        followingCount.textContent =
+            Number(
+                currentProfile.following_count ||
+                0
+            );
+
+
+        postsCount.textContent =
+            Number(
+                currentProfile.posts_count ||
+                0
+            );
+
+
+        applyVerification(
+            currentProfile,
+            currentUser
+        );
+
+
+        applyAvatar();
+
+
+        applyCover();
+
+    }
+
+
+    /* =================================================
+       AVATAR
+    ================================================== */
+
+    function applyAvatar() {
+
+        const url =
+            currentProfile.avatar_url;
+
+
+        if (url) {
+
+            profileAvatar.src =
+                url;
+
+            profileAvatar.style.display =
+                "block";
+
+            avatarFallback.style.display =
+                "none";
+
+        } else {
+
+            profileAvatar.removeAttribute(
+                "src"
+            );
+
+            profileAvatar.style.display =
+                "none";
+
+            avatarFallback.style.display =
+                "flex";
+
+
+            const name =
+                profileName.textContent
+                    .trim();
+
+
+            avatarFallback.textContent =
+                name
+                    ? name
+                        .charAt(0)
+                        .toUpperCase()
+                    : "W";
+
+        }
+
+    }
+
+
+    /* =================================================
+       COVER
+    ================================================== */
+
+    function applyCover() {
+
+        const url =
+            currentProfile.cover_url;
+
+
+        if (url) {
+
+            profileCoverImage.src =
+                url;
+
+            profileCoverImage.style.display =
+                "block";
+
+            coverDefault.style.display =
+                "none";
+
+        } else {
+
+            profileCoverImage.removeAttribute(
+                "src"
+            );
+
+            profileCoverImage.style.display =
+                "none";
+
+            coverDefault.style.display =
+                "flex";
+
+        }
+
+    }
+
+
+    /* =================================================
+       OPEN EDIT
+    ================================================== */
+
+    function openEditProfile() {
+
+        nameInput.value =
+            getNameFromUser(
+                currentUser,
+                currentProfile
+            );
+
+
+        usernameInput.value =
+            getUsernameFromProfile(
+                currentProfile
+            );
+
+
+        bioInput.value =
+            typeof currentProfile.bio ===
+            "string"
+                ? currentProfile.bio
+                : "";
+
+
+        clearMessages();
+
+
+        editProfileModal
+            .classList
+            .add("show");
+
+
+        updateTimers();
+
+    }
+
+
+    function closeEditProfile() {
+
+        editProfileModal
+            .classList
+            .remove("show");
+
+    }
+
+
+    /* =================================================
+       MESSAGES
+    ================================================== */
+
+    function clearMessages() {
+
+        [
+            nameMessage,
+            usernameMessage,
+            bioMessage
+        ]
+        .forEach(
+            function (element) {
+
+                if (!element) {
+                    return;
+                }
+
+                element.textContent = "";
+
+                element.classList
+                    .remove("success");
+
+            }
+        );
+
+
+        [
+            nameInput,
+            usernameInput,
+            bioInput
+        ]
+        .forEach(
+            function (element) {
+
+                if (!element) {
+                    return;
+                }
+
+                element.classList
+                    .remove("error");
+
+            }
+        );
+
+    }
+
+
+    function setFieldMessage(
+        element,
+        message,
+        success = false
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+
+        element.textContent =
+            message;
+
+
+        element.classList.toggle(
+            "success",
+            success
+        );
+
+    }
+
+
+    function shake(
+        element
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+
+        element.classList
+            .remove("shake");
+
+
+        void element.offsetWidth;
+
+
+        element.classList
+            .add("shake");
+
+
+        setTimeout(
+            function () {
+
+                element.classList
+                    .remove("shake");
+
+            },
+            500
+        );
+
+    }
+
+
+    /* =================================================
+       TIMER
+    ================================================== */
+
+    function getLockRemaining(
+        timestamp
+    ) {
+
+        if (!timestamp) {
+            return 0;
+        }
+
+
+        const time =
+            new Date(
+                timestamp
+            ).getTime();
+
+
+        if (
+            !Number.isFinite(time)
+        ) {
+
+            return 0;
+
+        }
+
+
+        const remaining =
+            time +
+            HOUR -
+            Date.now();
+
+
+        return Math.max(
+            0,
+            remaining
+        );
+
+    }
+
+
+    function formatRemaining(
+        milliseconds
+    ) {
+
+        if (
+            milliseconds <= 0
+        ) {
+
+            return "متاح الآن";
+
+        }
+
+
+        const totalSeconds =
+            Math.ceil(
+                milliseconds / 1000
+            );
+
+
+        const hours =
+            Math.floor(
+                totalSeconds / 3600
+            );
+
+
+        const minutes =
+            Math.floor(
+                (totalSeconds % 3600) / 60
+            );
+
+
+        const seconds =
+            totalSeconds % 60;
+
+
+        if (hours > 0) {
+
+            return (
+                "متبقي " +
+                hours +
+                " ساعة " +
+                minutes +
+                " دقيقة"
+            );
+
+        }
+
+
+        return (
+            "متبقي " +
+            minutes +
+            " دقيقة " +
+            seconds +
+            " ثانية"
+        );
+
+    }
+
+
+    function updateOneTimer(
+        timestamp,
+        timer,
+        button
+    ) {
+
+        const remaining =
+            getLockRemaining(
+                timestamp
+            );
+
+
+        if (!timer) {
+            return;
+        }
+
+
+        if (remaining <= 0) {
+
+            timer.textContent =
+                "متاح الآن";
+
+            timer.classList
+                .add("ready");
+
+
+            if (button) {
+
+                button.disabled =
+                    false;
+
+            }
+
+        } else {
+
+            timer.textContent =
+                formatRemaining(
+                    remaining
+                );
+
+            timer.classList
+                .remove("ready");
+
+
+            if (button) {
+
+                button.disabled =
+                    true;
+
+            }
+
+        }
+
+    }
+
+
+    function updateTimers() {
+
+        updateOneTimer(
+            currentProfile.last_display_name_change_at,
+            nameTimer,
+            saveNameButton
+        );
+
+
+        updateOneTimer(
+            currentProfile.last_username_change_at,
+            usernameTimer,
+            saveUsernameButton
+        );
+
+    }
+
+
+    function startTimers() {
+
+        clearInterval(
+            timerInterval
+        );
+
+
+        updateTimers();
+
+
+        timerInterval =
+            setInterval(
+                updateTimers,
+                1000
+            );
+
+    }
+
+
+    /* =================================================
+       NAME SAVE
+    ================================================== */
+
+    async function saveName() {
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        const value =
+            String(
+                nameInput.value || ""
+            ).trim()
+            .slice(
+                0,
+                15
+            );
+
+
+        nameInput.value =
+            value;
+
+
+        if (!value) {
+
+            nameInput.classList
+                .add("error");
+
+            setFieldMessage(
+                nameMessage,
+                "يرجى إدخال اسم صحيح."
+            );
+
+            shake(nameInput);
+
+            return;
+
+        }
+
+
+        const remaining =
+            getLockRemaining(
+                currentProfile.last_display_name_change_at
+            );
+
+
+        if (remaining > 0) {
+
+            setFieldMessage(
+                nameMessage,
+                "لا يمكنك تغيير الاسم الآن."
+            );
+
+            shake(nameInput);
+
+            updateTimers();
+
+            return;
+
+        }
+
+
+        const oldName =
+            getNameFromUser(
+                currentUser,
+                currentProfile
+            );
+
+
+        if (value === oldName) {
+
+            setFieldMessage(
+                nameMessage,
+                "الاسم لم يتغير.",
+                true
+            );
+
+            return;
+
+        }
+
+
+        saveNameButton.disabled =
+            true;
+
+
+        try {
+
+            const now =
+                new Date()
+                    .toISOString();
+
+
+            if (
+                auth &&
+                typeof auth.updateAccountMetadata ===
+                "function"
+            ) {
+
+                await auth.updateAccountMetadata(
+                    {
+                        name: value,
+                        display_name: value
+                    }
+                );
+
+            }
+
+
+            if (
+                auth &&
+                typeof auth.updateProfile ===
+                "function"
+            ) {
+
+                await auth.updateProfile(
+                    {
+                        last_display_name_change_at:
+                            now
+                    }
+                );
+
+            }
+
+
+            currentProfile
+                .last_display_name_change_at =
+                now;
+
+
+            currentUser.user_metadata =
+                currentUser.user_metadata ||
+                {};
+
+
+            currentUser.user_metadata.name =
+                value;
+
+
+            currentUser.user_metadata
+                .display_name =
+                value;
+
+
+            renderProfile();
+
+
+            setFieldMessage(
+                nameMessage,
+                "تم تغيير الاسم بنجاح.",
+                true
+            );
+
+
+            showStatus(
+                "تم تغيير الاسم بنجاح.",
+                "success"
+            );
+
+
+            document
+                .getElementById(
+                    "nameEditSection"
+                )
+                .classList
+                .add("saved");
+
+
+            updateTimers();
+
+        } catch (error) {
+
+            console.error(
+                "WFESC name:",
+                error
+            );
+
+
+            setFieldMessage(
+                nameMessage,
+                "تعذر تغيير الاسم حاليًا."
+            );
+
+        } finally {
+
+            updateTimers();
+
+        }
+
+    }
+
+
+    /* =================================================
+       USERNAME SAVE
+    ================================================== */
+
+    async function saveUsername() {
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        const username =
+            sanitizeUsername(
+                usernameInput.value
+            );
+
+
+        usernameInput.value =
+            username;
+
+
+        if (
+            username.length < 3 ||
+            username.length > 9
+        ) {
+
+            usernameInput.classList
+                .add("error");
+
+
+            setFieldMessage(
+                usernameMessage,
+                "اسم المستخدم يجب أن يتكون من 3 إلى 9 أحرف أو أرقام."
+            );
+
+
+            shake(usernameInput);
+
+            return;
+
+        }
+
+
+        const remaining =
+            getLockRemaining(
+                currentProfile.last_username_change_at
+            );
+
+
+        if (remaining > 0) {
+
+            setFieldMessage(
+                usernameMessage,
+                "لا يمكنك تغيير اليوزر الآن."
+            );
+
+
+            shake(usernameInput);
+
+            updateTimers();
+
+            return;
+
+        }
+
+
+        const oldUsername =
+            getUsernameFromProfile(
+                currentProfile
+            );
+
+
+        if (
+            username ===
+            oldUsername
+        ) {
+
+            setFieldMessage(
+                usernameMessage,
+                "اليوزر لم يتغير.",
+                true
+            );
+
+            return;
+
+        }
+
+
+        saveUsernameButton.disabled =
+            true;
+
+
+        try {
+
+            /*
+             * فحص مباشر قبل الحفظ
+             */
+
+            if (
+                auth &&
+                typeof auth.usernameExists ===
+                "function"
+            ) {
+
+                const result =
+                    await auth.usernameExists(
+                        username
+                    );
+
+
+                const exists =
+                    result === true ||
+                    (
+                        result &&
+                        result.exists === true
+                    ) ||
+                    (
+                        result &&
+                        result.data &&
+                        result.data.exists === true
+                    ) ||
+                    (
+                        result &&
+                        result.taken === true
+                    );
+
+
+                if (exists) {
+
+                    usernameInput.classList
+                        .add("error");
+
+
+                    setFieldMessage(
+                        usernameMessage,
+                        "اسم المستخدم مأخوذ مسبقًا"
+                    );
+
+
+                    shake(usernameInput);
+
+                    return;
+
+                }
+
+            }
+
+
+            const now =
+                new Date()
+                    .toISOString();
+
+
+            if (
+                auth &&
+                typeof auth.updateProfile ===
+                "function"
+            ) {
+
+                try {
+
+                    await auth.updateProfile(
+                        {
+                            username:
+                                username,
+
+                            last_username_change_at:
+                                now
+                        }
+                    );
+
+                } catch (error) {
+
+                    if (
+                        isUsernameTakenError(
+                            error
+                        )
+                    ) {
+
+                        usernameInput.classList
+                            .add("error");
+
+
+                        setFieldMessage(
+                            usernameMessage,
+                            "اسم المستخدم مأخوذ مسبقًا"
+                        );
+
+
+                        shake(usernameInput);
+
+                        return;
 
                     }
 
 
-                    return result || null;
+                    throw error;
 
                 }
 
+            }
 
-                throw new Error(
-                    "وظيفة profile غير متوفرة."
+
+            currentProfile.username =
+                username;
+
+
+            currentProfile
+                .last_username_change_at =
+                now;
+
+
+            renderProfile();
+
+
+            setFieldMessage(
+                usernameMessage,
+                "تم تغيير اليوزر بنجاح.",
+                true
+            );
+
+
+            showStatus(
+                "تم تغيير اليوزر بنجاح.",
+                "success"
+            );
+
+
+            document
+                .getElementById(
+                    "usernameEditSection"
+                )
+                .classList
+                .add("saved");
+
+
+            updateTimers();
+
+        } catch (error) {
+
+            console.error(
+                "WFESC username:",
+                error
+            );
+
+
+            if (
+                isUsernameTakenError(
+                    error
+                )
+            ) {
+
+                usernameInput.classList
+                    .add("error");
+
+
+                setFieldMessage(
+                    usernameMessage,
+                    "اسم المستخدم مأخوذ مسبقًا"
+                );
+
+
+                shake(usernameInput);
+
+            } else {
+
+                setFieldMessage(
+                    usernameMessage,
+                    "تعذر تغيير اليوزر حاليًا."
+                );
+
+            }
+
+        } finally {
+
+            updateTimers();
+
+        }
+
+    }
+
+
+    function isUsernameTakenError(
+        error
+    ) {
+
+        if (!error) {
+            return false;
+        }
+
+
+        const text =
+            String(
+                error.message ||
+                error.code ||
+                error.details ||
+                error
+            )
+            .toLowerCase();
+
+
+        return (
+            text.includes(
+                "username_already_exists"
+            ) ||
+            text.includes(
+                "username_exists"
+            ) ||
+            text.includes(
+                "username_taken"
+            ) ||
+            text.includes(
+                "duplicate_username"
+            ) ||
+            text.includes(
+                "23505"
+            ) ||
+            text.includes(
+                "اسم المستخدم مأخوذ"
+            ) ||
+            text.includes(
+                "اسم المستخدم مستخدم"
+            )
+        );
+
+    }
+
+
+    /* =================================================
+       BIO SAVE
+    ================================================== */
+
+    async function saveBio() {
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        const bio =
+            String(
+                bioInput.value || ""
+            )
+            .trim()
+            .slice(
+                0,
+                500
+            );
+
+
+        saveBioButton.disabled =
+            true;
+
+
+        try {
+
+            if (
+                auth &&
+                typeof auth.updateProfile ===
+                "function"
+            ) {
+
+                await auth.updateProfile(
+                    {
+                        bio: bio
+                    }
                 );
 
             }
 
 
-            /* =========================================
-               تحديث profile
-               ========================================= */
+            currentProfile.bio =
+                bio;
 
-            async function updateProfile(
-                updates
+
+            renderProfile();
+
+
+            setFieldMessage(
+                bioMessage,
+                "تم حفظ البايو.",
+                true
+            );
+
+
+            showStatus(
+                "تم حفظ البايو بنجاح.",
+                "success"
+            );
+
+
+            document
+                .getElementById(
+                    "bioEditSection"
+                )
+                .classList
+                .add("saved");
+
+        } catch (error) {
+
+            console.error(
+                "WFESC bio:",
+                error
+            );
+
+
+            setFieldMessage(
+                bioMessage,
+                "تعذر حفظ البايو حاليًا."
+            );
+
+        } finally {
+
+            saveBioButton.disabled =
+                false;
+
+        }
+
+    }
+
+
+    /* =================================================
+       USERNAME INPUT
+    ================================================== */
+
+    usernameInput.addEventListener(
+        "input",
+        function () {
+
+            const value =
+                sanitizeUsername(
+                    usernameInput.value
+                );
+
+
+            usernameInput.value =
+                value;
+
+
+            usernameInput.classList
+                .remove("error");
+
+
+            if (
+                value.length >= 3
             ) {
 
-                const auth =
-                    window.WFESCSettingsAuth;
+                setFieldMessage(
+                    usernameMessage,
+                    ""
+                );
 
+            }
+
+        }
+    );
+
+
+    nameInput.addEventListener(
+        "input",
+        function () {
+
+            nameInput.value =
+                String(
+                    nameInput.value || ""
+                )
+                .slice(
+                    0,
+                    15
+                );
+
+
+            nameInput.classList
+                .remove("error");
+
+        }
+    );
+
+
+    bioInput.addEventListener(
+        "input",
+        function () {
+
+            bioInput.classList
+                .remove("error");
+
+        }
+    );
+
+
+    /* =================================================
+       IMAGE
+    ================================================== */
+
+    function openImageModal(
+        type
+    ) {
+
+        imageType =
+            type;
+
+
+        selectedImageData =
+            null;
+
+
+        imagePreview.style.display =
+            "none";
+
+
+        imagePreview.removeAttribute(
+            "src"
+        );
+
+
+        imageFile.value =
+            "";
+
+
+        if (type === "avatar") {
+
+            imageModalTitle.textContent =
+                "تغيير الصورة الشخصية";
+
+        } else {
+
+            imageModalTitle.textContent =
+                "تغيير الغلاف";
+
+        }
+
+
+        imageModal.classList
+            .add("show");
+
+    }
+
+
+    function closeImageModal() {
+
+        imageModal.classList
+            .remove("show");
+
+    }
+
+
+    imageFile.addEventListener(
+        "change",
+        function () {
+
+            const file =
+                imageFile.files &&
+                imageFile.files[0];
+
+
+            if (!file) {
+                return;
+            }
+
+
+            if (
+                !file.type.startsWith(
+                    "image/"
+                )
+            ) {
+
+                showStatus(
+                    "يرجى اختيار صورة صحيحة.",
+                    "error"
+                );
+
+                imageFile.value =
+                    "";
+
+                return;
+
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                function (event) {
+
+                    selectedImageData =
+                        event.target.result;
+
+
+                    imagePreview.src =
+                        selectedImageData;
+
+
+                    imagePreview.style.display =
+                        "block";
+
+
+                    if (
+                        imageType ===
+                        "cover"
+                    ) {
+
+                        imagePreview.classList
+                            .add("cover-preview");
+
+                    } else {
+
+                        imagePreview.classList
+                            .remove("cover-preview");
+
+                    }
+
+                };
+
+
+            reader.readAsDataURL(
+                file
+            );
+
+        }
+    );
+
+
+    async function saveImage() {
+
+        if (!selectedImageData) {
+
+            showStatus(
+                "اختر صورة أولًا.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        saveImageButton.disabled =
+            true;
+
+
+        try {
+
+            const data = {};
+
+
+            if (
+                imageType ===
+                "avatar"
+            ) {
+
+                data.avatar_url =
+                    selectedImageData;
+
+            } else {
+
+                data.cover_url =
+                    selectedImageData;
+
+            }
+
+
+            if (
+                auth &&
+                typeof auth.updateProfile ===
+                "function"
+            ) {
+
+                await auth.updateProfile(
+                    data
+                );
+
+            }
+
+
+            if (
+                imageType ===
+                "avatar"
+            ) {
+
+                currentProfile.avatar_url =
+                    selectedImageData;
+
+            } else {
+
+                currentProfile.cover_url =
+                    selectedImageData;
+
+            }
+
+
+            renderProfile();
+
+
+            closeImageModal();
+
+
+            showStatus(
+                imageType === "avatar"
+                    ? "تم تغيير الصورة الشخصية."
+                    : "تم تغيير الغلاف.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC image:",
+                error
+            );
+
+
+            showStatus(
+                "تعذر حفظ الصورة حاليًا.",
+                "error"
+            );
+
+        } finally {
+
+            saveImageButton.disabled =
+                false;
+
+            selectedImageData =
+                null;
+
+        }
+
+    }
+
+
+    async function deleteImage() {
+
+        deleteImageButton.disabled =
+            true;
+
+
+        try {
+
+            if (
+                auth &&
+                typeof auth.updateProfile ===
+                "function"
+            ) {
 
                 if (
-                    auth &&
-                    auth.updateProfile
+                    imageType ===
+                    "avatar"
                 ) {
 
-                    return await auth.updateProfile(
-                        updates
+                    await auth.updateProfile(
+                        {
+                            avatar_url: ""
+                        }
+                    );
+
+                } else {
+
+                    await auth.updateProfile(
+                        {
+                            cover_url: ""
+                        }
                     );
 
                 }
 
+            }
 
-                throw new Error(
-                    "وظيفة تحديث الملف غير متوفرة."
-                );
+
+            if (
+                imageType ===
+                "avatar"
+            ) {
+
+                currentProfile.avatar_url =
+                    "";
+
+            } else {
+
+                currentProfile.cover_url =
+                    "";
 
             }
 
 
-            /* =========================================
-               تحميل الحساب
-               ========================================= */
-
-            async function loadProfile() {
-
-                try {
-
-                    currentUser =
-                        await getCurrentUser();
+            renderProfile();
 
 
-                    if (!currentUser) {
+            closeImageModal();
+
+
+            showStatus(
+                "تم حذف الصورة.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC delete image:",
+                error
+            );
+
+
+            showStatus(
+                "تعذر حذف الصورة.",
+                "error"
+            );
+
+        } finally {
+
+            deleteImageButton.disabled =
+                false;
+
+        }
+
+    }
+
+
+    /* =================================================
+       SHARING
+    ================================================== */
+
+    async function shareProfile() {
+
+        const username =
+            getUsernameFromProfile(
+                currentProfile
+            );
+
+
+        const url =
+            new URL(
+                "profile.html",
+                window.location.href
+            ).href;
+
+
+        try {
+
+            if (
+                navigator.share
+            ) {
+
+                await navigator.share(
+                    {
+                        title:
+                            getNameFromUser(
+                                currentUser,
+                                currentProfile
+                            ),
+
+                        text:
+                            "ملف @" +
+                            username +
+                            " على WFESC",
+
+                        url:
+                            url
+                    }
+                );
+
+            } else {
+
+                if (
+                    navigator.clipboard
+                ) {
+
+                    await navigator.clipboard
+                        .writeText(
+                            url
+                        );
+
+                    showStatus(
+                        "تم نسخ رابط الملف.",
+                        "success"
+                    );
+
+                } else {
+
+                    showStatus(
+                        url
+                    );
+
+                }
+
+            }
+
+        } catch (error) {
+
+            /*
+             * إلغاء نافذة المشاركة
+             * لا يعتبر خطأ.
+             */
+
+        }
+
+    }
+
+
+    /* =================================================
+       SETTINGS CONNECTION
+    ================================================== */
+
+    function applyThemeFromSettings() {
+
+        let theme =
+            "dark";
+
+
+        try {
+
+            theme =
+                localStorage.getItem(
+                    "wfesc-theme"
+                ) ||
+                "dark";
+
+        } catch (error) {}
+
+
+        const html =
+            document.documentElement;
+
+
+        html.classList.toggle(
+            "wfesc-light-mode",
+            theme === "light"
+        );
+
+
+        html.classList.toggle(
+            "wfesc-dark-mode",
+            theme !== "light"
+        );
+
+    }
+
+
+    function applyAnimationFromSettings() {
+
+        let state =
+            "on";
+
+
+        try {
+
+            state =
+                localStorage.getItem(
+                    "wfesc-animation"
+                ) ||
+                "on";
+
+        } catch (error) {}
+
+
+        document.documentElement
+            .classList
+            .toggle(
+                "wfesc-animation-off",
+                state === "off"
+            );
+
+    }
+
+
+    function applyGlassFromSettings() {
+
+        let state =
+            "on";
+
+
+        try {
+
+            state =
+                localStorage.getItem(
+                    "wfesc-liquid-glass"
+                ) ||
+                "on";
+
+        } catch (error) {}
+
+
+        document.documentElement
+            .classList
+            .toggle(
+                "wfesc-liquid-glass",
+                state !== "off"
+            );
+
+    }
+
+
+    function applyAllSettings() {
+
+        applyThemeFromSettings();
+
+        applyAnimationFromSettings();
+
+        applyGlassFromSettings();
+
+    }
+
+
+    /*
+     * تشغيل مباشر عند تغيير Liquid Glass
+     */
+
+    window.addEventListener(
+        "WFESCLiquidGlassChanged",
+        function (event) {
+
+            const enabled =
+                event &&
+                event.detail &&
+                event.detail.enabled;
+
+
+            document.documentElement
+                .classList
+                .toggle(
+                    "wfesc-liquid-glass",
+                    Boolean(enabled)
+                );
+
+        }
+    );
+
+
+    /*
+     * إذا تم تغيير الإعدادات من صفحة أخرى
+     * ثم رجع المستخدم للبروفايل.
+     */
+
+    window.addEventListener(
+        "storage",
+        function (event) {
+
+            if (
+                event.key ===
+                "wfesc-theme" ||
+
+                event.key ===
+                "wfesc-animation" ||
+
+                event.key ===
+                "wfesc-liquid-glass"
+            ) {
+
+                applyAllSettings();
+
+            }
+
+        }
+    );
+
+
+    /*
+     * فحص الإعدادات عند رجوع الصفحة
+     */
+
+    document.addEventListener(
+        "visibilitychange",
+        function () {
+
+            if (
+                document.visibilityState ===
+                "visible"
+            ) {
+
+                applyAllSettings();
+
+            }
+
+        }
+    );
+
+
+    /* =================================================
+       EVENTS
+    ================================================== */
+
+    document
+        .getElementById(
+            "editProfileButton"
+        )
+        .addEventListener(
+            "click",
+            openEditProfile
+        );
+
+
+    document
+        .getElementById(
+            "closeEditProfile"
+        )
+        .addEventListener(
+            "click",
+            closeEditProfile
+        );
+
+
+    editProfileModal.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                editProfileModal
+            ) {
+
+                closeEditProfile();
+
+            }
+
+        }
+    );
+
+
+    document
+        .getElementById(
+            "saveNameButton"
+        )
+        .addEventListener(
+            "click",
+            saveName
+        );
+
+
+    document
+        .getElementById(
+            "saveUsernameButton"
+        )
+        .addEventListener(
+            "click",
+            saveUsername
+        );
+
+
+    document
+        .getElementById(
+            "saveBioButton"
+        )
+        .addEventListener(
+            "click",
+            saveBio
+        );
+
+
+    document
+        .getElementById(
+            "shareProfileButton"
+        )
+        .addEventListener(
+            "click",
+            shareProfile
+        );
+
+
+    document
+        .getElementById(
+            "editAvatarButton"
+        )
+        .addEventListener(
+            "click",
+            function () {
+
+                openImageModal(
+                    "avatar"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "editCoverButton"
+        )
+        .addEventListener(
+            "click",
+            function () {
+
+                openImageModal(
+                    "cover"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "closeImageModal"
+        )
+        .addEventListener(
+            "click",
+            closeImageModal
+        );
+
+
+    imageModal.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                imageModal
+            ) {
+
+                closeImageModal();
+
+            }
+
+        }
+    );
+
+
+    saveImageButton.addEventListener(
+        "click",
+        saveImage
+    );
+
+
+    deleteImageButton.addEventListener(
+        "click",
+        deleteImage
+    );
+
+
+    /* =================================================
+       LOAD
+    ================================================== */
+
+    async function loadProfile() {
+
+        applyAllSettings();
+
+
+        let user = null;
+
+
+        /*
+         * ننتظر قليلًا إذا كانت جلسة Supabase
+         * ما زالت قيد الاستعادة.
+         */
+
+        for (
+            let attempt = 0;
+            attempt < 4;
+            attempt++
+        ) {
+
+            user =
+                await getCurrentUserSafe();
+
+
+            if (user) {
+                break;
+            }
+
+
+            await new Promise(
+                function (resolve) {
+
+                    setTimeout(
+                        resolve,
+                        350
+                    );
+
+                }
+            );
+
+        }
+
+
+        if (!user) {
+
+            window.location.href =
+                "settings.html";
+
+            return;
+
+        }
+
+
+        currentUser =
+            user;
+
+
+        currentProfile =
+            await getProfile(
+                currentUser
+            );
+
+
+        if (
+            !currentProfile ||
+            typeof currentProfile !==
+            "object"
+        ) {
+
+            currentProfile = {};
+
+        }
+
+
+        renderProfile();
+
+
+        startTimers();
+
+    }
+
+
+    /* =================================================
+       AUTH STATE
+    ================================================== */
+
+    try {
+
+        if (
+            auth &&
+            typeof auth.onAuthStateChange ===
+            "function"
+        ) {
+
+            auth.onAuthStateChange(
+                function (
+                    event,
+                    user
+                ) {
+
+                    if (
+                        event ===
+                        "SIGNED_OUT"
+                    ) {
 
                         window.location.href =
-                            CONFIG.settingsPage ||
                             "settings.html";
 
                         return;
@@ -2253,1640 +5169,50 @@
                     }
 
 
-                    currentProfile =
-                        await fetchProfile();
-
-
-                    currentProfile =
-                        currentProfile || {};
-
-
-                    const name =
-                        currentProfile.name ||
-                        currentProfile.display_name ||
-                        DEFAULT_NAME;
-
-
-                    const username =
-                        currentProfile.username ||
-                        DEFAULT_USERNAME;
-
-
-                    const bio =
-                        currentProfile.bio ||
-                        DEFAULT_BIO;
-
-
-                    profileName.textContent =
-                        name;
-
-
-                    profileUsername.textContent =
-                        "@" + username;
-
-
-                    infoUsername.textContent =
-                        "@" + username;
-
-
-                    profileBio.textContent =
-                        bio;
-
-
-                    infoEmail.textContent =
-                        currentUser.email ||
-                        "—";
-
-
-                    setAvatar(
-                        currentProfile.avatar_url ||
-                        DEFAULT_AVATAR
-                    );
-
-
-                    setCover(
-                        currentProfile.cover_url ||
-                        ""
-                    );
-
-
-                    updateChangeMessages();
-
-                } catch (error) {
-
-                    console.error(
-                        "WFESC profile:",
-                        error
-                    );
-
-
-                    showMessage(
-                        "تعذر تحميل بيانات الملف الشخصي حاليًا.",
-                        "error"
-                    );
-
-                }
-
-            }
-
-
-            /* =========================================
-               فتح التعديل
-               ========================================= */
-
-            document
-                .getElementById(
-                    "editProfileButton"
-                )
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        if (!currentUser) {
-
-                            window.location.href =
-                                CONFIG.settingsPage ||
-                                "settings.html";
-
-                            return;
-
-                        }
-
-
-                        editName.value =
-                            profileName.textContent.trim();
-
-
-                        editUsername.value =
-                            profileUsername
-                                .textContent
-                                .trim()
-                                .replace(/^@+/, "");
-
-
-                        editBio.value =
-                            profileBio.textContent.trim();
-
-
-                        updateChangeMessages();
-
-
-                        profileModal.classList.add(
-                            "show"
-                        );
-
-                    }
-                );
-
-
-            /* =========================================
-               إغلاق التعديل
-               ========================================= */
-
-            document
-                .getElementById(
-                    "closeProfileModal"
-                )
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        profileModal.classList.remove(
-                            "show"
-                        );
-
-                    }
-                );
-
-
-            profileModal.addEventListener(
-                "click",
-                function (event) {
-
                     if (
-                        event.target ===
-                        profileModal
+                        user
                     ) {
 
-                        profileModal.classList.remove(
-                            "show"
-                        );
+                        currentUser =
+                            user;
 
                     }
 
                 }
             );
 
+        }
 
-            /* =========================================
-               تنظيف اسم المستخدم مباشرة
-               ========================================= */
+    } catch (error) {
 
-            editUsername.addEventListener(
-                "input",
-                function () {
+        console.warn(
+            "WFESC auth listener:",
+            error
+        );
 
-                    const clean =
-                        sanitizeUsername(
-                            editUsername.value
-                        );
+    }
 
 
-                    editUsername.value =
-                        clean;
+    /* =================================================
+       START
+    ================================================== */
 
-                }
-            );
+    loadProfile();
 
 
-            /* =========================================
-               حفظ بيانات الملف
-               ========================================= */
+})();
 
-            document
-                .getElementById(
-                    "saveProfile"
-                )
-                .addEventListener(
-                    "click",
-                    async function () {
+</script>
 
-                        if (!currentUser) {
 
-                            return;
+<!-- =================================================
+     NAVIGATION
+================================================== -->
 
-                        }
+<script
+    src="./navigation/navigation-loader.js"
+></script>
 
-
-                        hideMessage();
-
-
-                        const newName =
-                            editName.value.trim();
-
-
-                        const newUsername =
-                            sanitizeUsername(
-                                editUsername.value
-                            );
-
-
-                        const newBio =
-                            editBio.value.trim();
-
-
-                        const oldName =
-                            (
-                                currentProfile.name ||
-                                currentProfile.display_name ||
-                                DEFAULT_NAME
-                            ).trim();
-
-
-                        const oldUsername =
-                            String(
-                                currentProfile.username ||
-                                DEFAULT_USERNAME
-                            ).trim();
-
-
-                        const oldBio =
-                            String(
-                                currentProfile.bio ||
-                                DEFAULT_BIO
-                            ).trim();
-
-
-                        if (
-                            !newName ||
-                            newName.length > 15
-                        ) {
-
-                            showMessage(
-                                "يرجى إدخال اسم صحيح بحد أقصى 15 حرفًا.",
-                                "error"
-                            );
-
-                            return;
-
-                        }
-
-
-                        if (
-                            newUsername.length < 3 ||
-                            newUsername.length > 9
-                        ) {
-
-                            showMessage(
-                                "اسم المستخدم يجب أن يتكون من 3 إلى 9 أحرف أو أرقام.",
-                                "error"
-                            );
-
-                            return;
-
-                        }
-
-
-                        if (
-                            newUsername !==
-                            oldUsername
-                        ) {
-
-                            if (
-                                isChangeLocked(
-                                    currentProfile
-                                        .last_username_change_at
-                                )
-                            ) {
-
-                                showMessage(
-                                    formatRemaining(
-                                        currentProfile
-                                            .last_username_change_at
-                                    ),
-                                    "error"
-                                );
-
-                                return;
-
-                            }
-
-
-                            try {
-
-                                const auth =
-                                    window.WFESCSettingsAuth;
-
-
-                                if (
-                                    auth &&
-                                    auth.usernameExists
-                                ) {
-
-                                    const check =
-                                        await auth.usernameExists(
-                                            newUsername
-                                        );
-
-
-                                    const exists =
-                                        Boolean(
-                                            check &&
-                                            (
-                                                check.exists ||
-                                                (
-                                                    check.data &&
-                                                    check.data.exists
-                                                ) ||
-                                                check.taken
-                                            )
-                                        );
-
-
-                                    if (exists) {
-
-                                        showMessage(
-                                            "اسم المستخدم مأخوذ مسبقًا",
-                                            "error"
-                                        );
-
-                                        editUsername.focus();
-
-                                        return;
-
-                                    }
-
-                                }
-
-                            } catch (error) {
-
-                                console.error(
-                                    "Username check:",
-                                    error
-                                );
-
-
-                                showMessage(
-                                    "تعذر التحقق من توفر اسم المستخدم حاليًا. حاول مرة أخرى.",
-                                    "error"
-                                );
-
-                                return;
-
-                            }
-
-                        }
-
-
-                        if (
-                            newName !==
-                            oldName
-                        ) {
-
-                            if (
-                                isChangeLocked(
-                                    currentProfile
-                                        .last_display_name_change_at
-                                )
-                            ) {
-
-                                showMessage(
-                                    formatRemaining(
-                                        currentProfile
-                                            .last_display_name_change_at
-                                    ),
-                                    "error"
-                                );
-
-                                return;
-
-                            }
-
-                        }
-
-
-                        const updates = {};
-
-
-                        if (
-                            newName !==
-                            oldName
-                        ) {
-
-                            updates.name =
-                                newName;
-
-                            updates.display_name =
-                                newName;
-
-                            updates.last_display_name_change_at =
-                                new Date().toISOString();
-
-                        }
-
-
-                        if (
-                            newUsername !==
-                            oldUsername
-                        ) {
-
-                            updates.username =
-                                newUsername;
-
-                            updates.last_username_change_at =
-                                new Date().toISOString();
-
-                        }
-
-
-                        if (
-                            newBio !==
-                            oldBio
-                        ) {
-
-                            updates.bio =
-                                newBio;
-
-                        }
-
-
-                        if (
-                            Object.keys(
-                                updates
-                            ).length === 0
-                        ) {
-
-                            profileModal.classList.remove(
-                                "show"
-                            );
-
-                            return;
-
-                        }
-
-
-                        const saveButton =
-                            document.getElementById(
-                                "saveProfile"
-                            );
-
-
-                        saveButton.disabled =
-                            true;
-
-
-                        saveButton.textContent =
-                            "جارٍ الحفظ...";
-
-
-                        try {
-
-                            const result =
-                                await updateProfile(
-                                    updates
-                                );
-
-
-                            if (
-                                result &&
-                                result.error
-                            ) {
-
-                                throw result.error;
-
-                            }
-
-
-                            currentProfile =
-                                {
-                                    ...currentProfile,
-                                    ...updates
-                                };
-
-
-                            profileName.textContent =
-                                newName;
-
-
-                            profileUsername.textContent =
-                                "@" + newUsername;
-
-
-                            infoUsername.textContent =
-                                "@" + newUsername;
-
-
-                            profileBio.textContent =
-                                newBio;
-
-
-                            updateChangeMessages();
-
-
-                            profileModal.classList.remove(
-                                "show"
-                            );
-
-
-                            showMessage(
-                                "تم حفظ تعديلات الملف الشخصي.",
-                                "success"
-                            );
-
-
-                        } catch (error) {
-
-                            console.error(
-                                "Profile update:",
-                                error
-                            );
-
-
-                            const text =
-                                String(
-                                    error &&
-                                    (
-                                        error.message ||
-                                        error
-                                    )
-                                );
-
-
-                            if (
-                                text.includes("23505") ||
-                                text.includes("duplicate") ||
-                                text.includes("اسم المستخدم مأخوذ") ||
-                                text.includes("username")
-                            ) {
-
-                                showMessage(
-                                    "اسم المستخدم مأخوذ مسبقًا",
-                                    "error"
-                                );
-
-                            } else {
-
-                                showMessage(
-                                    "تعذر حفظ تعديلات الملف الشخصي حاليًا.",
-                                    "error"
-                                );
-
-                            }
-
-                        } finally {
-
-                            saveButton.disabled =
-                                false;
-
-                            saveButton.textContent =
-                                "حفظ";
-
-                        }
-
-                    }
-                );
-
-
-            /* =========================================
-               مشاركة الملف
-               ========================================= */
-
-            document
-                .getElementById(
-                    "shareProfileButton"
-                )
-                .addEventListener(
-                    "click",
-                    async function () {
-
-                        const shareData = {
-
-                            title:
-                                profileName.textContent ||
-                                "name",
-
-                            text:
-                                "الملف الشخصي لـ " +
-                                (
-                                    profileName.textContent ||
-                                    "name"
-                                ),
-
-                            url:
-                                window.location.href
-
-                        };
-
-
-                        try {
-
-                            if (
-                                navigator.share
-                            ) {
-
-                                await navigator.share(
-                                    shareData
-                                );
-
-                            } else if (
-                                navigator.clipboard
-                            ) {
-
-                                await navigator.clipboard.writeText(
-                                    window.location.href
-                                );
-
-
-                                showMessage(
-                                    "تم نسخ رابط الملف الشخصي.",
-                                    "success"
-                                );
-
-                            } else {
-
-                                showMessage(
-                                    window.location.href,
-                                    "success"
-                                );
-
-                            }
-
-                        } catch (error) {
-
-                            /* إلغاء المشاركة لا يحتاج رسالة */
-
-                        }
-
-                    }
-                );
-
-
-            /* =========================================
-               فتح اختيار الصورة الشخصية
-               ========================================= */
-
-            document
-                .getElementById(
-                    "changeAvatarButton"
-                )
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        avatarFileInput.click();
-
-                    }
-                );
-
-
-            /* =========================================
-               فتح اختيار الغلاف
-               ========================================= */
-
-            profileCover.addEventListener(
-                "click",
-                function () {
-
-                    coverFileInput.click();
-
-                }
-            );
-
-
-            /* =========================================
-               قراءة الصورة
-               ========================================= */
-
-            function openImageEditor(
-                file,
-                type
-            ) {
-
-                if (!file) {
-                    return;
-                }
-
-
-                if (
-                    !file.type ||
-                    !file.type.startsWith(
-                        "image/"
-                    )
-                ) {
-
-                    showMessage(
-                        "يرجى اختيار صورة صحيحة.",
-                        "error"
-                    );
-
-                    return;
-
-                }
-
-
-                if (
-                    file.size >
-                    8 * 1024 * 1024
-                ) {
-
-                    showMessage(
-                        "حجم الصورة يجب ألا يتجاوز 8MB.",
-                        "error"
-                    );
-
-                    return;
-
-                }
-
-
-                editorType =
-                    type;
-
-
-                if (
-                    editorObjectUrl
-                ) {
-
-                    URL.revokeObjectURL(
-                        editorObjectUrl
-                    );
-
-                }
-
-
-                editorObjectUrl =
-                    URL.createObjectURL(
-                        file
-                    );
-
-
-                editorImage.src =
-                    editorObjectUrl;
-
-
-                editorState = {
-
-                    zoom: 1,
-
-                    x: 0,
-
-                    y: 0
-
-                };
-
-
-                zoomRange.value =
-                    "1";
-
-
-                positionXRange.value =
-                    "0";
-
-
-                positionYRange.value =
-                    "0";
-
-
-                if (
-                    type === "avatar"
-                ) {
-
-                    imageEditor.className =
-                        "image-editor avatar-editor";
-
-                    imageEditorTitle.textContent =
-                        "تعديل صورة الملف الشخصي";
-
-                } else {
-
-                    imageEditor.className =
-                        "image-editor cover-editor";
-
-                    imageEditorTitle.textContent =
-                        "تعديل صورة الغلاف";
-
-                }
-
-
-                imageEditorModal.classList.add(
-                    "show"
-                );
-
-
-                editorImage.onload =
-                    function () {
-
-                        updateEditorImage();
-
-                    };
-
-            }
-
-
-            avatarFileInput.addEventListener(
-                "change",
-                function () {
-
-                    const file =
-                        avatarFileInput.files &&
-                        avatarFileInput.files[0];
-
-
-                    openImageEditor(
-                        file,
-                        "avatar"
-                    );
-
-
-                    avatarFileInput.value =
-                        "";
-
-                }
-            );
-
-
-            coverFileInput.addEventListener(
-                "change",
-                function () {
-
-                    const file =
-                        coverFileInput.files &&
-                        coverFileInput.files[0];
-
-
-                    openImageEditor(
-                        file,
-                        "cover"
-                    );
-
-
-                    coverFileInput.value =
-                        "";
-
-                }
-            );
-
-
-            /* =========================================
-               تحديث معاينة المحرر
-               ========================================= */
-
-            function updateEditorImage() {
-
-                if (
-                    !editorImage.naturalWidth ||
-                    !editorImage.naturalHeight
-                ) {
-
-                    return;
-
-                }
-
-
-                const boxWidth =
-                    imageEditor.clientWidth;
-
-
-                const boxHeight =
-                    imageEditor.clientHeight;
-
-
-                const imageWidth =
-                    editorImage.naturalWidth;
-
-
-                const imageHeight =
-                    editorImage.naturalHeight;
-
-
-                const coverScale =
-                    Math.max(
-                        boxWidth / imageWidth,
-                        boxHeight / imageHeight
-                    );
-
-
-                const scale =
-                    coverScale *
-                    editorState.zoom;
-
-
-                const width =
-                    imageWidth *
-                    scale;
-
-
-                const height =
-                    imageHeight *
-                    scale;
-
-
-                const maxX =
-                    Math.max(
-                        0,
-                        (width - boxWidth) / 2
-                    );
-
-
-                const maxY =
-                    Math.max(
-                        0,
-                        (height - boxHeight) / 2
-                    );
-
-
-                const x =
-                    (
-                        editorState.x /
-                        100
-                    ) *
-                    maxX;
-
-
-                const y =
-                    (
-                        editorState.y /
-                        100
-                    ) *
-                    maxY;
-
-
-                editorImage.style.width =
-                    width + "px";
-
-
-                editorImage.style.height =
-                    height + "px";
-
-
-                editorImage.style.left =
-                    (
-                        (boxWidth - width) / 2 +
-                        x
-                    ) + "px";
-
-
-                editorImage.style.top =
-                    (
-                        (boxHeight - height) / 2 +
-                        y
-                    ) + "px";
-
-            }
-
-
-            zoomRange.addEventListener(
-                "input",
-                function () {
-
-                    editorState.zoom =
-                        Number(
-                            zoomRange.value
-                        ) || 1;
-
-                    updateEditorImage();
-
-                }
-            );
-
-
-            positionXRange.addEventListener(
-                "input",
-                function () {
-
-                    editorState.x =
-                        Number(
-                            positionXRange.value
-                        ) || 0;
-
-                    updateEditorImage();
-
-                }
-            );
-
-
-            positionYRange.addEventListener(
-                "input",
-                function () {
-
-                    editorState.y =
-                        Number(
-                            positionYRange.value
-                        ) || 0;
-
-                    updateEditorImage();
-
-                }
-            );
-
-
-            /* =========================================
-               سحب الصورة باللمس
-               ========================================= */
-
-            imageEditor.addEventListener(
-                "pointerdown",
-                function (event) {
-
-                    if (
-                        !editorImage.src
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    dragging =
-                        true;
-
-
-                    imageEditor.setPointerCapture(
-                        event.pointerId
-                    );
-
-
-                    dragStartX =
-                        event.clientX;
-
-
-                    dragStartY =
-                        event.clientY;
-
-
-                    dragOriginalX =
-                        editorState.x;
-
-
-                    dragOriginalY =
-                        editorState.y;
-
-                }
-            );
-
-
-            imageEditor.addEventListener(
-                "pointermove",
-                function (event) {
-
-                    if (!dragging) {
-                        return;
-                    }
-
-
-                    const dx =
-                        event.clientX -
-                        dragStartX;
-
-
-                    const dy =
-                        event.clientY -
-                        dragStartY;
-
-
-                    const width =
-                        imageEditor.clientWidth;
-
-
-                    const height =
-                        imageEditor.clientHeight;
-
-
-                    editorState.x =
-                        Math.max(
-                            -100,
-                            Math.min(
-                                100,
-                                dragOriginalX +
-                                (
-                                    dx /
-                                    Math.max(
-                                        1,
-                                        width
-                                    )
-                                ) *
-                                200
-                            )
-                        );
-
-
-                    editorState.y =
-                        Math.max(
-                            -100,
-                            Math.min(
-                                100,
-                                dragOriginalY +
-                                (
-                                    dy /
-                                    Math.max(
-                                        1,
-                                        height
-                                    )
-                                ) *
-                                200
-                            )
-                        );
-
-
-                    positionXRange.value =
-                        String(
-                            Math.round(
-                                editorState.x
-                            )
-                        );
-
-
-                    positionYRange.value =
-                        String(
-                            Math.round(
-                                editorState.y
-                            )
-                        );
-
-
-                    updateEditorImage();
-
-                }
-            );
-
-
-            function stopDragging() {
-
-                dragging =
-                    false;
-
-            }
-
-
-            imageEditor.addEventListener(
-                "pointerup",
-                stopDragging
-            );
-
-
-            imageEditor.addEventListener(
-                "pointercancel",
-                stopDragging
-            );
-
-
-            /* =========================================
-               تحويل الصورة إلى نسخة مقصوصة
-               ========================================= */
-
-            async function createEditedImage() {
-
-                const image =
-                    editorImage;
-
-
-                if (
-                    !image.naturalWidth ||
-                    !image.naturalHeight
-                ) {
-
-                    throw new Error(
-                        "الصورة لم تجهز بعد."
-                    );
-
-                }
-
-
-                const boxWidth =
-                    imageEditor.clientWidth;
-
-
-                const boxHeight =
-                    imageEditor.clientHeight;
-
-
-                const canvas =
-                    document.createElement(
-                        "canvas"
-                    );
-
-
-                let outputWidth;
-                let outputHeight;
-
-
-                if (
-                    editorType ===
-                    "avatar"
-                ) {
-
-                    outputWidth =
-                        700;
-
-                    outputHeight =
-                        700;
-
-                } else {
-
-                    outputWidth =
-                        1400;
-
-                    outputHeight =
-                        438;
-
-                }
-
-
-                canvas.width =
-                    outputWidth;
-
-
-                canvas.height =
-                    outputHeight;
-
-
-                const context =
-                    canvas.getContext(
-                        "2d"
-                    );
-
-
-                const imageWidth =
-                    image.naturalWidth;
-
-
-                const imageHeight =
-                    image.naturalHeight;
-
-
-                const baseScale =
-                    Math.max(
-                        boxWidth / imageWidth,
-                        boxHeight / imageHeight
-                    );
-
-
-                const scale =
-                    baseScale *
-                    editorState.zoom;
-
-
-                const drawnWidth =
-                    imageWidth *
-                    scale;
-
-
-                const drawnHeight =
-                    imageHeight *
-                    scale;
-
-
-                const maxX =
-                    Math.max(
-                        0,
-                        (drawnWidth - boxWidth) / 2
-                    );
-
-
-                const maxY =
-                    Math.max(
-                        0,
-                        (drawnHeight - boxHeight) / 2
-                    );
-
-
-                const offsetX =
-                    (
-                        editorState.x /
-                        100
-                    ) *
-                    maxX;
-
-
-                const offsetY =
-                    (
-                        editorState.y /
-                        100
-                    ) *
-                    maxY;
-
-
-                const left =
-                    (
-                        (boxWidth - drawnWidth) / 2 +
-                        offsetX
-                    );
-
-
-                const top =
-                    (
-                        (boxHeight - drawnHeight) / 2 +
-                        offsetY
-                    );
-
-
-                const ratioX =
-                    outputWidth /
-                    boxWidth;
-
-
-                const ratioY =
-                    outputHeight /
-                    boxHeight;
-
-
-                context.drawImage(
-                    image,
-                    left * ratioX,
-                    top * ratioY,
-                    drawnWidth * ratioX,
-                    drawnHeight * ratioY
-                );
-
-
-                return await new Promise(
-                    function (resolve, reject) {
-
-                        canvas.toBlob(
-                            function (blob) {
-
-                                if (!blob) {
-
-                                    reject(
-                                        new Error(
-                                            "تعذر تجهيز الصورة."
-                                        )
-                                    );
-
-                                    return;
-
-                                }
-
-
-                                resolve(blob);
-
-                            },
-                            "image/jpeg",
-                            0.88
-                        );
-
-                    }
-                );
-
-            }
-
-
-            /* =========================================
-               رفع/حفظ الصورة
-               ========================================= */
-
-            async function blobToDataUrl(
-                blob
-            ) {
-
-                return await new Promise(
-                    function (resolve, reject) {
-
-                        const reader =
-                            new FileReader();
-
-
-                        reader.onload =
-                            function () {
-
-                                resolve(
-                                    reader.result
-                                );
-
-                            };
-
-
-                        reader.onerror =
-                            function () {
-
-                                reject(
-                                    new Error(
-                                        "تعذر قراءة الصورة."
-                                    )
-                                );
-
-                            };
-
-
-                        reader.readAsDataURL(
-                            blob
-                        );
-
-                    }
-                );
-
-            }
-
-
-            /* =========================================
-               حفظ الصورة المعدلة
-               ========================================= */
-
-            document
-                .getElementById(
-                    "saveEditedImage"
-                )
-                .addEventListener(
-                    "click",
-                    async function () {
-
-                        const button =
-                            document.getElementById(
-                                "saveEditedImage"
-                            );
-
-
-                        button.disabled =
-                            true;
-
-
-                        button.textContent =
-                            "جارٍ الحفظ...";
-
-
-                        try {
-
-                            const blob =
-                                await createEditedImage();
-
-
-                            /*
-                             * يتم حفظ الصورة كـ Data URL
-                             * داخل profiles.
-                             * هذا يجعلها مرتبطة بالحساب
-                             * وتظهر على الأجهزة الأخرى.
-                             */
-
-                            const dataUrl =
-                                await blobToDataUrl(
-                                    blob
-                                );
-
-
-                            const updates =
-                                {};
-
-
-                            if (
-                                editorType ===
-                                "avatar"
-                            ) {
-
-                                updates.avatar_url =
-                                    dataUrl;
-
-                            } else {
-
-                                updates.cover_url =
-                                    dataUrl;
-
-                            }
-
-
-                            const result =
-                                await updateProfile(
-                                    updates
-                                );
-
-
-                            if (
-                                result &&
-                                result.error
-                            ) {
-
-                                throw result.error;
-
-                            }
-
-
-                            currentProfile =
-                                {
-                                    ...currentProfile,
-                                    ...updates
-                                };
-
-
-                            if (
-                                editorType ===
-                                "avatar"
-                            ) {
-
-                                setAvatar(
-                                    dataUrl
-                                );
-
-                            } else {
-
-                                setCover(
-                                    dataUrl
-                                );
-
-                            }
-
-
-                            imageEditorModal.classList.remove(
-                                "show"
-                            );
-
-
-                            showMessage(
-                                editorType ===
-                                "avatar"
-                                    ? "تم حفظ صورة الملف الشخصي."
-                                    : "تم حفظ صورة الغلاف.",
-                                "success"
-                            );
-
-
-                        } catch (error) {
-
-                            console.error(
-                                "Image save:",
-                                error
-                            );
-
-
-                            showMessage(
-                                "تعذر حفظ الصورة حاليًا.",
-                                "error"
-                            );
-
-                        } finally {
-
-                            button.disabled =
-                                false;
-
-                            button.textContent =
-                                "حفظ الصورة";
-
-                        }
-
-                    }
-                );
-
-
-            /* =========================================
-               إلغاء محرر الصورة
-               ========================================= */
-
-            document
-                .getElementById(
-                    "cancelEditedImage"
-                )
-                .addEventListener(
-                    "click",
-                    closeImageEditor
-                );
-
-
-            imageEditorModal.addEventListener(
-                "click",
-                function (event) {
-
-                    if (
-                        event.target ===
-                        imageEditorModal
-                    ) {
-
-                        closeImageEditor();
-
-                    }
-
-                }
-            );
-
-
-            function closeImageEditor() {
-
-                imageEditorModal.classList.remove(
-                    "show"
-                );
-
-
-                if (
-                    editorObjectUrl
-                ) {
-
-                    URL.revokeObjectURL(
-                        editorObjectUrl
-                    );
-
-                    editorObjectUrl =
-                        null;
-
-                }
-
-
-                editorImage.removeAttribute(
-                    "src"
-                );
-
-            }
-
-
-            /* =========================================
-               تحديث عداد الساعة
-               ========================================= */
-
-            setInterval(
-                function () {
-
-                    updateChangeMessages();
-
-                },
-                30000
-            );
-
-
-            /* =========================================
-               بدء الصفحة
-               ========================================= */
-
-            loadProfile();
-
-        })();
-
-    </script>
 
 </body>
 
