@@ -3809,4 +3809,67 @@ async function handleChangePassword() {
     /* =========================================
        INITIALIZE
     ========================================= */
-    
+    function init() {
+
+        ensureRoot();
+
+        injectCSS();
+
+        bindEvents();
+
+        bindAuthEvents();
+
+        handleRecoveryURL();
+
+        setMode("login");
+
+        restoreSession();
+
+    }
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            init,
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        init();
+
+    }
+
+    /* =========================================
+       PUBLIC API
+    ========================================= */
+
+    window.WFESCSettingsAuthUIAPI = {
+
+        setMode:
+            setMode,
+
+        restoreSession:
+            restoreSession,
+
+        renderAccount:
+            renderAccount,
+
+        showRecoveryEmail:
+            showRecoveryEmail,
+
+        showRecoveryPassword:
+            showRecoveryPassword,
+
+        showVerificationMessage:
+            showVerificationMessage
+
+    };
+
+})();
