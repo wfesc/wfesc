@@ -322,7 +322,7 @@
 
     /* =====================================================
        اسم العرض
-       
+
        يسمح بالعربي والإنجليزي والأرقام والرموز.
        الحد الأقصى 15 حرفًا.
     ===================================================== */
@@ -422,7 +422,7 @@
 
     /* =====================================================
        تنظيف اسم المستخدم
-       
+
        المسموح:
        a-z
        0-9
@@ -838,6 +838,101 @@
 
 
     /* =====================================================
+       فحص وجود اسم المستخدم
+       
+       يتم استخدامه قبل إنشاء حساب جديد.
+       لا يتم إنشاء أي حساب إذا كان الاسم مأخوذًا.
+    ===================================================== */
+
+    async function usernameExists(username) {
+
+        username =
+            sanitizeUsername(
+                username
+            );
+
+
+        const validation =
+            validateUsername(
+                username
+            );
+
+
+        if (!validation.valid) {
+
+            return {
+                exists: false,
+                error:
+                    validation.error
+            };
+
+        }
+
+
+        let result;
+
+
+        try {
+
+            result =
+                await supabaseClient
+                    .from(
+                        CONFIG.profilesTable
+                    )
+                    .select("id")
+                    .eq(
+                        "username",
+                        username
+                    )
+                    .limit(1);
+
+        } catch (error) {
+
+            console.error(
+                "WFESC Auth: خطأ أثناء فحص اسم المستخدم:",
+                error
+            );
+
+            return {
+                exists: false,
+                error:
+                    error
+            };
+
+        }
+
+
+        if (result.error) {
+
+            console.error(
+                "WFESC Auth: خطأ أثناء فحص اسم المستخدم:",
+                result.error
+            );
+
+            return {
+                exists: false,
+                error:
+                    result.error
+            };
+
+        }
+
+
+        return {
+            exists:
+                Array.isArray(
+                    result.data
+                ) &&
+                result.data.length > 0,
+
+            error:
+                null
+        };
+
+    }
+
+
+    /* =====================================================
        إنشاء Profile تلقائيًا
     ===================================================== */
 
@@ -1164,7 +1259,7 @@
 
     /* =====================================================
        تحديث بيانات الحساب في Auth
-       
+
        اسم العرض يخزن في user_metadata
        ولا يحتاج عمود جديد في profiles.
     ===================================================== */
@@ -1392,7 +1487,7 @@
 
     /* =====================================================
        إنشاء الحساب
-       
+
        يدعم الشكل الجديد:
        signUp(name, email, password, username)
 
@@ -1546,6 +1641,55 @@
 
 
         /* ---------------------------------------------
+           فحص Username قبل إنشاء الحساب
+        --------------------------------------------- */
+
+        const usernameCheck =
+            await usernameExists(
+                username
+            );
+
+
+        if (
+            usernameCheck.error
+        ) {
+
+            return {
+                data: null,
+
+                error:
+                    new Error(
+                        "تعذر التحقق من توفر اسم المستخدم حاليًا."
+                    )
+            };
+
+        }
+
+
+        if (
+            usernameCheck.exists
+        ) {
+
+            const usernameError =
+                new Error(
+                    "اسم المستخدم مأخوذ مسبقًا"
+                );
+
+            usernameError.code =
+                "USERNAME_ALREADY_EXISTS";
+
+
+            return {
+                data: null,
+
+                error:
+                    usernameError
+            };
+
+        }
+
+
+        /* ---------------------------------------------
            Password
         --------------------------------------------- */
 
@@ -1630,6 +1774,48 @@
                 result.error;
 
 
+            /*
+             * Username conflict
+             *
+             * حماية إضافية في حال حصل تعارض
+             * بين الفحص السابق وإنشاء الحساب.
+             */
+
+            if (
+                String(
+                    result.error.code || ""
+                ) === "23505"
+            ) {
+
+                const errorMessage =
+                    getErrorText(
+                        result.error
+                    ).toLowerCase();
+
+
+                if (
+                    errorMessage.includes(
+                        "username"
+                    )
+                ) {
+
+                    finalError =
+                        new Error(
+                            "اسم المستخدم مأخوذ مسبقًا"
+                        );
+
+                    finalError.code =
+                        "USERNAME_ALREADY_EXISTS";
+
+                }
+
+            }
+
+
+            /*
+             * Email conflict
+             */
+
             if (
                 isExistingEmailError(
                     result.error
@@ -1638,8 +1824,11 @@
 
                 finalError =
                     new Error(
-                        "يوجد حساب بهذا البريد، قم بتسجيل الدخول."
+                        "أنت تملك حساب بالفعل"
                     );
+
+                finalError.code =
+                    "EMAIL_ALREADY_EXISTS";
 
             }
 
@@ -2115,10 +2304,10 @@
 
     /* =====================================================
        حذف الحساب
-       
+
        مهم:
        لا نضع Service Role Key داخل JavaScript.
-       
+
        الحذف الكامل من auth.users يحتاج:
        Supabase Edge Function
        أو Backend آمن.
@@ -2228,7 +2417,7 @@
 
     /* =====================================================
        فحص رابط Auth
-       
+
        نستخدم URL فقط لمعرفة أن الصفحة
        جاءت من عملية تحقق/استرداد.
     ===================================================== */
@@ -2589,6 +2778,9 @@
 
         updateProfile:
             updateProfile,
+
+        usernameExists:
+            usernameExists,
 
 
         /* Account metadata */
