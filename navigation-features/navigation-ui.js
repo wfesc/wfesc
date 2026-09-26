@@ -20,491 +20,626 @@
 
 
     /*
-     * التأكد من وجود الإعدادات
+     * التأكد من وجود إعدادات التنقل
      */
 
-    if (!window.WFESCNavigationSettings) {
-        console.error(
-            "WFESC Navigation: navigation-settings.js غير محمل."
-        );
+    function waitForSettings(callback) {
 
-        return;
-    }
-
-
-    const settings =
-        window.WFESCNavigationSettings;
-
-
-    /*
-     * إنشاء شريط التنقل
-     */
-
-    function createNavigation() {
-
-        // إذا موجود مسبقًا لا ننشئ واحد ثاني
-        if (
-            document.querySelector(
-                ".wfesc-navigation"
-            )
-        ) {
+        if (window.WFESCNavigationSettings) {
+            callback();
             return;
         }
 
+        let attempts = 0;
 
-        const navigation =
-            document.createElement("nav");
+        const timer = window.setInterval(function () {
 
+            attempts++;
 
-        navigation.className =
-            "wfesc-navigation";
+            if (window.WFESCNavigationSettings) {
 
+                window.clearInterval(timer);
 
-        navigation.setAttribute(
-            "aria-label",
-            "التنقل الرئيسي"
-        );
+                callback();
 
-
-        /*
-         * إنشاء الأزرار
-         */
-
-        settings.buttons.forEach(function (button) {
-
-            const page =
-                settings.pages[button.page];
-
-
-            if (!page) {
                 return;
             }
 
-
-            const link =
-                document.createElement("a");
-
-
-            link.className =
-                "wfesc-navigation-item";
-
-
-            link.dataset.navigationId =
-                button.id;
-
-
-            link.href = page;
-
-
-            link.setAttribute(
-                "aria-label",
-                button.title
-            );
-
-
             /*
-             * الأيقونة
+             * منع الانتظار إلى ما لا نهاية
              */
 
-            const icon =
-                document.createElement("span");
+            if (attempts >= 100) {
 
+                window.clearInterval(timer);
 
-            icon.className =
-                "wfesc-navigation-icon";
+                console.error(
+                    "WFESC Navigation: navigation-settings.js غير محمل."
+                );
 
+            }
 
-            icon.textContent =
-                button.icon;
+        }, 10);
 
-
-            icon.setAttribute(
-                "aria-hidden",
-                "true"
-            );
-
-
-            /*
-             * اسم الخيار
-             */
-
-            const title =
-                document.createElement("span");
-
-
-            title.className =
-                "wfesc-navigation-title";
-
-
-            title.textContent =
-                button.title;
-
-
-            /*
-             * تركيب الزر
-             */
-
-            link.appendChild(icon);
-
-            link.appendChild(title);
-
-            navigation.appendChild(link);
-
-        });
-
-
-        /*
-         * إضافة الشريط للصفحة
-         */
-
-        document.body.appendChild(
-            navigation
-        );
-
-
-        /*
-         * تحديد الصفحة الحالية
-         */
-
-        setActiveButton();
-
-
-        /*
-         * تفعيل الانتقال
-         */
-
-        setupNavigationClicks();
-
-
-        /*
-         * إضافة مساحة أسفل الصفحة
-         */
-
-        document.body.classList.add(
-            "wfesc-navigation-active"
-        );
     }
 
 
     /*
-     * معرفة الصفحة الحالية
+     * تشغيل النظام بعد توفر الإعدادات
      */
 
-    function getCurrentPage() {
+    waitForSettings(function () {
 
-        let current =
-            window.location.pathname
-            .split("/")
-            .pop();
+        const settings =
+            window.WFESCNavigationSettings;
 
 
         /*
-         * إذا كانت الصفحة الرئيسية
-         * ولم يظهر اسم الملف
+         * إنشاء شريط التنقل
          */
 
-        if (!current) {
-            current = "index.html";
-        }
+        function createNavigation() {
 
-
-        return current
-            .toLowerCase();
-    }
-
-
-    /*
-     * تحديد الزر النشط
-     */
-
-    function setActiveButton() {
-
-        const currentPage =
-            getCurrentPage();
-
-
-        const links =
-            document.querySelectorAll(
-                ".wfesc-navigation-item"
-            );
-
-
-        links.forEach(function (link) {
-
-            const linkPage =
-                link.getAttribute("href");
-
-
-            if (!linkPage) {
-                return;
-            }
-
-
-            const cleanPage =
-                linkPage
-                    .split("?")[0]
-                    .split("#")[0]
-                    .split("/")
-                    .pop()
-                    .toLowerCase();
-
+            /*
+             * إذا موجود مسبقًا لا ننشئ واحد ثاني
+             */
 
             if (
-                cleanPage === currentPage
+                document.querySelector(
+                    ".wfesc-navigation"
+                )
+            ) {
+                return;
+            }
+
+
+            const navigation =
+                document.createElement("nav");
+
+
+            navigation.className =
+                "wfesc-navigation";
+
+
+            navigation.setAttribute(
+                "aria-label",
+                "التنقل الرئيسي"
+            );
+
+
+            /*
+             * إنشاء الأزرار
+             */
+
+            if (
+                Array.isArray(settings.buttons)
             ) {
 
-                link.classList.add(
-                    "active"
-                );
+                settings.buttons.forEach(
+                    function (button) {
 
-            } else {
+                        const page =
+                            settings.pages &&
+                            settings.pages[button.page];
 
-                link.classList.remove(
-                    "active"
+
+                        if (!page) {
+                            return;
+                        }
+
+
+                        const link =
+                            document.createElement("a");
+
+
+                        link.className =
+                            "wfesc-navigation-item";
+
+
+                        link.dataset.navigationId =
+                            button.id;
+
+
+                        link.href =
+                            page;
+
+
+                        link.setAttribute(
+                            "aria-label",
+                            button.title
+                        );
+
+
+                        /*
+                         * الأيقونة
+                         */
+
+                        const icon =
+                            document.createElement("span");
+
+
+                        icon.className =
+                            "wfesc-navigation-icon";
+
+
+                        icon.textContent =
+                            button.icon;
+
+
+                        icon.setAttribute(
+                            "aria-hidden",
+                            "true"
+                        );
+
+
+                        /*
+                         * اسم الخيار
+                         */
+
+                        const title =
+                            document.createElement("span");
+
+
+                        title.className =
+                            "wfesc-navigation-title";
+
+
+                        title.textContent =
+                            button.title;
+
+
+                        /*
+                         * تركيب الزر
+                         */
+
+                        link.appendChild(icon);
+
+                        link.appendChild(title);
+
+                        navigation.appendChild(link);
+
+                    }
                 );
 
             }
 
-        });
-    }
 
+            /*
+             * إضافة الشريط للصفحة
+             */
 
-    /*
-     * إظهار شاشة التحميل
-     */
-
-    function showLoading() {
-
-        document.documentElement.classList.add(
-            "wfesc-loading"
-        );
-
-
-        const loader =
-            document.querySelector(
-                ".wfesc-page-loader"
+            document.body.appendChild(
+                navigation
             );
 
 
-        if (loader) {
+            /*
+             * تحديد الصفحة الحالية
+             */
 
-            loader.classList.remove(
-                "wfesc-loader-hidden"
+            setActiveButton();
+
+
+            /*
+             * تفعيل الانتقال
+             */
+
+            setupNavigationClicks();
+
+
+            /*
+             * إضافة مساحة أسفل الصفحة
+             */
+
+            document.body.classList.add(
+                "wfesc-navigation-active"
             );
 
         }
-    }
-
-
-    /*
-     * الانتقال للصفحة
-     */
-
-    function navigateToPage(url) {
-
-        showLoading();
-
-
-        const delay =
-            settings.loading &&
-            settings.loading.navigationDelay
-                ? settings.loading.navigationDelay
-                : 350;
 
 
         /*
-         * ننتظر قليلًا حتى يظهر
-         * تأثير التحميل قبل الانتقال
+         * معرفة الصفحة الحالية
          */
 
-        window.setTimeout(
-            function () {
+        function getCurrentPage() {
 
-                window.location.href =
-                    url;
-
-            },
-            delay
-        );
-    }
+            let current =
+                window.location.pathname
+                .split("/")
+                .pop();
 
 
-    /*
-     * تفعيل الضغط على الأزرار
-     */
+            /*
+             * إذا كانت الصفحة الرئيسية
+             */
 
-    function setupNavigationClicks() {
+            if (!current) {
 
-        const links =
-            document.querySelectorAll(
-                ".wfesc-navigation-item"
-            );
+                current =
+                    "index.html";
 
-
-        links.forEach(function (link) {
-
-            link.addEventListener(
-                "click",
-                function (event) {
-
-                    /*
-                     * السماح بالضغط المطول
-                     * وفتح الرابط في تبويب جديد
-                     */
-
-                    if (
-                        event.ctrlKey ||
-                        event.metaKey ||
-                        event.shiftKey ||
-                        event.altKey ||
-                        event.button !== 0
-                    ) {
-                        return;
-                    }
+            }
 
 
-                    const target =
-                        link.getAttribute("href");
+            return current.toLowerCase();
+
+        }
 
 
-                    if (!target) {
-                        return;
-                    }
+        /*
+         * تحديد الزر النشط
+         */
+
+        function setActiveButton() {
+
+            const currentPage =
+                getCurrentPage();
 
 
-                    /*
-                     * إذا نفس الصفحة
-                     * لا نعيد التحميل
-                     */
-
-                    const targetURL =
-                        new URL(
-                            target,
-                            window.location.href
-                        );
+            const links =
+                document.querySelectorAll(
+                    ".wfesc-navigation-item"
+                );
 
 
-                    const currentURL =
-                        new URL(
-                            window.location.href
-                        );
+            links.forEach(function (link) {
+
+                const linkPage =
+                    link.getAttribute("href");
 
 
-                    if (
-                        targetURL.pathname ===
-                        currentURL.pathname
-                    ) {
-
-                        event.preventDefault();
-
-                        return;
-                    }
+                if (!linkPage) {
+                    return;
+                }
 
 
-                    /*
-                     * نتأكد أن الرابط
-                     * داخل نفس الموقع
-                     */
-
-                    if (
-                        targetURL.origin !==
-                        currentURL.origin
-                    ) {
-                        return;
-                    }
+                const cleanPage =
+                    linkPage
+                        .split("?")[0]
+                        .split("#")[0]
+                        .split("/")
+                        .pop()
+                        .toLowerCase();
 
 
-                    /*
-                     * إيقاف الانتقال الطبيعي
-                     */
+                if (
+                    cleanPage ===
+                    currentPage
+                ) {
 
-                    event.preventDefault();
+                    link.classList.add(
+                        "active"
+                    );
 
+                } else {
 
-                    /*
-                     * بدء التحميل
-                     */
-
-                    navigateToPage(
-                        targetURL.href
+                    link.classList.remove(
+                        "active"
                     );
 
                 }
-            );
 
-        });
+            });
 
-    }
-
-
-    /*
-     * إعادة فحص الزر النشط
-     */
-
-    function refreshNavigation() {
-
-        setActiveButton();
-
-    }
-
-
-    /*
-     * تشغيل النظام
-     */
-
-    function init() {
-
-        if (
-            !document.body
-        ) {
-
-            window.setTimeout(
-                init,
-                10
-            );
-
-            return;
         }
 
 
-        createNavigation();
+        /*
+         * إظهار شاشة التحميل
+         */
+
+        function showLoading() {
+
+            document.documentElement.classList.add(
+                "wfesc-loading"
+            );
+
+
+            const loader =
+                document.querySelector(
+                    ".wfesc-page-loader"
+                );
+
+
+            if (loader) {
+
+                loader.classList.remove(
+                    "wfesc-loader-hidden"
+                );
+
+            }
+
+        }
 
 
         /*
-         * إعادة تحديد الصفحة الحالية
-         * بعد انتهاء كل شيء
+         * معرفة حالة الأنميشن العالمية
          */
 
-        window.setTimeout(
-            refreshNavigation,
-            50
-        );
+        function isAnimationEnabled() {
 
-    }
+            if (
+                window.WFESCGlobalSettings &&
+                typeof
+                window.WFESCGlobalSettings
+                    .getAnimationEnabled ===
+                "function"
+            ) {
+
+                return window.WFESCGlobalSettings
+                    .getAnimationEnabled();
+
+            }
 
 
-    /*
-     * تشغيل بعد تجهيز الصفحة
-     */
+            return true;
 
-    if (
-        document.readyState ===
-        "loading"
-    ) {
+        }
 
-        document.addEventListener(
-            "DOMContentLoaded",
-            init,
-            {
-                once: true
+
+        /*
+         * الانتقال للصفحة
+         */
+
+        function navigateToPage(url) {
+
+            showLoading();
+
+
+            let delay = 0;
+
+
+            /*
+             * إذا الأنميشن مفعل
+             * نستخدم التأخير الموجود بالإعدادات
+             */
+
+            if (isAnimationEnabled()) {
+
+                delay =
+                    settings.loading &&
+                    typeof settings.loading.navigationDelay ===
+                    "number"
+                        ? settings.loading.navigationDelay
+                        : 350;
+
+            }
+
+
+            /*
+             * الانتقال
+             */
+
+            window.setTimeout(
+                function () {
+
+                    window.location.href =
+                        url;
+
+                },
+                delay
+            );
+
+        }
+
+
+        /*
+         * تفعيل الضغط على الأزرار
+         */
+
+        function setupNavigationClicks() {
+
+            const links =
+                document.querySelectorAll(
+                    ".wfesc-navigation-item"
+                );
+
+
+            links.forEach(function (link) {
+
+                link.addEventListener(
+                    "click",
+                    function (event) {
+
+                        /*
+                         * السماح بالضغط المطول
+                         * وفتح الرابط في تبويب جديد
+                         */
+
+                        if (
+                            event.ctrlKey ||
+                            event.metaKey ||
+                            event.shiftKey ||
+                            event.altKey ||
+                            event.button !== 0
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const target =
+                            link.getAttribute("href");
+
+
+                        if (!target) {
+                            return;
+                        }
+
+
+                        /*
+                         * تحويل الرابط إلى URL كامل
+                         */
+
+                        let targetURL;
+
+                        let currentURL;
+
+                        try {
+
+                            targetURL =
+                                new URL(
+                                    target,
+                                    window.location.href
+                                );
+
+
+                            currentURL =
+                                new URL(
+                                    window.location.href
+                                );
+
+                        } catch (error) {
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * إذا نفس الصفحة
+                         * لا نعيد التحميل
+                         */
+
+                        if (
+                            targetURL.pathname ===
+                            currentURL.pathname
+                        ) {
+
+                            event.preventDefault();
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * التأكد أن الرابط
+                         * داخل نفس الموقع
+                         */
+
+                        if (
+                            targetURL.origin !==
+                            currentURL.origin
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * إيقاف الانتقال الطبيعي
+                         */
+
+                        event.preventDefault();
+
+
+                        /*
+                         * بدء التحميل
+                         */
+
+                        navigateToPage(
+                            targetURL.href
+                        );
+
+                    }
+                );
+
+            });
+
+        }
+
+
+        /*
+         * إعادة فحص الزر النشط
+         */
+
+        function refreshNavigation() {
+
+            setActiveButton();
+
+        }
+
+
+        /*
+         * الاستماع لتغيير الإعدادات العالمية
+         */
+
+        window.addEventListener(
+            "wfesc:settings-changed",
+            function () {
+
+                /*
+                 * تحديث الزر النشط فقط.
+                 * إعداد الأنميشن نفسه يتم
+                 * تطبيقه من النظام العالمي.
+                 */
+
+                refreshNavigation();
+
             }
         );
 
-    } else {
 
-        init();
+        /*
+         * تشغيل النظام
+         */
 
-    }
+        function init() {
 
+            if (!document.body) {
+
+                window.setTimeout(
+                    init,
+                    10
+                );
+
+                return;
+
+            }
+
+
+            createNavigation();
+
+
+            /*
+             * إعادة تحديد الصفحة الحالية
+             */
+
+            window.setTimeout(
+                refreshNavigation,
+                50
+            );
+
+        }
+
+
+        /*
+         * تشغيل بعد تجهيز الصفحة
+         */
+
+        if (
+            document.readyState ===
+            "loading"
+        ) {
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                init,
+                {
+                    once: true
+                }
+            );
+
+        } else {
+
+            init();
+
+        }
+
+    });
 
 })();
