@@ -2243,4 +2243,331 @@ function bindPasswordToggle(
     /* =========================================
        FORGOT PASSWORD
     ========================================= */
+    function handleForgotPassword(
+        event
+    ) {
+
+        event.preventDefault();
+
+        showRecoveryEmail();
+
+    }
+
+    async function handleRecoverySubmit(
+        event
+    ) {
+
+        event.preventDefault();
+
+        if (busy) {
+            return;
+        }
+
+        const e =
+            getElements();
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return;
+        }
+
+        clearFieldError(
+            e.recoveryEmail,
+            e.recoveryEmailError
+        );
+
+        const email =
+            validateEmail(
+                e.recoveryEmail &&
+                e.recoveryEmail.value
+            );
+
+        if (!email.valid) {
+
+            setFieldError(
+                e.recoveryEmail,
+                e.recoveryEmailError,
+                email.message
+            );
+
+            shake(
+                e.recoveryEmail
+            );
+
+            return;
+
+        }
+
+        if (
+            typeof auth.resetPassword !==
+            "function"
+        ) {
+
+            showStatus(
+                "وظيفة استعادة كلمة المرور غير متوفرة.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            const result =
+                await auth.resetPassword(
+                    email.value,
+                    SETTINGS_URL
+                );
+
+            if (
+                result &&
+                result.error
+            ) {
+
+                throw result.error;
+
+            }
+
+            showStatus(
+                (
+                    CONFIG.messages &&
+                    CONFIG.messages.resetSent
+                ) ||
+                "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC reset error:",
+                error
+            );
+
+            showStatus(
+                getAuthErrorMessage(
+                    error,
+                    (
+                        CONFIG.messages &&
+                        CONFIG.messages.resetError
+                    ) ||
+                    "تعذر إرسال رابط إعادة تعيين كلمة المرور."
+                ),
+                "error"
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       NEW PASSWORD
+    ========================================= */
+
+    async function handleRecoveryPasswordSubmit(
+        event
+    ) {
+
+        event.preventDefault();
+
+        if (busy) {
+            return;
+        }
+
+        const e =
+            getElements();
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return;
+        }
+
+        const password =
+            validatePassword(
+                e.recoveryPassword &&
+                e.recoveryPassword.value
+            );
+
+        clearFieldError(
+            e.recoveryPassword,
+            e.recoveryPasswordError
+        );
+
+        clearFieldError(
+            e.recoveryConfirm,
+            e.recoveryConfirmError
+        );
+
+        if (!password.valid) {
+
+            setFieldError(
+                e.recoveryPassword,
+                e.recoveryPasswordError,
+                password.message
+            );
+
+            shake(
+                e.recoveryPassword
+            );
+
+            return;
+
+        }
+
+        const confirm =
+            String(
+                e.recoveryConfirm &&
+                e.recoveryConfirm.value ||
+                ""
+            );
+
+        if (
+            confirm !==
+            password.value
+        ) {
+
+            const message =
+                "كلمتا المرور غير متطابقتين.";
+
+            setFieldError(
+                e.recoveryPassword,
+                e.recoveryPasswordError,
+                message
+            );
+
+            setFieldError(
+                e.recoveryConfirm,
+                e.recoveryConfirmError,
+                message
+            );
+
+            shake(
+                e.recoveryPassword
+            );
+
+            shake(
+                e.recoveryConfirm
+            );
+
+            return;
+
+        }
+
+        if (
+            typeof auth.updatePassword !==
+            "function"
+        ) {
+
+            showStatus(
+                "وظيفة تغيير كلمة المرور غير متوفرة.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            const result =
+                await auth.updatePassword(
+                    password.value
+                );
+
+            if (
+                result &&
+                result.error
+            ) {
+
+                throw result.error;
+
+            }
+
+            showStatus(
+                "تم تغيير كلمة المرور بنجاح. سيتم تسجيل الخروج.",
+                "success"
+            );
+
+            setTimeout(
+                async function () {
+
+                    if (
+                        typeof auth.signOut ===
+                        "function"
+                    ) {
+
+                        try {
+
+                            await auth.signOut();
+
+                        } catch (error) {
+
+                            console.error(
+                                error
+                            );
+
+                        }
+
+                    }
+
+                    setMode(
+                        "login"
+                    );
+
+                    document.dispatchEvent(
+                        new CustomEvent(
+                            "WFESCAuthChanged",
+                            {
+                                detail: {
+                                    user: null,
+                                    profile: null,
+                                    loggedIn: false
+                                }
+                            }
+                        )
+                    );
+
+                },
+                1200
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC password update error:",
+                error
+            );
+
+            showStatus(
+                getAuthErrorMessage(
+                    error,
+                    "تعذر تغيير كلمة المرور."
+                ),
+                "error"
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       CHANGE PASSWORD
+    ========================================= */
     
