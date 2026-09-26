@@ -51,7 +51,6 @@
 
     /* =====================================================
        إنشاء اتصال Supabase
-       المفتاح الجديد يؤخذ من settings-auth-config.js
     ===================================================== */
 
     const supabaseClient =
@@ -73,6 +72,14 @@
     let currentSession = null;
 
     let currentProfile = null;
+
+
+    /* =====================================================
+       رابط صفحة الإعدادات
+    ===================================================== */
+
+    const SETTINGS_URL =
+        "https://wfesc.github.io/wfesc/settings.html";
 
 
     /* =====================================================
@@ -148,12 +155,12 @@
 
             min:
                 Number(
-                    usernameConfig.minLength || 1
+                    usernameConfig.minLength || 3
                 ),
 
             max:
                 Number(
-                    usernameConfig.maxLength || 3
+                    usernameConfig.maxLength || 9
                 )
 
         };
@@ -163,6 +170,15 @@
 
     /* =====================================================
        التحقق من اسم المستخدم
+       
+       الشروط:
+       - 3 أحرف أو أكثر
+       - بحد أقصى 9 أحرف
+       - أحرف إنجليزية فقط
+       - بدون مسافات
+       - بدون أرقام
+       - بدون فواصل
+       - بدون رموز
     ===================================================== */
 
     function validateUsername(username) {
@@ -203,7 +219,7 @@
 
                 error:
                     new Error(
-                        "اسم المستخدم قصير جدًا."
+                        "يجب أن يتكون اسم المستخدم من 3 أحرف أو أكثر."
                     )
 
             };
@@ -219,9 +235,27 @@
 
                 error:
                     new Error(
-                        "اسم المستخدم يجب ألا يتجاوز " +
-                        limits.max +
-                        " أحرف."
+                        "اسم المستخدم يجب ألا يتجاوز 9 أحرف."
+                    )
+
+            };
+
+        }
+
+
+        /*
+         * أحرف إنجليزية فقط
+         */
+
+        if (!/^[A-Za-z]+$/.test(username)) {
+
+            return {
+
+                valid: false,
+
+                error:
+                    new Error(
+                        "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية فقط، بدون مسافات أو فواصل أو رموز."
                     )
 
             };
@@ -241,17 +275,73 @@
 
 
     /* =====================================================
+       تنظيف اسم المستخدم
+       
+       يستخدم فقط عند إنشاء اسم افتراضي
+       للحسابات القديمة أو الحالات الخاصة.
+    ===================================================== */
+
+    function sanitizeUsername(username) {
+
+        username =
+            String(username || "");
+
+
+        username =
+            username.replace(
+                /[^A-Za-z]/g,
+                ""
+            );
+
+
+        const limits =
+            getUsernameLimits();
+
+
+        username =
+            username
+                .slice(
+                    0,
+                    limits.max
+                );
+
+
+        if (
+            username.length >=
+            limits.min
+        ) {
+
+            return username;
+
+        }
+
+
+        return "WFESC";
+
+    }
+
+
+    /* =====================================================
        اسم افتراضي
     ===================================================== */
 
     function getDefaultUsername(user) {
 
+        const limits =
+            getUsernameLimits();
+
+
         if (!user) {
 
-            return "W";
+            return "WFESC";
 
         }
 
+
+        /*
+         * أولاً نحاول أخذ username
+         * المخزن في user_metadata
+         */
 
         if (
             user.user_metadata &&
@@ -279,6 +369,11 @@
         }
 
 
+        /*
+         * إذا لم يوجد نأخذ الجزء
+         * الموجود قبل @ من البريد.
+         */
+
         if (user.email) {
 
             const emailName =
@@ -289,30 +384,25 @@
                 .trim();
 
 
-            if (emailName) {
-
-                const limits =
-                    getUsernameLimits();
-
-
-                const shortName =
-                    [...emailName]
-                        .slice(0, limits.max)
-                        .join("");
+            const cleaned =
+                sanitizeUsername(
+                    emailName
+                );
 
 
-                if (shortName) {
+            if (
+                cleaned.length >=
+                limits.min
+            ) {
 
-                    return shortName;
-
-                }
+                return cleaned;
 
             }
 
         }
 
 
-        return "W";
+        return "WFESC";
 
     }
 
@@ -369,8 +459,6 @@
 
     /* =====================================================
        إنشاء Profile إذا لم يكن موجودًا
-       مهم:
-       فشل profile لا يمنع تسجيل الدخول
     ===================================================== */
 
     async function ensureProfile(user) {
@@ -437,11 +525,6 @@
 
 
         if (result.error) {
-
-            /*
-             * تسجيل الدخول لا يفشل إذا كانت
-             * مشكلة الـprofile من RLS أو الجدول.
-             */
 
             console.warn(
                 "WFESC Auth: تعذر إنشاء profile:",
@@ -821,9 +904,12 @@
 
                         },
 
+                        /*
+                         * رابط تأكيد البريد
+                         */
+
                         emailRedirectTo:
-                            window.location.origin +
-                            window.location.pathname
+                            SETTINGS_URL
 
                     }
 
@@ -878,11 +964,8 @@
 
 
         /*
-         * إذا Supabase أعطى Session مباشرة
-         * ننشئ profile.
-         *
-         * إذا كان تأكيد البريد مطلوبًا
-         * فلن توجد Session وهذا طبيعي.
+         * إذا كانت Session موجودة
+         * ننشئ Profile مباشرة.
          */
 
         if (
@@ -937,6 +1020,7 @@
        تسجيل الدخول
     ===================================================== */
 
+   
     async function signIn(
         email,
         password
@@ -1068,16 +1152,7 @@
             result.data.user || null;
 
 
-        /*
-         * نجاح تسجيل الدخول الحقيقي
-         */
-
         if (currentUser) {
-
-            /*
-             * لا ننتظر profile حتى لا تتعطل
-             * واجهة الحساب إذا كانت RLS تمنع القراءة.
-             */
 
             ensureProfile(
                 currentUser
@@ -1135,7 +1210,6 @@
        إعادة تعيين كلمة المرور
     ===================================================== */
 
-    
     async function resetPassword(email) {
 
         email =
@@ -1177,8 +1251,7 @@
 
 
         const redirectUrl =
-            window.location.origin +
-            window.location.pathname;
+            SETTINGS_URL;
 
 
         let result;
@@ -1200,6 +1273,12 @@
                     );
 
         } catch (error) {
+
+            console.error(
+                "WFESC Auth: خطأ أثناء إعادة تعيين كلمة المرور:",
+                error
+            );
+
 
             return {
 
@@ -1237,7 +1316,8 @@
 
             data: true,
 
-            error: null
+            error:
+                null
 
         };
 
@@ -1441,6 +1521,51 @@
         }
 
 
+        /*
+         * معرفة إذا كان المستخدم عاد
+         * من رابط تأكيد البريد الإلكتروني.
+         */
+
+        const currentUrl =
+            window.location.href;
+
+
+        const cameFromEmailVerification =
+            currentUrl.includes("code=") ||
+            currentUrl.includes("access_token=") ||
+            currentUrl.includes("refresh_token=");
+
+
+        if (
+            currentUser &&
+            cameFromEmailVerification
+        ) {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "WFESCEmailVerified",
+                    {
+
+                        detail: {
+
+                            user:
+                                currentUser,
+
+                            session:
+                                currentSession,
+
+                            profile:
+                                currentProfile
+
+                        }
+
+                    }
+                )
+            );
+
+        }
+
+
         window.dispatchEvent(
             new CustomEvent(
                 "WFESCAuthChanged",
@@ -1535,6 +1660,60 @@
                                 console.warn(
                                     "WFESC Auth: مشكلة profile:",
                                     error
+                                );
+
+                            }
+
+                        }
+
+
+                        /*
+                         * إذا تم تأكيد البريد
+                         * وأعاد Supabase Session
+                         */
+
+                        if (
+                            currentUser &&
+                            (
+                                event ===
+                                "SIGNED_IN" ||
+                                event ===
+                                "INITIAL_SESSION"
+                            )
+                        ) {
+
+                            const currentUrl =
+                                window.location.href;
+
+
+                            const verifiedFromUrl =
+                                currentUrl.includes("code=") ||
+                                currentUrl.includes("access_token=") ||
+                                currentUrl.includes("refresh_token=");
+
+
+                            if (verifiedFromUrl) {
+
+                                window.dispatchEvent(
+                                    new CustomEvent(
+                                        "WFESCEmailVerified",
+                                        {
+
+                                            detail: {
+
+                                                user:
+                                                    currentUser,
+
+                                                session:
+                                                    currentSession,
+
+                                                profile:
+                                                    currentProfile
+
+                                            }
+
+                                        }
+                                    )
                                 );
 
                             }
@@ -1667,3 +1846,4 @@
 
 
 })();
+ 
