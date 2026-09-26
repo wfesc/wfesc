@@ -8,6 +8,7 @@
     <title>الإعدادات - WFESC</title>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -131,7 +132,10 @@
             line-height: 1.5;
         }
 
-        /* SWITCH */
+
+        /* =========================
+           SWITCH
+        ========================== */
 
         .switch {
             position: relative;
@@ -182,7 +186,10 @@
             background: #050505;
         }
 
-        /* THEMES */
+
+        /* =========================
+           THEMES
+        ========================== */
 
         .theme-buttons {
             display: flex;
@@ -226,7 +233,10 @@
             font-weight: bold;
         }
 
-        /* ACCOUNT */
+
+        /* =========================
+           ACCOUNT
+        ========================== */
 
         .account-buttons {
             padding: 15px;
@@ -273,7 +283,94 @@
             font-weight: normal;
         }
 
-        /* STATUS */
+
+        /* =========================
+           LOGGED IN ACCOUNT
+        ========================== */
+
+        .logged-in-account {
+            display: none;
+            padding: 18px;
+        }
+
+        .logged-in-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+
+            margin-bottom: 15px;
+        }
+
+        .logged-in-avatar-wrap {
+            width: 68px;
+            height: 68px;
+            min-width: 68px;
+
+            border-radius: 50%;
+
+            overflow: hidden;
+
+            background: #1b1b1b;
+
+            border: 2px solid #333;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logged-in-avatar {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            display: none;
+        }
+
+        .logged-in-avatar-fallback {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 24px;
+            font-weight: bold;
+
+            color: #eee;
+        }
+
+        .logged-in-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .logged-in-username {
+            font-size: 18px;
+            font-weight: bold;
+
+            margin-bottom: 6px;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logged-in-status {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .logged-in-account .account-button {
+            margin-top: 3px;
+        }
+
+
+        /* =========================
+           STATUS
+        ========================== */
 
         .settings-status {
             position: fixed;
@@ -306,7 +403,10 @@
             transform: translate(-50%, 0);
         }
 
-        /* MODAL */
+
+        /* =========================
+           MODAL
+        ========================== */
 
         .modal {
             position: fixed;
@@ -452,7 +552,10 @@
             line-height: 1.6;
         }
 
-        /* LIGHT MODE */
+
+        /* =========================
+           LIGHT MODE
+        ========================== */
 
         html.wfesc-light-mode body {
             background: #f3f3f3;
@@ -532,7 +635,19 @@
             color: #666;
         }
 
-        /* ANIMATION OFF */
+        html.wfesc-light-mode .logged-in-avatar-wrap {
+            background: #f0f0f0;
+            border-color: #ddd;
+        }
+
+        html.wfesc-light-mode .logged-in-avatar-fallback {
+            color: #111;
+        }
+
+
+        /* =========================
+           ANIMATION OFF
+        ========================== */
 
         html.wfesc-animation-off *,
         html.wfesc-animation-off *::before,
@@ -544,6 +659,11 @@
 
             scroll-behavior: auto !important;
         }
+
+
+        /* =========================
+           MOBILE
+        ========================== */
 
         @media (max-width: 500px) {
 
@@ -572,8 +692,24 @@
                 padding: 11px 6px;
             }
 
+            .logged-in-account {
+                padding: 15px;
+            }
+
+            .logged-in-avatar-wrap {
+                width: 58px;
+                height: 58px;
+                min-width: 58px;
+            }
+
+            .logged-in-username {
+                font-size: 16px;
+            }
+
         }
+
     </style>
+
 </head>
 
 
@@ -722,7 +858,13 @@
 
         <div class="settings-card">
 
-            <div class="account-buttons">
+
+            <!-- LOGGED OUT -->
+
+            <div
+                class="account-buttons"
+                id="accountButtons"
+            >
 
                 <button
                     class="account-button primary"
@@ -752,11 +894,69 @@
 
             </div>
 
+
+            <!-- LOGGED IN -->
+
+            <div
+                class="logged-in-account"
+                id="loggedInAccount"
+            >
+
+                <div class="logged-in-profile">
+
+                    <div class="logged-in-avatar-wrap">
+
+                        <img
+                            class="logged-in-avatar"
+                            id="loggedInAvatar"
+                            src=""
+                            alt="صورة الحساب"
+                        >
+
+                        <div
+                            class="logged-in-avatar-fallback"
+                            id="loggedInAvatarFallback"
+                        >
+                            W
+                        </div>
+
+                    </div>
+
+
+                    <div class="logged-in-info">
+
+                        <div
+                            class="logged-in-username"
+                            id="loggedInUsername"
+                        >
+                            مستخدم WFESC
+                        </div>
+
+                        <div class="logged-in-status">
+                            أنت مسجل بالفعل
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="account-button"
+                    id="logoutAccountButton"
+                    type="button"
+                >
+                    تسجيل الخروج
+                </button>
+
+            </div>
+
         </div>
 
     </section>
 
 
+    
     <!-- =========================
          حول الموقع
     ========================== -->
@@ -1322,6 +1522,346 @@ updateSettingsUI();
 <script src="settings-features/settings-auth.js"></script>
 
 <script src="settings-features/settings-auth-ui.js"></script>
+
+
+<!-- =====================================================
+     LOGGED IN ACCOUNT UI
+     ===================================================== -->
+
+<script>
+
+"use strict";
+
+(function () {
+
+    function getElement(id) {
+
+        return document.getElementById(id);
+
+    }
+
+
+    function getFallbackLetter(username) {
+
+        const text =
+            String(username || "W").trim();
+
+        if (!text) {
+            return "W";
+        }
+
+        return text.charAt(0).toUpperCase();
+
+    }
+
+
+    function updateLoggedInUI() {
+
+        const accountButtons =
+            getElement("accountButtons");
+
+        const loggedInAccount =
+            getElement("loggedInAccount");
+
+        const loggedInAvatar =
+            getElement("loggedInAvatar");
+
+        const loggedInAvatarFallback =
+            getElement("loggedInAvatarFallback");
+
+        const loggedInUsername =
+            getElement("loggedInUsername");
+
+
+        if (
+            !accountButtons ||
+            !loggedInAccount ||
+            !loggedInAvatar ||
+            !loggedInAvatarFallback ||
+            !loggedInUsername
+        ) {
+            return;
+        }
+
+
+        const auth =
+            window.WFESCSettingsAuth;
+
+
+        if (!auth) {
+
+            accountButtons.style.display =
+                "grid";
+
+            loggedInAccount.style.display =
+                "none";
+
+            return;
+
+        }
+
+
+        const user =
+            auth.getUser();
+
+
+        if (!user) {
+
+            accountButtons.style.display =
+                "grid";
+
+            loggedInAccount.style.display =
+                "none";
+
+            loggedInAvatar.removeAttribute(
+                "src"
+            );
+
+            loggedInAvatar.style.display =
+                "none";
+
+            loggedInAvatarFallback.style.display =
+                "flex";
+
+            loggedInAvatarFallback.textContent =
+                "W";
+
+            loggedInUsername.textContent =
+                "مستخدم WFESC";
+
+            return;
+
+        }
+
+
+        const profile =
+            auth.getProfile() || {};
+
+
+        const metadata =
+            user.user_metadata || {};
+
+
+        const username =
+            profile.username ||
+            metadata.username ||
+            (
+                user.email
+                    ? user.email.split("@")[0]
+                    : "مستخدم WFESC"
+            );
+
+
+        const avatar =
+            profile.avatar_url ||
+            "";
+
+
+        accountButtons.style.display =
+            "none";
+
+        loggedInAccount.style.display =
+            "block";
+
+
+        loggedInUsername.textContent =
+            username;
+
+
+        loggedInAvatarFallback.textContent =
+            getFallbackLetter(
+                username
+            );
+
+
+        if (avatar) {
+
+            loggedInAvatar.src =
+                avatar;
+
+            loggedInAvatar.style.display =
+                "block";
+
+            loggedInAvatarFallback.style.display =
+                "none";
+
+        } else {
+
+            loggedInAvatar.removeAttribute(
+                "src"
+            );
+
+            loggedInAvatar.style.display =
+                "none";
+
+            loggedInAvatarFallback.style.display =
+                "flex";
+
+        }
+
+    }
+
+
+    async function waitForAuth() {
+
+        for (
+            let i = 0;
+            i < 100;
+            i++
+        ) {
+
+            if (
+                window.WFESCSettingsAuth
+            ) {
+
+                updateLoggedInUI();
+
+                return;
+
+            }
+
+            await new Promise(
+                function (resolve) {
+
+                    setTimeout(
+                        resolve,
+                        50
+                    );
+
+                }
+            );
+
+        }
+
+        updateLoggedInUI();
+
+    }
+
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            waitForAuth();
+
+        }
+    );
+
+
+    window.addEventListener(
+        "WFESCAuthChanged",
+        function () {
+
+            setTimeout(
+                function () {
+
+                    updateLoggedInUI();
+
+                },
+                50
+            );
+
+        }
+    );
+
+
+    window.addEventListener(
+        "WFESCProfileUpdated",
+        function () {
+
+            setTimeout(
+                function () {
+
+                    updateLoggedInUI();
+
+                },
+                50
+            );
+
+        }
+    );
+
+
+    const logoutButton =
+        getElement(
+            "logoutAccountButton"
+        );
+
+
+    if (logoutButton) {
+
+        logoutButton.addEventListener(
+            "click",
+            async function () {
+
+                const auth =
+                    window.WFESCSettingsAuth;
+
+
+                if (!auth) {
+                    return;
+                }
+
+
+                logoutButton.disabled =
+                    true;
+
+
+                try {
+
+                    await auth.signOut();
+
+
+                    updateLoggedInUI();
+
+
+                    if (
+                        typeof showStatus ===
+                        "function"
+                    ) {
+
+                        showStatus(
+                            "تم تسجيل الخروج"
+                        );
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "WFESC logout error:",
+                        error
+                    );
+
+                    if (
+                        typeof showStatus ===
+                        "function"
+                    ) {
+
+                        showStatus(
+                            "تعذر تسجيل الخروج"
+                        );
+
+                    }
+
+                } finally {
+
+                    logoutButton.disabled =
+                        false;
+
+                }
+
+            }
+        );
+
+    }
+
+
+    updateLoggedInUI();
+
+})();
+
+</script>
 
 
 <!-- =====================================================
