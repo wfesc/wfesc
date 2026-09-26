@@ -676,3 +676,448 @@
     ========================================= */
 
     
+    function buildUI() {
+        root = findRoot();
+
+        if (!root) {
+            return;
+        }
+
+        injectStyles();
+
+        /*
+         * إذا كانت الصفحة تحتوي على
+         * data-wfesc-auth أو #wfesc-auth
+         * نستخدمه.
+         *
+         * وإلا ننشئ الحاوية.
+         */
+        let container =
+            document.getElementById(
+                "wfesc-settings-auth-root"
+            );
+
+        if (!container) {
+            container =
+                document.createElement("div");
+
+            container.id =
+                "wfesc-settings-auth-root";
+
+            container.className =
+                "wfesc-auth-root";
+
+            root.appendChild(container);
+        }
+
+        container.innerHTML = `
+            <section
+                class="wfesc-auth-card"
+                aria-label="حساب WFESC"
+            >
+
+                <header class="wfesc-auth-header">
+                    <div
+                        class="wfesc-auth-logo"
+                        aria-hidden="true"
+                    >
+                        W
+                    </div>
+
+                    <h2
+                        class="wfesc-auth-title"
+                        id="wfesc-auth-title"
+                    >
+                        تسجيل الدخول
+                    </h2>
+
+                    <p
+                        class="wfesc-auth-subtitle"
+                        id="wfesc-auth-subtitle"
+                    >
+                        سجّل الدخول إلى حسابك في WFESC
+                    </p>
+                </header>
+
+                <div
+                    class="wfesc-status"
+                    id="wfesc-auth-status"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
+                <div
+                    class="wfesc-verify-box"
+                    id="wfesc-verify-box"
+                >
+                    <div
+                        class="wfesc-verify-icon"
+                        aria-hidden="true"
+                    >
+                        ✓
+                    </div>
+
+                    <div
+                        class="wfesc-verify-title"
+                    >
+                        تحقق من بريدك الإلكتروني
+                    </div>
+
+                    <div
+                        class="wfesc-verify-text"
+                    >
+                        تم إنشاء الحساب.
+                        افتح رسالة التحقق من بريدك،
+                        وإذا لم تجدها فتفقد الرسائل غير المرغوب فيها.
+                    </div>
+                </div>
+
+                <div
+                    class="wfesc-auth-tabs"
+                    id="wfesc-auth-tabs"
+                >
+                    <button
+                        type="button"
+                        class="wfesc-auth-tab active"
+                        data-auth-tab="login"
+                    >
+                        لدي حساب
+                    </button>
+
+                    <button
+                        type="button"
+                        class="wfesc-auth-tab"
+                        data-auth-tab="register"
+                    >
+                        إنشاء حساب
+                    </button>
+                </div>
+
+                <!-- تسجيل الدخول -->
+
+                <form
+                    class="wfesc-form show"
+                    id="wfesc-login-form"
+                    novalidate
+                >
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-login-email"
+                        >
+                            البريد الإلكتروني
+                        </label>
+
+                        <input
+                            class="wfesc-input"
+                            id="wfesc-login-email"
+                            type="email"
+                            autocomplete="email"
+                            placeholder="example@email.com"
+                            maxlength="254"
+                            required
+                        >
+                    </div>
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-login-password"
+                        >
+                            كلمة المرور
+                        </label>
+
+                        <div class="wfesc-input-wrap">
+                            <input
+                                class="wfesc-input wfesc-password-input"
+                                id="wfesc-login-password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="كلمة المرور"
+                                maxlength="16"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="wfesc-password-toggle"
+                                data-password-toggle="login"
+                                aria-label="إظهار كلمة المرور"
+                            >
+                                🙈
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="wfesc-button-row">
+                        <button
+                            type="submit"
+                            class="wfesc-primary-button"
+                            id="wfesc-login-submit"
+                        >
+                            تسجيل الدخول
+                        </button>
+
+                        <button
+                            type="button"
+                            class="wfesc-link-button"
+                            id="wfesc-forgot-button"
+                        >
+                            نسيت كلمة المرور؟
+                        </button>
+                    </div>
+                </form>
+
+                <!-- إنشاء الحساب -->
+
+                <form
+                    class="wfesc-form"
+                    id="wfesc-register-form"
+                    novalidate
+                >
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-register-username"
+                        >
+                            اسم المستخدم
+                        </label>
+
+                        <input
+                            class="wfesc-input"
+                            id="wfesc-register-username"
+                            type="text"
+                            autocomplete="username"
+                            placeholder="مثال: xzz"
+                            maxlength="9"
+                            required
+                        >
+
+                        <div class="wfesc-hint">
+                            3 إلى 9 أحرف إنجليزية فقط.
+                            اكتب الاسم بدون @.
+                        </div>
+                    </div>
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-register-email"
+                        >
+                            البريد الإلكتروني
+                        </label>
+
+                        <input
+                            class="wfesc-input"
+                            id="wfesc-register-email"
+                            type="email"
+                            autocomplete="email"
+                            placeholder="example@email.com"
+                            maxlength="254"
+                            required
+                        >
+                    </div>
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-register-password"
+                        >
+                            كلمة المرور
+                        </label>
+
+                        <div class="wfesc-input-wrap">
+                            <input
+                                class="wfesc-input wfesc-password-input"
+                                id="wfesc-register-password"
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="6 إلى 16 حرفًا"
+                                maxlength="16"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="wfesc-password-toggle"
+                                data-password-toggle="register"
+                                aria-label="إظهار كلمة المرور"
+                            >
+                                🙈
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-register-confirm"
+                        >
+                            تأكيد كلمة المرور
+                        </label>
+
+                        <div class="wfesc-input-wrap">
+                            <input
+                                class="wfesc-input wfesc-password-input"
+                                id="wfesc-register-confirm"
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="أعد كتابة كلمة المرور"
+                                maxlength="16"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="wfesc-password-toggle"
+                                data-password-toggle="confirm"
+                                aria-label="إظهار كلمة المرور"
+                            >
+                                🙈
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="wfesc-button-row">
+                        <button
+                            type="submit"
+                            class="wfesc-primary-button"
+                            id="wfesc-register-submit"
+                        >
+                            إنشاء الحساب
+                        </button>
+                    </div>
+
+                    <div class="wfesc-small-text">
+                        بعد إنشاء الحساب ستحتاج إلى تأكيد بريدك الإلكتروني.
+                    </div>
+                </form>
+
+                <!-- استعادة كلمة المرور -->
+
+                <div
+                    class="wfesc-recovery"
+                    id="wfesc-recovery"
+                >
+
+                    <div class="wfesc-field">
+                        <label
+                            for="wfesc-recovery-email"
+                        >
+                            البريد الإلكتروني
+                        </label>
+
+                        <input
+                            class="wfesc-input"
+                            id="wfesc-recovery-email"
+                            type="email"
+                            autocomplete="email"
+                            placeholder="example@email.com"
+                            maxlength="254"
+                        >
+                    </div>
+
+                    <div class="wfesc-button-row">
+                        <button
+                            type="button"
+                            class="wfesc-primary-button"
+                            id="wfesc-reset-submit"
+                        >
+                            إرسال رابط الاستعادة
+                        </button>
+
+                        <button
+                            type="button"
+                            class="wfesc-link-button"
+                            id="wfesc-back-login"
+                        >
+                            العودة لتسجيل الدخول
+                        </button>
+                    </div>
+                </div>
+
+                <!-- الحساب المسجل -->
+
+                <section
+                    class="wfesc-account"
+                    id="wfesc-account"
+                    aria-label="الحساب"
+                >
+
+                    <div
+                        class="wfesc-account-top"
+                    >
+
+                        <div
+                            class="wfesc-account-avatar"
+                            id="wfesc-account-avatar"
+                        >
+                            W
+                        </div>
+
+                        <div
+                            class="wfesc-account-info"
+                        >
+                            <div
+                                class="wfesc-account-name"
+                                id="wfesc-account-name"
+                            >
+                                @WFESC
+                            </div>
+
+                            <div
+                                class="wfesc-account-email"
+                                id="wfesc-account-email"
+                            ></div>
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="wfesc-account-actions"
+                    >
+
+                        <button
+                            type="button"
+                            class="wfesc-secondary-button"
+                            id="wfesc-profile-button"
+                        >
+                            إدارة الحساب
+                        </button>
+
+                        <button
+                            type="button"
+                            class="wfesc-secondary-button"
+                            id="wfesc-password-button"
+                        >
+                            تغيير كلمة المرور
+                        </button>
+
+                        <button
+                            type="button"
+                            class="wfesc-secondary-button"
+                            id="wfesc-logout-button"
+                        >
+                            تسجيل الخروج
+                        </button>
+
+                        <button
+                            type="button"
+                            class="wfesc-danger-button"
+                            id="wfesc-delete-button"
+                        >
+                            حذف الحساب
+                        </button>
+
+                    </div>
+
+                </section>
+
+            </section>
+        `;
+
+        bindEvents();
+        updateUI();
+    }
+
+    /* =========================================
+       إظهار الرسائل
+    ========================================= */
+    
+    
