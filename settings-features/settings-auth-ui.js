@@ -2571,3 +2571,469 @@ function bindPasswordToggle(
        CHANGE PASSWORD
     ========================================= */
     
+async function handleChangePassword() {
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return;
+        }
+
+        const password =
+            window.prompt(
+                "اكتب كلمة المرور الجديدة (6 إلى 16 خانة):"
+            );
+
+        if (password === null) {
+            return;
+        }
+
+        const validation =
+            validatePassword(
+                password
+            );
+
+        if (!validation.valid) {
+
+            showStatus(
+                validation.message,
+                "error"
+            );
+
+            return;
+
+        }
+
+        const confirm =
+            window.prompt(
+                "أعد كتابة كلمة المرور:"
+            );
+
+        if (confirm === null) {
+            return;
+        }
+
+        if (
+            confirm !==
+            validation.value
+        ) {
+
+            showStatus(
+                "كلمتا المرور غير متطابقتين.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        if (
+            typeof auth.updatePassword !==
+            "function"
+        ) {
+
+            showStatus(
+                "وظيفة تغيير كلمة المرور غير متوفرة.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            const result =
+                await auth.updatePassword(
+                    validation.value
+                );
+
+            if (
+                result &&
+                result.error
+            ) {
+
+                throw result.error;
+
+            }
+
+            showStatus(
+                "تم تغيير كلمة المرور بنجاح.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC change password error:",
+                error
+            );
+
+            showStatus(
+                getAuthErrorMessage(
+                    error,
+                    "تعذر تغيير كلمة المرور."
+                ),
+                "error"
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       LOGOUT
+    ========================================= */
+
+    async function handleLogout() {
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+
+            if (
+                typeof auth.signOut ===
+                "function"
+            ) {
+
+                const result =
+                    await auth.signOut();
+
+                if (
+                    result &&
+                    result.error
+                ) {
+
+                    throw result.error;
+
+                }
+
+            }
+
+            renderAccount(
+                null,
+                null
+            );
+
+            showStatus(
+                "تم تسجيل الخروج.",
+                "success"
+            );
+
+            document.dispatchEvent(
+                new CustomEvent(
+                    "WFESCAuthChanged",
+                    {
+                        detail: {
+                            user: null,
+                            profile: null,
+                            loggedIn: false
+                        }
+                    }
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC logout error:",
+                error
+            );
+
+            showStatus(
+                "تعذر تسجيل الخروج.",
+                "error"
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       DELETE ACCOUNT
+    ========================================= */
+
+    async function handleDeleteAccount() {
+
+        const auth =
+            getAuth();
+
+        if (!auth) {
+            return;
+        }
+
+        if (
+            !window.confirm(
+                "هل أنت متأكد من حذف حسابك نهائيًا؟"
+            )
+        ) {
+            return;
+        }
+
+        if (
+            !window.confirm(
+                "هذا الإجراء نهائي. هل تريد المتابعة؟"
+            )
+        ) {
+            return;
+        }
+
+        if (
+            typeof auth.deleteAccount !==
+            "function"
+        ) {
+
+            showStatus(
+                "حذف الحساب غير متوفر حاليًا.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        try {
+
+            const result =
+                await auth.deleteAccount();
+
+            if (
+                result &&
+                result.error
+            ) {
+
+                throw result.error;
+
+            }
+
+            renderAccount(
+                null,
+                null
+            );
+
+            showStatus(
+                "تم تنفيذ طلب حذف الحساب.",
+                "success"
+            );
+
+            document.dispatchEvent(
+                new CustomEvent(
+                    "WFESCAuthChanged",
+                    {
+                        detail: {
+                            user: null,
+                            profile: null,
+                            loggedIn: false
+                        }
+                    }
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "WFESC delete account error:",
+                error
+            );
+
+            showStatus(
+                getAuthErrorMessage(
+                    error,
+                    "تعذر حذف الحساب. حذف auth.users يحتاج إلى إجراء آمن على الخادم."
+                ),
+                "error"
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    }
+
+    /* =========================================
+       EVENTS
+    ========================================= */
+
+    function bindEvents() {
+
+        const e =
+            getElements();
+
+        if (e.loginTab) {
+
+            e.loginTab.addEventListener(
+                "click",
+                function () {
+                    setMode("login");
+                }
+            );
+
+        }
+
+        if (e.registerTab) {
+
+            e.registerTab.addEventListener(
+                "click",
+                function () {
+                    setMode("register");
+                }
+            );
+
+        }
+
+        if (e.loginForm) {
+
+            e.loginForm.addEventListener(
+                "submit",
+                handleLogin
+            );
+
+        }
+
+        if (e.registerForm) {
+
+            e.registerForm.addEventListener(
+                "submit",
+                handleRegister
+            );
+
+        }
+
+        if (e.forgotPassword) {
+
+            e.forgotPassword.addEventListener(
+                "click",
+                handleForgotPassword
+            );
+
+        }
+
+        if (e.recoverySubmit) {
+
+            e.recoverySubmit.addEventListener(
+                "click",
+                handleRecoverySubmit
+            );
+
+        }
+
+        if (e.recoveryBack) {
+
+            e.recoveryBack.addEventListener(
+                "click",
+                function () {
+                    setMode("login");
+                }
+            );
+
+        }
+
+        if (
+            e.recoveryPasswordSubmit
+        ) {
+
+            e.recoveryPasswordSubmit.addEventListener(
+                "click",
+                handleRecoveryPasswordSubmit
+            );
+
+        }
+
+        if (e.profileButton) {
+
+            e.profileButton.addEventListener(
+                "click",
+                function () {
+
+                    window.location.href =
+                        "profile.html";
+
+                }
+            );
+
+        }
+
+        if (
+            e.changePasswordButton
+        ) {
+
+            e.changePasswordButton.addEventListener(
+                "click",
+                handleChangePassword
+            );
+
+        }
+
+        if (e.logoutButton) {
+
+            e.logoutButton.addEventListener(
+                "click",
+                handleLogout
+            );
+
+        }
+
+        if (e.deleteButton) {
+
+            e.deleteButton.addEventListener(
+                "click",
+                handleDeleteAccount
+            );
+
+        }
+
+        bindPasswordToggle(
+            e.loginPasswordToggle,
+            e.loginPassword
+        );
+
+        bindPasswordToggle(
+            e.registerPasswordToggle,
+            e.registerPassword
+        );
+
+        bindPasswordToggle(
+            e.registerConfirmToggle,
+            e.registerConfirm
+        );
+
+        bindPasswordToggle(
+            e.recoveryPasswordToggle,
+            e.recoveryPassword
+        );
+
+        bindPasswordToggle(
+            e.recoveryConfirmToggle,
+            e.recoveryConfirm
+        );
+
+        bindInputCleanup();
+
+    }
+
+    /* =========================================
+       AUTH EVENTS
+    ========================================= */
+ 
