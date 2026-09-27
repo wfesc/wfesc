@@ -4,20 +4,20 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       الإصدار النهائي
+       FINAL FIXED VERSION
 
        - Supabase
        - المستخدم الحالي
        - المحادثات
        - فتح المحادثة من آخر رسالة مباشرة
-       - بدون ظهور انتقال من أعلى إلى أسفل
-       - Slide Up عند فتح المحادثة
-       - لا تختفي الرسائل القديمة
+       - لا يوجد انتقال مرئي من أعلى إلى أسفل
+       - Slide Up سلس
        - Realtime
-       - جاري الكتابة
-       - منع تكرار الرسائل
-       - دمج Optimistic + Realtime
-       - إعدادات الرسائل
+       - Typing
+       - منع التكرار
+       - Optimistic + Realtime reconciliation
+       - Message Settings
+       - حماية من الشاشة السوداء أثناء التحميل
     ============================================================
     */
 
@@ -40,11 +40,9 @@
         );
 
     if (!client) {
-
         console.error(
             "WFESC: Supabase client لم يتم تحميله."
         );
-
         return;
     }
 
@@ -58,7 +56,6 @@
 
     const SUPPORT_NAME =
         "تواصل مع فريق الدعم الشامل";
-
 
     const DEFAULT_AVATAR =
         "data:image/svg+xml;charset=UTF-8," +
@@ -75,21 +72,18 @@
                     rx="100"
                     fill="#111"
                 />
-
                 <circle
                     cx="100"
                     cy="75"
                     r="34"
                     fill="#777"
                 />
-
                 <path
                     d="M42 174c8-35 30-53 58-53s50 18 58 53"
                     fill="#777"
                 />
             </svg>
         `);
-
 
     const TYPING_REMOTE_TIMEOUT =
         2600;
@@ -100,21 +94,15 @@
     ========================================================= */
 
     let currentUser = null;
-
     let currentConversationId = null;
-
     let currentConversationContact = null;
 
     let conversations = [];
-
     let currentMessages = [];
 
     let messageChannel = null;
-
     let typingChannel = null;
-
     let presenceChannel = null;
-
     let notificationChannel = null;
 
     let initialized = false;
@@ -122,15 +110,12 @@
     let conversationLoadToken = 0;
 
     let typingTimer = null;
-
     let isTyping = false;
 
     let typingUsers = new Set();
-
     let typingUserTimers = new Map();
 
     let realtimeStarted = false;
-
     let realtimeConversationId = null;
 
     let lastRenderedMessageId = null;
@@ -207,7 +192,6 @@
         const styleId =
             "wfesc-chat-open-animation-style";
 
-
         if (
             document.getElementById(
                 styleId
@@ -216,16 +200,13 @@
             return;
         }
 
-
         const style =
             document.createElement(
                 "style"
             );
 
-
         style.id =
             styleId;
-
 
         style.textContent = `
 
@@ -236,9 +217,13 @@
                     transform:
                         translate3d(
                             0,
-                            34px,
+                            22px,
                             0
                         );
+                }
+
+                45% {
+                    opacity: .72;
                 }
 
                 100% {
@@ -257,11 +242,11 @@
 
                 animation:
                     wfescChatSlideUp
-                    .30s
+                    .38s
                     cubic-bezier(
-                        .22,
-                        .75,
-                        .25,
+                        .16,
+                        1,
+                        .3,
                         1
                     )
                     both;
@@ -290,12 +275,10 @@
             }
         `;
 
-
         document.head.appendChild(
             style
         );
     }
-
 
     ensureChatOpenAnimation();
 
@@ -321,10 +304,8 @@
             return "";
         }
 
-
         const date =
             new Date(value);
-
 
         if (
             Number.isNaN(
@@ -333,7 +314,6 @@
         ) {
             return "";
         }
-
 
         return date.toLocaleTimeString(
             "ar-IQ",
@@ -350,7 +330,6 @@
         if (!contact) {
             return "مستخدم";
         }
-
 
         return (
             contact.display_name ||
@@ -374,7 +353,6 @@
         if (!message) {
             return null;
         }
-
 
         return (
             message.id ??
@@ -424,7 +402,6 @@
                 message
             );
 
-
         return (
             senderId != null &&
             currentUser?.id != null &&
@@ -446,14 +423,12 @@
             return;
         }
 
-
         const target =
             Math.max(
                 0,
                 chatMessages.scrollHeight -
                 chatMessages.clientHeight
             );
-
 
         if (
             typeof chatMessages.scrollTo ===
@@ -479,7 +454,6 @@
             return;
         }
 
-
         chatMessages.scrollTop =
             Math.max(
                 0,
@@ -495,7 +469,6 @@
             return true;
         }
 
-
         return (
             chatMessages.scrollHeight -
             chatMessages.scrollTop -
@@ -506,11 +479,7 @@
 
     /*
     ============================================================
-       تجهيز آخر رسالة قبل إظهار المحادثة
-
-       مهم جداً:
-       هذه الدالة لا تستخدم smooth.
-       لذلك لا توجد حركة من أول رسالة إلى آخر رسالة.
+       تجهيز المحادثة على آخر رسالة بدون أي حركة مرئية
     ============================================================
     */
 
@@ -520,22 +489,17 @@
             return;
         }
 
-
         const oldBehavior =
             chatMessages.style.scrollBehavior;
-
 
         chatMessages.style.scrollBehavior =
             "auto";
 
-
         forceScrollToBottom();
-
 
         requestAnimationFrame(() => {
 
             forceScrollToBottom();
-
 
             requestAnimationFrame(() => {
 
@@ -545,30 +509,26 @@
 
         });
 
+        setTimeout(() => {
+
+            forceScrollToBottom();
+
+        }, 20);
 
         setTimeout(() => {
 
             forceScrollToBottom();
 
-        }, 30);
-
-
-        setTimeout(() => {
-
-            forceScrollToBottom();
-
-        }, 100);
-
+        }, 80);
 
         setTimeout(() => {
 
             forceScrollToBottom();
-
 
             chatMessages.style.scrollBehavior =
                 oldBehavior || "";
 
-        }, 220);
+        }, 180);
     }
 
 
@@ -582,22 +542,26 @@
             return;
         }
 
-
         chatView.classList.remove(
             "wfesc-chat-opening"
         );
 
-
         void chatView.offsetWidth;
-
 
         chatView.classList.add(
             "wfesc-chat-opening"
         );
 
+        let finished = false;
 
         const removeAnimation =
             () => {
+
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
 
                 chatView.classList.remove(
                     "wfesc-chat-opening"
@@ -609,12 +573,10 @@
                 );
             };
 
-
         chatView.addEventListener(
             "animationend",
             removeAnimation
         );
-
 
         setTimeout(
             removeAnimation,
@@ -634,11 +596,9 @@
             const settings =
                 window.WFESC_MESSAGE_SETTINGS;
 
-
             if (!settings) {
                 return;
             }
-
 
             if (
                 typeof settings.apply ===
@@ -659,10 +619,8 @@
                     settings.apply();
                 }
 
-
                 return;
             }
-
 
             if (
                 typeof settings.applySettings ===
@@ -756,41 +714,48 @@
             return getSupportContact();
         }
 
+        try {
 
-        const {
-            data,
-            error
-        } = await client.rpc(
-            "get_conversation_contacts",
-            {
-                target_conversation_id:
-                    conversationId
+            const {
+                data,
+                error
+            } = await client.rpc(
+                "get_conversation_contacts",
+                {
+                    target_conversation_id:
+                        conversationId
+                }
+            );
+
+            if (error) {
+
+                console.error(
+                    "WFESC contact error:",
+                    error
+                );
+
+                return null;
             }
-        );
 
+            if (!data) {
+                return null;
+            }
 
-        if (error) {
+            if (Array.isArray(data)) {
+                return data[0] || null;
+            }
+
+            return data;
+
+        } catch (error) {
 
             console.error(
-                "WFESC contact error:",
+                "WFESC contact exception:",
                 error
             );
 
             return null;
         }
-
-
-        if (!data) {
-            return null;
-        }
-
-
-        if (Array.isArray(data)) {
-            return data[0] || null;
-        }
-
-
-        return data;
     }
 
 
@@ -809,7 +774,6 @@
                 "get_or_create_support_conversation"
             );
 
-
             if (error) {
 
                 console.error(
@@ -820,11 +784,9 @@
                 return null;
             }
 
-
             if (!data) {
                 return null;
             }
-
 
             if (
                 typeof data ===
@@ -833,7 +795,6 @@
 
                 return data;
             }
-
 
             return (
                 data.conversation_id ||
@@ -865,60 +826,64 @@
             return [];
         }
 
+        try {
 
-        const {
-            data,
-            error
-        } = await client.rpc(
-            "get_my_conversations"
-        );
+            const {
+                data,
+                error
+            } = await client.rpc(
+                "get_my_conversations"
+            );
 
+            if (error) {
 
-        if (error) {
+                console.error(
+                    "WFESC conversations error:",
+                    error
+                );
+
+                return [];
+            }
+
+            conversations =
+                Array.isArray(data)
+                    ? [...data]
+                    : [];
+
+            conversations.sort(
+                (a, b) => {
+
+                    const first =
+                        new Date(
+                            a.last_message_at ||
+                            a.updated_at ||
+                            0
+                        ).getTime();
+
+                    const second =
+                        new Date(
+                            b.last_message_at ||
+                            b.updated_at ||
+                            0
+                        ).getTime();
+
+                    return second - first;
+                }
+            );
+
+            renderConversations();
+
+            return conversations;
+
+        } catch (error) {
 
             console.error(
-                "WFESC conversations error:",
+                "WFESC load conversations:",
                 error
             );
 
             return [];
         }
-
-
-        conversations =
-            Array.isArray(data)
-                ? [...data]
-                : [];
-
-
-        conversations.sort(
-            (a, b) => {
-
-                const first =
-                    new Date(
-                        a.last_message_at ||
-                        a.updated_at ||
-                        0
-                    ).getTime();
-
-
-                const second =
-                    new Date(
-                        b.last_message_at ||
-                        b.updated_at ||
-                        0
-                    ).getTime();
-
-
-                return second - first;
-            }
-        );
-
-
-        renderConversations();
-
-
-        return conversations;
     }
 
 
@@ -932,10 +897,8 @@
             return;
         }
 
-
         conversationList.innerHTML =
             "";
-
 
         if (!conversations.length) {
 
@@ -960,7 +923,6 @@
             return;
         }
 
-
         conversations.forEach(
             conversation => {
 
@@ -968,7 +930,6 @@
                     createConversationCard(
                         conversation
                     );
-
 
                 conversationList.appendChild(
                     card
@@ -991,10 +952,8 @@
                 "article"
             );
 
-
         card.className =
             "conversation-card";
-
 
         const contact =
             conversation.contact ||
@@ -1002,14 +961,12 @@
             conversation.user ||
             null;
 
-
         const name =
             conversation.display_name ||
             contact?.display_name ||
             conversation.username ||
             contact?.username ||
             "مستخدم";
-
 
         const avatar =
             conversation.avatar_url ||
@@ -1020,12 +977,10 @@
                     : DEFAULT_AVATAR
             );
 
-
         const preview =
             conversation.last_message ||
             conversation.last_message_text ||
             "لا توجد رسائل";
-
 
         const time =
             formatTime(
@@ -1033,13 +988,11 @@
                 conversation.updated_at
             );
 
-
         const unread =
             Number(
                 conversation.unread_count ||
                 0
             );
-
 
         card.innerHTML = `
 
@@ -1061,7 +1014,6 @@
                 ></span>
 
             </div>
-
 
             <div class="conversation-info">
 
@@ -1088,19 +1040,16 @@
 
                 </div>
 
-
                 <div class="conversation-preview">
                     ${escapeHtml(preview)}
                 </div>
 
             </div>
 
-
             <div class="conversation-time">
                 ${escapeHtml(time)}
             </div>
         `;
-
 
         card.addEventListener(
             "click",
@@ -1117,7 +1066,6 @@
             }
         );
 
-
         return card;
     }
 
@@ -1132,10 +1080,8 @@
             return;
         }
 
-
         const contact =
             currentConversationContact;
-
 
         if (chatAvatar) {
 
@@ -1146,19 +1092,16 @@
                 getDisplayName(contact);
         }
 
-
         if (chatName) {
 
             chatName.textContent =
                 getDisplayName(contact);
         }
 
-
         const online =
             Boolean(
                 contact.is_online
             );
-
 
         if (chatStatus) {
 
@@ -1167,7 +1110,6 @@
                     ? "نشط الآن"
                     : "غير نشط";
         }
-
 
         if (chatOnlineDot) {
 
@@ -1189,31 +1131,25 @@
             return null;
         }
 
-
         let typing =
             document.getElementById(
                 "wfescTypingIndicator"
             );
 
-
         if (typing) {
             return typing;
         }
-
 
         typing =
             document.createElement(
                 "div"
             );
 
-
         typing.id =
             "wfescTypingIndicator";
 
-
         typing.className =
             "wfesc-typing-indicator";
-
 
         typing.innerHTML = `
             <div class="wfesc-typing-bubble">
@@ -1228,7 +1164,6 @@
                 جاري الكتابة...
             </span>
         `;
-
 
         typing.style.cssText = `
             position:absolute;
@@ -1255,18 +1190,16 @@
 
             pointer-events:none;
 
-            animation:wfescTypingFade .18s ease;
+            opacity:0;
 
             transition:
-                bottom .08s linear,
+                bottom .10s linear,
                 opacity .18s ease,
                 transform .18s ease;
         `;
 
-
         const styleId =
             "wfescTypingStyle";
-
 
         if (
             !document.getElementById(
@@ -1279,26 +1212,10 @@
                     "style"
                 );
 
-
             style.id =
                 styleId;
 
-
             style.textContent = `
-                @keyframes wfescTypingFade {
-
-                    from {
-                        opacity:0;
-                        transform:translateY(5px);
-                    }
-
-                    to {
-                        opacity:1;
-                        transform:translateY(0);
-                    }
-                }
-
-
                 @keyframes wfescTypingDot {
 
                     0%,
@@ -1314,11 +1231,9 @@
                     }
                 }
 
-
                 .wfesc-typing-indicator {
                     box-sizing:border-box;
                 }
-
 
                 .wfesc-typing-bubble {
 
@@ -1352,7 +1267,6 @@
                     -webkit-backdrop-filter:blur(10px);
                 }
 
-
                 .wfesc-typing-bubble span {
 
                     width:5px;
@@ -1368,16 +1282,13 @@
                         infinite;
                 }
 
-
                 .wfesc-typing-bubble span:nth-child(2) {
                     animation-delay:.15s;
                 }
 
-
                 .wfesc-typing-bubble span:nth-child(3) {
-                    animation-delay:.3s;
+                    animation-delay:.30s;
                 }
-
 
                 .wfesc-typing-text {
                     white-space:nowrap;
@@ -1385,20 +1296,16 @@
                 }
             `;
 
-
             document.head.appendChild(
                 style
             );
         }
 
-
         chatView.appendChild(
             typing
         );
 
-
         updateTypingIndicatorPosition();
-
 
         return typing;
     }
@@ -1415,40 +1322,29 @@
                 "wfescTypingIndicator"
             );
 
-
         if (!element) {
             return;
         }
-
 
         const composer =
             document.querySelector(
                 ".message-composer"
             );
 
-
         if (!composer) {
             return;
         }
 
-
         const composerRect =
             composer.getBoundingClientRect();
 
-
         const chatRect =
             chatView?.getBoundingClientRect();
-
 
         if (!chatRect) {
             return;
         }
 
-
-        /*
-           وضع المؤشر مباشرة فوق الـcomposer.
-           لا يعتمد على ارتفاع ثابت.
-        */
         const bottom =
             Math.max(
                 0,
@@ -1456,7 +1352,6 @@
                 composerRect.top +
                 6
             );
-
 
         element.style.bottom =
             `${bottom}px`;
@@ -1472,25 +1367,23 @@
         const element =
             ensureTypingElement();
 
-
         if (!element) {
             return;
         }
 
-
         updateTypingIndicatorPosition();
-
 
         element.style.display =
             "flex";
 
+        requestAnimationFrame(() => {
 
-        element.style.opacity =
-            "1";
+            element.style.opacity =
+                "1";
 
-
-        element.style.transform =
-            "translateY(0)";
+            element.style.transform =
+                "translateY(0)";
+        });
     }
 
 
@@ -1505,19 +1398,15 @@
                 "wfescTypingIndicator"
             );
 
-
         if (!element) {
             return;
         }
 
-
         element.style.opacity =
             "0";
 
-
         element.style.transform =
             "translateY(5px)";
-
 
         setTimeout(() => {
 
@@ -1564,23 +1453,19 @@
             return;
         }
 
-
         const key =
             String(
                 userId
             );
 
-
         typingUsers.delete(
             key
         );
-
 
         const timer =
             typingUserTimers.get(
                 key
             );
-
 
         if (timer) {
 
@@ -1592,7 +1477,6 @@
                 key
             );
         }
-
 
         updateTypingIndicator();
     }
@@ -1610,23 +1494,19 @@
             return;
         }
 
-
         const key =
             String(
                 userId
             );
 
-
         typingUsers.add(
             key
         );
-
 
         const oldTimer =
             typingUserTimers.get(
                 key
             );
-
 
         if (oldTimer) {
 
@@ -1634,7 +1514,6 @@
                 oldTimer
             );
         }
-
 
         const timer =
             setTimeout(() => {
@@ -1645,12 +1524,10 @@
 
             }, TYPING_REMOTE_TIMEOUT);
 
-
         typingUserTimers.set(
             key,
             timer
         );
-
 
         updateTypingIndicator();
     }
@@ -1672,15 +1549,12 @@
                 null;
         }
 
-
         if (!isTyping) {
             return;
         }
 
-
         isTyping =
             false;
-
 
         try {
 
@@ -1731,7 +1605,6 @@
             return;
         }
 
-
         if (typingTimer) {
 
             clearTimeout(
@@ -1739,12 +1612,10 @@
             );
         }
 
-
         if (!isTyping) {
 
             isTyping =
                 true;
-
 
             try {
 
@@ -1776,7 +1647,6 @@
             }
         }
 
-
         typingTimer =
             setTimeout(
                 async () => {
@@ -1792,7 +1662,6 @@
 
                         return;
                     }
-
 
                     try {
 
@@ -1823,7 +1692,6 @@
                         );
                     }
 
-
                     sendTypingState();
 
                 },
@@ -1842,7 +1710,6 @@
 
         await removeTypingChannel();
 
-
         if (
             !conversationId ||
             !currentUser
@@ -1850,29 +1717,24 @@
             return;
         }
 
-
         const channelName =
             "wfesc-typing-" +
             String(
                 conversationId
             );
 
-
         typingChannel =
             client.channel(
                 channelName,
                 {
                     config: {
-
                         broadcast: {
-
                             self:
                                 false
                         }
                     }
                 }
             );
-
 
         typingChannel.on(
 
@@ -1890,20 +1752,16 @@
                     payload ||
                     {};
 
-
                 const userId =
                     data.user_id;
-
 
                 if (
                     !userId ||
                     String(userId) ===
                     String(currentUser.id)
                 ) {
-
                     return;
                 }
-
 
                 if (
                     data.typing ===
@@ -1922,7 +1780,6 @@
                 }
             }
         );
-
 
         typingChannel.subscribe(
             status => {
@@ -1958,13 +1815,10 @@
                 null;
         }
 
-
         isTyping =
             false;
 
-
         typingUsers.clear();
-
 
         typingUserTimers.forEach(
             timer => {
@@ -1976,12 +1830,9 @@
             }
         );
 
-
         typingUserTimers.clear();
 
-
         hideTypingIndicator();
-
 
         if (typingChannel) {
 
@@ -2000,7 +1851,6 @@
             }
         }
 
-
         typingChannel =
             null;
     }
@@ -2017,11 +1867,9 @@
                 "messageInput"
             );
 
-
         if (!input) {
             return;
         }
-
 
         input.addEventListener(
             "input",
@@ -2040,7 +1888,6 @@
             }
         );
 
-
         input.addEventListener(
             "blur",
             () => {
@@ -2049,7 +1896,6 @@
 
             }
         );
-
 
         input.addEventListener(
             "focus",
@@ -2078,12 +1924,10 @@
             return null;
         }
 
-
         const record =
             payload.new ||
             payload.record ||
             payload;
-
 
         return record || null;
     }
@@ -2101,16 +1945,13 @@
             return false;
         }
 
-
         const conversationId =
             message.conversation_id ??
             message.target_conversation_id;
 
-
         if (!conversationId) {
             return false;
         }
-
 
         return (
             String(conversationId) ===
@@ -2133,7 +1974,6 @@
             return null;
         }
 
-
         return (
             currentMessages.find(
                 existing => {
@@ -2142,7 +1982,6 @@
                         getMessageId(
                             existing
                         );
-
 
                     return (
                         existingId != null &&
@@ -2168,16 +2007,13 @@
             !chatMessages ||
             messageId == null
         ) {
-
             return null;
         }
-
 
         const elements =
             chatMessages.querySelectorAll(
                 "[data-message-id]"
             );
-
 
         for (
             const element
@@ -2194,7 +2030,6 @@
                 return element;
             }
         }
-
 
         return null;
     }
@@ -2215,12 +2050,10 @@
             return null;
         }
 
-
         const senderId =
             getMessageSenderId(
                 message
             );
-
 
         const content =
             String(
@@ -2229,12 +2062,10 @@
                 )
             ).trim();
 
-
         const rows =
             chatMessages.querySelectorAll(
                 ".message-row.optimistic"
             );
-
 
         for (
             const row
@@ -2245,19 +2076,16 @@
                 row.dataset.senderId ||
                 "";
 
-
             const contentElement =
                 row.querySelector(
                     ".message-content"
                 );
-
 
             const rowContent =
                 String(
                     contentElement?.textContent ||
                     ""
                 ).trim();
-
 
             if (
                 String(rowSenderId) ===
@@ -2270,7 +2098,6 @@
             }
         }
 
-
         return null;
     }
 
@@ -2282,11 +2109,6 @@
     function findExistingMessageElement(
         message
     ) {
-
-        /*
-           لا نبحث بين الرسائل الحقيقية
-           لأن رسالتين قد تكونان متطابقتين.
-        */
 
         return findOptimisticMessageElement(
             message
@@ -2310,32 +2132,26 @@
             return;
         }
 
-
         const messageId =
             getMessageId(
                 message
             );
-
 
         const senderId =
             getMessageSenderId(
                 message
             );
 
-
         element.classList.remove(
             "optimistic"
         );
-
 
         element.classList.remove(
             "message-new"
         );
 
-
         element.dataset.confirmed =
             "true";
-
 
         if (
             messageId != null
@@ -2347,7 +2163,6 @@
                 );
         }
 
-
         if (
             senderId != null
         ) {
@@ -2358,12 +2173,10 @@
                 );
         }
 
-
         const contentElement =
             element.querySelector(
                 ".message-content"
             );
-
 
         if (contentElement) {
 
@@ -2373,12 +2186,10 @@
                 );
         }
 
-
         const timeElement =
             element.querySelector(
                 ".message-time"
             );
-
 
         if (timeElement) {
 
@@ -2389,7 +2200,6 @@
                     )
                 );
         }
-
 
         scheduleMessageSettingsApply();
     }
@@ -2407,12 +2217,10 @@
             return false;
         }
 
-
         const messageId =
             getMessageId(
                 message
             );
-
 
         if (
             messageId != null &&
@@ -2424,11 +2232,9 @@
             return false;
         }
 
-
         currentMessages.push(
             message
         );
-
 
         currentMessages.sort(
             (a, b) => {
@@ -2444,7 +2250,6 @@
                 );
             }
         );
-
 
         return true;
     }
@@ -2462,16 +2267,13 @@
             return;
         }
 
-
         const conversationId =
             message.conversation_id ??
             message.target_conversation_id;
 
-
         if (!conversationId) {
             return;
         }
-
 
         const index =
             conversations.findIndex(
@@ -2485,44 +2287,36 @@
                     )
             );
 
-
         if (index < 0) {
             return;
         }
 
-
         const conversation =
             conversations[index];
-
 
         conversation.last_message =
             getMessageContent(
                 message
             );
 
-
         conversation.last_message_text =
             getMessageContent(
                 message
             );
-
 
         conversation.last_message_at =
             getMessageTime(
                 message
             );
 
-
         conversations.splice(
             index,
             1
         );
 
-
         conversations.unshift(
             conversation
         );
-
 
         renderConversations();
     }
@@ -2541,32 +2335,26 @@
                 payload
             );
 
-
         if (!message) {
             return;
         }
 
-
         updateConversationPreview(
             message
         );
-
 
         if (
             !messageBelongsToCurrentConversation(
                 message
             )
         ) {
-
             return;
         }
-
 
         const messageId =
             getMessageId(
                 message
             );
-
 
         const stateMessage =
             messageId != null
@@ -2575,14 +2363,12 @@
                 )
                 : null;
 
-
         if (stateMessage) {
 
             const stateIndex =
                 currentMessages.indexOf(
                     stateMessage
                 );
-
 
             if (
                 stateIndex >= 0
@@ -2594,12 +2380,10 @@
                     message;
             }
 
-
             const domById =
                 findDomMessageById(
                     messageId
                 );
-
 
             if (domById) {
 
@@ -2609,17 +2393,14 @@
                 );
             }
 
-
             clearTypingUser(
                 getMessageSenderId(
                     message
                 )
             );
 
-
             return;
         }
-
 
         let existingElement =
             messageId != null
@@ -2627,7 +2408,6 @@
                     messageId
                 )
                 : null;
-
 
         if (!existingElement) {
 
@@ -2637,7 +2417,6 @@
                 );
         }
 
-
         if (existingElement) {
 
             reconcileExistingMessage(
@@ -2645,11 +2424,9 @@
                 message
             );
 
-
             addRealMessageToState(
                 message
             );
-
 
             clearTypingUser(
                 getMessageSenderId(
@@ -2657,19 +2434,15 @@
                 )
             );
 
-
             return;
         }
-
 
         const wasAtBottom =
             isNearBottom();
 
-
         addRealMessageToState(
             message
         );
-
 
         if (chatMessages) {
 
@@ -2678,14 +2451,11 @@
                     message
                 );
 
-
             chatMessages.appendChild(
                 element
             );
 
-
             scheduleMessageSettingsApply();
-
 
             if (wasAtBottom) {
 
@@ -2700,7 +2470,6 @@
                 );
             }
         }
-
 
         clearTypingUser(
             getMessageSenderId(
@@ -2723,7 +2492,6 @@
             return;
         }
 
-
         if (messageChannel) {
 
             try {
@@ -2735,7 +2503,6 @@
             } catch (_) {}
         }
 
-
         messageChannel =
             client
                 .channel(
@@ -2746,10 +2513,8 @@
                     {
                         event:
                             "INSERT",
-
                         schema:
                             "public",
-
                         table:
                             "messages"
                     },
@@ -2765,10 +2530,8 @@
                     {
                         event:
                             "UPDATE",
-
                         schema:
                             "public",
-
                         table:
                             "messages"
                     },
@@ -2779,18 +2542,15 @@
                                 payload
                             );
 
-
                         if (!message) {
                             return;
                         }
-
 
                         updateConversationPreview(
                             message
                         );
                     }
                 );
-
 
         messageChannel.subscribe(
             status => {
@@ -2802,7 +2562,6 @@
 
                     realtimeStarted =
                         true;
-
 
                     console.log(
                         "WFESC: Messages Realtime connected"
@@ -2834,34 +2593,31 @@
             !conversationId ||
             openingConversation
         ) {
-
             return;
         }
-
 
         openingConversation =
             true;
 
-
         const loadToken =
             ++conversationLoadToken;
 
-
         await removeTypingChannel();
-
 
         currentConversationId =
             conversationId;
 
-
         currentConversationContact =
             contact;
-
 
         typingUsers.clear();
 
         hideTypingIndicator();
 
+
+        /* =====================================================
+           إذا كانت محادثة الدعم
+        ===================================================== */
 
         if (
             type === "support"
@@ -2872,6 +2628,10 @@
         }
 
 
+        /* =====================================================
+           جلب بيانات الشخص
+        ===================================================== */
+
         if (
             !currentConversationContact
         ) {
@@ -2881,7 +2641,6 @@
                     conversationId,
                     type
                 );
-
 
             if (
                 loadToken !==
@@ -2922,26 +2681,23 @@
 
         /*
         ========================================================
-           مهم جداً
+           IMPORTANT FIX
 
-           لا نخلي chatView يبقى display:none أثناء تجهيز
-           الـscroll، لأن العناصر داخله وقتها ما عندها
-           clientHeight حقيقي.
+           هنا لا نفتح chatView.
 
-           نفتح chatView لكن نخفي chatMessages فقط.
-           المستخدم لن يرى أي حركة.
+           نخلي الصفحة الأصلية ظاهرة أثناء تحميل البيانات.
+           هذا يمنع الشاشة السوداء.
         ========================================================
         */
 
         if (chatView) {
 
             chatView.classList.remove(
-                "wfesc-chat-opening"
+                "open"
             );
 
-
-            chatView.classList.add(
-                "open"
+            chatView.classList.remove(
+                "wfesc-chat-opening"
             );
         }
 
@@ -2953,10 +2709,10 @@
         }
 
 
-        /*
-           تحميل كل ما يرجعه RPC بدون حذف المحادثة
-           أو إعادة إنشاء قائمة المحادثات.
-        */
+        /* =====================================================
+           تحميل الرسائل أولاً
+        ===================================================== */
+
         const loaded =
             await loadConversationMessages(
                 loadToken
@@ -2978,15 +2734,21 @@
         if (!loaded) {
 
             /*
-               حتى في حالة الخطأ لا نبقي الشاشة سوداء.
+               إذا صار خطأ، لا نخلي الصفحة سوداء.
             */
+
+            if (chatView) {
+
+                chatView.classList.remove(
+                    "open"
+                );
+            }
 
             if (chatMessages) {
 
                 chatMessages.style.visibility =
                     "visible";
             }
-
 
             openingConversation =
                 false;
@@ -2997,17 +2759,41 @@
 
         /*
         ========================================================
-           الآن chatView مفتوح فعلياً
-           وبالتالي scrollHeight/clientHeight صحيحين.
+           الرسائل الآن موجودة.
+
+           نفتح chatView وهي مخفية حتى يحصل
+           clientHeight حقيقي.
+        ========================================================
+        */
+
+        if (chatView) {
+
+            chatView.classList.add(
+                "open"
+            );
+        }
+
+
+        if (chatMessages) {
+
+            chatMessages.style.visibility =
+                "hidden";
+        }
+
+
+        /*
+        ========================================================
+           الآن المتصفح يستطيع حساب:
+           clientHeight
+           scrollHeight
+
+           بدون أن يرى المستخدم أي شيء.
         ========================================================
         */
 
         prepareChatAtBottom();
 
 
-        /*
-           ننتظر frame حتى يتأكد الـlayout.
-        */
         await new Promise(
             resolve =>
                 requestAnimationFrame(
@@ -3019,10 +2805,23 @@
         prepareChatAtBottom();
 
 
+        await new Promise(
+            resolve =>
+                requestAnimationFrame(
+                    resolve
+                )
+        );
+
+
+        forceScrollToBottom();
+
+
         /*
-           الآن فقط نكشف الرسائل.
-           المستخدم سيشاهد آخر الرسائل مباشرة.
+        ========================================================
+           الآن الرسائل جاهزة تماماً.
+        ========================================================
         */
+
         if (chatMessages) {
 
             chatMessages.style.visibility =
@@ -3031,24 +2830,33 @@
 
 
         /*
-           إعداد typing.
+        ========================================================
+           تفعيل typing بعد فتح المحادثة
+        ========================================================
         */
+
         await setupTypingChannel(
             conversationId
         );
 
 
         /*
-           تعليم كمقروء.
+        ========================================================
+           تعليم المحادثة كمقروءة
+        ========================================================
         */
+
         await markConversationRead(
             conversationId
         );
 
 
         /*
-           إخفاء قائمة البحث بعد نجاح فتح المحادثة.
+        ========================================================
+           إظهار واجهة المحادثة في الصفحة
+        ========================================================
         */
+
         if (page) {
 
             page.classList.add(
@@ -3066,32 +2874,50 @@
 
 
         /*
-           ضبط نهائي سريع بدون animation للـscroll.
+        ========================================================
+           تثبيت آخر رسالة مرة أخيرة
+        ========================================================
         */
+
         prepareChatAtBottom();
 
 
         /*
-           Slide Up فقط للشاشة نفسها.
-           لا يوجد Slide للرسائل من الأعلى للأسفل.
+        ========================================================
+           Slide Up ناعم
+        ========================================================
         */
+
         requestAnimationFrame(() => {
 
-            prepareChatAtBottom();
+            forceScrollToBottom();
 
             playChatOpenAnimation();
+
+            updateTypingIndicatorPosition();
 
         });
 
 
-        requestAnimationFrame(
-            updateTypingIndicatorPosition
+        setTimeout(
+            () => {
+
+                forceScrollToBottom();
+
+                updateTypingIndicatorPosition();
+
+            },
+            80
         );
 
 
         setTimeout(
-            updateTypingIndicatorPosition,
-            100
+            () => {
+
+                updateTypingIndicatorPosition();
+
+            },
+            250
         );
 
 
@@ -3113,60 +2939,141 @@
             return false;
         }
 
-
         const requestedConversationId =
             currentConversationId;
 
 
-        if (chatMessages) {
+        /*
+        ========================================================
+           تنظيف الرسائل القديمة بدون إظهار أي شيء
+        ========================================================
+        */
 
-            /*
-               نخفي محتوى الرسائل فقط أثناء البناء.
-               لا نخفي chatView نفسه.
-            */
+        if (chatMessages) {
 
             chatMessages.style.visibility =
                 "hidden";
-
 
             chatMessages.innerHTML =
                 "";
         }
 
 
-        const {
-            data,
-            error
-        } = await client.rpc(
-            "get_conversation_messages",
-            {
-                target_conversation_id:
-                    requestedConversationId,
+        try {
 
-                message_limit:
-                    100
-            }
-        );
-
-
-        if (
-            expectedLoadToken !==
-            conversationLoadToken ||
-            requestedConversationId !==
-            currentConversationId
-        ) {
-
-            return false;
-        }
-
-
-        if (error) {
-
-            console.error(
-                "WFESC messages error:",
+            const {
+                data,
                 error
+            } = await client.rpc(
+                "get_conversation_messages",
+                {
+                    target_conversation_id:
+                        requestedConversationId,
+
+                    message_limit:
+                        100
+                }
             );
 
+
+            if (
+                expectedLoadToken !==
+                conversationLoadToken ||
+                requestedConversationId !==
+                currentConversationId
+            ) {
+
+                return false;
+            }
+
+
+            if (error) {
+
+                console.error(
+                    "WFESC messages error:",
+                    error
+                );
+
+
+                /*
+                   نعرض الخطأ فقط بعد أن نتأكد
+                   أن المستخدم ما زال في نفس المحادثة.
+                */
+
+                if (chatMessages) {
+
+                    chatMessages.innerHTML = `
+                        <div class="empty-state">
+
+                            <div class="empty-icon">
+                                ⚠️
+                            </div>
+
+                            <strong>
+                                تعذر تحميل الرسائل
+                            </strong>
+
+                            <p>
+                                حاول مرة أخرى
+                            </p>
+
+                        </div>
+                    `;
+                }
+
+                return false;
+            }
+
+
+            currentMessages =
+                Array.isArray(data)
+                    ? [...data]
+                    : [];
+
+
+            /*
+            ====================================================
+               الأقدم أولاً
+               الأحدث أخيراً
+            ====================================================
+            */
+
+            currentMessages.sort(
+                (a, b) => {
+
+                    return (
+                        new Date(
+                            getMessageTime(a) || 0
+                        ).getTime()
+                        -
+                        new Date(
+                            getMessageTime(b) || 0
+                        ).getTime()
+                    );
+                }
+            );
+
+
+            /*
+            ====================================================
+               رسم الرسائل بدون إظهارها
+            ====================================================
+            */
+
+            renderMessages({
+                initialLoad:
+                    true
+            });
+
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "WFESC load messages exception:",
+                error
+            );
 
             if (chatMessages) {
 
@@ -3187,57 +3094,10 @@
 
                     </div>
                 `;
-
-
-                chatMessages.style.visibility =
-                    "visible";
             }
-
 
             return false;
         }
-
-
-        currentMessages =
-            Array.isArray(data)
-                ? [...data]
-                : [];
-
-
-        /*
-           الأقدم أولاً → الأحدث أخيراً.
-           لا نحذف أي رسالة من البيانات.
-        */
-        currentMessages.sort(
-            (a, b) => {
-
-                return (
-                    new Date(
-                        getMessageTime(a) || 0
-                    ).getTime()
-                    -
-                    new Date(
-                        getMessageTime(b) || 0
-                    ).getTime()
-                );
-            }
-        );
-
-
-        renderMessages({
-            initialLoad:
-                true
-        });
-
-
-        /*
-           ضبط أولي.
-           chatView مفتوح لكن الرسائل مخفية.
-        */
-        prepareChatAtBottom();
-
-
-        return true;
     }
 
 
@@ -3253,7 +3113,6 @@
             return;
         }
 
-
         const initialLoad =
             Boolean(
                 options.initialLoad
@@ -3263,14 +3122,11 @@
         const oldScrollTop =
             chatMessages.scrollTop;
 
-
         const oldScrollHeight =
             chatMessages.scrollHeight;
 
-
         const oldClientHeight =
             chatMessages.clientHeight;
-
 
         const wasNear =
             (
@@ -3283,6 +3139,12 @@
         chatMessages.innerHTML =
             "";
 
+
+        /*
+        ========================================================
+           لا توجد رسائل
+        ========================================================
+        */
 
         if (!currentMessages.length) {
 
@@ -3305,21 +3167,15 @@
             `;
 
 
-            /*
-               لا نتركها hidden إذا كانت هذه محادثة
-               فارغة، حتى تظهر رسالة البداية.
-            */
-            if (!initialLoad) {
-
-                chatMessages.style.visibility =
-                    "visible";
-            }
-
-
             scheduleMessageSettingsApply();
 
 
             if (initialLoad) {
+
+                /*
+                   لا نظهرها هنا.
+                   openConversation هو الذي يقرر متى تظهر.
+                */
 
                 requestAnimationFrame(() => {
 
@@ -3328,10 +3184,15 @@
                 });
             }
 
-
             return;
         }
 
+
+        /*
+        ========================================================
+           إنشاء الرسائل
+        ========================================================
+        */
 
         const fragment =
             document.createDocumentFragment();
@@ -3344,7 +3205,6 @@
                     createMessageElement(
                         message
                     );
-
 
                 fragment.appendChild(
                     element
@@ -3361,22 +3221,19 @@
         scheduleMessageSettingsApply();
 
 
+        /*
+        ========================================================
+           Initial Load
+
+           نستخدم auto فقط.
+           لا يوجد smooth هنا نهائياً.
+        ========================================================
+        */
+
         if (initialLoad) {
-
-            /*
-            ====================================================
-               الأهم:
-
-               الرسائل تنرسم وهي مخفية.
-               نضع scrollTop مباشرة في النهاية.
-               لا smooth.
-               لا يرى المستخدم أي انتقال.
-            ====================================================
-            */
 
             const oldBehavior =
                 chatMessages.style.scrollBehavior;
-
 
             chatMessages.style.scrollBehavior =
                 "auto";
@@ -3403,49 +3260,35 @@
 
                 forceScrollToBottom();
 
-            }, 40);
+            }, 20);
 
 
             setTimeout(() => {
 
                 forceScrollToBottom();
 
-            }, 120);
+            }, 80);
 
-
-            /*
-               لا نعيد visibility هنا.
-               openConversation هو المسؤول عن كشفها
-               بعد اكتمال الـlayout.
-            */
 
             setTimeout(() => {
 
-                /*
-                   إذا لم تكن هناك عملية فتح جارية،
-                   لا نترك الرسائل مخفية.
-                */
-                if (
-                    !openingConversation &&
-                    chatView?.classList.contains(
-                        "open"
-                    )
-                ) {
-
-                    chatMessages.style.visibility =
-                        "visible";
-                }
-
+                forceScrollToBottom();
 
                 chatMessages.style.scrollBehavior =
                     oldBehavior || "";
 
-            }, 220);
+            }, 180);
 
 
             return;
         }
 
+
+        /*
+        ========================================================
+           Render عادي بعد إرسال/Realtime
+        ========================================================
+        */
 
         if (wasNear) {
 
@@ -3464,7 +3307,6 @@
             const heightDifference =
                 chatMessages.scrollHeight -
                 oldScrollHeight;
-
 
             chatMessages.scrollTop =
                 oldScrollTop +
@@ -3489,12 +3331,10 @@
                 message
             );
 
-
         const row =
             document.createElement(
                 "div"
             );
-
 
         row.className =
             "message-row " +
@@ -3549,7 +3389,6 @@
                 "div"
             );
 
-
         bubble.className =
             "message-bubble";
 
@@ -3565,7 +3404,6 @@
                 "div"
             );
 
-
         content.className =
             "message-content";
 
@@ -3580,7 +3418,6 @@
             document.createElement(
                 "div"
             );
-
 
         time.className =
             "message-time";
@@ -3598,11 +3435,9 @@
             content
         );
 
-
         bubble.appendChild(
             time
         );
-
 
         row.appendChild(
             bubble
@@ -3626,7 +3461,6 @@
             return null;
         }
 
-
         if (
             options.conversationId &&
             String(
@@ -3640,12 +3474,10 @@
             return null;
         }
 
-
         const messageId =
             getMessageId(
                 message
             );
-
 
         if (
             messageId != null &&
@@ -3656,7 +3488,6 @@
 
             return null;
         }
-
 
         const wasAtBottom =
             isNearBottom();
@@ -3693,11 +3524,9 @@
                     message
                 );
 
-
             chatMessages.appendChild(
                 element
             );
-
 
             scheduleMessageSettingsApply();
 
@@ -3717,7 +3546,6 @@
                     }
                 );
             }
-
 
             return element;
         }
@@ -3741,7 +3569,6 @@
             );
         }
 
-
         return true;
     }
 
@@ -3758,7 +3585,6 @@
             return;
         }
 
-
         try {
 
             const {
@@ -3770,7 +3596,6 @@
                         conversationId
                 }
             );
-
 
             if (error) {
 
@@ -3809,14 +3634,11 @@
         currentConversationId =
             null;
 
-
         currentConversationContact =
             null;
 
-
         currentMessages =
             [];
-
 
         typingUsers.clear();
 
@@ -3826,7 +3648,6 @@
             chatView.classList.remove(
                 "wfesc-chat-opening"
             );
-
 
             chatView.classList.remove(
                 "open"
@@ -3854,7 +3675,6 @@
 
             chatMessages.innerHTML =
                 "";
-
 
             chatMessages.style.visibility =
                 "visible";
@@ -3895,6 +3715,15 @@
 
         window.visualViewport.addEventListener(
             "resize",
+            () => {
+
+                updateTypingIndicatorPosition();
+
+            }
+        );
+
+        window.visualViewport.addEventListener(
+            "scroll",
             () => {
 
                 updateTypingIndicatorPosition();
@@ -4001,7 +3830,6 @@
                 conversations =
                     [];
 
-
                 currentMessages =
                     [];
 
@@ -4046,21 +3874,17 @@
 
         client,
 
-
         getCurrentUser() {
             return currentUser;
         },
-
 
         getCurrentConversation() {
             return currentConversationId;
         },
 
-
         getCurrentContact() {
             return currentConversationContact;
         },
-
 
         getConversations() {
             return [
@@ -4068,13 +3892,11 @@
             ];
         },
 
-
         getMessages() {
             return [
                 ...currentMessages
             ];
         },
-
 
         loadConversations,
 
