@@ -4,6 +4,7 @@
     /*
     ============================================================
     WFESC MESSAGES SEND
+
     مسؤول عن:
     - كتابة الرسالة
     - تعديل ارتفاع مربع الكتابة
@@ -11,14 +12,19 @@
     - منع الإرسال المكرر
     - حالة الإرسال
     - Enter للإرسال
-    - إعادة تحميل الرسائل بعد الإرسال
+    - Shift + Enter لسطر جديد
+    - الإضافة الفورية بدون Refresh
+    - الحفاظ على المحادثة مفتوحة
     ============================================================
     */
+
 
     const core =
         window.WFESC_MESSAGES_CORE;
 
+
     if (!core) {
+
         console.error(
             "WFESC Messages Send: messages-core.js غير موجود."
         );
@@ -36,15 +42,18 @@
             "messageForm"
         );
 
+
     const messageInput =
         document.getElementById(
             "messageInput"
         );
 
+
     const sendButton =
         document.getElementById(
             "sendButton"
         );
+
 
     const chatMessages =
         document.getElementById(
@@ -71,9 +80,12 @@
             return;
         }
 
+
         chatMessages.scrollTo({
+
             top:
                 chatMessages.scrollHeight,
+
             behavior
         });
     }
@@ -85,16 +97,21 @@
             return;
         }
 
+
         messageInput.style.height =
             "auto";
 
-        const maxHeight = 100;
+
+        const maxHeight =
+            100;
+
 
         const nextHeight =
             Math.min(
                 messageInput.scrollHeight,
                 maxHeight
             );
+
 
         messageInput.style.height =
             `${nextHeight}px`;
@@ -105,7 +122,8 @@
         state
     ) {
 
-        isSending = Boolean(state);
+        isSending =
+            Boolean(state);
 
 
         if (sendButton) {
@@ -113,10 +131,12 @@
             sendButton.disabled =
                 isSending;
 
+
             sendButton.classList.toggle(
                 "sending",
                 isSending
             );
+
 
             sendButton.textContent =
                 isSending
@@ -125,10 +145,18 @@
         }
 
 
+        /*
+           لا نعطل حقل الكتابة أثناء الإرسال.
+
+           هذا يسمح للمستخدم بكتابة الرسالة التالية
+           مباشرة، لكن زر الإرسال يبقى محميًا من التكرار.
+        */
         if (messageInput) {
 
-            messageInput.disabled =
-                isSending;
+            messageInput.classList.toggle(
+                "sending",
+                isSending
+            );
         }
     }
 
@@ -139,6 +167,7 @@
     ) {
 
         return {
+
             id:
                 `temp-${Date.now()}-${Math.random()
                     .toString(36)
@@ -163,7 +192,7 @@
     ) {
 
         if (!chatMessages) {
-            return;
+            return null;
         }
 
 
@@ -178,85 +207,130 @@
         }
 
 
-        const row =
-            document.createElement(
-                "div"
+        /*
+           نستخدم Core لإنشاء نفس شكل الرسائل الحقيقي.
+           هذا يضمن أن إعدادات الفقاعات تنطبق أيضًا
+           على الرسالة المؤقتة.
+        */
+        let row = null;
+
+
+        if (
+            typeof core.createMessageElement ===
+            "function"
+        ) {
+
+            row =
+                core.createMessageElement(
+                    message
+                );
+
+        } else {
+
+            /*
+               Fallback احتياطي إذا Core قديم.
+            */
+
+            row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "message-row mine message-new optimistic";
+
+
+            row.dataset.messageId =
+                String(message.id);
+
+
+            const bubble =
+                document.createElement(
+                    "div"
+                );
+
+
+            bubble.className =
+                "message-bubble";
+
+
+            const content =
+                document.createElement(
+                    "div"
+                );
+
+
+            content.className =
+                "message-content";
+
+
+            content.textContent =
+                message.content;
+
+
+            const time =
+                document.createElement(
+                    "div"
+                );
+
+
+            time.className =
+                "message-time";
+
+
+            time.textContent =
+                new Date(
+                    message.created_at
+                ).toLocaleTimeString(
+                    "ar-IQ",
+                    {
+                        hour:
+                            "2-digit",
+
+                        minute:
+                            "2-digit"
+                    }
+                );
+
+
+            bubble.appendChild(
+                content
             );
 
 
-        row.className =
-            "message-row mine message-new optimistic";
-
-
-        row.dataset.messageId =
-            String(message.id);
-
-
-        const bubble =
-            document.createElement(
-                "div"
+            bubble.appendChild(
+                time
             );
 
 
-        bubble.className =
-            "message-bubble";
-
-
-        const content =
-            document.createElement(
-                "div"
+            row.appendChild(
+                bubble
             );
+        }
 
 
-        content.className =
-            "message-content";
-
-
-        content.textContent =
-            message.content;
-
-
-        const time =
-            document.createElement(
-                "div"
-            );
-
-
-        time.className =
-            "message-time";
-
-
-        time.textContent =
-            new Date(
-                message.created_at
-            ).toLocaleTimeString(
-                "ar-IQ",
-                {
-                    hour:
-                        "2-digit",
-
-                    minute:
-                        "2-digit"
-                }
-            );
-
-
-        bubble.appendChild(
-            content
-        );
-
-        bubble.appendChild(
-            time
-        );
-
-        row.appendChild(
-            bubble
+        row.classList.add(
+            "message-new",
+            "optimistic"
         );
 
 
         chatMessages.appendChild(
             row
         );
+
+
+        /*
+           تطبيق إعدادات الفقاعات فورًا.
+        */
+        if (
+            typeof core.applyMessageSettings ===
+            "function"
+        ) {
+
+            core.applyMessageSettings();
+        }
 
 
         scrollToBottom(
@@ -302,12 +376,18 @@
                 "object"
         ) {
 
-            if (Array.isArray(data.data)) {
+            if (
+                Array.isArray(
+                    data.data
+                )
+            ) {
+
                 return (
                     data.data[0] ||
                     null
                 );
             }
+
 
             return data.data;
         }
@@ -317,12 +397,71 @@
     }
 
 
+    function removeTemporaryMessage(
+        temporaryRow
+    ) {
+
+        if (!temporaryRow) {
+            return;
+        }
+
+
+        if (
+            typeof temporaryRow.animate ===
+            "function"
+        ) {
+
+            try {
+
+                temporaryRow.animate(
+                    [
+                        {
+                            opacity: 1,
+                            transform:
+                                "translateY(0)"
+                        },
+                        {
+                            opacity: 0,
+                            transform:
+                                "translateY(5px)"
+                        }
+                    ],
+                    {
+                        duration: 160,
+                        easing: "ease"
+                    }
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC temporary animation:",
+                    error
+                );
+            }
+        }
+
+
+        setTimeout(
+            () => {
+
+                temporaryRow.remove();
+
+            },
+            170
+        );
+    }
+
+
     /* =========================================================
        SEND
     ========================================================= */
 
     async function sendCurrentMessage() {
 
+        /*
+           منع الإرسال المكرر.
+        */
         if (isSending) {
             return;
         }
@@ -374,7 +513,7 @@
 
         /*
         --------------------------------------------------------
-        نحفظ النص قبل المسح حتى نرجعه في حال فشل الإرسال
+        نحفظ النص قبل المسح.
         --------------------------------------------------------
         */
 
@@ -382,18 +521,30 @@
             content;
 
 
+        /*
+        --------------------------------------------------------
+        نثبت رقم المحادثة.
+        إذا تغيرت المحادثة أثناء الإرسال،
+        لن نضيف النتيجة للمحادثة الخطأ.
+        --------------------------------------------------------
+        */
+
+        const sendingConversationId =
+            conversationId;
+
+
         setSendingState(true);
 
 
         /*
         --------------------------------------------------------
-        رسالة مؤقتة
+        رسالة مؤقتة تظهر فورًا.
         --------------------------------------------------------
         */
 
         const optimistic =
             createOptimisticMessage(
-                content,
+                originalContent,
                 user.id
             );
 
@@ -406,12 +557,13 @@
 
         /*
         --------------------------------------------------------
-        نفرغ مربع الكتابة مباشرة
+        نفرغ مربع الكتابة مباشرة.
         --------------------------------------------------------
         */
 
         messageInput.value =
             "";
+
 
         resizeTextarea();
 
@@ -421,6 +573,8 @@
             /*
             ====================================================
             SEND RPC
+
+            نفس RPC الأصلي بدون تغيير.
             ====================================================
             */
 
@@ -431,7 +585,7 @@
                 "send_message",
                 {
                     target_conversation_id:
-                        conversationId,
+                        sendingConversationId,
 
                     message_content:
                         originalContent
@@ -447,46 +601,41 @@
 
             /*
             ====================================================
-            حذف الرسالة المؤقتة
+            تحقق من أن المستخدم ما زال داخل نفس المحادثة.
+            ====================================================
+            */
+
+            const stillSameConversation =
+                String(
+                    core.getCurrentConversation()
+                ) === String(
+                    sendingConversationId
+                );
+
+
+            /*
+            ====================================================
+            الرسالة المؤقتة انتهى دورها.
             ====================================================
             */
 
             if (temporaryRow) {
 
-                temporaryRow.remove();
+                temporaryRow.classList.remove(
+                    "optimistic"
+                );
+
+
+                temporaryRow.dataset.confirmed =
+                    "true";
             }
 
 
             /*
             ====================================================
-            نعيد تحميل القائمة من قاعدة البيانات مرة واحدة.
+            الرسالة الحقيقية من Supabase.
             
-            هذا يمنع ظهور الرسالة مرتين قبل إضافة Realtime.
-            ====================================================
-            */
-
-            await core.loadConversationMessages();
-
-
-            /*
-            ====================================================
-            نرجع إلى آخر الرسائل
-            ====================================================
-            */
-
-            requestAnimationFrame(
-                () => {
-
-                    scrollToBottom(
-                        "smooth"
-                    );
-                }
-            );
-
-
-            /*
-            ====================================================
-            تحديث قائمة المحادثات لاحقاً
+            لا نعيد تحميل كامل المحادثة.
             ====================================================
             */
 
@@ -495,6 +644,99 @@
                     data
                 );
 
+
+            if (
+                sentMessage &&
+                stillSameConversation &&
+                typeof core.addMessageToCurrentConversation ===
+                    "function"
+            ) {
+
+                /*
+                   نحذف المؤقت أولاً.
+                */
+                if (temporaryRow) {
+
+                    temporaryRow.remove();
+                }
+
+
+                core.addMessageToCurrentConversation(
+                    sentMessage,
+                    {
+                        conversationId:
+                            sendingConversationId,
+
+                        appendOnly:
+                            true,
+
+                        scroll:
+                            true
+                    }
+                );
+
+            } else {
+
+                /*
+                   إذا الـRPC لم يرجع الرسالة نفسها،
+                   نبقي الرسالة المؤقتة ظاهرة بدل
+                   إعادة تحميل المحادثة كاملة.
+                */
+
+                if (temporaryRow) {
+
+                    temporaryRow.classList.remove(
+                        "message-new"
+                    );
+
+                    temporaryRow.classList.remove(
+                        "optimistic"
+                    );
+                }
+            }
+
+
+            /*
+            ====================================================
+            تطبيق إعدادات الفقاعات مرة أخيرة.
+            ====================================================
+            */
+
+            if (
+                typeof core.applyMessageSettings ===
+                "function"
+            ) {
+
+                core.applyMessageSettings();
+            }
+
+
+            /*
+            ====================================================
+            الحفاظ على آخر الرسائل.
+            ====================================================
+            */
+
+            requestAnimationFrame(
+                () => {
+
+                    if (
+                        stillSameConversation
+                    ) {
+
+                        scrollToBottom(
+                            "smooth"
+                        );
+                    }
+                }
+            );
+
+
+            /*
+            ====================================================
+            Log فقط.
+            ====================================================
+            */
 
             if (sentMessage) {
 
@@ -515,31 +757,40 @@
 
             /*
             ----------------------------------------------------
-            إزالة الرسالة المؤقتة
+            إزالة الرسالة المؤقتة.
             ----------------------------------------------------
             */
 
             if (temporaryRow) {
 
-                temporaryRow.animate(
-                    [
+                try {
+
+                    temporaryRow.animate(
+                        [
+                            {
+                                opacity: 1,
+                                transform:
+                                    "translateX(0)"
+                            },
+                            {
+                                opacity: 0,
+                                transform:
+                                    "translateX(20px)"
+                            }
+                        ],
                         {
-                            opacity: 1,
-                            transform:
-                                "translateX(0)"
-                        },
-                        {
-                            opacity: 0,
-                            transform:
-                                "translateX(20px)"
+                            duration: 220,
+                            easing: "ease"
                         }
-                    ],
-                    {
-                        duration:220,
-                        easing:
-                            "ease"
-                    }
-                );
+                    );
+
+                } catch (animationError) {
+
+                    console.warn(
+                        "WFESC send animation:",
+                        animationError
+                    );
+                }
 
 
                 setTimeout(
@@ -555,51 +806,85 @@
 
             /*
             ----------------------------------------------------
-            إعادة النص للمستخدم
+            إعادة النص للمستخدم.
             ----------------------------------------------------
             */
 
             messageInput.value =
                 originalContent;
 
+
             resizeTextarea();
 
 
             /*
             ----------------------------------------------------
-            تنبيه بصري بسيط
+            تنبيه بصري بسيط.
             ----------------------------------------------------
             */
 
-            messageInput.animate(
-                [
+            try {
+
+                messageInput.animate(
+                    [
+                        {
+                            transform:
+                                "translateX(0)"
+                        },
+                        {
+                            transform:
+                                "translateX(-4px)"
+                        },
+                        {
+                            transform:
+                                "translateX(4px)"
+                        },
+                        {
+                            transform:
+                                "translateX(0)"
+                        }
+                    ],
                     {
-                        transform:
-                            "translateX(0)"
-                    },
-                    {
-                        transform:
-                            "translateX(-4px)"
-                    },
-                    {
-                        transform:
-                            "translateX(4px)"
-                    },
-                    {
-                        transform:
-                            "translateX(0)"
+                        duration: 240
                     }
-                ],
-                {
-                    duration:240
-                }
-            );
+                );
+
+            } catch (animationError) {
+
+                console.warn(
+                    "WFESC input animation:",
+                    animationError
+                );
+            }
+
 
         } finally {
 
             setSendingState(false);
 
-            messageInput.focus();
+
+            /*
+               إبقاء المؤشر داخل مربع الكتابة
+               بدون إغلاق المحادثة.
+            */
+            if (
+                messageInput &&
+                document.activeElement !==
+                    messageInput
+            ) {
+
+                try {
+
+                    messageInput.focus();
+
+                } catch (error) {
+
+                    console.warn(
+                        "WFESC focus:",
+                        error
+                    );
+                }
+            }
         }
     }
 
@@ -639,8 +924,10 @@
             event => {
 
                 /*
+                ================================================
                 Enter = إرسال
                 Shift + Enter = سطر جديد
+                ================================================
                 */
 
                 if (
@@ -662,6 +949,7 @@
 
                 requestAnimationFrame(
                     () => {
+
                         scrollToBottom(
                             "smooth"
                         );
@@ -680,9 +968,12 @@
 
         sendCurrentMessage,
 
+
         isSending() {
+
             return isSending;
         },
+
 
         resizeTextarea
     };
