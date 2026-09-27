@@ -45,6 +45,22 @@
 
     /*
      * ============================================================
+     * SESSION LISTENER
+     * ============================================================
+     *
+     * مراقبة جلسة Supabase المركزية.
+     *
+     * مهم:
+     * لا نستخدم localStorage لتخزين الحساب.
+     * Supabase هو المصدر الرئيسي للجلسة.
+     */
+
+    let authSubscription = null;
+    let authListenerBound = false;
+    let sessionRestoreInProgress = false;
+
+    /*
+     * ============================================================
      * HELPERS
      * ============================================================
      */
@@ -224,10 +240,6 @@
                 ""
             ).toLowerCase();
 
-        /*
-         * أكواد settings-auth.js
-         */
-
         if (
             code === "username_already_exists" ||
             code === "username_exists" ||
@@ -237,10 +249,6 @@
         ) {
             return true;
         }
-
-        /*
-         * رسالة WFESC العربية
-         */
 
         if (
             message.includes(
@@ -259,10 +267,6 @@
             return true;
         }
 
-        /*
-         * PostgreSQL unique violation
-         */
-
         if (
             code === "23505" &&
             (
@@ -272,10 +276,6 @@
         ) {
             return true;
         }
-
-        /*
-         * رسائل إنجليزية محتملة
-         */
 
         if (
             message.includes(
@@ -3120,6 +3120,7 @@
         const value =
             profile?.full_name ||
             profile?.name ||
+            profile?.display_name ||
             user?.user_metadata?.full_name ||
             user?.user_metadata?.name ||
             user?.user_metadata?.display_name ||
@@ -3257,6 +3258,41 @@
 
     /*
      * ============================================================
+     * SESSION EVENT BROADCAST
+     * ============================================================
+     */
+
+    function broadcastAuthState(
+        user,
+        profile,
+        eventName
+    ) {
+
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "WFESCAuthChanged",
+                    {
+                        detail: {
+                            user:
+                                user || null,
+
+                            profile:
+                                profile || null,
+
+                            event:
+                                eventName || null
+                        }
+                    }
+                )
+            );
+
+        } catch (_) {}
+    }
+
+    /*
+     * ============================================================
      * RESTORE SESSION
      * ============================================================
      */
@@ -3265,6 +3301,19 @@
 
         if (!E) {
             return;
+        }
+
+        if (sessionRestoreInProgress) {
+            return;
+        }
+
+        sessionRestoreInProgress = true;
+
+        if (E.loading) {
+
+            E.loading.classList.add(
+                "show"
+            );
         }
 
         try {
@@ -3279,6 +3328,13 @@
                 );
             }
 
+            let user = null;
+            let profile = null;
+
+            /*
+             * بعض الإصدارات قد تحتوي restoreSession.
+             */
+
             if (
                 typeof auth.restoreSession ===
                 "function"
@@ -3287,55 +3343,22 @@
                 const result =
                     await auth.restoreSession();
 
-                const user =
+                user =
                     extractUser(result);
 
-                if (user) {
-
-                    currentUser =
-                        user;
-
-                    currentProfile =
-                        result?.profile ||
-                        null;
-
-                    if (
-                        !currentProfile &&
-                        typeof auth.fetchProfile ===
-                        "function"
-                    ) {
-
-                        try {
-
-                            currentProfile =
-                                await auth.fetchProfile(
-                                    user.id
-                                );
-
-                        } catch (_) {
-
-                            currentProfile =
-                                null;
-                        }
-                    }
-
-                    renderAccount(
-                        currentUser,
-                        currentProfile
-                    );
-
-                } else {
-
-                    renderAccount(
-                        null,
-                        null
-                    );
-                }
-
-                return;
+                profile =
+                    result?.profile ||
+                    result?.data?.profile ||
+                    null;
             }
 
+            /*
+             * المصدر الأساسي الحالي:
+             * getSession()
+             */
+
             if (
+                !isRealUser(user) &&
                 typeof auth.getSession ===
                 "function"
             ) {
@@ -3348,54 +3371,80 @@
                     result?.session ||
                     null;
 
-                const user =
+                user =
                     session?.user ||
                     null;
+            }
 
-                if (
-                    isRealUser(user)
-                ) {
+            /*
+             * إذا لم يوجد User:
+             * الحساب غير مسجل الدخول.
+             */
 
-                    currentUser =
-                        user;
+            if (
+                !isRealUser(user)
+            ) {
 
-                    if (
-                        typeof auth.fetchProfile ===
-                        "function"
-                    ) {
+                currentUser = null;
+                currentProfile = null;
 
-                        try {
+                renderAccount(
+                    null,
+                    null
+                );
 
-                            currentProfile =
-                                await auth.fetchProfile(
-                                    user.id
-                                );
-
-                        } catch (_) {
-
-                            currentProfile =
-                                null;
-                        }
-                    }
-
-                    renderAccount(
-                        currentUser,
-                        currentProfile
-                    );
-
-                } else {
-
-                    renderAccount(
-                        null,
-                        null
-                    );
-                }
+                broadcastAuthState(
+                    null,
+                    null,
+                    "SIGNED_OUT"
+                );
 
                 return;
             }
 
-            throw new Error(
-                "دالة استعادة الجلسة غير موجودة."
+            /*
+             * جلب Profile للحساب الحالي.
+             */
+
+            if (
+                !profile &&
+                typeof auth.fetchProfile ===
+                "function"
+            ) {
+
+                try {
+
+                    profile =
+                        await auth.fetchProfile(
+                            user.id
+                        );
+
+                } catch (profileError) {
+
+                    console.warn(
+                        "WFESC: تعذر جلب Profile أثناء استعادة الجلسة.",
+                        profileError
+                    );
+
+                    profile = null;
+                }
+            }
+
+            currentUser =
+                user;
+
+            currentProfile =
+                profile || null;
+
+            renderAccount(
+                currentUser,
+                currentProfile
+            );
+
+            broadcastAuthState(
+                currentUser,
+                currentProfile,
+                "SESSION_RESTORED"
             );
 
         } catch (error) {
@@ -3405,12 +3454,23 @@
                 error
             );
 
+            currentUser = null;
+            currentProfile = null;
+
             renderAccount(
                 null,
                 null
             );
 
+            broadcastAuthState(
+                null,
+                null,
+                "SESSION_ERROR"
+            );
+
         } finally {
+
+            sessionRestoreInProgress = false;
 
             if (E.loading) {
 
@@ -3418,6 +3478,208 @@
                     "show"
                 );
             }
+        }
+    }
+
+    /*
+     * ============================================================
+     * CENTRAL AUTH STATE LISTENER
+     * ============================================================
+     */
+
+    function bindCentralAuthListener() {
+
+        if (authListenerBound) {
+            return;
+        }
+
+        const auth =
+            getAuth();
+
+        if (
+            !auth ||
+            typeof auth.onAuthStateChange !==
+            "function"
+        ) {
+            return;
+        }
+
+        authListenerBound = true;
+
+        try {
+
+            const callback =
+                async function (
+                    event,
+                    session,
+                    user
+                ) {
+
+                    /*
+                     * بعض wrappers قد ترسل:
+                     *
+                     * callback(user, profile)
+                     *
+                     * لذلك نحاول استخراج المستخدم
+                     * بأكثر من شكل.
+                     */
+
+                    let nextUser =
+                        null;
+
+                    let nextProfile =
+                        null;
+
+                    if (
+                        isRealUser(user)
+                    ) {
+
+                        nextUser =
+                            user;
+
+                    } else if (
+                        isRealUser(session?.user)
+                    ) {
+
+                        nextUser =
+                            session.user;
+
+                    } else if (
+                        isRealUser(session)
+                    ) {
+
+                        nextUser =
+                            session;
+
+                    } else if (
+                        isRealUser(event)
+                    ) {
+
+                        nextUser =
+                            event;
+                    }
+
+                    /*
+                     * تسجيل الخروج.
+                     */
+
+                    if (
+                        event ===
+                            "SIGNED_OUT" ||
+                        event ===
+                            "SIGNED_OUT_GLOBAL" ||
+                        !isRealUser(nextUser)
+                    ) {
+
+                        currentUser = null;
+                        currentProfile = null;
+
+                        renderAccount(
+                            null,
+                            null
+                        );
+
+                        closeAllModals();
+
+                        broadcastAuthState(
+                            null,
+                            null,
+                            event ||
+                            "SIGNED_OUT"
+                        );
+
+                        return;
+                    }
+
+                    /*
+                     * جلب Profile للمستخدم الجديد.
+                     */
+
+                    if (
+                        typeof auth.fetchProfile ===
+                        "function"
+                    ) {
+
+                        try {
+
+                            nextProfile =
+                                await auth.fetchProfile(
+                                    nextUser.id
+                                );
+
+                        } catch (profileError) {
+
+                            console.warn(
+                                "WFESC: تعذر تحديث Profile بعد تغير الجلسة.",
+                                profileError
+                            );
+
+                            nextProfile =
+                                null;
+                        }
+                    }
+
+                    currentUser =
+                        nextUser;
+
+                    currentProfile =
+                        nextProfile;
+
+                    renderAccount(
+                        currentUser,
+                        currentProfile
+                    );
+
+                    broadcastAuthState(
+                        currentUser,
+                        currentProfile,
+                        event ||
+                        "SIGNED_IN"
+                    );
+                };
+
+            const subscription =
+                auth.onAuthStateChange(
+                    callback
+                );
+
+            /*
+             * دعم أكثر من شكل لإرجاع subscription.
+             */
+
+            if (
+                subscription?.data?.subscription
+            ) {
+
+                authSubscription =
+                    subscription
+                        .data
+                        .subscription;
+
+            } else if (
+                subscription?.subscription
+            ) {
+
+                authSubscription =
+                    subscription.subscription;
+
+            } else if (
+                typeof subscription?.unsubscribe ===
+                "function"
+            ) {
+
+                authSubscription =
+                    subscription;
+            }
+
+        } catch (error) {
+
+            console.error(
+                "WFESC auth listener error:",
+                error
+            );
+
+            authListenerBound = false;
         }
     }
 
@@ -3551,6 +3813,12 @@
                 currentProfile
             );
 
+            broadcastAuthState(
+                currentUser,
+                currentProfile,
+                "SIGNED_IN"
+            );
+
             showStatus(
                 "تم تسجيل الدخول بنجاح.",
                 "success"
@@ -3630,10 +3898,6 @@
         ) {
             return;
         }
-
-        /*
-         * منع الضغط المتكرر
-         */
 
         if (
             E.registerSubmit.disabled
@@ -3747,9 +4011,7 @@
         const auth =
             getAuth();
 
-        if (
-            !auth
-        ) {
+        if (!auth) {
 
             setMessage(
                 E.registerMessage,
@@ -3792,12 +4054,6 @@
 
         try {
 
-            /*
-             * ====================================================
-             * فحص اسم المستخدم قبل إنشاء Auth User
-             * ====================================================
-             */
-
             if (
                 typeof auth.usernameExists ===
                 "function"
@@ -3814,10 +4070,6 @@
 
                 } catch (usernameCheckError) {
 
-                    /*
-                     * لا نخلي الخطأ يختفي.
-                     */
-
                     console.error(
                         "WFESC username check exception:",
                         usernameCheckError
@@ -3826,27 +4078,12 @@
                     throw usernameCheckError;
                 }
 
-                /*
-                 * بعض النسخ قد ترجع:
-                 *
-                 * { exists: true }
-                 *
-                 * أو:
-                 *
-                 * { data: { exists: true } }
-                 *
-                 * أو:
-                 *
-                 * { exists: true, error: null }
-                 */
-
                 const checkError =
                     usernameCheck?.error ||
                     usernameCheck?.data?.error ||
                     null;
 
                 if (checkError) {
-
                     throw checkError;
                 }
 
@@ -3881,12 +4118,6 @@
                 }
             }
 
-            /*
-             * ====================================================
-             * إنشاء الحساب
-             * ====================================================
-             */
-
             const result =
                 await auth.signUp(
                     name,
@@ -3894,11 +4125,6 @@
                     password,
                     username
                 );
-
-            /*
-             * مهم:
-             * بعض الدوال ترجع error بدل throw.
-             */
 
             if (
                 result?.error
@@ -3913,12 +4139,6 @@
 
                 throw result.data.error;
             }
-
-            /*
-             * ====================================================
-             * حماية إضافية من duplicate username
-             * ====================================================
-             */
 
             if (
                 isUsernameTakenError(
@@ -3942,12 +4162,6 @@
 
                 throw usernameError;
             }
-
-            /*
-             * ====================================================
-             * التحقق من المستخدم
-             * ====================================================
-             */
 
             const user =
                 extractUser(result);
@@ -3990,6 +4204,12 @@
                     currentProfile
                 );
 
+                broadcastAuthState(
+                    currentUser,
+                    currentProfile,
+                    "SIGNED_IN"
+                );
+
                 showStatus(
                     "تم إنشاء الحساب وتسجيل الدخول بنجاح.",
                     "success"
@@ -3997,10 +4217,6 @@
 
                 return;
             }
-
-            /*
-             * البريد يحتاج تأكيد.
-             */
 
             showVerificationMessage();
 
@@ -4017,19 +4233,9 @@
                 error
             );
 
-            /*
-             * ====================================================
-             * اسم المستخدم مأخوذ
-             * ====================================================
-             */
-
             if (
                 isUsernameTakenError(error)
             ) {
-
-                /*
-                 * نضمن بقاء اليوزر الذي كتبه المستخدم.
-                 */
 
                 E.registerUsername.value =
                     username;
@@ -4051,22 +4257,12 @@
                     "error"
                 );
 
-                /*
-                 * يبقى المستخدم داخل التسجيل.
-                 */
-
                 setMode(
                     "register"
                 );
 
                 return;
             }
-
-            /*
-             * ====================================================
-             * البريد مستخدم مسبقًا
-             * ====================================================
-             */
 
             if (
                 isExistingEmailError(error)
@@ -4095,12 +4291,6 @@
 
                 return;
             }
-
-            /*
-             * ====================================================
-             * خطأ فحص اليوزر من قاعدة البيانات
-             * ====================================================
-             */
 
             const errorCode =
                 safeText(
@@ -4135,11 +4325,6 @@
 
                 return;
             }
-
-            /*
-             * حماية إضافية في حال جاء الخطأ
-             * من Supabase بصيغة مختلفة.
-             */
 
             if (
                 errorMessage.includes("username") &&
@@ -4347,6 +4532,16 @@
      */
 
     function openChangePassword() {
+
+        if (
+            !isRealUser(currentUser)
+        ) {
+            showStatus(
+                "يجب تسجيل الدخول أولًا.",
+                "error"
+            );
+            return;
+        }
 
         E.newPassword.value =
             "";
@@ -4611,6 +4806,12 @@
                         null
                     );
 
+                    broadcastAuthState(
+                        null,
+                        null,
+                        "SIGNED_OUT"
+                    );
+
                     setMode(
                         "login"
                     );
@@ -4676,9 +4877,25 @@
             return;
         }
 
+        if (
+            E.logoutButton.disabled
+        ) {
+            return;
+        }
+
+        setButtonLoading(
+            E.logoutButton,
+            true,
+            "جارٍ تسجيل الخروج..."
+        );
+
         try {
 
             await auth.signOut();
+
+            /*
+             * نمسح الحالة المحلية فورًا.
+             */
 
             currentUser = null;
             currentProfile = null;
@@ -4688,8 +4905,20 @@
                 null
             );
 
+            closeAllModals();
+
             setMode(
                 "login"
+            );
+
+            /*
+             * إشعار بقية أنظمة WFESC.
+             */
+
+            broadcastAuthState(
+                null,
+                null,
+                "SIGNED_OUT"
             );
 
             showStatus(
@@ -4708,6 +4937,13 @@
                 getErrorMessage(error),
                 "error"
             );
+
+        } finally {
+
+            setButtonLoading(
+                E.logoutButton,
+                false
+            );
         }
     }
 
@@ -4718,6 +4954,18 @@
      */
 
     function openDeleteWarning() {
+
+        if (
+            !isRealUser(currentUser)
+        ) {
+
+            showStatus(
+                "يجب تسجيل الدخول أولًا.",
+                "error"
+            );
+
+            return;
+        }
 
         clearMessage(
             E.deleteMessage
@@ -4796,6 +5044,12 @@
                 null
             );
 
+            broadcastAuthState(
+                null,
+                null,
+                "ACCOUNT_DELETE_REQUESTED"
+            );
+
             showStatus(
                 "تم إرسال طلب حذف الحساب بنجاح.",
                 "success"
@@ -4852,6 +5106,18 @@
      */
 
     function openProfile() {
+
+        if (
+            !isRealUser(currentUser)
+        ) {
+
+            showStatus(
+                "يجب تسجيل الدخول أولًا لفتح الملف الشخصي.",
+                "error"
+            );
+
+            return;
+        }
 
         window.location.href =
             "profile.html";
@@ -4926,6 +5192,10 @@
 
     function bindAuthEvents() {
 
+        /*
+         * حدث داخلي/عام تستخدمه بقية صفحات WFESC.
+         */
+
         window.addEventListener(
             "WFESCAuthChanged",
             function (event) {
@@ -4994,6 +5264,12 @@
                 }
             }
         );
+
+        /*
+         * ربط الجلسة المركزية.
+         */
+
+        bindCentralAuthListener();
     }
 
     /*
@@ -5421,6 +5697,17 @@
         setMode(
             "login"
         );
+
+        /*
+         * إظهار التحميل أثناء فحص الجلسة.
+         */
+
+        if (E.loading) {
+
+            E.loading.classList.add(
+                "show"
+            );
+        }
 
         await handleRecoveryURL();
 
