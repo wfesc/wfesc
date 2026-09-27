@@ -1,373 +1,271 @@
-(() => {
+/* =========================================================
+   WFESC MESSAGES KEYBOARD
+   File:
+   messages/messages-keyboard.js
+
+   الوظيفة:
+   - اكتشاف ارتفاع كيبورد الهاتف
+   - استخدام VisualViewport عند توفره
+   - تحريك خانة الكتابة فوق الكيبورد مباشرة
+   - دعم تدوير الشاشة
+   - دعم فتح/إغلاق المحادثة
+   - منع القفزات غير الضرورية
+   ========================================================= */
+
+(function () {
     "use strict";
 
-    /*
-    ============================================================
-    WFESC MESSAGES KEYBOARD
-    النسخة الأولى
+    const root = document.documentElement;
+    const body = document.body;
 
-    مسؤول عن:
-    - اكتشاف ارتفاع كيبورد الهاتف
-    - مراقبة visualViewport
-    - تحريك منطقة الكتابة فوق الكيبورد
-    - المحافظة على حقل الكتابة داخل الشاشة
-    - توفير API لملف messages-send.js
-    - عدم إعادة رسم الرسائل
-    - عدم تغيير منطق إرسال الرسائل
-    ============================================================
-    */
+    const navigationHeight = 82;
+    const keyboardThreshold = 80;
 
-    const messageInput =
-        document.getElementById("messageInput");
-
-    const messageForm =
-        document.getElementById("messageForm");
-
-    const chatMessages =
-        document.getElementById("chatMessages");
-
-    /*
-       نحاول العثور على منطقة الإدخال.
-       إذا كان عندك عنصر محدد لاحقاً نضيف ID له بسهولة.
-    */
-    const inputArea =
-        document.getElementById("messageInputArea") ||
-        document.getElementById("chatInputArea") ||
-        messageForm;
-
-    if (!messageInput) {
-        console.warn(
-            "WFESC Keyboard: messageInput غير موجود."
-        );
-        return;
-    }
-
-    /* =========================================================
-       STATE
-    ========================================================= */
-
-    let keyboardHeight = 0;
-
-    let keyboardVisible = false;
-
-    let lastViewportHeight =
-        window.innerHeight;
-
+    let lastKeyboardHeight = -1;
+    let updateTimer = null;
     let initialized = false;
 
-    let keepKeyboardRequested = false;
+    let visualViewportInstance = null;
 
-    /* =========================================================
-       HELPERS
-    ========================================================= */
+    /* ---------------------------------------------------------
+       أدوات عامة
+       --------------------------------------------------------- */
 
-    function getViewport() {
-        return window.visualViewport || null;
-    }
-
-    function getKeyboardHeight() {
-
-        const viewport =
-            getViewport();
-
-        if (!viewport) {
-            return 0;
-        }
-
-        const windowHeight =
-            window.innerHeight;
-
-        const viewportHeight =
-            viewport.height;
-
-        const viewportTop =
-            viewport.offsetTop || 0;
-
-        /*
-           المساحة التي اختفت من نافذة العرض.
-        */
-        const calculatedHeight =
-            windowHeight -
-            viewportHeight -
-            viewportTop;
-
-        /*
-           نتجنب القيم السالبة.
-        */
+    function getLayoutHeight() {
         return Math.max(
+            document.documentElement.clientHeight || 0,
+            window.innerHeight || 0
+        );
+    }
+
+    function getViewportBottom() {
+        if (visualViewportInstance) {
+            return (
+                visualViewportInstance.height +
+                visualViewportInstance.offsetTop
+            );
+        }
+
+        return window.innerHeight || getLayoutHeight();
+    }
+
+    /* ---------------------------------------------------------
+       حساب ارتفاع الكيبورد
+       --------------------------------------------------------- */
+
+    function calculateKeyboardHeight() {
+        const layoutHeight = getLayoutHeight();
+        const viewportBottom = getViewportBottom();
+
+        let height = layoutHeight - viewportBottom;
+
+        if (!Number.isFinite(height)) {
+            height = 0;
+        }
+
+        height = Math.max(0, Math.round(height));
+
+        /*
+         * القيم الصغيرة غالباً تكون بسبب:
+         * - شريط النظام
+         * - تغييرات بسيطة في الـ viewport
+         * - safe area
+         *
+         * لذلك لا نعتبرها كيبورد.
+         */
+        if (height < keyboardThreshold) {
+            height = 0;
+        }
+
+        return height;
+    }
+
+    /* ---------------------------------------------------------
+       تطبيق ارتفاع الكيبورد
+       --------------------------------------------------------- */
+
+    function applyKeyboardHeight(height) {
+        height = Math.max(
             0,
-            Math.round(calculatedHeight)
-        );
-    }
-
-    function detectKeyboard() {
-
-        const previousHeight =
-            keyboardHeight;
-
-        keyboardHeight =
-            getKeyboardHeight();
-
-        /*
-           نعتبر الكيبورد مفتوحاً إذا اختفى جزء
-           واضح من نافذة العرض.
-        */
-        keyboardVisible =
-            keyboardHeight > 80;
-
-        /*
-           نخزن القيم على الصفحة حتى يمكن استعمالها
-           أيضاً من CSS إذا احتجنا ذلك.
-        */
-        document.documentElement.style.setProperty(
-            "--wfesc-keyboard-height",
-            `${keyboardHeight}px`
-        );
-
-        document.documentElement.style.setProperty(
-            "--wfesc-keyboard-visible",
-            keyboardVisible
-                ? "1"
-                : "0"
+            Math.round(Number(height) || 0)
         );
 
         /*
-           إذا تغير ارتفاع الكيبورد،
-           نعيد ضبط مكان منطقة الإدخال.
-        */
-        if (
-            previousHeight !==
-            keyboardHeight
-        ) {
-            updateInputPosition();
-        }
-    }
-
-    function updateInputPosition() {
-
-        if (!inputArea) {
+         * لا نعيد كتابة CSS إذا لم يتغير الارتفاع.
+         * هذا يقلل الـ reflow والاهتزاز.
+         */
+        if (height === lastKeyboardHeight) {
             return;
         }
 
-        /*
-           لا نحرك منطقة الإدخال إذا الكيبورد مغلق.
-        */
-        if (!keyboardVisible) {
+        lastKeyboardHeight = height;
 
-            inputArea.style.removeProperty(
-                "bottom"
+        root.style.setProperty(
+            "--keyboard-height",
+            height + "px"
+        );
+
+        /*
+         * عند فتح الكيبورد:
+         *
+         * composer-bottom = ارتفاع الكيبورد
+         *
+         * وبالتالي يصبح الـ composer فوق الكيبورد مباشرة.
+         *
+         * عند إغلاقه:
+         *
+         * يرجع فوق شريط التنقل.
+         */
+        if (height > 0) {
+            root.style.setProperty(
+                "--composer-bottom",
+                height + "px"
             );
 
-            inputArea.style.removeProperty(
-                "transform"
+            body.classList.add(
+                "wfesc-keyboard-open"
+            );
+        } else {
+            root.style.setProperty(
+                "--composer-bottom",
+                navigationHeight + "px"
             );
 
-            return;
-        }
-
-        /*
-           نحرك المنطقة فوق الكيبورد مباشرة.
-        */
-        inputArea.style.bottom =
-            `${keyboardHeight}px`;
-
-        inputArea.style.transform =
-            "translateY(0)";
-
-        /*
-           نطلب من المتصفح إعادة الرسم.
-        */
-        requestAnimationFrame(() => {
-
-            ensureInputVisible();
-
-        });
-    }
-
-    function ensureInputVisible() {
-
-        if (
-            !messageInput ||
-            !keyboardVisible
-        ) {
-            return;
-        }
-
-        const viewport =
-            getViewport();
-
-        if (!viewport) {
-            return;
-        }
-
-        const rect =
-            messageInput.getBoundingClientRect();
-
-        const visibleBottom =
-            viewport.height +
-            viewport.offsetTop;
-
-        /*
-           إذا نزل الحقل تحت حدود الشاشة،
-           نرفعه قليلاً.
-        */
-        if (
-            rect.bottom >
-            visibleBottom
-        ) {
-
-            const difference =
-                rect.bottom -
-                visibleBottom;
-
-            if (inputArea) {
-
-                const currentBottom =
-                    parseFloat(
-                        getComputedStyle(
-                            inputArea
-                        ).bottom
-                    ) || 0;
-
-                inputArea.style.bottom =
-                    `${currentBottom + difference}px`;
-            }
+            body.classList.remove(
+                "wfesc-keyboard-open"
+            );
         }
     }
 
-    /* =========================================================
-       FOCUS
-    ========================================================= */
+    /* ---------------------------------------------------------
+       التحديث الأساسي
+       --------------------------------------------------------- */
 
-    function focusInput() {
-
-        if (!messageInput) {
-            return false;
+    function update() {
+        if (!initialized) {
+            return;
         }
 
-        try {
+        const height = calculateKeyboardHeight();
 
-            messageInput.focus({
-                preventScroll: true
-            });
+        applyKeyboardHeight(height);
+    }
 
-        } catch (_) {
+    /* ---------------------------------------------------------
+       تحديث مؤجل
+       --------------------------------------------------------- */
 
-            try {
-                messageInput.focus();
-            } catch (_) {}
+    function scheduleUpdate(delay) {
+        if (updateTimer) {
+            clearTimeout(updateTimer);
         }
 
+        updateTimer = setTimeout(function () {
+            updateTimer = null;
+            update();
+        }, delay || 0);
+    }
+
+    /* ---------------------------------------------------------
+       التأكد من أن الصفحة جاهزة
+       --------------------------------------------------------- */
+
+    function isPageReady() {
         return (
-            document.activeElement ===
-            messageInput
+            document.readyState === "interactive" ||
+            document.readyState === "complete"
         );
     }
 
-    /*
-       هذه الدالة سنستخدمها من messages-send.js
-       بعد إرسال الرسالة.
-    */
-    function keepKeyboardOpen() {
+    /* ---------------------------------------------------------
+       التركيز على حقل الرسالة
+       --------------------------------------------------------- */
 
-        keepKeyboardRequested =
-            true;
-
+    function handleInputFocus() {
         /*
-           نركز مباشرة.
-        */
-        focusInput();
+         * ننتظر قليلاً لأن VisualViewport قد لا يتغير
+         * بنفس اللحظة التي يفتح فيها الكيبورد.
+         */
 
-        /*
-           ننتظر إعادة حساب الـ viewport.
-        */
-        requestAnimationFrame(() => {
+        scheduleUpdate(30);
 
-            detectKeyboard();
-
-            focusInput();
-
-            requestAnimationFrame(() => {
-
-                detectKeyboard();
-
-                updateInputPosition();
-
-            });
-
-        });
-
-        /*
-           محاولة إضافية بعد تأخير بسيط،
-           لأن بعض متصفحات Android تغلق الكيبورد
-           بعد انتهاء عملية async.
-        */
-        setTimeout(() => {
-
-            if (
-                keepKeyboardRequested
-            ) {
-                focusInput();
-
-                detectKeyboard();
-
-                updateInputPosition();
-            }
-
-        }, 80);
-
-        setTimeout(() => {
-
-            if (
-                keepKeyboardRequested
-            ) {
-                focusInput();
-
-                detectKeyboard();
-
-                updateInputPosition();
-            }
-
-        }, 180);
+        setTimeout(update, 100);
+        setTimeout(update, 250);
+        setTimeout(update, 500);
     }
 
-    function stopKeepingKeyboardOpen() {
+    /* ---------------------------------------------------------
+       فقدان التركيز
+       --------------------------------------------------------- */
 
-        keepKeyboardRequested =
-            false;
+    function handleInputBlur() {
+        /*
+         * بعد إغلاق الكيبورد قد يحتاج النظام عدة لحظات
+         * لإعادة حجم الـ viewport الطبيعي.
+         */
+
+        scheduleUpdate(50);
+
+        setTimeout(update, 150);
+        setTimeout(update, 350);
     }
 
-    /* =========================================================
-       VIEWPORT EVENTS
-    ========================================================= */
+    /* ---------------------------------------------------------
+       تغيير حجم نافذة المتصفح
+       --------------------------------------------------------- */
 
-    const viewport =
-        getViewport();
+    function handleWindowResize() {
+        scheduleUpdate(20);
 
-    if (viewport) {
+        setTimeout(update, 100);
+    }
 
-        viewport.addEventListener(
+    /* ---------------------------------------------------------
+       تدوير الشاشة
+       --------------------------------------------------------- */
+
+    function handleOrientationChange() {
+        /*
+         * بعد تدوير الهاتف يتغير:
+         * width
+         * height
+         * visualViewport
+         *
+         * لذلك نعمل عدة تحديثات.
+         */
+
+        scheduleUpdate(50);
+
+        setTimeout(update, 150);
+        setTimeout(update, 350);
+        setTimeout(update, 600);
+    }
+
+    /* ---------------------------------------------------------
+       VisualViewport
+       --------------------------------------------------------- */
+
+    function setupVisualViewport() {
+        if (!window.visualViewport) {
+            return;
+        }
+
+        visualViewportInstance = window.visualViewport;
+
+        visualViewportInstance.addEventListener(
             "resize",
-            () => {
-
-                detectKeyboard();
-
-                updateInputPosition();
-
+            function () {
+                scheduleUpdate(0);
             },
             {
                 passive: true
             }
         );
 
-        viewport.addEventListener(
+        visualViewportInstance.addEventListener(
             "scroll",
-            () => {
-
-                if (keyboardVisible) {
-                    updateInputPosition();
-                }
-
+            function () {
+                scheduleUpdate(0);
             },
             {
                 passive: true
@@ -375,142 +273,193 @@
         );
     }
 
-    window.addEventListener(
-        "resize",
-        () => {
+    /* ---------------------------------------------------------
+       مراقبة فتح المحادثة
+       --------------------------------------------------------- */
 
-            detectKeyboard();
+    function setupChatObserver() {
+        const chatView = document.getElementById(
+            "chatView"
+        );
 
-            updateInputPosition();
-
-        },
-        {
-            passive: true
+        if (!chatView) {
+            return;
         }
-    );
 
-    /* =========================================================
-       INPUT EVENTS
-    ========================================================= */
+        const observer = new MutationObserver(
+            function () {
+                /*
+                 * عندما تفتح أو تغلق المحادثة
+                 * نعيد حساب الـ viewport.
+                 */
 
-    messageInput.addEventListener(
-        "focus",
-        () => {
+                scheduleUpdate(0);
 
-            /*
-               نعطي المتصفح فرصة لفتح الكيبورد.
-            */
-            requestAnimationFrame(() => {
-
-                detectKeyboard();
-
-                updateInputPosition();
-
-            });
-
-        }
-    );
-
-    messageInput.addEventListener(
-        "blur",
-        () => {
-
-            /*
-               لا نعتبر الـ blur وحده دليلاً على إغلاق
-               الكيبورد، لأن Android قد يغير الـ focus
-               مؤقتاً أثناء تحديث الـ viewport.
-            */
-
-            setTimeout(() => {
-
-                detectKeyboard();
-
-            }, 50);
-
-        }
-    );
-
-    /* =========================================================
-       PAGE VISIBILITY
-    ========================================================= */
-
-    document.addEventListener(
-        "visibilitychange",
-        () => {
-
-            if (
-                !document.hidden
-            ) {
-
-                requestAnimationFrame(() => {
-
-                    detectKeyboard();
-
-                    updateInputPosition();
-
-                });
-
+                setTimeout(update, 100);
             }
+        );
 
+        observer.observe(chatView, {
+            attributes: true,
+            attributeFilter: [
+                "class"
+            ]
+        });
+    }
+
+    /* ---------------------------------------------------------
+       مراقبة حقل الكتابة
+       --------------------------------------------------------- */
+
+    function setupInputEvents() {
+        const input = document.getElementById(
+            "messageInput"
+        );
+
+        if (!input) {
+            return;
         }
-    );
 
-    /* =========================================================
-       INITIALIZE
-    ========================================================= */
+        input.addEventListener(
+            "focus",
+            handleInputFocus,
+            {
+                passive: true
+            }
+        );
+
+        input.addEventListener(
+            "blur",
+            handleInputBlur,
+            {
+                passive: true
+            }
+        );
+    }
+
+    /* ---------------------------------------------------------
+       مراقبة الصفحة
+       --------------------------------------------------------- */
+
+    function setupWindowEvents() {
+        window.addEventListener(
+            "resize",
+            handleWindowResize,
+            {
+                passive: true
+            }
+        );
+
+        window.addEventListener(
+            "orientationchange",
+            handleOrientationChange,
+            {
+                passive: true
+            }
+        );
+
+        /*
+         * pageshow مهم عند الرجوع للصفحة من history.
+         */
+        window.addEventListener(
+            "pageshow",
+            function () {
+                scheduleUpdate(50);
+
+                setTimeout(update, 200);
+            },
+            {
+                passive: true
+            }
+        );
+    }
+
+    /* ---------------------------------------------------------
+       التهيئة
+       --------------------------------------------------------- */
 
     function init() {
-
         if (initialized) {
             return;
         }
 
         initialized = true;
 
-        detectKeyboard();
-
-        updateInputPosition();
-
-        lastViewportHeight =
-            window.innerHeight;
-
-        console.log(
-            "WFESC Keyboard: initialized"
+        /*
+         * البداية بدون كيبورد.
+         */
+        root.style.setProperty(
+            "--keyboard-height",
+            "0px"
         );
+
+        root.style.setProperty(
+            "--composer-bottom",
+            navigationHeight + "px"
+        );
+
+        body.classList.remove(
+            "wfesc-keyboard-open"
+        );
+
+        setupVisualViewport();
+        setupInputEvents();
+        setupWindowEvents();
+        setupChatObserver();
+
+        /*
+         * تحديث أولي.
+         */
+        scheduleUpdate(0);
+
+        /*
+         * تحديثات إضافية بعد اكتمال رسم الصفحة.
+         */
+        setTimeout(update, 100);
+        setTimeout(update, 300);
+        setTimeout(update, 600);
     }
 
-    /* =========================================================
-       PUBLIC API
-    ========================================================= */
+    /* ---------------------------------------------------------
+       API عام
+       --------------------------------------------------------- */
 
-    window.WFESC_MESSAGES_KEYBOARD = {
+    window.WFESC_MESSAGE_KEYBOARD = {
+        init: init,
 
-        init,
-
-        getKeyboardHeight() {
-            return keyboardHeight;
+        update: function () {
+            update();
         },
 
-        isKeyboardVisible() {
-            return keyboardVisible;
+        getHeight: function () {
+            return calculateKeyboardHeight();
         },
 
-        focusInput,
-
-        keepKeyboardOpen,
-
-        stopKeepingKeyboardOpen,
-
-        updateInputPosition,
-
-        detectKeyboard
-
+        isOpen: function () {
+            return calculateKeyboardHeight() > 0;
+        }
     };
 
-    /* =========================================================
-       START
-    ========================================================= */
+    /* ---------------------------------------------------------
+       تشغيل تلقائي
+       --------------------------------------------------------- */
 
-    init();
+    function boot() {
+        if (!isPageReady()) {
+            document.addEventListener(
+                "DOMContentLoaded",
+                init,
+                {
+                    once: true
+                }
+            );
+
+            return;
+        }
+
+        init();
+    }
+
+    boot();
 
 })();
