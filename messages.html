@@ -24,7 +24,65 @@
     --red:#ff5f6d;
     --blue:#62a8ff;
     --shadow:0 20px 60px rgba(0,0,0,.45);
+    --blur:24px;
 }
+
+/* =========================
+   CENTRAL APPEARANCE HOOKS
+========================= */
+
+html.wfesc-no-animation *,
+html.wfesc-no-animation *::before,
+html.wfesc-no-animation *::after{
+    animation:none !important;
+    transition:none !important;
+    scroll-behavior:auto !important;
+}
+
+html.wfesc-no-glass .glass,
+html.wfesc-no-glass .search-input,
+html.wfesc-no-glass .activity-box,
+html.wfesc-no-glass .conversation-menu{
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+    box-shadow:none !important;
+}
+
+html.wfesc-light{
+    --bg:#f3f5f8;
+    --glass:rgba(255,255,255,.78);
+    --glass-strong:rgba(255,255,255,.9);
+    --glass-border:rgba(0,0,0,.09);
+    --text:#171717;
+    --muted:#666;
+    --shadow:0 20px 50px rgba(0,0,0,.12);
+}
+
+html.wfesc-light body{
+    background:
+        radial-gradient(circle at 15% 10%,rgba(80,130,255,.12),transparent 30%),
+        radial-gradient(circle at 85% 20%,rgba(0,200,120,.08),transparent 28%),
+        #f3f5f8;
+    color:var(--text);
+}
+
+html.wfesc-light .search-input,
+html.wfesc-light .activity-box,
+html.wfesc-light .icon-btn,
+html.wfesc-light .search-mode,
+html.wfesc-light .message-input{
+    color:#171717;
+}
+
+html.wfesc-light .message-content,
+html.wfesc-light .conversation-name,
+html.wfesc-light .chat-user-name{
+    color:#171717;
+}
+
+/* =========================
+   BASE
+========================= */
 
 html{
     scroll-behavior:smooth;
@@ -42,6 +100,16 @@ body{
     overflow-x:hidden;
 }
 
+button,
+input,
+textarea{
+    font-family:inherit;
+}
+
+button{
+    -webkit-tap-highlight-color:transparent;
+}
+
 /* =========================
    LIQUID GLASS
 ========================= */
@@ -56,8 +124,8 @@ body{
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,.06),
         var(--shadow);
-    backdrop-filter:blur(24px) saturate(140%);
-    -webkit-backdrop-filter:blur(24px) saturate(140%);
+    backdrop-filter:blur(var(--blur)) saturate(140%);
+    -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);
 }
 
 .page{
@@ -128,6 +196,59 @@ body{
 }
 
 /* =========================
+   HEADER NAV
+========================= */
+
+.header-nav{
+    display:flex;
+    align-items:center;
+    gap:7px;
+}
+
+.header-nav-btn{
+    min-height:40px;
+    padding:0 14px;
+    border-radius:13px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.045);
+    color:#aaa;
+    cursor:pointer;
+    transition:.22s;
+}
+
+.header-nav-btn:hover{
+    background:rgba(255,255,255,.08);
+    color:#fff;
+}
+
+.header-nav-btn.active{
+    background:rgba(98,168,255,.13);
+    border-color:rgba(98,168,255,.28);
+    color:#fff;
+}
+
+.notification-indicator{
+    position:relative;
+}
+
+.notification-indicator::after{
+    content:"";
+    position:absolute;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--red);
+    top:7px;
+    right:7px;
+    box-shadow:0 0 9px rgba(255,95,109,.7);
+    display:none;
+}
+
+.notification-indicator.has-notifications::after{
+    display:block;
+}
+
+/* =========================
    ACTIVITY
 ========================= */
 
@@ -143,6 +264,7 @@ body{
     cursor:pointer;
     transition:.25s;
     user-select:none;
+    color:inherit;
 }
 
 .activity-box:hover{
@@ -166,8 +288,12 @@ body{
 }
 
 @keyframes activityPulse{
-    0%,100%{box-shadow:0 0 0 0 rgba(66,232,139,.25)}
-    50%{box-shadow:0 0 0 6px rgba(66,232,139,0)}
+    0%,100%{
+        box-shadow:0 0 0 0 rgba(66,232,139,.25)
+    }
+    50%{
+        box-shadow:0 0 0 6px rgba(66,232,139,0)
+    }
 }
 
 .activity-text{
@@ -201,6 +327,7 @@ body{
     font-size:14px;
     transition:.25s;
     backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
 }
 
 .search-input:focus{
@@ -307,6 +434,7 @@ body{
     object-fit:cover;
     background:#171717;
     flex:none;
+    cursor:pointer;
 }
 
 .result-info{
@@ -331,6 +459,19 @@ body{
     color:#72aaff;
     font-size:11px;
     white-space:nowrap;
+}
+
+.support-search{
+    background:rgba(66,232,139,.045);
+}
+
+.support-search .result-avatar{
+    border-color:rgba(66,232,139,.2);
+}
+
+.support-search-label{
+    color:#7ee8a8;
+    font-size:11px;
 }
 
 /* =========================
@@ -421,6 +562,7 @@ body{
     object-fit:cover;
     background:#171717;
     border:1px solid rgba(255,255,255,.08);
+    cursor:pointer;
 }
 
 .online-small{
@@ -529,6 +671,7 @@ body{
     border-radius:15px;
     object-fit:cover;
     background:#171717;
+    cursor:pointer;
 }
 
 .chat-user-info{
@@ -598,19 +741,19 @@ body{
 
 .message-row{
     display:flex;
+    width:100%;
     margin:8px 0;
-    gap:8px;
-    animation:messageIn .22s ease;
+    animation:messageIn .25s cubic-bezier(.2,.8,.2,1);
 }
 
 @keyframes messageIn{
     from{
         opacity:0;
-        transform:translateY(5px) scale(.99);
+        transform:translateY(9px) scale(.96);
     }
     to{
         opacity:1;
-        transform:none;
+        transform:translateY(0) scale(1);
     }
 }
 
@@ -622,22 +765,15 @@ body{
     justify-content:flex-end;
 }
 
-.message-avatar{
-    width:31px;
-    height:31px;
-    border-radius:11px;
-    object-fit:cover;
-    align-self:flex-end;
-    cursor:pointer;
-}
-
 .message-bubble{
+    width:max-content;
     max-width:min(75%,520px);
-    padding:10px 13px;
+    padding:9px 12px 6px;
     border-radius:17px;
     background:rgba(255,255,255,.055);
     border:1px solid rgba(255,255,255,.07);
     position:relative;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
 }
 
 .message-row.mine .message-bubble{
@@ -654,6 +790,7 @@ body{
     font-size:13px;
     line-height:1.65;
     white-space:pre-wrap;
+    overflow-wrap:anywhere;
     word-break:break-word;
 }
 
@@ -664,7 +801,27 @@ body{
     gap:5px;
     color:#666;
     font-size:9px;
-    margin-top:4px;
+    margin-top:3px;
+    line-height:1;
+}
+
+.message-send-animation{
+    animation:sentPop .32s cubic-bezier(.2,.9,.2,1);
+}
+
+@keyframes sentPop{
+    0%{
+        opacity:0;
+        transform:translateY(8px) scale(.9);
+    }
+    70%{
+        opacity:1;
+        transform:translateY(-2px) scale(1.02);
+    }
+    100%{
+        opacity:1;
+        transform:none;
+    }
 }
 
 .message-highlight{
@@ -716,8 +873,14 @@ body{
 }
 
 @keyframes typingDot{
-    0%,60%,100%{transform:translateY(0);opacity:.4}
-    30%{transform:translateY(-4px);opacity:1}
+    0%,60%,100%{
+        transform:translateY(0);
+        opacity:.4
+    }
+    30%{
+        transform:translateY(-4px);
+        opacity:1
+    }
 }
 
 /* =========================
@@ -760,6 +923,8 @@ body{
     color:#9fc7ff;
     cursor:pointer;
     transition:.2s;
+    position:relative;
+    overflow:hidden;
 }
 
 .send-btn:hover{
@@ -769,6 +934,25 @@ body{
 .send-btn:disabled{
     opacity:.35;
     cursor:not-allowed;
+}
+
+.send-btn.sending{
+    animation:sendButtonPulse .5s ease;
+}
+
+@keyframes sendButtonPulse{
+    0%{
+        transform:scale(1);
+    }
+    40%{
+        transform:scale(.88);
+    }
+    75%{
+        transform:scale(1.08);
+    }
+    100%{
+        transform:scale(1);
+    }
 }
 
 /* =========================
@@ -784,100 +968,6 @@ body{
 .empty-state .big{
     font-size:38px;
     margin-bottom:12px;
-}
-
-/* =========================
-   NOTIFICATIONS
-========================= */
-
-.notifications-panel{
-    display:none;
-    position:fixed;
-    z-index:1000;
-    inset:0;
-    background:rgba(0,0,0,.65);
-    backdrop-filter:blur(8px);
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-}
-
-.notifications-panel.show{
-    display:flex;
-}
-
-.notifications-box{
-    width:min(520px,100%);
-    max-height:80vh;
-    border-radius:27px;
-    overflow:hidden;
-    animation:modalIn .25s ease;
-}
-
-@keyframes modalIn{
-    from{
-        opacity:0;
-        transform:translateY(12px) scale(.97);
-    }
-    to{
-        opacity:1;
-        transform:none;
-    }
-}
-
-.notifications-head{
-    height:65px;
-    padding:0 18px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom:1px solid rgba(255,255,255,.07);
-}
-
-.notifications-list{
-    max-height:calc(80vh - 65px);
-    overflow-y:auto;
-}
-
-.notification-item{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-    padding:15px;
-    border-bottom:1px solid rgba(255,255,255,.05);
-}
-
-.notification-item.unread{
-    background:rgba(98,168,255,.055);
-}
-
-.notification-avatar{
-    width:42px;
-    height:42px;
-    border-radius:14px;
-    object-fit:cover;
-}
-
-.notification-info{
-    flex:1;
-}
-
-.notification-text{
-    font-size:13px;
-    line-height:1.5;
-}
-
-.notification-time{
-    color:#666;
-    font-size:10px;
-    margin-top:5px;
-}
-
-.notification-delete{
-    background:none;
-    border:0;
-    color:#666;
-    cursor:pointer;
 }
 
 /* =========================
@@ -943,6 +1033,7 @@ body{
     justify-content:center;
     background:rgba(0,0,0,.65);
     backdrop-filter:blur(9px);
+    -webkit-backdrop-filter:blur(9px);
     padding:20px;
 }
 
@@ -955,6 +1046,17 @@ body{
     border-radius:25px;
     padding:22px;
     animation:modalIn .22s ease;
+}
+
+@keyframes modalIn{
+    from{
+        opacity:0;
+        transform:translateY(12px) scale(.97);
+    }
+    to{
+        opacity:1;
+        transform:none;
+    }
 }
 
 .modal h2{
@@ -1091,6 +1193,7 @@ body{
     border:1px solid rgba(255,255,255,.1);
     color:#eee;
     backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
     transition:.25s;
     font-size:12px;
     box-shadow:0 15px 40px rgba(0,0,0,.4);
@@ -1106,6 +1209,7 @@ body{
 ========================= */
 
 @media(max-width:800px){
+
     .messages-layout{
         grid-template-columns:1fr;
     }
@@ -1130,9 +1234,28 @@ body{
     .conversation-list{
         max-height:none;
     }
+
+}
+
+@media(max-width:700px){
+
+    .header-row{
+        flex-wrap:wrap;
+    }
+
+    .header-nav{
+        width:100%;
+        order:3;
+    }
+
+    .header-nav-btn{
+        flex:1;
+    }
+
 }
 
 @media(max-width:600px){
+
     .page{
         width:96%;
         padding-top:15px;
@@ -1178,13 +1301,14 @@ body{
     }
 
     .message-bubble{
-        max-width:82%;
+        max-width:84%;
     }
 
     .chat-messages{
         min-height:500px;
         max-height:500px;
     }
+
 }
 </style>
 </head>
@@ -1199,12 +1323,34 @@ body{
         <div class="header-row">
 
             <div class="header-title">
-                <div class="header-icon">💬</div>
+
+                <div class="header-icon">
+                    💬
+                </div>
 
                 <div>
                     <h1>الرسائل</h1>
-                    <p>محادثاتك وإشعاراتك</p>
+                    <p>محادثاتك الخاصة</p>
                 </div>
+
+            </div>
+
+            <div class="header-nav">
+
+                <button
+                    type="button"
+                    id="messagesHeaderButton"
+                    class="header-nav-btn active">
+                    💬 الرسائل
+                </button>
+
+                <button
+                    type="button"
+                    id="notificationsHeaderButton"
+                    class="header-nav-btn notification-indicator">
+                    🔔 الإشعارات
+                </button>
+
             </div>
 
             <button
@@ -1237,7 +1383,9 @@ body{
 
         <div class="search-input-wrap">
 
-            <span class="search-icon">🔎</span>
+            <span class="search-icon">
+                🔎
+            </span>
 
             <input
                 id="messageSearch"
@@ -1281,7 +1429,8 @@ body{
                 نتائج البحث
             </strong>
 
-            <div style="display:flex;align-items:center;gap:10px">
+            <div
+                style="display:flex;align-items:center;gap:10px">
 
                 <div
                     id="searchNavigation"
@@ -1333,24 +1482,22 @@ body{
 
         <!-- CONVERSATIONS -->
 
-        <section class="conversations-panel glass">
+        <section
+            class="conversations-panel glass">
 
             <div class="panel-head">
 
                 <div>
-                    <div class="panel-title">المحادثات</div>
+
+                    <div class="panel-title">
+                        المحادثات
+                    </div>
+
                     <div class="panel-subtitle">
                         رسائلك الأخيرة
                     </div>
-                </div>
 
-                <button
-                    type="button"
-                    id="notificationsButton"
-                    class="icon-btn"
-                    title="الإشعارات">
-                    🔔
-                </button>
+                </div>
 
             </div>
 
@@ -1359,8 +1506,15 @@ body{
                 class="conversation-list">
 
                 <div class="empty-state">
-                    <div class="big">💬</div>
-                    <div>جاري تحميل المحادثات...</div>
+
+                    <div class="big">
+                        💬
+                    </div>
+
+                    <div>
+                        جاري تحميل المحادثات...
+                    </div>
+
                 </div>
 
             </div>
@@ -1413,14 +1567,6 @@ body{
 
                     <button
                         type="button"
-                        id="chatNotifications"
-                        class="icon-btn"
-                        title="الإشعارات">
-                        🔔
-                    </button>
-
-                    <button
-                        type="button"
                         id="chatMenuButton"
                         class="icon-btn"
                         title="خيارات المحادثة">
@@ -1439,8 +1585,15 @@ body{
                 <div class="chat-empty">
 
                     <div>
-                        <div class="chat-empty-icon">💬</div>
-                        <div>اختر محادثة لعرض الرسائل</div>
+
+                        <div class="chat-empty-icon">
+                            💬
+                        </div>
+
+                        <div>
+                            اختر محادثة لعرض الرسائل
+                        </div>
+
                     </div>
 
                 </div>
@@ -1456,12 +1609,16 @@ body{
                     المستخدم
                 </span>
 
-                <span>يكتب</span>
+                <span>
+                    يكتب
+                </span>
 
                 <span class="typing-dots">
+
                     <i></i>
                     <i></i>
                     <i></i>
+
                 </span>
 
             </div>
@@ -1496,62 +1653,6 @@ body{
 </div>
 
 
-<!-- NOTIFICATIONS -->
-
-<div
-    id="notificationsPanel"
-    class="notifications-panel">
-
-    <div class="notifications-box glass">
-
-        <div class="notifications-head">
-
-            <strong>الإشعارات</strong>
-
-            <div style="display:flex;gap:7px">
-
-                <button
-                    type="button"
-                    id="markAllNotifications"
-                    class="icon-btn"
-                    title="تحديد الكل كمقروء">
-                    ✓
-                </button>
-
-                <button
-                    type="button"
-                    id="deleteAllNotifications"
-                    class="icon-btn"
-                    title="حذف الكل">
-                    🗑
-                </button>
-
-                <button
-                    type="button"
-                    id="closeNotifications"
-                    class="icon-btn">
-                    ×
-                </button>
-
-            </div>
-
-        </div>
-
-        <div
-            id="notificationsList"
-            class="notifications-list">
-
-            <div class="empty-state">
-                لا توجد إشعارات
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
 <!-- ACTIVITY MODAL -->
 
 <div
@@ -1560,7 +1661,9 @@ body{
 
     <div class="modal glass">
 
-        <h2>حالة النشاط</h2>
+        <h2>
+            حالة النشاط
+        </h2>
 
         <p>
             عند تفعيل هذا الخيار يمكن للمستخدمين الذين تتواصل معهم
@@ -1570,12 +1673,16 @@ body{
         <div class="setting-row">
 
             <div>
-                <strong>إظهار حالة النشاط</strong>
+
+                <strong>
+                    إظهار حالة النشاط
+                </strong>
 
                 <div
                     style="color:#777;font-size:11px;margin-top:4px">
                     متصل / غير متصل
                 </div>
+
             </div>
 
             <label class="switch">
@@ -1655,6 +1762,7 @@ body{
 <script>
 /* =========================================================
    WFESC MESSAGES SYSTEM
+   VERSION: FINAL MESSAGE SYSTEM
 ========================================================= */
 
 (function(){
@@ -1666,7 +1774,28 @@ body{
    CONFIG
 ========================================================= */
 
-const SUPPORT_AVATAR = "./sborts-wfesc-help.jpg";
+const SUPPORT_AVATAR =
+    "./sborts-wfesc-help.jpg";
+
+const SUPPORT_SEARCH_WORDS = [
+    "الدعم",
+    "اتصال بالدعم",
+    "الاتصال بالدعم",
+    "دعم wfesc",
+    "support",
+    "wfesc support"
+];
+
+
+/*
+   الأدمن لا يظهر في بحث المستخدمين كحساب عادي.
+   الحسابات نفسها تبقى طبيعية داخل النظام.
+*/
+const SUPPORT_ADMIN_IDS = new Set([
+    "3ef0346c-f619-4bcd-86de-85667da0810f",
+    "b78656e9-0b1c-49ba-b013-4c13512b3f6d"
+]);
+
 
 const DEFAULT_AVATAR =
     "data:image/svg+xml;charset=UTF-8," +
@@ -1675,7 +1804,10 @@ const DEFAULT_AVATAR =
              width="120"
              height="120"
              viewBox="0 0 120 120">
-            <rect width="120" height="120" rx="30" fill="#151515"/>
+            <rect width="120"
+                  height="120"
+                  rx="30"
+                  fill="#151515"/>
             <text x="60"
                   y="72"
                   text-anchor="middle"
@@ -1714,54 +1846,93 @@ let messageSearchResults = [];
 let searchMatches = [];
 let currentSearchIndex = 0;
 
-let notifications = [];
-
 let activityEnabled = true;
 let activityDraft = true;
+
+let initialized = false;
+let authListenerAttached = false;
+
+let sendingMessage = false;
 
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+    document.getElementById(id);
 
-const layout = $("messagesLayout");
+const layout =
+    $("messagesLayout");
 
-const conversationList = $("conversationList");
+const conversationList =
+    $("conversationList");
 
-const chatAvatar = $("chatAvatar");
-const chatName = $("chatName");
-const chatStatus = $("chatStatus");
-const chatUser = $("chatUser");
+const chatAvatar =
+    $("chatAvatar");
 
-const chatMessages = $("chatMessages");
+const chatName =
+    $("chatName");
 
-const messageInput = $("messageInput");
-const messageForm = $("messageForm");
-const sendButton = $("sendButton");
+const chatStatus =
+    $("chatStatus");
 
-const typingIndicator = $("typingIndicator");
-const typingName = $("typingName");
+const chatUser =
+    $("chatUser");
 
-const messageSearch = $("messageSearch");
-const searchResults = $("searchResults");
-const searchResultsList = $("searchResultsList");
-const searchResultsTitle = $("searchResultsTitle");
+const chatMessages =
+    $("chatMessages");
 
-const searchNavigation = $("searchNavigation");
-const searchMatchCounter = $("searchMatchCounter");
+const messageInput =
+    $("messageInput");
 
-const activityButton = $("activityButton");
-const activityDot = $("activityDot");
-const activityText = $("activityText");
+const messageForm =
+    $("messageForm");
 
-const notificationsPanel = $("notificationsPanel");
-const notificationsList = $("notificationsList");
+const sendButton =
+    $("sendButton");
 
-const conversationMenu = $("conversationMenu");
+const typingIndicator =
+    $("typingIndicator");
 
-const toast = $("toast");
+const typingName =
+    $("typingName");
+
+const messageSearch =
+    $("messageSearch");
+
+const searchResults =
+    $("searchResults");
+
+const searchResultsList =
+    $("searchResultsList");
+
+const searchResultsTitle =
+    $("searchResultsTitle");
+
+const searchNavigation =
+    $("searchNavigation");
+
+const searchMatchCounter =
+    $("searchMatchCounter");
+
+const activityButton =
+    $("activityButton");
+
+const activityDot =
+    $("activityDot");
+
+const activityText =
+    $("activityText");
+
+const conversationMenu =
+    $("conversationMenu");
+
+const toast =
+    $("toast");
+
+const notificationsHeaderButton =
+    $("notificationsHeaderButton");
 
 
 /* =========================================================
@@ -1789,90 +1960,159 @@ function safeAvatar(url){
 
 function formatTime(dateString){
 
-    if(!dateString) return "";
+    if(!dateString)
+        return "";
 
-    const date = new Date(dateString);
+    const date =
+        new Date(dateString);
 
-    if(Number.isNaN(date.getTime())) return "";
+    if(
+        Number.isNaN(
+            date.getTime()
+        )
+    ){
 
-    const now = new Date();
+        return "";
 
-    const diff = now - date;
+    }
+
+    const now =
+        new Date();
+
+    const diff =
+        now - date;
 
     if(diff < 60000){
+
         return "الآن";
+
     }
 
     if(diff < 3600000){
-        return Math.floor(diff / 60000) + " د";
+
+        return (
+            Math.floor(
+                diff / 60000
+            ) +
+            " د"
+        );
+
     }
 
-    if(date.toDateString() === now.toDateString()){
+    if(
+        date.toDateString() ===
+        now.toDateString()
+    ){
 
-        return date.toLocaleTimeString("ar-IQ",{
+        return date.toLocaleTimeString(
+            "ar-IQ",
+            {
+                hour:"2-digit",
+                minute:"2-digit"
+            }
+        );
+
+    }
+
+    return date.toLocaleDateString(
+        "ar-IQ",
+        {
+            day:"numeric",
+            month:"short"
+        }
+    );
+
+}
+
+
+function formatMessageTime(dateString){
+
+    if(!dateString)
+        return "";
+
+    const date =
+        new Date(dateString);
+
+    if(
+        Number.isNaN(
+            date.getTime()
+        )
+    ){
+
+        return "";
+
+    }
+
+    return date.toLocaleTimeString(
+        "ar-IQ",
+        {
             hour:"2-digit",
             minute:"2-digit"
-        });
-
-    }
-
-    return date.toLocaleDateString("ar-IQ",{
-        day:"numeric",
-        month:"short"
-    });
+        }
+    );
 
 }
 
 
 function showToast(message){
 
-    toast.textContent = message;
+    toast.textContent =
+        message;
 
-    toast.classList.add("show");
+    toast.classList.add(
+        "show"
+    );
 
-    clearTimeout(showToast.timer);
+    clearTimeout(
+        showToast.timer
+    );
 
-    showToast.timer = setTimeout(()=>{
-        toast.classList.remove("show");
-    },3000);
+    showToast.timer =
+        setTimeout(
+            ()=>{
+                toast.classList.remove(
+                    "show"
+                );
+            },
+            3000
+        );
 
 }
 
 
 function scrollChatToBottom(){
 
-    requestAnimationFrame(()=>{
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
+    requestAnimationFrame(
+        ()=>{
+            chatMessages.scrollTop =
+                chatMessages.scrollHeight;
+        }
+    );
 
 }
 
 
 function closeMenus(){
 
-    conversationMenu.classList.remove("show");
+    conversationMenu.classList.remove(
+        "show"
+    );
 
 }
 
-
-function getSettingsAuth(){
-
-    return window.WFESCSettingsAuth || null;
-
-}
-
-
-/* =========================================================
-   CLIENT
-========================================================= */
 
 function getSupabaseClient(){
 
     if(window.WFESCSupabase){
+
         return window.WFESCSupabase;
+
     }
 
-    if(window.supabase && window.WFESC_CONFIG){
+    if(
+        window.supabase &&
+        window.WFESC_CONFIG
+    ){
 
         const url =
             window.WFESC_CONFIG.supabaseUrl ||
@@ -1900,12 +2140,155 @@ function getSupabaseClient(){
 
 
 /* =========================================================
+   CENTRAL SETTINGS HOOK
+   Settings can call:
+   window.WFESCApplyMessagesAppearance(...)
+========================================================= */
+
+window.WFESCApplyMessagesAppearance =
+function(settings = {}){
+
+    const root =
+        document.documentElement;
+
+    if(
+        settings.darkMode === false
+    ){
+
+        root.classList.add(
+            "wfesc-light"
+        );
+
+    }else{
+
+        root.classList.remove(
+            "wfesc-light"
+        );
+
+    }
+
+    if(
+        settings.animations === false
+    ){
+
+        root.classList.add(
+            "wfesc-no-animation"
+        );
+
+    }else{
+
+        root.classList.remove(
+            "wfesc-no-animation"
+        );
+
+    }
+
+    if(
+        settings.liquidGlass === false
+    ){
+
+        root.classList.add(
+            "wfesc-no-glass"
+        );
+
+    }else{
+
+        root.classList.remove(
+            "wfesc-no-glass"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   SUPPORT SEARCH
+========================================================= */
+
+function isSupportSearch(query){
+
+    const normalized =
+        String(query || "")
+            .trim()
+            .toLowerCase();
+
+    if(!normalized)
+        return false;
+
+    return SUPPORT_SEARCH_WORDS.some(
+        word =>
+            normalized ===
+            word.toLowerCase()
+    );
+
+}
+
+
+function addSupportSearchResult(){
+
+    const item =
+        document.createElement("div");
+
+    item.className =
+        "result-item support-search";
+
+    item.innerHTML = `
+
+        <img
+            class="result-avatar"
+            src="${escapeHTML(
+                SUPPORT_AVATAR
+            )}"
+            alt="">
+
+        <div class="result-info">
+
+            <div class="result-name">
+                الاتصال بالدعم
+            </div>
+
+            <div class="support-search-label">
+                افتح محادثة مباشرة مع دعم WFESC
+            </div>
+
+        </div>
+
+    `;
+
+    item.addEventListener(
+        "click",
+        async ()=>{
+
+            hideSearchResults();
+
+            messageSearch.value = "";
+
+            await openSupport();
+
+        }
+    );
+
+    searchResultsList.prepend(
+        item
+    );
+
+}
+
+
+/* =========================================================
    AUTH
 ========================================================= */
 
 async function loadSession(){
 
-    client = getSupabaseClient();
+    if(initialized)
+        return;
+
+    initialized = true;
+
+    client =
+        getSupabaseClient();
 
     if(!client){
 
@@ -1922,11 +2305,15 @@ async function loadSession(){
         const {
             data,
             error
-        } = await client.auth.getSession();
+        } =
+            await client.auth.getSession();
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
-        currentUser = data?.session?.user || null;
+        currentUser =
+            data?.session?.user ||
+            null;
 
         if(!currentUser){
 
@@ -1934,11 +2321,15 @@ async function loadSession(){
                 "سجّل الدخول من الإعدادات لاستخدام الرسائل"
             );
 
+            attachAuthListener();
+
             return;
 
         }
 
         await startPrivateSystem();
+
+        attachAuthListener();
 
     }catch(error){
 
@@ -1948,34 +2339,58 @@ async function loadSession(){
             "تعذر تحميل الحساب"
         );
 
+        attachAuthListener();
+
     }
 
+}
+
+
+function attachAuthListener(){
+
+    if(
+        authListenerAttached ||
+        !client
+    ){
+
+        return;
+
+    }
+
+    authListenerAttached = true;
 
     client.auth.onAuthStateChange(
         async (_event,session)=>{
 
             const nextUser =
-                session?.user || null;
+                session?.user ||
+                null;
 
-            if(
-                nextUser?.id !== currentUser?.id
-            ){
+            const oldId =
+                currentUser?.id ||
+                null;
 
-                currentUser = nextUser;
+            const newId =
+                nextUser?.id ||
+                null;
 
-                if(currentUser){
+            if(oldId === newId)
+                return;
 
-                    await startPrivateSystem();
+            currentUser =
+                nextUser;
 
-                }else{
+            if(currentUser){
 
-                    stopPrivateSystem();
+                await startPrivateSystem();
 
-                    showGuestState(
-                        "سجّل الدخول لاستخدام الرسائل"
-                    );
+            }else{
 
-                }
+                stopPrivateSystem();
+
+                showGuestState(
+                    "سجّل الدخول لاستخدام الرسائل"
+                );
 
             }
 
@@ -1992,28 +2407,55 @@ async function loadSession(){
 function showGuestState(message){
 
     conversationList.innerHTML = `
+
         <div class="empty-state">
-            <div class="big">🔐</div>
-            <div>${escapeHTML(message)}</div>
+
+            <div class="big">
+                🔐
+            </div>
+
+            <div>
+                ${escapeHTML(message)}
+            </div>
+
         </div>
+
     `;
 
     chatMessages.innerHTML = `
+
         <div class="chat-empty">
+
             <div>
-                <div class="chat-empty-icon">💬</div>
-                <div>${escapeHTML(message)}</div>
+
+                <div class="chat-empty-icon">
+                    💬
+                </div>
+
+                <div>
+                    ${escapeHTML(message)}
+                </div>
+
             </div>
+
         </div>
+
     `;
 
-    messageInput.disabled = true;
-    sendButton.disabled = true;
+    messageInput.disabled =
+        true;
 
-    chatName.textContent = "الرسائل";
-    chatStatus.textContent = "تسجيل الدخول مطلوب";
+    sendButton.disabled =
+        true;
 
-    chatAvatar.src = DEFAULT_AVATAR;
+    chatName.textContent =
+        "الرسائل";
+
+    chatStatus.textContent =
+        "تسجيل الدخول مطلوب";
+
+    chatAvatar.src =
+        DEFAULT_AVATAR;
 
 }
 
@@ -2028,23 +2470,88 @@ async function startPrivateSystem(){
 
     closeMenus();
 
-    currentConversationId = null;
-    currentConversationType = null;
-    currentContact = null;
+    currentConversationId =
+        null;
+
+    currentConversationType =
+        null;
+
+    currentContact =
+        null;
+
     currentMessages = [];
 
-    messageInput.disabled = true;
-    sendButton.disabled = true;
+    currentMessageMap.clear();
+
+    contactsCache.clear();
+
+    layout.classList.remove(
+        "chat-open"
+    );
+
+    messageInput.disabled =
+        true;
+
+    sendButton.disabled =
+        true;
 
     await loadActivitySetting();
 
-    await loadConversations();
+    /*
+       إنشاء/إضافة المستخدم إلى محادثة الدعم
+       حتى يظهر الدعم في قائمة المحادثات.
+    */
+    await ensureSupportConversation();
 
-    await loadNotifications();
+    await loadConversations();
 
     await setPresence(true);
 
     subscribeRealtime();
+
+}
+
+
+/* =========================================================
+   SUPPORT ENSURE
+========================================================= */
+
+async function ensureSupportConversation(){
+
+    if(
+        !client ||
+        !currentUser
+    ){
+
+        return null;
+
+    }
+
+    try{
+
+        const {
+            data,
+            error
+        } =
+            await client.rpc(
+                "get_or_create_support_conversation"
+            );
+
+        if(error)
+            throw error;
+
+        return data || null;
+
+    }catch(error){
+
+        console.error(
+            "Support setup error:",
+            error
+        );
+
+        return null;
+
+    }
 
 }
 
@@ -2057,28 +2564,44 @@ function stopPrivateSystem(){
 
     clearSubscriptions();
 
-    if(client && currentUser){
+    if(
+        client &&
+        currentUser
+    ){
 
-        setPresence(false).catch(()=>{});
+        setPresence(false)
+            .catch(()=>{});
 
     }
 
     conversations = [];
+
     contactsCache.clear();
 
-    currentConversationId = null;
-    currentContact = null;
+    currentConversationId =
+        null;
 
-    conversationList.innerHTML = "";
+    currentContact =
+        null;
 
-    currentUser = null;
+    currentMessages = [];
 
-    activityEnabled = false;
+    conversationList.innerHTML =
+        "";
+
+    currentUser =
+        null;
+
+    activityEnabled =
+        false;
 
     updateActivityUI();
 
-    messageInput.disabled = true;
-    sendButton.disabled = true;
+    messageInput.disabled =
+        true;
+
+    sendButton.disabled =
+        true;
 
 }
 
@@ -2089,25 +2612,32 @@ function stopPrivateSystem(){
 
 async function loadActivitySetting(){
 
-    if(!currentUser) return;
+    if(!currentUser)
+        return;
 
     try{
 
         const {
             data,
             error
-        } = await client
-            .from("profiles")
-            .select("show_activity")
-            .eq("id",currentUser.id)
-            .maybeSingle();
+        } =
+            await client
+                .from("profiles")
+                .select("show_activity")
+                .eq(
+                    "id",
+                    currentUser.id
+                )
+                .maybeSingle();
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         activityEnabled =
             data?.show_activity !== false;
 
-        activityDraft = activityEnabled;
+        activityDraft =
+            activityEnabled;
 
         updateActivityUI();
 
@@ -2127,13 +2657,21 @@ function updateActivityUI(){
 
     if(activityEnabled){
 
-        activityDot.classList.add("active");
-        activityText.textContent = "نشط";
+        activityDot.classList.add(
+            "active"
+        );
+
+        activityText.textContent =
+            "نشط";
 
     }else{
 
-        activityDot.classList.remove("active");
-        activityText.textContent = "مخفي";
+        activityDot.classList.remove(
+            "active"
+        );
+
+        activityText.textContent =
+            "مخفي";
 
     }
 
@@ -2142,7 +2680,14 @@ function updateActivityUI(){
 
 async function setPresence(online){
 
-    if(!client || !currentUser) return;
+    if(
+        !client ||
+        !currentUser
+    ){
+
+        return;
+
+    }
 
     try{
 
@@ -2167,22 +2712,36 @@ async function setPresence(online){
 
 async function saveActivitySetting(){
 
-    if(!client || !currentUser) return;
+    if(
+        !client ||
+        !currentUser
+    ){
+
+        return;
+
+    }
 
     try{
 
         const {
             error
-        } = await client
-            .from("profiles")
-            .update({
-                show_activity:activityDraft
-            })
-            .eq("id",currentUser.id);
+        } =
+            await client
+                .from("profiles")
+                .update({
+                    show_activity:
+                        activityDraft
+                })
+                .eq(
+                    "id",
+                    currentUser.id
+                );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
-        activityEnabled = activityDraft;
+        activityEnabled =
+            activityDraft;
 
         await setPresence(true);
 
@@ -2213,19 +2772,22 @@ async function saveActivitySetting(){
 
 function openActivityModal(){
 
-    activityDraft = activityEnabled;
+    activityDraft =
+        activityEnabled;
 
     $("activityToggle").checked =
         activityDraft;
 
-    $("activityModal").classList.add("show");
+    $("activityModal")
+        .classList.add("show");
 
 }
 
 
 function closeActivityModal(){
 
-    $("activityModal").classList.remove("show");
+    $("activityModal")
+        .classList.remove("show");
 
 }
 
@@ -2236,35 +2798,41 @@ function closeActivityModal(){
 
 async function loadConversations(){
 
-    if(!currentUser) return;
-
-    conversationList.innerHTML = `
-        <div class="empty-state">
-            <div class="big">💬</div>
-            <div>جاري تحميل المحادثات...</div>
-        </div>
-    `;
+    if(!currentUser)
+        return;
 
     try{
 
         const {
             data,
             error
-        } = await client.rpc(
-            "get_my_conversations"
-        );
+        } =
+            await client.rpc(
+                "get_my_conversations"
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
-        conversations = data || [];
+        conversations =
+            data || [];
 
         if(!conversations.length){
 
             conversationList.innerHTML = `
+
                 <div class="empty-state">
-                    <div class="big">💬</div>
-                    <div>لا توجد محادثات بعد</div>
+
+                    <div class="big">
+                        💬
+                    </div>
+
+                    <div>
+                        لا توجد محادثات بعد
+                    </div>
+
                 </div>
+
             `;
 
             return;
@@ -2278,10 +2846,19 @@ async function loadConversations(){
         console.error(error);
 
         conversationList.innerHTML = `
+
             <div class="empty-state">
-                <div class="big">⚠️</div>
-                <div>تعذر تحميل المحادثات</div>
+
+                <div class="big">
+                    ⚠️
+                </div>
+
+                <div>
+                    تعذر تحميل المحادثات
+                </div>
+
             </div>
+
         `;
 
     }
@@ -2291,16 +2868,21 @@ async function loadConversations(){
 
 async function renderConversations(){
 
-    conversationList.innerHTML = "";
+    conversationList.innerHTML =
+        "";
 
-    for(const conversation of conversations){
+    for(
+        const conversation
+        of conversations
+    ){
 
         const contact =
             await getConversationContact(
                 conversation.conversation_id
             );
 
-        if(!contact) continue;
+        if(!contact)
+            continue;
 
         const item =
             document.createElement("div");
@@ -2318,18 +2900,30 @@ async function renderConversations(){
             conversation.conversation_id;
 
         const isSupport =
-            conversation.type === "support";
+            conversation.type ===
+            "support";
+
+        const displayName =
+            isSupport
+                ? "دعم WFESC"
+                : (
+                    contact.display_name ||
+                    "مستخدم"
+                );
 
         item.innerHTML = `
 
-            <div class="conversation-avatar-wrap">
+            <div
+                class="conversation-avatar-wrap">
 
                 <img
                     class="conversation-avatar"
                     src="${escapeHTML(
                         isSupport
                             ? SUPPORT_AVATAR
-                            : safeAvatar(contact.avatar_url)
+                            : safeAvatar(
+                                contact.avatar_url
+                            )
                     )}"
                     alt="">
 
@@ -2344,27 +2938,15 @@ async function renderConversations(){
 
             </div>
 
-            <div class="conversation-content">
+            <div
+                class="conversation-content">
 
                 <div class="conversation-top">
 
                     <span class="conversation-name">
                         ${escapeHTML(
-                            isSupport
-                                ? "دعم WFESC"
-                                : (
-                                    contact.display_name ||
-                                    contact.username ||
-                                    "مستخدم"
-                                )
+                            displayName
                         )}
-
-                        ${
-                            isSupport
-                                ? `<span class="support-badge">دعم</span>`
-                                : ""
-                        }
-
                     </span>
 
                     <span class="conversation-time">
@@ -2387,8 +2969,14 @@ async function renderConversations(){
             </div>
 
             ${
-                Number(conversation.unread_count || 0) > 0
-                    ? `<span class="unread-dot"></span>`
+                Number(
+                    conversation.unread_count || 0
+                ) > 0
+                    ? `
+                        <span
+                            class="unread-dot">
+                        </span>
+                    `
                     : ""
             }
 
@@ -2396,21 +2984,60 @@ async function renderConversations(){
 
         item.addEventListener(
             "click",
-            ()=>openConversation(
-                conversation.conversation_id
-            )
+            ()=>{
+                openConversation(
+                    conversation.conversation_id
+                );
+            }
         );
 
-        conversationList.appendChild(item);
+        const avatar =
+            item.querySelector(
+                ".conversation-avatar"
+            );
+
+        avatar.addEventListener(
+            "click",
+            event=>{
+
+                event.stopPropagation();
+
+                if(
+                    !isSupport &&
+                    contact.user_id
+                ){
+
+                    openProfile(
+                        contact.user_id
+                    );
+
+                }
+
+            }
+        );
+
+        conversationList.appendChild(
+            item
+        );
 
     }
 
 }
 
 
-async function getConversationContact(conversationId){
+/* =========================================================
+   CONTACT
+========================================================= */
 
-    if(contactsCache.has(conversationId)){
+async function getConversationContact(
+    conversationId
+){
+
+    if(
+        contactsCache.has(
+            conversationId
+        )
+    ){
 
         return contactsCache.get(
             conversationId
@@ -2423,18 +3050,21 @@ async function getConversationContact(conversationId){
         const {
             data,
             error
-        } = await client.rpc(
-            "get_conversation_contacts",
-            {
-                target_conversation_id:
-                    conversationId
-            }
-        );
+        } =
+            await client.rpc(
+                "get_conversation_contacts",
+                {
+                    target_conversation_id:
+                        conversationId
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         const contact =
-            data?.[0] || null;
+            data?.[0] ||
+            null;
 
         if(contact){
 
@@ -2469,7 +3099,9 @@ async function openSupport(){
 
     if(!currentUser){
 
-        showToast("سجّل الدخول أولاً");
+        showToast(
+            "سجّل الدخول أولاً"
+        );
 
         return;
 
@@ -2480,17 +3112,21 @@ async function openSupport(){
         const {
             data,
             error
-        } = await client.rpc(
-            "get_or_create_support_conversation"
-        );
+        } =
+            await client.rpc(
+                "get_or_create_support_conversation"
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         if(data){
 
             await loadConversations();
 
-            await openConversation(data);
+            await openConversation(
+                data
+            );
 
         }
 
@@ -2511,10 +3147,19 @@ async function openSupport(){
    OPEN CONVERSATION
 ========================================================= */
 
-async function openConversation(conversationId){
+async function openConversation(
+    conversationId,
+    focusMessageId = null
+){
 
-    if(!conversationId || !currentUser)
+    if(
+        !conversationId ||
+        !currentUser
+    ){
+
         return;
+
+    }
 
     closeMenus();
 
@@ -2529,7 +3174,8 @@ async function openConversation(conversationId){
         );
 
     currentConversationType =
-        conversation?.type || "direct";
+        conversation?.type ||
+        "direct";
 
     currentContact =
         await getConversationContact(
@@ -2537,7 +3183,8 @@ async function openConversation(conversationId){
         );
 
     if(
-        currentConversationType === "support"
+        currentConversationType ===
+        "support"
     ){
 
         chatName.textContent =
@@ -2547,13 +3194,12 @@ async function openConversation(conversationId){
             SUPPORT_AVATAR;
 
         chatStatus.textContent =
-            "فريق دعم WFESC";
+            "محادثة الدعم";
 
     }else{
 
         chatName.textContent =
             currentContact?.display_name ||
-            currentContact?.username ||
             "مستخدم";
 
         chatAvatar.src =
@@ -2565,12 +3211,20 @@ async function openConversation(conversationId){
 
     }
 
-    messageInput.disabled = false;
-    sendButton.disabled = false;
+    messageInput.disabled =
+        false;
 
-    layout.classList.add("chat-open");
+    sendButton.disabled =
+        false;
 
-    await loadMessages(conversationId);
+    layout.classList.add(
+        "chat-open"
+    );
+
+    await loadMessages(
+        conversationId,
+        focusMessageId
+    );
 
     await markConversationRead(
         conversationId
@@ -2597,7 +3251,7 @@ function updateChatStatus(){
     ){
 
         chatStatus.textContent =
-            "فريق دعم WFESC";
+            "محادثة الدعم";
 
         return;
 
@@ -2605,7 +3259,7 @@ function updateChatStatus(){
 
     if(
         currentContact?.show_activity !==
-        false &&
+            false &&
         currentContact?.is_online
     ){
 
@@ -2632,9 +3286,15 @@ async function loadMessages(
 ){
 
     chatMessages.innerHTML = `
+
         <div class="chat-empty">
-            <div>جاري تحميل الرسائل...</div>
+
+            <div>
+                جاري تحميل الرسائل...
+            </div>
+
         </div>
+
     `;
 
     try{
@@ -2642,27 +3302,32 @@ async function loadMessages(
         const {
             data,
             error
-        } = await client.rpc(
-            "get_conversation_messages",
-            {
-                target_conversation_id:
-                    conversationId,
-                message_limit:100
-            }
-        );
+        } =
+            await client.rpc(
+                "get_conversation_messages",
+                {
+                    target_conversation_id:
+                        conversationId,
+                    message_limit:100
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
-        currentMessages = data || [];
+        currentMessages =
+            data || [];
 
         currentMessageMap.clear();
 
         currentMessages.forEach(
             message=>{
+
                 currentMessageMap.set(
                     message.message_id,
                     message
                 );
+
             }
         );
 
@@ -2676,7 +3341,7 @@ async function loadMessages(
                         focusMessageId
                     );
                 },
-                100
+                80
             );
 
         }else{
@@ -2690,12 +3355,23 @@ async function loadMessages(
         console.error(error);
 
         chatMessages.innerHTML = `
+
             <div class="chat-empty">
+
                 <div>
-                    <div class="chat-empty-icon">⚠️</div>
-                    <div>تعذر تحميل الرسائل</div>
+
+                    <div class="chat-empty-icon">
+                        ⚠️
+                    </div>
+
+                    <div>
+                        تعذر تحميل الرسائل
+                    </div>
+
                 </div>
+
             </div>
+
         `;
 
     }
@@ -2703,24 +3379,38 @@ async function loadMessages(
 }
 
 
-function renderMessages(){
+function renderMessages(
+    animatedMessageId = null
+){
 
     if(!currentMessages.length){
 
         chatMessages.innerHTML = `
+
             <div class="chat-empty">
+
                 <div>
-                    <div class="chat-empty-icon">👋</div>
-                    <div>ابدأ المحادثة</div>
+
+                    <div class="chat-empty-icon">
+                        👋
+                    </div>
+
+                    <div>
+                        ابدأ المحادثة
+                    </div>
+
                 </div>
+
             </div>
+
         `;
 
         return;
 
     }
 
-    chatMessages.innerHTML = "";
+    chatMessages.innerHTML =
+        "";
 
     currentMessages.forEach(
         message=>{
@@ -2743,37 +3433,29 @@ function renderMessages(){
             row.dataset.messageId =
                 message.message_id;
 
-            let avatar =
-                DEFAULT_AVATAR;
-
-            if(mine){
-
-                avatar =
-                    currentUser?.user_metadata?.avatar_url ||
-                    DEFAULT_AVATAR;
-
-            }else if(
-                currentConversationType ===
-                "support"
+            if(
+                animatedMessageId ===
+                message.message_id
             ){
 
-                avatar =
-                    SUPPORT_AVATAR;
-
-            }else{
-
-                avatar =
-                    safeAvatar(
-                        currentContact?.avatar_url
-                    );
+                row.classList.add(
+                    "message-send-animation"
+                );
 
             }
 
             const bubble =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             bubble.className =
                 "message-bubble";
+
+            const time =
+                formatMessageTime(
+                    message.created_at
+                );
 
             bubble.innerHTML = `
 
@@ -2789,15 +3471,17 @@ function renderMessages(){
 
                     <span>
                         ${escapeHTML(
-                            formatTime(
-                                message.created_at
-                            )
+                            time
                         )}
                     </span>
 
                     ${
                         message.edited_at
-                            ? `<span>معدلة</span>`
+                            ? `
+                                <span>
+                                    معدلة
+                                </span>
+                            `
                             : ""
                     }
 
@@ -2805,48 +3489,13 @@ function renderMessages(){
 
             `;
 
-            if(mine){
+            row.appendChild(
+                bubble
+            );
 
-                row.appendChild(
-                    bubble
-                );
-
-            }else{
-
-                const image =
-                    document.createElement("img");
-
-                image.className =
-                    "message-avatar";
-
-                image.src = avatar;
-
-                image.alt = "";
-
-                image.addEventListener(
-                    "click",
-                    ()=>{
-                        if(
-                            currentContact?.user_id
-                        ){
-
-                            openProfile(
-                                currentContact.user_id
-                            );
-
-                        }
-                    }
-                );
-
-                row.appendChild(image);
-
-                row.appendChild(
-                    bubble
-                );
-
-            }
-
-            chatMessages.appendChild(row);
+            chatMessages.appendChild(
+                row
+            );
 
         }
     );
@@ -2861,6 +3510,7 @@ function renderMessages(){
 async function sendMessage(){
 
     if(
+        sendingMessage ||
         !currentUser ||
         !currentConversationId
     ){
@@ -2872,35 +3522,127 @@ async function sendMessage(){
     const content =
         messageInput.value.trim();
 
-    if(!content) return;
+    if(!content)
+        return;
 
-    sendButton.disabled = true;
+    sendingMessage =
+        true;
+
+    sendButton.disabled =
+        true;
+
+    sendButton.classList.add(
+        "sending"
+    );
+
+    const targetConversationId =
+        currentConversationId;
+
+    const previousValue =
+        messageInput.value;
 
     try{
 
         const {
+            data,
             error
-        } = await client.rpc(
-            "send_message",
-            {
-                target_conversation_id:
-                    currentConversationId,
-                message_content:
-                    content
-            }
-        );
+        } =
+            await client.rpc(
+                "send_message",
+                {
+                    target_conversation_id:
+                        targetConversationId,
+                    message_content:
+                        content
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
-        messageInput.value = "";
+        /*
+           نمسح مربع الكتابة فقط بعد نجاح الإرسال.
+           لا يوجد reload.
+        */
+        messageInput.value =
+            "";
 
         autoResizeTextarea();
 
+        typingCurrently =
+            false;
+
+        clearTimeout(
+            typingTimer
+        );
+
         await setTyping(false);
+
+        /*
+           إذا Realtime وصل الرسالة،
+           لن نعيد بناء الصفحة.
+           وإذا لم يصل فوراً، نحمّل المحادثة
+           مرة واحدة فقط.
+        */
+        if(
+            currentConversationId ===
+            targetConversationId
+        ){
+
+            let insertedMessageId =
+                null;
+
+            if(
+                data &&
+                typeof data === "object"
+            ){
+
+                insertedMessageId =
+                    data.message_id ||
+                    data.id ||
+                    null;
+
+            }
+
+            if(insertedMessageId){
+
+                await loadMessages(
+                    targetConversationId,
+                    insertedMessageId
+                );
+
+            }else{
+
+                await loadMessages(
+                    targetConversationId
+                );
+
+            }
+
+        }
+
+        await loadConversations();
 
     }catch(error){
 
-        console.error(error);
+        console.error(
+            error
+        );
+
+        /*
+           إذا فشل الإرسال نرجع النص
+           حتى لا يضيع من المستخدم.
+        */
+        if(
+            !messageInput.value
+        ){
+
+            messageInput.value =
+                previousValue;
+
+            autoResizeTextarea();
+
+        }
 
         showToast(
             error?.message ||
@@ -2909,7 +3651,20 @@ async function sendMessage(){
 
     }finally{
 
-        sendButton.disabled = false;
+        sendingMessage =
+            false;
+
+        sendButton.disabled =
+            !currentConversationId;
+
+        setTimeout(
+            ()=>{
+                sendButton.classList.remove(
+                    "sending"
+                );
+            },
+            350
+        );
 
     }
 
@@ -2920,7 +3675,9 @@ async function sendMessage(){
    TYPING
 ========================================================= */
 
-async function setTyping(typing){
+async function setTyping(
+    typing
+){
 
     if(
         !currentConversationId ||
@@ -2961,7 +3718,8 @@ function handleTyping(){
 
     if(!typingCurrently){
 
-        typingCurrently = true;
+        typingCurrently =
+            true;
 
         setTyping(true);
 
@@ -2974,10 +3732,12 @@ function handleTyping(){
     typingTimer =
         setTimeout(
             ()=>{
-                typingCurrently = false;
+                typingCurrently =
+                    false;
+
                 setTyping(false);
             },
-            900
+            700
         );
 
 }
@@ -2987,65 +3747,70 @@ async function subscribeTypingForConversation(
     conversationId
 ){
 
-    if(!client) return;
+    if(!client)
+        return;
 
     await removeTypingSubscription();
 
     const channel =
         client
-        .channel(
-            "typing-" + conversationId
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:"*",
-                schema:"public",
-                table:"typing_status",
-                filter:
-                    "conversation_id=eq." +
-                    conversationId
-            },
-            payload=>{
+            .channel(
+                "typing-" +
+                conversationId
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event:"*",
+                    schema:"public",
+                    table:"typing_status",
+                    filter:
+                        "conversation_id=eq." +
+                        conversationId
+                },
+                payload=>{
 
-                const row =
-                    payload.new ||
-                    payload.old;
+                    const row =
+                        payload.new ||
+                        payload.old;
 
-                if(
-                    !row ||
-                    row.user_id ===
-                    currentUser?.id
-                ){
+                    if(
+                        !row ||
+                        row.user_id ===
+                        currentUser?.id
+                    ){
 
-                    return;
+                        return;
+
+                    }
+
+                    if(
+                        row.is_typing
+                    ){
+
+                        typingName.textContent =
+                            currentContact?.display_name ||
+                            "المستخدم";
+
+                        typingIndicator.classList.add(
+                            "show"
+                        );
+
+                    }else{
+
+                        typingIndicator.classList.remove(
+                            "show"
+                        );
+
+                    }
 
                 }
+            )
+            .subscribe();
 
-                if(row.is_typing){
-
-                    typingName.textContent =
-                        currentContact?.display_name ||
-                        currentContact?.username ||
-                        "المستخدم";
-
-                    typingIndicator.classList.add(
-                        "show"
-                    );
-
-                }else{
-
-                    typingIndicator.classList.remove(
-                        "show"
-                    );
-
-                }
-
-            }
-        )
-        .subscribe();
-
-    subscriptions.push(channel);
+    subscriptions.push(
+        channel
+    );
 
 }
 
@@ -3056,12 +3821,16 @@ async function removeTypingSubscription(){
         subscriptions.filter(
             channel =>
                 String(
-                    channel.topic || ""
-                ).includes("typing-")
+                    channel.topic ||
+                    ""
+                ).includes(
+                    "typing-"
+                )
         );
 
     for(
-        const channel of typingSubs
+        const channel
+        of typingSubs
     ){
 
         try{
@@ -3074,7 +3843,8 @@ async function removeTypingSubscription(){
 
         subscriptions =
             subscriptions.filter(
-                x => x !== channel
+                x =>
+                    x !== channel
             );
 
     }
@@ -3118,133 +3888,165 @@ async function markConversationRead(
 
 function subscribeRealtime(){
 
-    if(!client || !currentUser)
+    if(
+        !client ||
+        !currentUser
+    ){
+
         return;
+
+    }
+
+
+    /*
+       MESSAGE REALTIME
+    */
 
     const messageChannel =
         client
-        .channel(
-            "messages-global-" +
-            currentUser.id
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:"INSERT",
-                schema:"public",
-                table:"messages"
-            },
-            async payload=>{
+            .channel(
+                "messages-global-" +
+                currentUser.id
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event:"INSERT",
+                    schema:"public",
+                    table:"messages"
+                },
+                async payload=>{
 
-                const message =
-                    payload.new;
-
-                if(
-                    !message ||
-                    !message.conversation_id
-                ){
-
-                    return;
-
-                }
-
-                if(
-                    message.conversation_id ===
-                    currentConversationId
-                ){
-
-                    await loadMessages(
-                        currentConversationId
-                    );
+                    const message =
+                        payload.new;
 
                     if(
-                        message.sender_id !==
-                        currentUser.id
+                        !message ||
+                        !message.conversation_id
                     ){
 
-                        await markConversationRead(
-                            currentConversationId
-                        );
+                        return;
 
                     }
 
+                    /*
+                       لا نعيد الصفحة.
+                       فقط نحدث المحادثة المفتوحة
+                       إذا كانت الرسالة تخصها.
+                    */
+                    if(
+                        message.conversation_id ===
+                        currentConversationId
+                    ){
+
+                        const exists =
+                            currentMessages.some(
+                                m =>
+                                    m.message_id ===
+                                    message.id
+                            );
+
+                        if(!exists){
+
+                            currentMessages.push({
+                                message_id:
+                                    message.id,
+                                sender_id:
+                                    message.sender_id,
+                                content:
+                                    message.content,
+                                created_at:
+                                    message.created_at,
+                                edited_at:
+                                    message.edited_at,
+                                deleted_at:
+                                    message.deleted_at
+                            });
+
+                            currentMessageMap.set(
+                                message.id,
+                                message
+                            );
+
+                            renderMessages(
+                                message.sender_id ===
+                                currentUser.id
+                                    ? message.id
+                                    : null
+                            );
+
+                            scrollChatToBottom();
+
+                        }
+
+                        if(
+                            message.sender_id !==
+                            currentUser.id
+                        ){
+
+                            await markConversationRead(
+                                currentConversationId
+                            );
+
+                        }
+
+                    }
+
+                    /*
+                       تحديث القائمة فقط.
+                       لا reload للصفحة.
+                    */
+                    await loadConversations();
+
                 }
-
-                await loadConversations();
-
-            }
-        )
-        .subscribe();
+            )
+            .subscribe();
 
     subscriptions.push(
         messageChannel
     );
 
 
-    const notificationChannel =
-        client
-        .channel(
-            "notifications-" +
-            currentUser.id
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:"*",
-                schema:"public",
-                table:"notifications",
-                filter:
-                    "user_id=eq." +
-                    currentUser.id
-            },
-            async ()=>{
-
-                await loadNotifications();
-
-            }
-        )
-        .subscribe();
-
-    subscriptions.push(
-        notificationChannel
-    );
-
+    /*
+       PRESENCE REALTIME
+    */
 
     const presenceChannel =
         client
-        .channel(
-            "presence-global"
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:"*",
-                schema:"public",
-                table:"user_presence"
-            },
-            async payload=>{
+            .channel(
+                "presence-global-" +
+                currentUser.id
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event:"*",
+                    schema:"public",
+                    table:"user_presence"
+                },
+                async payload=>{
 
-                const row =
-                    payload.new;
+                    const row =
+                        payload.new;
 
-                if(
-                    currentContact &&
-                    row?.user_id ===
-                    currentContact.user_id
-                ){
+                    if(
+                        currentContact &&
+                        row?.user_id ===
+                        currentContact.user_id
+                    ){
 
-                    currentContact.is_online =
-                        row.is_online;
+                        currentContact.is_online =
+                            row.is_online;
 
-                    updateChatStatus();
+                        updateChatStatus();
 
-                    await renderConversations();
+                        await renderConversations();
+
+                    }
 
                 }
-
-            }
-        )
-        .subscribe();
+            )
+            .subscribe();
 
     subscriptions.push(
         presenceChannel
@@ -3279,307 +4081,12 @@ function clearSubscriptions(){
 
     subscriptions = [];
 
-    clearTimeout(typingTimer);
-
-    typingCurrently = false;
-
-}
-
-
-/* =========================================================
-   NOTIFICATIONS
-========================================================= */
-
-async function loadNotifications(){
-
-    if(!client || !currentUser)
-        return;
-
-    try{
-
-        const {
-            data,
-            error
-        } = await client
-            .from("notifications")
-            .select(
-                "id,actor_id,type,message,is_read,created_at,conversation_id"
-            )
-            .eq(
-                "user_id",
-                currentUser.id
-            )
-            .order(
-                "created_at",
-                {
-                    ascending:false
-                }
-            )
-            .limit(100);
-
-        if(error) throw error;
-
-        notifications =
-            data || [];
-
-        renderNotifications();
-
-    }catch(error){
-
-        console.error(
-            "Notifications error:",
-            error
-        );
-
-    }
-
-}
-
-
-function renderNotifications(){
-
-    if(!notifications.length){
-
-        notificationsList.innerHTML = `
-            <div class="empty-state">
-                <div class="big">🔔</div>
-                <div>لا توجد إشعارات</div>
-            </div>
-        `;
-
-        return;
-
-    }
-
-    notificationsList.innerHTML = "";
-
-    notifications.forEach(
-        notification=>{
-
-            const item =
-                document.createElement("div");
-
-            item.className =
-                "notification-item" +
-                (
-                    notification.is_read
-                        ? ""
-                        : " unread"
-                );
-
-            item.innerHTML = `
-
-                <img
-                    class="notification-avatar"
-                    src="${escapeHTML(
-                        notification.actor_id
-                            ? DEFAULT_AVATAR
-                            : SUPPORT_AVATAR
-                    )}"
-                    alt="">
-
-                <div class="notification-info">
-
-                    <div class="notification-text">
-                        ${escapeHTML(
-                            notification.message
-                        )}
-                    </div>
-
-                    <div class="notification-time">
-                        ${escapeHTML(
-                            formatTime(
-                                notification.created_at
-                            )
-                        )}
-                    </div>
-
-                </div>
-
-                <button
-                    type="button"
-                    class="notification-delete">
-                    ×
-                </button>
-
-            `;
-
-            item.querySelector(
-                ".notification-delete"
-            ).addEventListener(
-                "click",
-                async event=>{
-
-                    event.stopPropagation();
-
-                    await deleteNotification(
-                        notification.id
-                    );
-
-                }
-            );
-
-            item.addEventListener(
-                "click",
-                async ()=>{
-
-                    await markNotificationRead(
-                        notification.id
-                    );
-
-                    if(
-                        notification.conversation_id
-                    ){
-
-                        closeNotifications();
-
-                        await openConversation(
-                            notification.conversation_id
-                        );
-
-                    }
-
-                }
-            );
-
-            notificationsList.appendChild(
-                item
-            );
-
-        }
+    clearTimeout(
+        typingTimer
     );
 
-}
-
-
-async function deleteNotification(id){
-
-    try{
-
-        const {
-            error
-        } = await client.rpc(
-            "delete_my_notification",
-            {
-                notification_id:id
-            }
-        );
-
-        if(error) throw error;
-
-        await loadNotifications();
-
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر حذف الإشعار"
-        );
-
-    }
-
-}
-
-
-async function deleteAllNotifications(){
-
-    if(!currentUser) return;
-
-    if(
-        !confirm(
-            "هل تريد حذف جميع الإشعارات؟"
-        )
-    ){
-
-        return;
-
-    }
-
-    try{
-
-        const {
-            error
-        } = await client.rpc(
-            "delete_my_notifications"
-        );
-
-        if(error) throw error;
-
-        await loadNotifications();
-
-        showToast(
-            "تم حذف جميع الإشعارات"
-        );
-
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر حذف الإشعارات"
-        );
-
-    }
-
-}
-
-
-async function markNotificationRead(id){
-
-    try{
-
-        await client.rpc(
-            "mark_notification_read",
-            {
-                notification_id:id
-            }
-        );
-
-    }catch(error){
-
-        console.error(error);
-
-    }
-
-}
-
-
-async function markAllNotificationsRead(){
-
-    try{
-
-        await client.rpc(
-            "mark_all_notifications_read"
-        );
-
-        await loadNotifications();
-
-    }catch(error){
-
-        console.error(error);
-
-    }
-
-}
-
-
-function openNotifications(){
-
-    notificationsPanel.classList.add(
-        "show"
-    );
-
-    loadNotifications();
-
-}
-
-
-function closeNotifications(){
-
-    notificationsPanel.classList.remove(
-        "show"
-    );
+    typingCurrently =
+        false;
 
 }
 
@@ -3588,7 +4095,9 @@ function closeNotifications(){
    MESSAGE SEARCH
 ========================================================= */
 
-async function searchMessages(query){
+async function searchMessages(
+    query
+){
 
     if(
         !client ||
@@ -3607,15 +4116,17 @@ async function searchMessages(query){
         const {
             data,
             error
-        } = await client.rpc(
-            "search_messages",
-            {
-                search_text:
-                    query.trim()
-            }
-        );
+        } =
+            await client.rpc(
+                "search_messages",
+                {
+                    search_text:
+                        query.trim()
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         messageSearchResults =
             data || [];
@@ -3623,7 +4134,8 @@ async function searchMessages(query){
         searchMatches =
             [...messageSearchResults];
 
-        currentSearchIndex = 0;
+        currentSearchIndex =
+            0;
 
         renderMessageSearchResults();
 
@@ -3654,21 +4166,27 @@ async function renderMessageSearchResults(){
             ? "نتائج الرسائل"
             : "لا توجد نتائج";
 
-    searchResultsList.innerHTML = "";
+    searchResultsList.innerHTML =
+        "";
 
     searchNavigation.classList.toggle(
         "show",
-        messageSearchResults.length > 0
+        messageSearchResults.length >
+            0
     );
 
     updateSearchCounter();
 
-    if(!messageSearchResults.length){
+    if(
+        !messageSearchResults.length
+    ){
 
         searchResultsList.innerHTML = `
+
             <div class="empty-state">
                 لم يتم العثور على الرسالة
             </div>
+
         `;
 
         return;
@@ -3697,7 +4215,9 @@ async function renderMessageSearchResults(){
             "support";
 
         const item =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         item.className =
             "result-item";
@@ -3723,7 +4243,6 @@ async function renderMessageSearchResults(){
                             ? "دعم WFESC"
                             : (
                                 contact?.display_name ||
-                                contact?.username ||
                                 "مستخدم"
                             )
                     )}
@@ -3740,7 +4259,8 @@ async function renderMessageSearchResults(){
 
             <span class="result-count">
                 ${Number(
-                    result.match_count || 0
+                    result.match_count ||
+                    0
                 )} تطابق
             </span>
 
@@ -3751,12 +4271,34 @@ async function renderMessageSearchResults(){
             async ()=>{
 
                 await openConversation(
-                    result.conversation_id
-                );
-
-                focusMessage(
+                    result.conversation_id,
                     result.message_id
                 );
+
+            }
+        );
+
+        const avatar =
+            item.querySelector(
+                ".result-avatar"
+            );
+
+        avatar.addEventListener(
+            "click",
+            event=>{
+
+                event.stopPropagation();
+
+                if(
+                    !isSupport &&
+                    contact?.user_id
+                ){
+
+                    openProfile(
+                        contact.user_id
+                    );
+
+                }
 
             }
         );
@@ -3778,10 +4320,12 @@ function highlightSearchText(
     const safe =
         escapeHTML(text);
 
-    const escapedQuery =
-        escapeHTML(query);
+    const safeQuery =
+        String(
+            query || ""
+        );
 
-    if(!escapedQuery)
+    if(!safeQuery)
         return safe;
 
     try{
@@ -3789,23 +4333,26 @@ function highlightSearchText(
         const regex =
             new RegExp(
                 "(" +
-                escapedQuery
-                    .replace(
-                        /[.*+?^${}()|[\]\\]/g,
-                        "\\$&"
-                    ) +
+                safeQuery.replace(
+                    /[.*+?^${}()|[\]\\]/g,
+                    "\\$&"
+                ) +
                 ")",
                 "ig"
             );
 
         return safe.replace(
             regex,
-            "<mark style=\"" +
-            "background:rgba(98,168,255,.25);" +
-            "color:#fff;" +
-            "border-radius:4px;" +
-            "padding:1px 3px\">" +
-            "$1</mark>"
+            `
+                <mark
+                    style="
+                        background:rgba(98,168,255,.25);
+                        color:#fff;
+                        border-radius:4px;
+                        padding:1px 3px">
+                    $1
+                </mark>
+            `
         );
 
     }catch(_){
@@ -3819,7 +4366,9 @@ function highlightSearchText(
 
 function updateSearchCounter(){
 
-    if(!searchMatches.length){
+    if(
+        !searchMatches.length
+    ){
 
         searchMatchCounter.textContent =
             "0 / 0";
@@ -3830,7 +4379,8 @@ function updateSearchCounter(){
 
     searchMatchCounter.textContent =
         (
-            currentSearchIndex + 1
+            currentSearchIndex +
+            1
         ) +
         " / " +
         searchMatches.length;
@@ -3838,10 +4388,17 @@ function updateSearchCounter(){
 }
 
 
-async function navigateSearch(direction){
+async function navigateSearch(
+    direction
+){
 
-    if(!searchMatches.length)
+    if(
+        !searchMatches.length
+    ){
+
         return;
+
+    }
 
     currentSearchIndex +=
         direction;
@@ -3851,7 +4408,8 @@ async function navigateSearch(direction){
     ){
 
         currentSearchIndex =
-            searchMatches.length - 1;
+            searchMatches.length -
+            1;
 
     }
 
@@ -3860,7 +4418,8 @@ async function navigateSearch(direction){
         searchMatches.length
     ){
 
-        currentSearchIndex = 0;
+        currentSearchIndex =
+            0;
 
     }
 
@@ -3871,32 +4430,25 @@ async function navigateSearch(direction){
             currentSearchIndex
         ];
 
-    if(
-        result.conversation_id !==
-        currentConversationId
-    ){
-
-        await openConversation(
-            result.conversation_id
-        );
-
-    }
-
-    focusMessage(
+    await openConversation(
+        result.conversation_id,
         result.message_id
     );
 
 }
 
 
-function focusMessage(messageId){
+function focusMessage(
+    messageId
+){
 
     const element =
         chatMessages.querySelector(
             `[data-message-id="${messageId}"]`
         );
 
-    if(!element) return;
+    if(!element)
+        return;
 
     element.scrollIntoView({
         behavior:"smooth",
@@ -3920,7 +4472,9 @@ function focusMessage(messageId){
    USER SEARCH
 ========================================================= */
 
-async function searchUsers(query){
+async function searchUsers(
+    query
+){
 
     if(
         !client ||
@@ -3939,18 +4493,21 @@ async function searchUsers(query){
         const {
             data,
             error
-        } = await client.rpc(
-            "search_users",
-            {
-                search_text:
-                    query.trim()
-            }
-        );
+        } =
+            await client.rpc(
+                "search_users",
+                {
+                    search_text:
+                        query.trim()
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         renderUserSearchResults(
-            data || []
+            data || [],
+            query
         );
 
     }catch(error){
@@ -3969,40 +4526,77 @@ async function searchUsers(query){
 }
 
 
-function renderUserSearchResults(users){
+function renderUserSearchResults(
+    users,
+    query
+){
 
     searchResults.classList.add(
         "show"
     );
 
     searchResultsTitle.textContent =
-        users.length
-            ? "المستخدمون"
-            : "لا توجد نتائج";
+        "بحث عن مستخدم";
 
     searchNavigation.classList.remove(
         "show"
     );
 
-    searchResultsList.innerHTML = "";
+    searchResultsList.innerHTML =
+        "";
 
-    if(!users.length){
+    /*
+       الاتصال بالدعم يظهر فقط
+       عند كتابة كلمات الدعم.
+    */
+    if(
+        isSupportSearch(query)
+    ){
+
+        addSupportSearchResult();
+
+    }
+
+    const filteredUsers =
+        users.filter(
+            user =>
+                !SUPPORT_ADMIN_IDS.has(
+                    user.user_id
+                )
+        );
+
+    if(
+        !filteredUsers.length &&
+        !isSupportSearch(query)
+    ){
 
         searchResultsList.innerHTML = `
+
             <div class="empty-state">
-                لم يتم العثور على مستخدم
+
+                <div class="big">
+                    👤
+                </div>
+
+                <div>
+                    لم يتم العثور على مستخدم
+                </div>
+
             </div>
+
         `;
 
         return;
 
     }
 
-    users.forEach(
+    filteredUsers.forEach(
         user=>{
 
             const item =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             item.className =
                 "result-item";
@@ -4023,7 +4617,6 @@ function renderUserSearchResults(users){
                     <div class="result-name">
                         ${escapeHTML(
                             user.display_name ||
-                            user.username ||
                             "مستخدم"
                         )}
                     </div>
@@ -4041,9 +4634,11 @@ function renderUserSearchResults(users){
 
             item.addEventListener(
                 "click",
-                ()=>openUserFromSearch(
-                    user
-                )
+                ()=>{
+                    openUserFromSearch(
+                        user
+                    );
+                }
             );
 
             item.querySelector(
@@ -4071,32 +4666,39 @@ function renderUserSearchResults(users){
 }
 
 
-async function openUserFromSearch(user){
+async function openUserFromSearch(
+    user
+){
 
     try{
 
         const {
             data,
             error
-        } = await client.rpc(
-            "get_or_create_direct_conversation",
-            {
-                target_user_id:
-                    user.user_id
-            }
-        );
+        } =
+            await client.rpc(
+                "get_or_create_direct_conversation",
+                {
+                    target_user_id:
+                        user.user_id
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         hideSearchResults();
 
-        messageSearch.value = "";
+        messageSearch.value =
+            "";
 
         await loadConversations();
 
         if(data){
 
-            await openConversation(data);
+            await openConversation(
+                data
+            );
 
         }
 
@@ -4117,9 +4719,12 @@ async function openUserFromSearch(user){
    PROFILE
 ========================================================= */
 
-function openProfile(userId){
+function openProfile(
+    userId
+){
 
-    if(!userId) return;
+    if(!userId)
+        return;
 
     window.location.href =
         "./profile.html?id=" +
@@ -4164,15 +4769,17 @@ async function hideCurrentConversation(){
 
         const {
             error
-        } = await client.rpc(
-            "hide_my_conversation",
-            {
-                target_conversation_id:
-                    currentConversationId
-            }
-        );
+        } =
+            await client.rpc(
+                "hide_my_conversation",
+                {
+                    target_conversation_id:
+                        currentConversationId
+                }
+            );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         showToast(
             "تم إخفاء المحادثة"
@@ -4184,22 +4791,38 @@ async function hideCurrentConversation(){
         currentContact =
             null;
 
+        currentMessages = [];
+
         layout.classList.remove(
             "chat-open"
         );
 
-        messageInput.disabled = true;
-        sendButton.disabled = true;
+        messageInput.disabled =
+            true;
+
+        sendButton.disabled =
+            true;
 
         await loadConversations();
 
         chatMessages.innerHTML = `
+
             <div class="chat-empty">
+
                 <div>
-                    <div class="chat-empty-icon">💬</div>
-                    <div>اختر محادثة لعرض الرسائل</div>
+
+                    <div class="chat-empty-icon">
+                        💬
+                    </div>
+
+                    <div>
+                        اختر محادثة لعرض الرسائل
+                    </div>
+
                 </div>
+
             </div>
+
         `;
 
         chatName.textContent =
@@ -4244,43 +4867,56 @@ async function muteCurrentConversation(){
         const {
             data:existing,
             error:readError
-        } = await client
-            .from("notification_settings")
-            .select("muted")
-            .eq(
-                "user_id",
-                currentUser.id
-            )
-            .eq(
-                "conversation_id",
-                currentConversationId
-            )
-            .maybeSingle();
+        } =
+            await client
+                .from("notification_settings")
+                .select("muted")
+                .eq(
+                    "user_id",
+                    currentUser.id
+                )
+                .eq(
+                    "conversation_id",
+                    currentConversationId
+                )
+                .maybeSingle();
 
-        if(readError) throw readError;
+        if(readError)
+            throw readError;
 
         const nextMuted =
-            !(existing?.muted === true);
+            !(
+                existing?.muted ===
+                true
+            );
 
         const {
             error
-        } = await client
-            .from("notification_settings")
-            .upsert({
-                user_id:
-                    currentUser.id,
-                conversation_id:
-                    currentConversationId,
-                muted:
-                    nextMuted,
-                updated_at:
-                    new Date().toISOString()
-            },{
-                onConflict:
-                    "user_id,conversation_id"
-            });
+        } =
+            await client
+                .from(
+                    "notification_settings"
+                )
+                .upsert(
+                    {
+                        user_id:
+                            currentUser.id,
+                        conversation_id:
+                            currentConversationId,
+                        muted:
+                            nextMuted,
+                        updated_at:
+                            new Date()
+                                .toISOString()
+                    },
+                    {
+                        onConflict:
+                            "user_id,conversation_id"
+                    }
+                );
 
-        if(error) throw error;
+        if(error)
+            throw error;
 
         showToast(
             nextMuted
@@ -4317,11 +4953,17 @@ function hideSearchResults(){
         "show"
     );
 
-    searchResultsList.innerHTML = "";
+    searchResultsList.innerHTML =
+        "";
 
-    messageSearchResults = [];
-    searchMatches = [];
-    currentSearchIndex = 0;
+    messageSearchResults =
+        [];
+
+    searchMatches =
+        [];
+
+    currentSearchIndex =
+        0;
 
 }
 
@@ -4384,7 +5026,8 @@ function autoResizeTextarea(){
         Math.min(
             messageInput.scrollHeight,
             120
-        ) + "px";
+        ) +
+        "px";
 
 }
 
@@ -4395,8 +5038,13 @@ function autoResizeTextarea(){
 
 function openConversationMenu(){
 
-    if(!currentConversationId)
+    if(
+        !currentConversationId
+    ){
+
         return;
+
+    }
 
     const button =
         $("chatMenuButton");
@@ -4406,14 +5054,18 @@ function openConversationMenu(){
 
     conversationMenu.style.top =
         (
-            rect.bottom + 7
-        ) + "px";
+            rect.bottom +
+            7
+        ) +
+        "px";
 
     conversationMenu.style.left =
         Math.max(
             10,
-            rect.left - 165
-        ) + "px";
+            rect.left -
+            165
+        ) +
+        "px";
 
     conversationMenu.classList.add(
         "show"
@@ -4433,6 +5085,42 @@ function closeMobileChat(){
     );
 
     closeMenus();
+
+}
+
+
+/* =========================================================
+   NOTIFICATIONS HANDOFF
+   لا يوجد محتوى إشعارات هنا.
+   الملف المستقل سيتولى النظام لاحقاً.
+========================================================= */
+
+function openNotificationsSystem(){
+
+    /*
+       إذا تم تركيب نظام الإشعارات المستقل،
+       نستعمل واجهته مباشرة.
+    */
+    if(
+        window.WFESCNotifications &&
+        typeof
+            window.WFESCNotifications.open ===
+            "function"
+    ){
+
+        window.WFESCNotifications.open();
+
+        return;
+
+    }
+
+    /*
+       حالياً الإشعارات ليست مدمجة
+       داخل messages.html.
+    */
+    showToast(
+        "نظام الإشعارات المستقل سيتم ربطه هنا"
+    );
 
 }
 
@@ -4494,13 +5182,18 @@ $("messageSearchMode").addEventListener(
     "click",
     ()=>{
 
-        searchMode = "messages";
+        searchMode =
+            "messages";
 
         $("messageSearchMode")
-            .classList.add("active");
+            .classList.add(
+                "active"
+            );
 
         $("userSearchMode")
-            .classList.remove("active");
+            .classList.remove(
+                "active"
+            );
 
         messageSearch.placeholder =
             "ابحث في الرسائل...";
@@ -4515,13 +5208,18 @@ $("userSearchMode").addEventListener(
     "click",
     ()=>{
 
-        searchMode = "users";
+        searchMode =
+            "users";
 
         $("userSearchMode")
-            .classList.add("active");
+            .classList.add(
+                "active"
+            );
 
         $("messageSearchMode")
-            .classList.remove("active");
+            .classList.remove(
+                "active"
+            );
 
         messageSearch.placeholder =
             "ابحث بالاسم أو username...";
@@ -4536,7 +5234,8 @@ $("closeSearch").addEventListener(
     "click",
     ()=>{
 
-        messageSearch.value = "";
+        messageSearch.value =
+            "";
 
         hideSearchResults();
 
@@ -4589,34 +5288,31 @@ $("activityToggle").addEventListener(
 );
 
 
-$("notificationsButton").addEventListener(
-    "click",
-    openNotifications
-);
+/*
+   الرسائل
+*/
+$("messagesHeaderButton")
+    .addEventListener(
+        "click",
+        ()=>{
+            layout.scrollIntoView({
+                behavior:"smooth",
+                block:"start"
+            });
+        }
+    );
 
 
-$("chatNotifications").addEventListener(
-    "click",
-    openNotifications
-);
-
-
-$("closeNotifications").addEventListener(
-    "click",
-    closeNotifications
-);
-
-
-$("deleteAllNotifications").addEventListener(
-    "click",
-    deleteAllNotifications
-);
-
-
-$("markAllNotifications").addEventListener(
-    "click",
-    markAllNotificationsRead
-);
+/*
+   الإشعارات:
+   لا يتم فتح لوحة داخل الرسائل.
+   يتم تسليم التحكم للنظام المستقل.
+*/
+notificationsHeaderButton
+    .addEventListener(
+        "click",
+        openNotificationsSystem
+    );
 
 
 $("backMobile").addEventListener(
@@ -4666,6 +5362,30 @@ chatUser.addEventListener(
     ()=>{
 
         if(
+            currentConversationType !==
+                "support" &&
+            currentContact?.user_id
+        ){
+
+            openProfile(
+                currentContact.user_id
+            );
+
+        }
+
+    }
+);
+
+
+chatAvatar.addEventListener(
+    "click",
+    event=>{
+
+        event.stopPropagation();
+
+        if(
+            currentConversationType !==
+                "support" &&
             currentContact?.user_id
         ){
 
@@ -4699,23 +5419,6 @@ document.addEventListener(
 );
 
 
-notificationsPanel.addEventListener(
-    "click",
-    event=>{
-
-        if(
-            event.target ===
-            notificationsPanel
-        ){
-
-            closeNotifications();
-
-        }
-
-    }
-);
-
-
 $("activityModal").addEventListener(
     "click",
     event=>{
@@ -4741,9 +5444,8 @@ document.addEventListener(
     "visibilitychange",
     ()=>{
 
-        if(
-            !currentUser
-        ) return;
+        if(!currentUser)
+            return;
 
         if(
             document.visibilityState ===
@@ -4766,9 +5468,7 @@ window.addEventListener(
     "pagehide",
     ()=>{
 
-        if(
-            currentUser
-        ){
+        if(currentUser){
 
             setPresence(false);
 
@@ -4790,6 +5490,21 @@ document.addEventListener(
             !searchResults.classList.contains(
                 "show"
             )
+        ){
+
+            return;
+
+        }
+
+        /*
+           لا نسرق الأسهم من textarea/input.
+        */
+        const tag =
+            document.activeElement?.tagName;
+
+        if(
+            tag === "INPUT" ||
+            tag === "TEXTAREA"
         ){
 
             return;
@@ -4867,23 +5582,32 @@ window.addEventListener(
    INIT
 ========================================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    ()=>{
-
-        loadSession();
-
-    }
-);
-
-if(
-    document.readyState !==
-    "loading"
-){
+function init(){
 
     loadSession();
 
 }
+
+
+if(
+    document.readyState ===
+    "loading"
+){
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        init,
+        {
+            once:true
+        }
+    );
+
+}else{
+
+    init();
+
+}
+
 
 })();
 </script>
