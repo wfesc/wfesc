@@ -4,7 +4,7 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       الإصدار المحسن
+       الإصدار المحسن + منع تكرار الرسائل Optimistic/Realtime
 
        مسؤول عن:
        - Supabase
@@ -41,9 +41,11 @@
         );
 
     if (!client) {
+
         console.error(
             "WFESC: Supabase client لم يتم تحميله."
         );
+
         return;
     }
 
@@ -377,14 +379,6 @@
     }
 
 
-    /*
-       عند فتح المحادثة لا نترك المستخدم يشاهد
-       الرسائل من البداية ثم ننزل للأسفل.
-
-       نرسم الرسائل،
-       نضع الموضع مباشرة في النهاية،
-       وبعدها نسمح بالتمرير الطبيعي.
-    */
     function revealChatAtBottom() {
 
         if (!chatMessages) {
@@ -403,9 +397,6 @@
             chatMessages.style.visibility =
                 "visible";
 
-            /*
-               تحديث إضافي بعد اكتمال الصور/الخطوط.
-            */
             setTimeout(() => {
 
                 forceScrollToBottom();
@@ -437,10 +428,6 @@
             }
 
 
-            /*
-               النسخة الجديدة من settings
-               تستخدم apply / get.
-            */
             if (
                 typeof settings.apply ===
                 "function"
@@ -464,9 +451,6 @@
             }
 
 
-            /*
-               دعم النسخة القديمة أيضًا.
-            */
             if (
                 typeof settings.applySettings ===
                 "function"
@@ -1164,10 +1148,6 @@
 
     function updateTypingIndicator() {
 
-        /*
-           نستثني المستخدم الحالي.
-        */
-
         if (
             typingUsers.size > 0
         ) {
@@ -1351,11 +1331,6 @@
                     updateTypingIndicator();
 
 
-                    /*
-                       إذا توقف الطرف الآخر عن
-                       إرسال heartbeat، نخفي المؤشر
-                       تلقائيًا بعد مدة قصيرة.
-                    */
                     setTimeout(() => {
 
                         typingUsers.delete(
@@ -1501,11 +1476,6 @@
         }
 
 
-        /*
-           Supabase postgres_changes:
-           payload.new
-        */
-
         const record =
             payload.new ||
             payload.record ||
@@ -1547,30 +1517,188 @@
     }
 
 
+    /* =========================================================
+       MESSAGE DUPLICATE CHECK
+    ========================================================= */
+
     function messageAlreadyExists(
         message
     ) {
 
         const messageId =
-            getMessageId(message);
+            getMessageId(
+                message
+            );
 
 
+        /*
+           أولاً:
+           البحث بالـ ID الحقيقي.
+        */
         if (
-            messageId == null
+            messageId != null
         ) {
-            return false;
+
+            const existsInState =
+                currentMessages.some(
+                    existing => {
+
+                        const existingId =
+                            getMessageId(
+                                existing
+                            );
+
+                        return (
+                            existingId != null &&
+                            String(existingId) ===
+                            String(messageId)
+                        );
+                    }
+                );
+
+
+            if (existsInState) {
+                return true;
+            }
+
+
+            /*
+               البحث داخل DOM أيضاً.
+            */
+            if (chatMessages) {
+
+                const elements =
+                    chatMessages.querySelectorAll(
+                        "[data-message-id]"
+                    );
+
+
+                for (
+                    const element
+                    of elements
+                ) {
+
+                    if (
+                        String(
+                            element.dataset.messageId
+                        ) ===
+                        String(messageId)
+                    ) {
+
+                        return true;
+                    }
+                }
+            }
         }
 
 
-        return currentMessages.some(
-            existing =>
-                String(
-                    getMessageId(existing)
-                ) ===
-                String(messageId)
-        );
+        return false;
     }
 
+
+    /* =========================================================
+       FIND OPTIMISTIC MESSAGE
+    ========================================================= */
+
+    function findOptimisticMessageElement(
+        message
+    ) {
+
+        if (
+            !chatMessages ||
+            !message
+        ) {
+            return null;
+        }
+
+
+        const senderId =
+            getMessageSenderId(
+                message
+            );
+
+
+        const content =
+            String(
+                getMessageContent(
+                    message
+                )
+            ).trim();
+
+
+        if (
+            senderId == null ||
+            !content
+        ) {
+
+            return null;
+        }
+
+
+        const optimisticElements =
+            chatMessages.querySelectorAll(
+                ".message-row.optimistic"
+            );
+
+
+        for (
+            const element
+            of optimisticElements
+        ) {
+
+            const elementSenderId =
+                element.dataset.senderId ||
+                "";
+
+
+            if (
+                String(
+                    elementSenderId
+                ) !==
+                String(
+                    senderId
+                )
+            ) {
+
+                continue;
+            }
+
+
+            const contentElement =
+                element.querySelector(
+                    ".message-content"
+                );
+
+
+            if (!contentElement) {
+                continue;
+            }
+
+
+            const elementContent =
+                String(
+                    contentElement.textContent ||
+                    ""
+                ).trim();
+
+
+            if (
+                elementContent ===
+                content
+            ) {
+
+                return element;
+            }
+        }
+
+
+        return null;
+    }
+
+
+    /* =========================================================
+       UPDATE CONVERSATION PREVIEW
+    ========================================================= */
 
     function updateConversationPreview(
         message
@@ -1612,15 +1740,21 @@
 
 
         conversation.last_message =
-            getMessageContent(message);
+            getMessageContent(
+                message
+            );
 
 
         conversation.last_message_text =
-            getMessageContent(message);
+            getMessageContent(
+                message
+            );
 
 
         conversation.last_message_at =
-            getMessageTime(message);
+            getMessageTime(
+                message
+            );
 
 
         conversations.splice(
@@ -1638,6 +1772,10 @@
     }
 
 
+    /* =========================================================
+       HANDLE REALTIME MESSAGE
+    ========================================================= */
+
     function handleRealtimeMessage(
         payload
     ) {
@@ -1654,8 +1792,8 @@
 
 
         /*
-           تحديث قائمة المحادثات حتى لو
-           المستخدم ليس داخل المحادثة.
+           تحديث القائمة حتى لو المستخدم
+           ليس داخل هذه المحادثة.
         */
         updateConversationPreview(
             message
@@ -1663,29 +1801,181 @@
 
 
         /*
-           إذا الرسالة تخص محادثة ثانية
-           لا نضيفها داخل الشاشة الحالية.
+           ليست المحادثة الحالية.
         */
         if (
             !messageBelongsToCurrentConversation(
                 message
             )
         ) {
+
             return;
         }
 
 
         /*
-           منع التكرار.
+        ========================================================
+           أولاً:
+           هل الرسالة الحقيقية موجودة أصلاً؟
+        ========================================================
         */
+
         if (
             messageAlreadyExists(
                 message
             )
         ) {
+
+            typingUsers.clear();
+
+            hideTypingIndicator();
+
             return;
         }
 
+
+        /*
+        ========================================================
+           ثانياً:
+           هل توجد نسخة Optimistic منها؟
+        ========================================================
+        */
+
+        const optimisticElement =
+            findOptimisticMessageElement(
+                message
+            );
+
+
+        if (optimisticElement) {
+
+            const messageId =
+                getMessageId(
+                    message
+                );
+
+
+            /*
+               تحويل نفس العنصر من مؤقت
+               إلى حقيقي.
+            */
+            optimisticElement.classList.remove(
+                "optimistic"
+            );
+
+
+            optimisticElement.classList.remove(
+                "message-new"
+            );
+
+
+            optimisticElement.dataset.confirmed =
+                "true";
+
+
+            if (
+                messageId != null
+            ) {
+
+                optimisticElement.dataset.messageId =
+                    String(
+                        messageId
+                    );
+            }
+
+
+            const senderId =
+                getMessageSenderId(
+                    message
+                );
+
+
+            if (
+                senderId != null
+            ) {
+
+                optimisticElement.dataset.senderId =
+                    String(
+                        senderId
+                    );
+            }
+
+
+            const contentElement =
+                optimisticElement.querySelector(
+                    ".message-content"
+                );
+
+
+            if (contentElement) {
+
+                contentElement.textContent =
+                    getMessageContent(
+                        message
+                    );
+            }
+
+
+            const timeElement =
+                optimisticElement.querySelector(
+                    ".message-time"
+                );
+
+
+            if (timeElement) {
+
+                timeElement.textContent =
+                    formatTime(
+                        getMessageTime(
+                            message
+                        )
+                    );
+            }
+
+
+            /*
+               إضافة السجل الحقيقي إلى الحالة
+               بدون إنشاء عنصر DOM جديد.
+            */
+            currentMessages.push(
+                message
+            );
+
+
+            currentMessages.sort(
+                (a, b) => {
+
+                    return (
+                        new Date(
+                            getMessageTime(a) || 0
+                        ).getTime()
+                        -
+                        new Date(
+                            getMessageTime(b) || 0
+                        ).getTime()
+                    );
+                }
+            );
+
+
+            scheduleMessageSettingsApply();
+
+
+            typingUsers.clear();
+
+            hideTypingIndicator();
+
+
+            return;
+        }
+
+
+        /*
+        ========================================================
+           ثالثاً:
+           رسالة جديدة حقيقية من الطرف الآخر
+        ========================================================
+        */
 
         const wasAtBottom =
             isNearBottom();
@@ -1743,14 +2033,15 @@
         }
 
 
-        /*
-           الرسالة وصلت، نخفي جاري الكتابة.
-        */
         typingUsers.clear();
 
         hideTypingIndicator();
     }
 
+
+    /* =========================================================
+       MESSAGE REALTIME
+    ========================================================= */
 
     async function setupMessageRealtime() {
 
@@ -1774,11 +2065,6 @@
         }
 
 
-        /*
-           القناة تستمع إلى رسائل جدول messages.
-           إذا كان جدول الرسائل عندك اسمه مختلف،
-           نغيره فقط هنا بدون لمس بقية النظام.
-        */
         messageChannel =
             client
                 .channel(
@@ -1871,9 +2157,6 @@
             ++conversationLoadToken;
 
 
-        /*
-           إيقاف حالة الكتابة للمحادثة السابقة.
-        */
         await removeTypingChannel();
 
 
@@ -1886,7 +2169,6 @@
 
 
         typingUsers.clear();
-
 
         hideTypingIndicator();
 
@@ -1915,6 +2197,7 @@
                 loadToken !==
                 conversationLoadToken
             ) {
+
                 return;
             }
         }
@@ -1962,9 +2245,6 @@
         updateChatHeader();
 
 
-        /*
-           نجهز قناة الكتابة فور فتح المحادثة.
-        */
         setupTypingChannel(
             conversationId
         );
@@ -1979,6 +2259,7 @@
             loadToken !==
             conversationLoadToken
         ) {
+
             return;
         }
 
@@ -1988,10 +2269,6 @@
         );
 
 
-        /*
-           تأكيد الوصول للنهاية بعد اكتمال
-           جميع عمليات الرسم.
-        */
         revealChatAtBottom();
     }
 
@@ -2016,10 +2293,6 @@
 
         if (chatMessages) {
 
-            /*
-               نخفي المحتوى المؤقت حتى لا يرى
-               المستخدم المحادثة وهي تبدأ من الأعلى.
-            */
             chatMessages.style.visibility =
                 "hidden";
 
@@ -2178,7 +2451,8 @@
             ) < 150;
 
 
-        chatMessages.innerHTML = "";
+        chatMessages.innerHTML =
+            "";
 
 
         if (!currentMessages.length) {
@@ -2241,12 +2515,6 @@
 
         if (initialLoad) {
 
-            /*
-               أهم جزء:
-               نحدد الأسفل قبل إظهار المحتوى،
-               لذلك المستخدم لن يشاهد القائمة
-               وهي تبدأ من أول رسالة.
-            */
             forceScrollToBottom();
 
 
@@ -2258,9 +2526,6 @@
                     "visible";
 
 
-                /*
-                   تحديث بعد حساب أبعاد الرسائل.
-                */
                 setTimeout(() => {
 
                     forceScrollToBottom();
@@ -2350,10 +2615,6 @@
         }
 
 
-        /*
-           نضيف نوع الرسالة للـDOM
-           حتى تقدر الملفات الأخرى تتعامل معها.
-        */
         row.dataset.senderId =
             String(
                 getMessageSenderId(
@@ -2449,7 +2710,8 @@
             options.conversationId &&
             String(
                 options.conversationId
-            ) !== String(
+            ) !==
+            String(
                 currentConversationId
             )
         ) {
@@ -2729,9 +2991,6 @@
             }
 
 
-            /*
-               تشغيل Realtime مرة واحدة.
-            */
             await setupMessageRealtime();
 
 
@@ -2782,7 +3041,6 @@
 
 
                 renderConversations();
-
 
                 return;
             }
@@ -2898,57 +3156,39 @@
 
         loadConversations,
 
-
         loadConversationMessages,
-
 
         openConversation,
 
-
         closeConversation,
-
 
         ensureSupportConversation,
 
-
         getConversationContact,
-
 
         markConversationRead,
 
-
         renderMessages,
-
 
         createMessageElement,
 
-
         addMessageToCurrentConversation,
-
 
         applyMessageSettings,
 
-
         scrollChatToBottom,
-
 
         forceScrollToBottom,
 
-
         setupMessageRealtime,
-
 
         setupTypingChannel,
 
-
         sendTypingState,
-
 
         stopTyping,
 
-
         showTypingIndicator,
-
 
         hideTypingIndicator
     };
