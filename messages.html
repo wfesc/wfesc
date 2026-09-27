@@ -3,7 +3,7 @@
 
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#050505">
 <title>الرسائل | WFESC</title>
 
@@ -30,6 +30,8 @@ html{
     --green-soft:rgba(54,226,123,.14);
     --danger:#ff5252;
     --shadow:0 20px 70px rgba(0,0,0,.55);
+    --keyboard-height:0px;
+    --navigation-height:82px;
 }
 
 body{
@@ -122,23 +124,41 @@ button:disabled{
     margin-top:4px;
 }
 
-.activity-button{
+.header-actions{
     display:flex;
     align-items:center;
     gap:7px;
+}
+
+.activity-button,
+.notifications-open-button{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
     min-height:40px;
-    padding:0 13px;
+    min-width:40px;
+    padding:0 12px;
     color:#ddd;
     border-radius:14px;
     background:rgba(255,255,255,.045);
     border:1px solid var(--border);
     backdrop-filter:blur(22px);
     -webkit-backdrop-filter:blur(22px);
-    transition:.2s ease;
+    transition:
+        transform .16s ease,
+        background .2s ease,
+        border-color .2s ease;
 }
 
-.activity-button:hover{
+.activity-button:hover,
+.notifications-open-button:hover{
     background:rgba(255,255,255,.08);
+}
+
+.activity-button:active,
+.notifications-open-button:active{
+    transform:scale(.94);
 }
 
 .activity-dot{
@@ -147,12 +167,61 @@ button:disabled{
     border-radius:50%;
     background:#666;
     box-shadow:none;
-    transition:.25s ease;
+    transition:.2s ease;
 }
 
 .activity-dot.active{
     background:var(--green);
     box-shadow:0 0 12px rgba(54,226,123,.75);
+    animation:activityPulse 1.8s infinite;
+}
+
+@keyframes activityPulse{
+    0%,100%{
+        box-shadow:0 0 7px rgba(54,226,123,.35);
+    }
+    50%{
+        box-shadow:0 0 15px rgba(54,226,123,.85);
+    }
+}
+
+.notifications-open-button{
+    position:relative;
+    font-size:17px;
+}
+
+.notification-badge{
+    position:absolute;
+    top:-5px;
+    right:-5px;
+    min-width:17px;
+    height:17px;
+    padding:0 4px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    background:#fff;
+    color:#000;
+    font-size:9px;
+    font-weight:800;
+    border:2px solid #080808;
+}
+
+.notification-badge.show{
+    display:flex;
+    animation:badgePop .22s ease;
+}
+
+@keyframes badgePop{
+    from{
+        opacity:0;
+        transform:scale(.5);
+    }
+    to{
+        opacity:1;
+        transform:scale(1);
+    }
 }
 
 /* =========================
@@ -298,17 +367,24 @@ button:disabled{
     opacity:0;
     transform:translateY(13px);
     animation:conversationIn .42s cubic-bezier(.2,.8,.2,1) forwards;
-    transition:.22s ease;
+    transition:
+        background .22s ease,
+        border-color .22s ease;
 }
 
 .conversation-card:hover{
-    transform:translateY(-2px);
     background:
         linear-gradient(
             145deg,
             rgba(255,255,255,.1),
             rgba(255,255,255,.035)
         );
+}
+
+.conversation-card.existing-card{
+    opacity:1;
+    transform:none;
+    animation:none;
 }
 
 @keyframes conversationIn{
@@ -357,6 +433,7 @@ button:disabled{
     border-radius:50%;
     border:2px solid #080808;
     background:#555;
+    transition:.2s ease;
 }
 
 .online-dot.active{
@@ -414,6 +491,7 @@ button:disabled{
     color:#000;
     font-size:10px;
     font-weight:800;
+    flex:0 0 auto;
 }
 
 .card-menu{
@@ -504,12 +582,19 @@ button:disabled{
     overflow:hidden;
 }
 
+.result-username{
+    color:#666;
+    direction:ltr;
+    text-align:right;
+}
+
 .match-count{
     padding:5px 8px;
     border-radius:10px;
     color:#bbb;
     background:rgba(255,255,255,.06);
     font-size:10px;
+    white-space:nowrap;
 }
 
 /* =========================
@@ -522,6 +607,7 @@ button:disabled{
     display:none;
     min-height:calc(100vh - 30px);
     flex-direction:column;
+    padding-bottom:92px;
     animation:chatOpen .28s ease both;
 }
 
@@ -649,10 +735,10 @@ button:disabled{
     min-height:calc(100vh - 235px);
     max-height:calc(100vh - 235px);
     overflow-y:auto;
-    padding:18px 12px 110px;
+    padding:18px 12px 125px;
     display:flex;
     flex-direction:column;
-    gap:8px;
+    gap:7px;
     scroll-behavior:smooth;
 }
 
@@ -683,6 +769,10 @@ button:disabled{
     justify-content:flex-end;
 }
 
+.message-row.optimistic{
+    opacity:.72;
+}
+
 @keyframes messageIn{
     from{
         opacity:0;
@@ -696,8 +786,8 @@ button:disabled{
 
 .message-bubble{
     max-width:min(76%,600px);
-    padding:10px 13px 8px;
-    border-radius:18px;
+    padding:9px 13px;
+    border-radius:999px;
     position:relative;
     box-shadow:0 7px 25px rgba(0,0,0,.2);
 }
@@ -710,7 +800,6 @@ button:disabled{
             rgba(255,255,255,.07)
         );
     border:1px solid rgba(255,255,255,.1);
-    border-bottom-right-radius:6px;
 }
 
 .theirs .message-bubble{
@@ -721,22 +810,83 @@ button:disabled{
             rgba(255,255,255,.045)
         );
     border:1px solid rgba(54,226,123,.12);
-    border-bottom-left-radius:6px;
 }
 
 .message-content{
     font-size:13px;
-    line-height:1.65;
+    line-height:1.5;
     color:#f0f0f0;
     white-space:pre-wrap;
     word-break:break-word;
 }
 
 .message-time{
-    margin-top:4px;
-    color:#777;
+    margin-top:2px;
+    color:#676767;
+    font-size:8px;
+    line-height:1;
+    text-align:center;
+    direction:ltr;
+    user-select:none;
+}
+
+.message-row.highlight-message .message-bubble{
+    animation:messageHighlight .9s ease;
+}
+
+@keyframes messageHighlight{
+    0%,100%{
+        box-shadow:0 7px 25px rgba(0,0,0,.2);
+    }
+    50%{
+        box-shadow:
+            0 0 0 3px rgba(54,226,123,.16),
+            0 8px 30px rgba(54,226,123,.18);
+    }
+}
+
+/* =========================
+   SEARCH NAVIGATOR
+========================= */
+
+.search-match-navigator{
+    position:absolute;
+    z-index:95;
+    left:12px;
+    top:78px;
+    display:none;
+    align-items:center;
+    gap:5px;
+    padding:5px;
+    border-radius:15px;
+    background:rgba(10,10,10,.88);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+}
+
+.search-match-navigator.show{
+    display:flex;
+    animation:menuIn .2s ease;
+}
+
+.search-match-navigator button{
+    width:31px;
+    height:31px;
+    border-radius:9px;
+    color:#ddd;
+    background:rgba(255,255,255,.06);
+}
+
+.search-match-navigator button:hover{
+    background:rgba(255,255,255,.11);
+}
+
+.search-match-count{
+    min-width:45px;
+    color:#888;
     font-size:9px;
-    text-align:left;
+    text-align:center;
 }
 
 /* =========================
@@ -744,20 +894,37 @@ button:disabled{
 ========================= */
 
 .typing-indicator{
+    position:absolute;
+    right:13px;
+    bottom:73px;
+    z-index:75;
     display:none;
     align-items:center;
     gap:5px;
     width:max-content;
-    padding:9px 12px;
-    margin:0 7px 8px;
+    padding:8px 11px;
     border-radius:15px;
     color:#888;
     background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.06);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
 }
 
 .typing-indicator.show{
     display:flex;
+    animation:typingIn .18s ease;
+}
+
+@keyframes typingIn{
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 
 .typing-text{
@@ -823,6 +990,8 @@ button:disabled{
         inset 0 1px 0 rgba(255,255,255,.06);
     backdrop-filter:blur(30px);
     -webkit-backdrop-filter:blur(30px);
+    transform:translateY(calc(var(--keyboard-height) * -1));
+    transition:transform .08s linear;
 }
 
 .message-input{
@@ -863,11 +1032,15 @@ button:disabled{
     transform:scale(.94);
 }
 
-/*
-  مساحة حماية من شريط التنقل الذي يحقنه navigation-loader
-*/
-.chat-view{
-    padding-bottom:92px;
+.send-button.sending{
+    animation:sendPulse .7s infinite;
+}
+
+@keyframes sendPulse{
+    50%{
+        opacity:.55;
+        transform:scale(.94);
+    }
 }
 
 /* =========================
@@ -1069,8 +1242,8 @@ button:disabled{
     z-index:9000;
     top:15px;
     left:15px;
-    width:min(390px,calc(100% - 30px));
-    max-height:75vh;
+    width:min(430px,calc(100% - 30px));
+    max-height:78vh;
     overflow:auto;
     display:none;
     padding:12px;
@@ -1091,6 +1264,7 @@ button:disabled{
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:8px;
     padding:7px 5px 12px;
 }
 
@@ -1112,10 +1286,27 @@ button:disabled{
     background:rgba(255,255,255,.04);
     margin-bottom:7px;
     border:1px solid rgba(255,255,255,.05);
+    cursor:pointer;
+    transition:.18s ease;
+}
+
+.notification-item:hover{
+    background:rgba(255,255,255,.07);
 }
 
 .notification-item.unread{
     background:rgba(255,255,255,.075);
+}
+
+.notification-icon{
+    width:34px;
+    height:34px;
+    flex:0 0 34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:11px;
+    background:rgba(255,255,255,.06);
 }
 
 .notification-content{
@@ -1135,6 +1326,14 @@ button:disabled{
 .notification-delete{
     color:#777;
     background:transparent;
+    width:25px;
+    height:25px;
+    border-radius:8px;
+}
+
+.notification-delete:hover{
+    color:#fff;
+    background:rgba(255,255,255,.07);
 }
 
 /* =========================
@@ -1164,6 +1363,16 @@ button:disabled{
     to{
         transform:rotate(360deg);
     }
+}
+
+/* =========================
+   SUPPORT
+========================= */
+
+.support-label{
+    color:#888;
+    font-size:9px;
+    margin-right:5px;
 }
 
 /* =========================
@@ -1204,6 +1413,7 @@ button:disabled{
 
     .message-bubble{
         max-width:84%;
+        padding:8px 12px;
     }
 
     .chat-actions{
@@ -1217,9 +1427,29 @@ button:disabled{
     .search-input{
         font-size:13px;
     }
+
+    .header-actions{
+        gap:5px;
+    }
+
+    .activity-button{
+        min-width:40px;
+        width:40px;
+        padding:0;
+    }
+
+    .activity-button #activityText{
+        display:none;
+    }
+
+    .notifications-open-button{
+        width:40px;
+        padding:0;
+    }
 }
 
 @media(prefers-reduced-motion:reduce){
+
     *,
     *::before,
     *::after{
@@ -1236,10 +1466,6 @@ button:disabled{
 
 <div class="messages-page" id="messagesPage">
 
-    <!-- =========================
-         MAIN HEADER
-    ========================== -->
-
     <header class="top-header">
 
         <div class="title-area">
@@ -1255,28 +1481,46 @@ button:disabled{
 
         </div>
 
-        <button
-            type="button"
-            class="activity-button"
-            id="activityButton">
+        <div class="header-actions">
 
-            <span
-                class="activity-dot"
-                id="topActivityDot">
-            </span>
+            <!-- الإشعارات: يسار الهيدر -->
+            <button
+                type="button"
+                class="notifications-open-button"
+                id="notificationsOpenButton"
+                aria-label="الإشعارات">
 
-            <span id="activityText">
-                غير نشط
-            </span>
+                🔔
 
-        </button>
+                <span
+                    class="notification-badge"
+                    id="notificationBadge">
+                    0
+                </span>
+
+            </button>
+
+            <!-- النشاط -->
+            <button
+                type="button"
+                class="activity-button"
+                id="activityButton">
+
+                <span
+                    class="activity-dot"
+                    id="topActivityDot">
+                </span>
+
+                <span id="activityText">
+                    غير نشط
+                </span>
+
+            </button>
+
+        </div>
 
     </header>
 
-
-    <!-- =========================
-         SEARCH
-    ========================== -->
 
     <section class="search-section">
 
@@ -1315,10 +1559,6 @@ button:disabled{
     </section>
 
 
-    <!-- =========================
-         MAIN LIST
-    ========================== -->
-
     <main class="main-list" id="mainList">
 
         <div class="list-title">
@@ -1340,19 +1580,11 @@ button:disabled{
     </main>
 
 
-    <!-- =========================
-         SEARCH RESULTS
-    ========================== -->
-
     <div
         class="search-results"
         id="searchResults">
     </div>
 
-
-    <!-- =========================
-         FULL CHAT
-    ========================== -->
 
     <section
         class="chat-view"
@@ -1398,7 +1630,7 @@ button:disabled{
                     <div
                         id="chatStatus"
                         class="chat-person-status">
-                        متصل
+                        غير نشط
                     </div>
 
                 </div>
@@ -1439,6 +1671,33 @@ button:disabled{
 
             </div>
 
+            <!-- التنقل بين نتائج البحث -->
+            <div
+                class="search-match-navigator"
+                id="searchMatchNavigator">
+
+                <button
+                    type="button"
+                    id="searchMatchUp"
+                    aria-label="النتيجة السابقة">
+                    ↑
+                </button>
+
+                <span
+                    class="search-match-count"
+                    id="searchMatchCount">
+                    0 / 0
+                </span>
+
+                <button
+                    type="button"
+                    id="searchMatchDown"
+                    aria-label="النتيجة التالية">
+                    ↓
+                </button>
+
+            </div>
+
 
             <div
                 class="typing-indicator"
@@ -1456,12 +1715,6 @@ button:disabled{
 
             </div>
 
-
-            <!--
-                مهم:
-                هذا العنصر داخل chat-body وفوق شريط التنقل
-                حتى يبقى قابل للضغط دائمًا.
-            -->
 
             <form
                 class="chat-composer"
@@ -1644,7 +1897,6 @@ button:disabled{
 <script src="./settings-features/settings-auth.js"></script>
 <script src="./settings-features/settings-auth-ui.js"></script>
 
-
 <script>
 (function(){
 
@@ -1678,6 +1930,9 @@ const DEFAULT_AVATAR =
 const SUPPORT_AVATAR =
     "./sborts-wfesc-help.jpg";
 
+const SUPPORT_NAME =
+    "تواصل مع فريق الدعم الشامل";
+
 
 /* =====================================================
    SUPABASE
@@ -1701,36 +1956,30 @@ if(!client){
 ===================================================== */
 
 let currentUser = null;
-
 let currentConversationId = null;
-
 let currentConversationContact = null;
-
 let conversations = [];
 
-let currentMessages = [];
-
 let messageChannel = null;
-
 let typingChannel = null;
-
 let presenceChannel = null;
-
 let notificationChannel = null;
 
 let typingTimer = null;
-
 let typingCleanupTimer = null;
 
 let isSending = false;
-
 let searchMode = "messages";
-
 let contextConversationId = null;
-
 let pendingConfirmAction = null;
-
 let initialized = false;
+
+let activityEnabled = false;
+
+let notificationsRows = [];
+
+let searchMatches = [];
+let searchMatchIndex = -1;
 
 
 /* =====================================================
@@ -1842,6 +2091,24 @@ const notificationsList =
 const markAllNotifications =
     document.getElementById("markAllNotifications");
 
+const notificationsOpenButton =
+    document.getElementById("notificationsOpenButton");
+
+const notificationBadge =
+    document.getElementById("notificationBadge");
+
+const searchMatchNavigator =
+    document.getElementById("searchMatchNavigator");
+
+const searchMatchUp =
+    document.getElementById("searchMatchUp");
+
+const searchMatchDown =
+    document.getElementById("searchMatchDown");
+
+const searchMatchCount =
+    document.getElementById("searchMatchCount");
+
 
 /* =====================================================
    HELPERS
@@ -1874,17 +2141,6 @@ function formatTime(dateValue){
     const now =
         new Date();
 
-    const diff =
-        now.getTime() - date.getTime();
-
-    if(diff < 60000){
-        return "الآن";
-    }
-
-    if(diff < 3600000){
-        return Math.floor(diff / 60000) + " د";
-    }
-
     if(date.toDateString() === now.toDateString()){
 
         return date.toLocaleTimeString(
@@ -1910,31 +2166,54 @@ function formatTime(dateValue){
 function getDisplayName(contact){
 
     if(!contact){
-        return "مستخدم";
+        return "بدون اسم";
     }
 
-    return (
-        contact.display_name ||
-        "مستخدم"
-    );
+    /*
+      display_name هو الاسم الذي اختاره
+      المستخدم ويظهر في واجهة الرسائل.
+    */
+    if(
+        contact.display_name &&
+        String(contact.display_name).trim()
+    ){
+        return String(contact.display_name).trim();
+    }
+
+    /*
+      لا نعرض @username في المحادثة.
+      إذا لا يوجد display_name نستخدم الاسم
+      المتوفر من profile بدون كتابة "مستخدم".
+    */
+    if(
+        contact.name &&
+        String(contact.name).trim()
+    ){
+        return String(contact.name).trim();
+    }
+
+    if(
+        contact.full_name &&
+        String(contact.full_name).trim()
+    ){
+        return String(contact.full_name).trim();
+    }
+
+    return "بدون اسم";
 }
 
 
 function avatarUrl(contact){
 
-    if(!contact){
-        return DEFAULT_AVATAR;
+    if(contact?.is_support){
+        return SUPPORT_AVATAR;
     }
 
     if(
-        contact.avatar_url &&
+        contact?.avatar_url &&
         String(contact.avatar_url).trim()
     ){
         return contact.avatar_url;
-    }
-
-    if(contact.is_support){
-        return SUPPORT_AVATAR;
     }
 
     return DEFAULT_AVATAR;
@@ -1951,7 +2230,9 @@ function showImage(img,url){
 
     };
 
-    img.src = url || DEFAULT_AVATAR;
+    img.src =
+        url ||
+        DEFAULT_AVATAR;
 }
 
 
@@ -1983,6 +2264,38 @@ function setLoading(container,text){
 }
 
 
+function normalizeSearchText(text){
+
+    return String(text || "")
+        .trim()
+        .replace(/\s+/g," ");
+}
+
+
+function normalizeArabic(text){
+
+    return String(text || "")
+        .toLowerCase()
+        .replace(/[أإآ]/g,"ا")
+        .replace(/ة/g,"ه")
+        .replace(/ى/g,"ي")
+        .replace(/ؤ/g,"و")
+        .replace(/ئ/g,"ي")
+        .replace(/ـ/g,"");
+}
+
+
+function getConversationSortTime(conversation){
+
+    return new Date(
+        conversation?.updated_at ||
+        conversation?.last_message_at ||
+        conversation?.created_at ||
+        0
+    ).getTime();
+}
+
+
 /* =====================================================
    AUTH
 ===================================================== */
@@ -1995,7 +2308,8 @@ async function getSession(){
             await client.auth.getSession();
 
         currentUser =
-            result?.data?.session?.user || null;
+            result?.data?.session?.user ||
+            null;
 
         return currentUser;
 
@@ -2036,15 +2350,18 @@ async function loadActivity(){
             throw error;
         }
 
-        const enabled =
+        activityEnabled =
             data?.show_activity !== false;
 
-        updateActivityUI(enabled);
+        updateActivityUI(
+            activityEnabled,
+            false
+        );
 
         await client.rpc(
             "set_my_presence",
             {
-                online:enabled
+                online:activityEnabled
             }
         );
 
@@ -2055,25 +2372,68 @@ async function loadActivity(){
             error
         );
 
-        updateActivityUI(true);
+        activityEnabled = true;
+
+        updateActivityUI(
+            true,
+            false
+        );
     }
 }
 
 
-function updateActivityUI(enabled){
+function updateActivityUI(enabled,animate=true){
+
+    activityEnabled =
+        Boolean(enabled);
+
+    if(animate){
+
+        activityButton.animate(
+            [
+                {
+                    transform:"scale(.94)",
+                    opacity:.65
+                },
+                {
+                    transform:"scale(1)",
+                    opacity:1
+                }
+            ],
+            {
+                duration:190,
+                easing:"ease-out"
+            }
+        );
+
+        activitySwitch.animate(
+            [
+                {
+                    transform:"scale(.88)"
+                },
+                {
+                    transform:"scale(1)"
+                }
+            ],
+            {
+                duration:190,
+                easing:"ease-out"
+            }
+        );
+    }
 
     activitySwitch.classList.toggle(
         "on",
-        enabled
+        activityEnabled
     );
 
     topActivityDot.classList.toggle(
         "active",
-        enabled
+        activityEnabled
     );
 
     activityText.textContent =
-        enabled
+        activityEnabled
             ? "نشط"
             : "غير نشط";
 }
@@ -2085,8 +2445,18 @@ async function toggleActivity(){
         return;
     }
 
-    const enabled =
-        !activitySwitch.classList.contains("on");
+    /*
+      تحديث الواجهة فوراً حتى لا يشعر المستخدم
+      أن الزر متأخر.
+    */
+
+    const next =
+        !activityEnabled;
+
+    updateActivityUI(
+        next,
+        true
+    );
 
     try{
 
@@ -2094,7 +2464,7 @@ async function toggleActivity(){
             await client
                 .from("profiles")
                 .update({
-                    show_activity:enabled
+                    show_activity:next
                 })
                 .eq("id",currentUser.id);
 
@@ -2105,11 +2475,9 @@ async function toggleActivity(){
         await client.rpc(
             "set_my_presence",
             {
-                online:enabled
+                online:next
             }
         );
-
-        updateActivityUI(enabled);
 
     }catch(error){
 
@@ -2118,9 +2486,112 @@ async function toggleActivity(){
             error
         );
 
+        /*
+          إذا فشل الحفظ نرجع الحالة السابقة.
+        */
+
+        updateActivityUI(
+            !next,
+            true
+        );
+
         alert(
             "تعذر تحديث حالة النشاط."
         );
+    }
+}
+
+
+/* =====================================================
+   CONTACT
+===================================================== */
+
+async function getConversationContact(
+    conversationId,
+    type
+){
+
+    try{
+
+        const {data,error} =
+            await client.rpc(
+                "get_conversation_contacts",
+                {
+                    target_conversation_id:
+                        conversationId
+                }
+            );
+
+        if(error){
+            throw error;
+        }
+
+        let contact =
+            Array.isArray(data)
+                ? data[0]
+                : data;
+
+        if(!contact){
+            return null;
+        }
+
+        if(type === "support"){
+
+            contact = {
+                ...contact,
+                is_support:true,
+                display_name:
+                    SUPPORT_NAME,
+                avatar_url:
+                    SUPPORT_AVATAR
+            };
+        }
+
+        return contact;
+
+    }catch(error){
+
+        console.error(
+            "getConversationContact",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/* =====================================================
+   SUPPORT AUTO CREATE
+===================================================== */
+
+async function ensureSupportConversation(){
+
+    if(!currentUser){
+        return null;
+    }
+
+    try{
+
+        const {data,error} =
+            await client.rpc(
+                "get_or_create_support_conversation"
+            );
+
+        if(error){
+            throw error;
+        }
+
+        return data || null;
+
+    }catch(error){
+
+        console.warn(
+            "support init",
+            error
+        );
+
+        return null;
     }
 }
 
@@ -2155,6 +2626,8 @@ async function loadConversations(){
 
     try{
 
+        await ensureSupportConversation();
+
         const {data,error} =
             await client.rpc(
                 "get_my_conversations"
@@ -2169,20 +2642,16 @@ async function loadConversations(){
                 ? data
                 : [];
 
-        conversations.sort(function(a,b){
-
-            return (
-                new Date(b.updated_at || b.last_message_at || 0)
-                -
-                new Date(a.updated_at || a.last_message_at || 0)
-            );
-
-        });
+        conversations.sort(
+            (a,b) =>
+                getConversationSortTime(b) -
+                getConversationSortTime(a)
+        );
 
         conversationCount.textContent =
             String(conversations.length);
 
-        await renderConversationsProgressively();
+        await renderConversationsInitial();
 
     }catch(error){
 
@@ -2205,10 +2674,10 @@ async function loadConversations(){
 
 
 /* =====================================================
-   PROGRESSIVE CONVERSATIONS
+   INITIAL PROGRESSIVE RENDER
 ===================================================== */
 
-async function renderConversationsProgressively(){
+async function renderConversationsInitial(){
 
     conversationList.innerHTML = "";
 
@@ -2250,73 +2719,171 @@ async function renderConversationsProgressively(){
 
         conversationList.appendChild(card);
 
-        /*
-          هذا التأخير هو الذي يجعل العناصر
-          تظهر واحداً وراء الآخر.
-        */
         await new Promise(
-            resolve => setTimeout(
-                resolve,
-                55
-            )
+            resolve =>
+                setTimeout(
+                    resolve,
+                    55
+                )
         );
     }
 }
 
 
 /* =====================================================
-   CONVERSATION CARD
+   UPDATE EXISTING CARD
 ===================================================== */
 
-async function createConversationCard(conversation){
+function updateConversationCard(
+    card,
+    conversation,
+    contact
+){
 
-    let contact = null;
+    card._contact =
+        contact;
 
-    try{
+    card._conversation =
+        conversation;
 
-        const {data,error} =
-            await client.rpc(
-                "get_conversation_contacts",
-                {
-                    target_conversation_id:
-                        conversation.conversation_id
-                }
-            );
+    const name =
+        conversation.type === "support"
+            ? SUPPORT_NAME
+            : getDisplayName(contact);
 
-        if(error){
-            throw error;
-        }
+    const preview =
+        conversation.last_message ||
+        "لا توجد رسائل بعد";
 
-        contact =
-            Array.isArray(data)
-                ? data[0]
-                : data;
-
-    }catch(error){
-
-        console.error(
-            "get contact",
-            error
+    const unread =
+        Number(
+            conversation.unread_count ||
+            0
         );
 
-        return null;
+    const online =
+        contact.show_activity !== false &&
+        contact.is_online === true;
+
+    const nameNode =
+        card.querySelector(
+            ".conversation-name"
+        );
+
+    const timeNode =
+        card.querySelector(
+            ".conversation-time"
+        );
+
+    const previewNode =
+        card.querySelector(
+            ".conversation-preview > span"
+        );
+
+    const badge =
+        card.querySelector(
+            ".unread-badge"
+        );
+
+    const avatar =
+        card.querySelector(
+            ".avatar"
+        );
+
+    const dot =
+        card.querySelector(
+            ".online-dot"
+        );
+
+    if(nameNode){
+        nameNode.textContent =
+            name;
     }
+
+    if(timeNode){
+        timeNode.textContent =
+            formatTime(
+                conversation.last_message_at ||
+                conversation.updated_at
+            );
+    }
+
+    if(previewNode){
+        previewNode.textContent =
+            preview;
+    }
+
+    if(avatar){
+
+        showImage(
+            avatar,
+            avatarUrl(contact)
+        );
+    }
+
+    if(dot){
+
+        dot.classList.toggle(
+            "active",
+            online
+        );
+    }
+
+    if(
+        unread > 0 &&
+        !badge
+    ){
+
+        const newBadge =
+            document.createElement("span");
+
+        newBadge.className =
+            "unread-badge";
+
+        newBadge.textContent =
+            unread > 99
+                ? "99+"
+                : String(unread);
+
+        card
+            .querySelector(".conversation-preview")
+            ?.appendChild(
+                newBadge
+            );
+
+    }else if(
+        unread <= 0 &&
+        badge
+    ){
+
+        badge.remove();
+
+    }else if(badge){
+
+        badge.textContent =
+            unread > 99
+                ? "99+"
+                : String(unread);
+    }
+}
+
+
+/* =====================================================
+   CREATE CONVERSATION CARD
+===================================================== */
+
+async function createConversationCard(
+    conversation
+){
+
+    const contact =
+        await getConversationContact(
+            conversation.conversation_id,
+            conversation.type
+        );
 
     if(!contact){
         return null;
-    }
-
-    if(conversation.type === "support"){
-
-        contact.is_support = true;
-
-        if(
-            !contact.avatar_url ||
-            contact.avatar_url === DEFAULT_AVATAR
-        ){
-            contact.avatar_url =
-                SUPPORT_AVATAR;
-        }
     }
 
     const card =
@@ -2334,12 +2901,20 @@ async function createConversationCard(conversation){
     card._conversation =
         conversation;
 
-    const unread =
-        Number(conversation.unread_count || 0);
-
     const online =
         contact.show_activity !== false &&
         contact.is_online === true;
+
+    const unread =
+        Number(
+            conversation.unread_count ||
+            0
+        );
+
+    const name =
+        conversation.type === "support"
+            ? SUPPORT_NAME
+            : getDisplayName(contact);
 
     const preview =
         conversation.last_message ||
@@ -2351,7 +2926,9 @@ async function createConversationCard(conversation){
 
             <img
                 class="avatar"
-                src="${escapeHtml(avatarUrl(contact))}"
+                src="${escapeHtml(
+                    avatarUrl(contact)
+                )}"
                 alt="">
 
             <span
@@ -2365,11 +2942,7 @@ async function createConversationCard(conversation){
             <div class="conversation-top">
 
                 <span class="conversation-name">
-                    ${escapeHtml(
-                        conversation.type === "support"
-                            ? "دعم WFESC"
-                            : getDisplayName(contact)
-                    )}
+                    ${escapeHtml(name)}
                 </span>
 
                 <span class="conversation-time">
@@ -2417,7 +2990,9 @@ async function createConversationCard(conversation){
     image.addEventListener(
         "error",
         function(){
-            image.src = DEFAULT_AVATAR;
+
+            image.src =
+                DEFAULT_AVATAR;
         }
     );
 
@@ -2458,11 +3033,170 @@ async function createConversationCard(conversation){
                 contact,
                 conversation.type
             );
-
         }
     );
 
     return card;
+}
+
+
+/* =====================================================
+   SILENT LIST SYNC
+   لا نمسح القائمة ولا نعيد الـAnimation
+===================================================== */
+
+async function syncConversationList(){
+
+    if(
+        page.classList.contains("chat-active") ||
+        searchInput.value.trim()
+    ){
+        return;
+    }
+
+    const cards =
+        new Map();
+
+    conversationList
+        .querySelectorAll(
+            ".conversation-card"
+        )
+        .forEach(function(card){
+
+            cards.set(
+                card.dataset.conversationId,
+                card
+            );
+        });
+
+    const empty =
+        conversationList.querySelector(
+            ".empty-state"
+        );
+
+    if(empty){
+        empty.remove();
+    }
+
+    if(!conversations.length){
+
+        if(
+            !conversationList.querySelector(
+                ".empty-state"
+            )
+        ){
+
+            conversationList.innerHTML = `
+                <div class="empty-state glass">
+                    <div class="empty-icon">💬</div>
+                    <strong>لا توجد محادثات بعد</strong>
+                    <p>
+                        ابدأ محادثة جديدة من البحث عن المستخدمين.
+                    </p>
+                </div>
+            `;
+        }
+
+        return;
+    }
+
+    for(
+        const conversation of conversations
+    ){
+
+        let card =
+            cards.get(
+                conversation.conversation_id
+            );
+
+        const contact =
+            await getConversationContact(
+                conversation.conversation_id,
+                conversation.type
+            );
+
+        if(!contact){
+            continue;
+        }
+
+        if(!card){
+
+            card =
+                await createConversationCard(
+                    conversation
+                );
+
+            if(!card){
+                continue;
+            }
+
+            card.classList.add(
+                "existing-card"
+            );
+        }else{
+
+            updateConversationCard(
+                card,
+                conversation,
+                contact
+            );
+        }
+
+        /*
+          appendChild لعنصر موجود ينقله فقط
+          بدون إنشاء Animation أو Reset.
+        */
+        conversationList.appendChild(
+            card
+        );
+    }
+
+    conversationCount.textContent =
+        String(conversations.length);
+}
+
+
+/* =====================================================
+   FETCH + SILENT REFRESH
+===================================================== */
+
+async function refreshConversationListSilently(){
+
+    if(!currentUser){
+        return;
+    }
+
+    try{
+
+        const {data,error} =
+            await client.rpc(
+                "get_my_conversations"
+            );
+
+        if(error){
+            throw error;
+        }
+
+        conversations =
+            Array.isArray(data)
+                ? data
+                : [];
+
+        conversations.sort(
+            (a,b) =>
+                getConversationSortTime(b) -
+                getConversationSortTime(a)
+        );
+
+        await syncConversationList();
+
+    }catch(error){
+
+        console.warn(
+            "silent refresh",
+            error
+        );
+    }
 }
 
 
@@ -2488,17 +3222,15 @@ async function openConversation(
 
     if(type === "support"){
 
-        currentConversationContact.is_support =
-            true;
-
-        currentConversationContact.avatar_url =
-            SUPPORT_AVATAR;
+        currentConversationContact = {
+            ...currentConversationContact,
+            is_support:true,
+            display_name:
+                SUPPORT_NAME,
+            avatar_url:
+                SUPPORT_AVATAR
+        };
     }
-
-    /*
-      هنا نخفي كل الصفحة الرئيسية
-      ونترك المحادثة فقط.
-    */
 
     page.classList.add(
         "chat-active"
@@ -2507,6 +3239,13 @@ async function openConversation(
     chatView.classList.add(
         "open"
     );
+
+    searchMatchNavigator.classList.remove(
+        "show"
+    );
+
+    searchMatches = [];
+    searchMatchIndex = -1;
 
     updateChatHeader();
 
@@ -2527,11 +3266,14 @@ async function openConversation(
 
     scrollChatToBottom(false);
 
-    setTimeout(function(){
+    setTimeout(
+        function(){
 
-        messageInput.focus();
+            messageInput.focus();
 
-    },180);
+        },
+        120
+    );
 }
 
 
@@ -2546,7 +3288,7 @@ function updateChatHeader(){
 
     chatName.textContent =
         contact?.is_support
-            ? "دعم WFESC"
+            ? SUPPORT_NAME
             : getDisplayName(contact);
 
     showImage(
@@ -2574,6 +3316,8 @@ function updateChatHeader(){
    LOAD MESSAGES
 ===================================================== */
 
+let currentMessages = [];
+
 async function loadConversationMessages(){
 
     if(!currentConversationId){
@@ -2600,6 +3344,12 @@ async function loadConversationMessages(){
             Array.isArray(data)
                 ? data
                 : [];
+
+        currentMessages.sort(
+            (a,b) =>
+                new Date(a.created_at) -
+                new Date(b.created_at)
+        );
 
         renderMessages();
 
@@ -2658,7 +3408,9 @@ function renderMessages(){
             row.style.animationDelay =
                 Math.min(index * 18,350) + "ms";
 
-            chatMessages.appendChild(row);
+            chatMessages.appendChild(
+                row
+            );
         }
     );
 }
@@ -2685,10 +3437,40 @@ function createMessageElement(
         (mine ? "mine" : "theirs");
 
     if(isNew){
+
         row.classList.add(
             "message-new"
         );
     }
+
+    if(message.optimistic){
+
+        row.classList.add(
+            "optimistic"
+        );
+
+        row.dataset.optimistic =
+            "true";
+    }
+
+    row.dataset.messageId =
+        message.message_id ||
+        message.id ||
+        "";
+
+    const wrapper =
+        document.createElement("div");
+
+    wrapper.style.display =
+        "flex";
+
+    wrapper.style.flexDirection =
+        "column";
+
+    wrapper.style.alignItems =
+        mine
+            ? "flex-start"
+            : "flex-end";
 
     const bubble =
         document.createElement("div");
@@ -2716,44 +3498,38 @@ function createMessageElement(
             message.created_at
         );
 
-    bubble.appendChild(content);
-    bubble.appendChild(time);
+    bubble.appendChild(
+        content
+    );
 
-    row.appendChild(bubble);
+    wrapper.appendChild(
+        bubble
+    );
+
+    /*
+      الوقت عنصر منفصل خارج الفقاعة.
+    */
+
+    wrapper.appendChild(
+        time
+    );
+
+    row.appendChild(
+        wrapper
+    );
 
     return row;
 }
 
 
 /* =====================================================
-   APPEND MESSAGE WITHOUT RELOAD
+   OPTIMISTIC MESSAGE
 ===================================================== */
 
-function appendIncomingMessage(message){
+function appendOptimisticMessage(
+    content
+){
 
-    if(
-        !message ||
-        message.conversation_id !==
-        currentConversationId
-    ){
-        return;
-    }
-
-    const exists =
-        currentMessages.some(
-            item =>
-                item.message_id ===
-                message.message_id ||
-                item.id === message.id
-        );
-
-    if(exists){
-        return;
-    }
-
-    /*
-      إزالة رسالة "ابدأ المحادثة"
-    */
     const empty =
         chatMessages.querySelector(
             ".empty-state"
@@ -2763,20 +3539,36 @@ function appendIncomingMessage(message){
         empty.remove();
     }
 
-    currentMessages.push(
-        message
-    );
+    const optimisticId =
+        "temp-" +
+        Date.now() +
+        "-" +
+        Math.random()
+            .toString(36)
+            .slice(2);
 
-    currentMessages.sort(
-        function(a,b){
+    const message = {
 
-            return (
-                new Date(a.created_at) -
-                new Date(b.created_at)
-            );
+        message_id:
+            optimisticId,
 
-        }
-    );
+        id:
+            optimisticId,
+
+        conversation_id:
+            currentConversationId,
+
+        sender_id:
+            currentUser.id,
+
+        content:
+            content,
+
+        created_at:
+            new Date().toISOString(),
+
+        optimistic:true
+    };
 
     const row =
         createMessageElement(
@@ -2784,9 +3576,275 @@ function appendIncomingMessage(message){
             true
         );
 
-    chatMessages.appendChild(row);
+    row.dataset.optimisticContent =
+        content;
 
-    scrollChatToBottom(true);
+    chatMessages.appendChild(
+        row
+    );
+
+    requestAnimationFrame(
+        function(){
+
+            scrollChatToBottom(
+                true
+            );
+
+        }
+    );
+
+    return {
+        id:optimisticId,
+        row:row
+    };
+}
+
+
+/* =====================================================
+   RECONCILE OPTIMISTIC
+===================================================== */
+
+function reconcileOptimisticMessage(
+    realMessage
+){
+
+    const optimistic =
+        Array.from(
+            chatMessages.querySelectorAll(
+                '.message-row[data-optimistic="true"]'
+            )
+        ).find(function(row){
+
+            return (
+                row.dataset.optimisticContent ===
+                String(realMessage.content || "")
+            );
+
+        });
+
+    if(!optimistic){
+
+        const exists =
+            currentMessages.some(
+                item =>
+                    (
+                        item.message_id ||
+                        item.id
+                    ) ===
+                    realMessage.id
+            );
+
+        if(!exists){
+
+            currentMessages.push({
+                message_id:
+                    realMessage.id,
+                id:
+                    realMessage.id,
+                conversation_id:
+                    realMessage.conversation_id,
+                sender_id:
+                    realMessage.sender_id,
+                content:
+                    realMessage.content,
+                created_at:
+                    realMessage.created_at,
+                edited_at:
+                    realMessage.edited_at,
+                deleted_at:
+                    realMessage.deleted_at
+            });
+
+            currentMessages.sort(
+                (a,b) =>
+                    new Date(a.created_at) -
+                    new Date(b.created_at)
+            );
+
+            const row =
+                createMessageElement(
+                    realMessage,
+                    true
+                );
+
+            chatMessages.appendChild(
+                row
+            );
+        }
+
+        return;
+    }
+
+    optimistic.classList.remove(
+        "optimistic"
+    );
+
+    optimistic.removeAttribute(
+        "data-optimistic"
+    );
+
+    optimistic.dataset.messageId =
+        realMessage.id;
+
+    optimistic
+        .querySelector(
+            ".message-time"
+        )
+        .textContent =
+        formatTime(
+            realMessage.created_at
+        );
+
+    const index =
+        currentMessages.findIndex(
+            item =>
+                item.optimistic === true &&
+                item.content ===
+                    realMessage.content
+        );
+
+    if(index >= 0){
+
+        currentMessages[index] = {
+
+            message_id:
+                realMessage.id,
+
+            id:
+                realMessage.id,
+
+            conversation_id:
+                realMessage.conversation_id,
+
+            sender_id:
+                realMessage.sender_id,
+
+            content:
+                realMessage.content,
+
+            created_at:
+                realMessage.created_at,
+
+            edited_at:
+                realMessage.edited_at,
+
+            deleted_at:
+                realMessage.deleted_at
+        };
+    }
+}
+
+
+/* =====================================================
+   APPEND INCOMING MESSAGE
+===================================================== */
+
+function appendIncomingMessage(
+    message
+){
+
+    if(
+        !message ||
+        message.conversation_id !==
+            currentConversationId
+    ){
+        return;
+    }
+
+    /*
+      رسالتنا نحن:
+      لا نتجاهلها، بل نستبدل الفقاعة المؤقتة.
+    */
+
+    if(
+        message.sender_id ===
+        currentUser?.id
+    ){
+
+        reconcileOptimisticMessage(
+            message
+        );
+
+        scrollChatToBottom(
+            true
+        );
+
+        return;
+    }
+
+    const exists =
+        currentMessages.some(
+            item =>
+                (
+                    item.message_id ||
+                    item.id
+                ) ===
+                message.id
+        );
+
+    if(exists){
+        return;
+    }
+
+    const empty =
+        chatMessages.querySelector(
+            ".empty-state"
+        );
+
+    if(empty){
+        empty.remove();
+    }
+
+    const normalized = {
+
+        message_id:
+            message.id,
+
+        id:
+            message.id,
+
+        conversation_id:
+            message.conversation_id,
+
+        sender_id:
+            message.sender_id,
+
+        content:
+            message.content,
+
+        created_at:
+            message.created_at,
+
+        edited_at:
+            message.edited_at,
+
+        deleted_at:
+            message.deleted_at
+    };
+
+    currentMessages.push(
+        normalized
+    );
+
+    currentMessages.sort(
+        (a,b) =>
+            new Date(a.created_at) -
+            new Date(b.created_at)
+    );
+
+    const row =
+        createMessageElement(
+            normalized,
+            true
+        );
+
+    chatMessages.appendChild(
+        row
+    );
+
+    scrollChatToBottom(
+        true
+    );
 
     markConversationRead();
 }
@@ -2800,13 +3858,7 @@ messageForm.addEventListener(
     "submit",
     async function(event){
 
-        /*
-          أهم إصلاح:
-          منع المتصفح من عمل reload.
-        */
-
         event.preventDefault();
-
         event.stopPropagation();
 
         await sendCurrentMessage();
@@ -2832,9 +3884,26 @@ async function sendCurrentMessage(){
         return;
     }
 
+    /*
+      الرسالة تظهر فوراً قبل انتظار Supabase.
+    */
+
+    const optimistic =
+        appendOptimisticMessage(
+            content
+        );
+
+    messageInput.value = "";
+
+    autoResizeTextarea();
+
     isSending = true;
 
     sendButton.disabled = true;
+
+    sendButton.classList.add(
+        "sending"
+    );
 
     const original =
         sendButton.textContent;
@@ -2861,9 +3930,8 @@ async function sendCurrentMessage(){
         }
 
         /*
-          إذا رجع RPC الرسالة نضيفها مباشرة.
-          وإذا كان Realtime سيصل بها أيضاً،
-          appendIncomingMessage يمنع التكرار.
+          بعض نسخ RPC ترجع البيانات
+          وبعضها لا ترجع شيئاً.
         */
 
         if(data){
@@ -2875,9 +3943,12 @@ async function sendCurrentMessage(){
 
             if(message){
 
-                appendIncomingMessage({
-
+                reconcileOptimisticMessage({
                     ...message,
+
+                    id:
+                        message.id ||
+                        message.message_id,
 
                     conversation_id:
                         currentConversationId,
@@ -2886,27 +3957,83 @@ async function sendCurrentMessage(){
                         currentUser.id,
 
                     content:
-                        message.content || content,
+                        message.content ||
+                        content,
 
                     created_at:
                         message.created_at ||
                         new Date().toISOString()
-
                 });
-
             }
-
         }
 
-        messageInput.value = "";
+        /*
+          تأكيد الرسالة من قاعدة البيانات
+          حتى إذا كان RPC لا يرجع الرسالة.
+        */
 
-        autoResizeTextarea();
+        setTimeout(
+            async function(){
+
+                if(
+                    !document.body.contains(
+                        optimistic.row
+                    )
+                ){
+                    return;
+                }
+
+                try{
+
+                    const {data:rows,error:fetchError} =
+                        await client.rpc(
+                            "get_conversation_messages",
+                            {
+                                target_conversation_id:
+                                    currentConversationId,
+                                message_limit:20
+                            }
+                        );
+
+                    if(fetchError){
+                        throw fetchError;
+                    }
+
+                    const latest =
+                        (rows || [])
+                            .slice()
+                            .reverse()
+                            .find(
+                                row =>
+                                    row.sender_id ===
+                                        currentUser.id &&
+                                    row.content ===
+                                        content
+                            );
+
+                    if(latest){
+
+                        reconcileOptimisticMessage(
+                            latest
+                        );
+                    }
+
+                }catch(error){
+
+                    console.warn(
+                        "message confirmation",
+                        error
+                    );
+                }
+
+            },
+            250
+        );
 
         await stopTyping();
 
         /*
-          تحديث القائمة في الخلفية فقط.
-          لا نعيد تحميل الصفحة.
+          تحديث القائمة بدون مسحها.
         */
 
         refreshConversationListSilently();
@@ -2918,6 +4045,44 @@ async function sendCurrentMessage(){
             error
         );
 
+        /*
+          فشل الإرسال:
+          نحذف الفقاعة المؤقتة فقط.
+        */
+
+        if(
+            optimistic.row &&
+            optimistic.row.parentNode
+        ){
+
+            optimistic.row.animate(
+                [
+                    {
+                        opacity:1,
+                        transform:"translateX(0)"
+                    },
+                    {
+                        opacity:0,
+                        transform:"translateX(-20px)"
+                    }
+                ],
+                {
+                    duration:180,
+                    easing:"ease-in"
+                }
+            ).onfinish =
+                function(){
+
+                    optimistic.row.remove();
+
+                };
+        }
+
+        messageInput.value =
+            content;
+
+        autoResizeTextarea();
+
         alert(
             error.message ||
             "تعذر إرسال الرسالة."
@@ -2928,6 +4093,10 @@ async function sendCurrentMessage(){
         isSending = false;
 
         sendButton.disabled = false;
+
+        sendButton.classList.remove(
+            "sending"
+        );
 
         sendButton.textContent =
             original;
@@ -3018,7 +4187,7 @@ async function startTyping(){
     typingTimer =
         setTimeout(
             stopTyping,
-            900
+            850
         );
 }
 
@@ -3072,6 +4241,10 @@ function removeTypingRealtime(){
 
         typingChannel = null;
     }
+
+    typingIndicator.classList.remove(
+        "show"
+    );
 }
 
 
@@ -3109,7 +4282,7 @@ function subscribeTypingRealtime(){
                     if(
                         !row ||
                         row.user_id ===
-                        currentUser?.id
+                            currentUser?.id
                     ){
                         return;
                     }
@@ -3195,40 +4368,13 @@ function subscribeMessageRealtime(){
                     const message =
                         payload.new;
 
-                    if(
-                        !message ||
-                        message.sender_id ===
-                        currentUser?.id
-                    ){
+                    if(!message){
                         return;
                     }
 
-                    appendIncomingMessage({
-
-                        message_id:
-                            message.id,
-
-                        id:
-                            message.id,
-
-                        conversation_id:
-                            message.conversation_id,
-
-                        sender_id:
-                            message.sender_id,
-
-                        content:
-                            message.content,
-
-                        created_at:
-                            message.created_at,
-
-                        edited_at:
-                            message.edited_at,
-
-                        deleted_at:
-                            message.deleted_at
-                    });
+                    appendIncomingMessage(
+                        message
+                    );
 
                     refreshConversationListSilently();
 
@@ -3301,6 +4447,12 @@ function subscribePresenceRealtime(){
                         row.show_activity === true &&
                         row.is_online === true;
 
+                    currentConversationContact.is_online =
+                        active;
+
+                    currentConversationContact.show_activity =
+                        row.show_activity === true;
+
                     chatOnlineDot.classList.toggle(
                         "active",
                         active
@@ -3337,10 +4489,6 @@ backChatButton.addEventListener(
             typingCleanupTimer
         );
 
-        typingIndicator.classList.remove(
-            "show"
-        );
-
         currentConversationId =
             null;
 
@@ -3349,6 +4497,16 @@ backChatButton.addEventListener(
 
         currentMessages =
             [];
+
+        searchMatches =
+            [];
+
+        searchMatchIndex =
+            -1;
+
+        searchMatchNavigator.classList.remove(
+            "show"
+        );
 
         chatMessages.innerHTML = "";
 
@@ -3360,7 +4518,12 @@ backChatButton.addEventListener(
             "chat-active"
         );
 
-        await loadConversations();
+        /*
+          نرجع للقائمة بدون إعادة بناء
+          إذا كانت موجودة.
+        */
+
+        await refreshConversationListSilently();
 
     }
 );
@@ -3467,7 +4630,9 @@ searchInput.addEventListener(
         );
 
         const value =
-            searchInput.value.trim();
+            normalizeSearchText(
+                searchInput.value
+            );
 
         if(!value){
 
@@ -3481,13 +4646,20 @@ searchInput.addEventListener(
                 function(){
 
                     if(searchMode === "messages"){
-                        searchMessages(value);
+
+                        searchMessages(
+                            value
+                        );
+
                     }else{
-                        searchUsers(value);
+
+                        searchUsers(
+                            value
+                        );
                     }
 
                 },
-                300
+                220
             );
 
     }
@@ -3502,12 +4674,23 @@ function clearSearchResults(){
         "visible"
     );
 
-    mainList.style.display =
-        "";
+    if(
+        !page.classList.contains(
+            "chat-active"
+        )
+    ){
 
-    if(page.classList.contains("chat-active")){
-        return;
+        mainList.style.display =
+            "";
     }
+
+    searchMatches = [];
+
+    searchMatchIndex = -1;
+
+    searchMatchNavigator.classList.remove(
+        "show"
+    );
 }
 
 
@@ -3569,16 +4752,16 @@ async function searchMessages(text){
             return;
         }
 
-        /*
-          تجميع النتائج حسب المحادثة
-        */
-
         const grouped =
             new Map();
 
         rows.forEach(function(row){
 
-            if(!grouped.has(row.conversation_id)){
+            if(
+                !grouped.has(
+                    row.conversation_id
+                )
+            ){
 
                 grouped.set(
                     row.conversation_id,
@@ -3586,9 +4769,11 @@ async function searchMessages(text){
                 );
             }
 
-            grouped.get(
-                row.conversation_id
-            ).push(row);
+            grouped
+                .get(
+                    row.conversation_id
+                )
+                .push(row);
 
         });
 
@@ -3602,6 +4787,9 @@ async function searchMessages(text){
         ){
 
             let contact = null;
+
+            let conversationType =
+                "direct";
 
             try{
 
@@ -3623,6 +4811,31 @@ async function searchMessages(text){
 
             if(!contact){
                 continue;
+            }
+
+            const conversation =
+                conversations.find(
+                    item =>
+                        item.conversation_id ===
+                        conversationId
+                );
+
+            if(
+                conversation?.type ===
+                "support"
+            ){
+
+                conversationType =
+                    "support";
+
+                contact = {
+                    ...contact,
+                    is_support:true,
+                    display_name:
+                        SUPPORT_NAME,
+                    avatar_url:
+                        SUPPORT_AVATAR
+                };
             }
 
             const first =
@@ -3673,7 +4886,9 @@ async function searchMessages(text){
             `;
 
             const img =
-                result.querySelector("img");
+                result.querySelector(
+                    "img"
+                );
 
             img.addEventListener(
                 "click",
@@ -3695,22 +4910,23 @@ async function searchMessages(text){
                     await openConversation(
                         conversationId,
                         contact,
-                        "direct"
+                        conversationType
                     );
 
                     /*
-                      نذهب إلى أول نتيجة
+                      بعد فتح المحادثة نحدد كل الرسائل
+                      التي تحتوي على البحث نفسه.
                     */
 
                     setTimeout(
                         function(){
 
-                            focusSearchMatch(
-                                first.content
+                            setSearchMatches(
+                                text
                             );
 
                         },
-                        250
+                        150
                     );
 
                 }
@@ -3767,6 +4983,12 @@ async function searchUsers(text){
 
     try{
 
+        /*
+          RPC يدعم البحث بالـILIKE.
+          نرسل النص كما كتبه المستخدم، لذلك
+          العربي يعمل أيضاً.
+        */
+
         const {data,error} =
             await client.rpc(
                 "search_users",
@@ -3779,12 +5001,43 @@ async function searchUsers(text){
             throw error;
         }
 
-        searchResults.innerHTML = "";
-
-        const rows =
+        let rows =
             Array.isArray(data)
                 ? data
                 : [];
+
+        /*
+          حماية إضافية من اختلاف التطابق العربي.
+        */
+
+        const normalizedQuery =
+            normalizeArabic(text);
+
+        rows =
+            rows.filter(function(user){
+
+                const display =
+                    normalizeArabic(
+                        user.display_name || ""
+                    );
+
+                const username =
+                    normalizeArabic(
+                        user.username || ""
+                    );
+
+                return (
+                    display.includes(
+                        normalizedQuery
+                    ) ||
+                    username.includes(
+                        normalizedQuery
+                    )
+                );
+
+            });
+
+        searchResults.innerHTML = "";
 
         if(!rows.length){
 
@@ -3814,6 +5067,14 @@ async function searchUsers(text){
                     Math.min(index * 55,600) +
                     "ms";
 
+                const displayName =
+                    user.display_name &&
+                    String(
+                        user.display_name
+                    ).trim()
+                        ? user.display_name
+                        : "بدون اسم";
+
                 item.innerHTML = `
 
                     <div class="avatar-wrap">
@@ -3832,23 +5093,28 @@ async function searchUsers(text){
 
                         <div class="result-name">
                             ${escapeHtml(
-                                user.display_name ||
-                                "مستخدم"
+                                displayName
                             )}
                         </div>
 
-                        <div class="result-preview">
-                            @${escapeHtml(
-                                user.username ||
-                                ""
-                            )}
+                        <div class="result-preview result-username">
+                            ${
+                                user.username
+                                    ? "@" +
+                                      escapeHtml(
+                                          user.username
+                                      )
+                                    : ""
+                            }
                         </div>
 
                     </div>
                 `;
 
                 const img =
-                    item.querySelector("img");
+                    item.querySelector(
+                        "img"
+                    );
 
                 img.addEventListener(
                     "click",
@@ -3930,118 +5196,173 @@ async function searchUsers(text){
 
 
 /* =====================================================
-   SEARCH MATCH
+   SEARCH MATCHES
 ===================================================== */
 
-function focusSearchMatch(text){
+function setSearchMatches(
+    query
+){
 
-    const nodes =
-        chatMessages.querySelectorAll(
-            ".message-content"
-        );
+    const wanted =
+        normalizeArabic(query);
 
-    for(
-        const node of nodes
-    ){
-
-        if(
-            node.textContent
-                .toLowerCase()
-                .includes(
-                    String(text)
-                        .toLowerCase()
-                )
-        ){
-
-            node.closest(
+    searchMatches =
+        Array.from(
+            chatMessages.querySelectorAll(
                 ".message-row"
-            )?.scrollIntoView({
-                behavior:"smooth",
-                block:"center"
-            });
+            )
+        ).filter(function(row){
 
-            break;
-        }
-    }
-}
+            const content =
+                row.querySelector(
+                    ".message-content"
+                );
 
-
-/* =====================================================
-   REFRESH LIST WITHOUT PAGE RELOAD
-===================================================== */
-
-async function refreshConversationListSilently(){
-
-    if(
-        page.classList.contains(
-            "chat-active"
-        )
-    ){
-        /*
-          لا نلمس واجهة المحادثة.
-          فقط نحدّث البيانات بالذاكرة.
-        */
-    }
-
-    try{
-
-        const {data,error} =
-            await client.rpc(
-                "get_my_conversations"
+            return (
+                content &&
+                normalizeArabic(
+                    content.textContent
+                ).includes(
+                    wanted
+                )
             );
 
-        if(error){
-            throw error;
-        }
+        });
 
-        conversations =
-            Array.isArray(data)
-                ? data
-                : [];
+    searchMatchIndex =
+        searchMatches.length
+            ? 0
+            : -1;
 
-        conversations.sort(
-            function(a,b){
+    if(
+        searchMatches.length
+    ){
 
-                return (
-                    new Date(
-                        b.updated_at ||
-                        b.last_message_at ||
-                        0
-                    )
-                    -
-                    new Date(
-                        a.updated_at ||
-                        a.last_message_at ||
-                        0
-                    )
-                );
-            }
+        searchMatchNavigator.classList.add(
+            "show"
         );
 
-        /*
-          إذا كنا في القائمة، نعيد ترتيبها
-          بدون إعادة تحميل الصفحة.
-        */
+        updateSearchMatchCounter();
 
-        if(
-            !page.classList.contains(
-                "chat-active"
-            )
-            &&
-            searchInput.value.trim() === ""
-        ){
+        scrollToSearchMatch();
 
-            await renderConversationsProgressively();
-        }
+    }else{
 
-    }catch(error){
-
-        console.warn(
-            "silent refresh",
-            error
+        searchMatchNavigator.classList.remove(
+            "show"
         );
     }
 }
+
+
+function updateSearchMatchCounter(){
+
+    if(
+        searchMatchIndex < 0 ||
+        !searchMatches.length
+    ){
+
+        searchMatchCount.textContent =
+            "0 / 0";
+
+        return;
+    }
+
+    searchMatchCount.textContent =
+        (
+            searchMatchIndex + 1
+        ) +
+        " / " +
+        searchMatches.length;
+}
+
+
+function scrollToSearchMatch(){
+
+    if(
+        searchMatchIndex < 0 ||
+        !searchMatches.length
+    ){
+        return;
+    }
+
+    searchMatches.forEach(
+        row =>
+            row.classList.remove(
+                "highlight-message"
+            )
+    );
+
+    const row =
+        searchMatches[
+            searchMatchIndex
+        ];
+
+    if(!row){
+        return;
+    }
+
+    row.classList.add(
+        "highlight-message"
+    );
+
+    row.scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+    });
+
+    updateSearchMatchCounter();
+}
+
+
+function moveSearchMatch(
+    direction
+){
+
+    if(!searchMatches.length){
+        return;
+    }
+
+    searchMatchIndex +=
+        direction;
+
+    if(
+        searchMatchIndex >=
+        searchMatches.length
+    ){
+
+        searchMatchIndex = 0;
+
+    }else if(
+        searchMatchIndex < 0
+    ){
+
+        searchMatchIndex =
+            searchMatches.length - 1;
+    }
+
+    scrollToSearchMatch();
+}
+
+
+searchMatchUp.addEventListener(
+    "click",
+    function(){
+
+        moveSearchMatch(-1);
+
+    }
+);
+
+
+searchMatchDown.addEventListener(
+    "click",
+    function(){
+
+        moveSearchMatch(1);
+
+    }
+);
 
 
 /* =====================================================
@@ -4126,9 +5447,14 @@ document.addEventListener(
     function(event){
 
         if(
-            !contextMenu.contains(event.target) &&
-            !event.target.closest(".card-menu")
+            !contextMenu.contains(
+                event.target
+            ) &&
+            !event.target.closest(
+                ".card-menu"
+            )
         ){
+
             closeContextMenu();
         }
 
@@ -4151,7 +5477,7 @@ document.getElementById(
 
         closeContextMenu();
 
-        if(!id){
+        if(!id || !currentUser){
             return;
         }
 
@@ -4159,7 +5485,9 @@ document.getElementById(
 
             const {data,error} =
                 await client
-                    .from("notification_settings")
+                    .from(
+                        "notification_settings"
+                    )
                     .select("muted")
                     .eq(
                         "user_id",
@@ -4180,15 +5508,23 @@ document.getElementById(
 
             const result =
                 await client
-                    .from("notification_settings")
+                    .from(
+                        "notification_settings"
+                    )
                     .upsert({
                         user_id:
                             currentUser.id,
+
                         conversation_id:
                             id,
-                        muted:muted,
+
+                        muted:
+
+                            muted,
+
                         updated_at:
                             new Date().toISOString()
+
                     },{
                         onConflict:
                             "user_id,conversation_id"
@@ -4197,6 +5533,26 @@ document.getElementById(
             if(result.error){
                 throw result.error;
             }
+
+            /*
+              أيضاً نحفظها في عضوية المحادثة.
+            */
+
+            await client
+                .from(
+                    "conversation_members"
+                )
+                .update({
+                    muted:muted
+                })
+                .eq(
+                    "conversation_id",
+                    id
+                )
+                .eq(
+                    "user_id",
+                    currentUser.id
+                );
 
         }catch(error){
 
@@ -4379,7 +5735,10 @@ activityModal.addEventListener(
     "click",
     function(event){
 
-        if(event.target === activityModal){
+        if(
+            event.target ===
+            activityModal
+        ){
 
             activityModal.classList.remove(
                 "show"
@@ -4393,12 +5752,82 @@ activityModal.addEventListener(
 
 activitySwitch.addEventListener(
     "click",
-    toggleActivity
+    function(event){
+
+        event.preventDefault();
+
+        toggleActivity();
+
+    }
 );
 
 
 /* =====================================================
-   NOTIFICATIONS
+   NOTIFICATION HELPERS
+===================================================== */
+
+function notificationIcon(
+    type
+){
+
+    const icons = {
+
+        message:"💬",
+
+        profile_visit:"👤",
+
+        comment:"💬",
+
+        like:"❤️",
+
+        follow:"➕",
+
+        friend:"🤝",
+
+        system:"🔔",
+
+        default:"🔔"
+    };
+
+    return (
+        icons[type] ||
+        icons.default
+    );
+}
+
+
+function updateNotificationBadge(
+    rows
+){
+
+    const unread =
+        rows.filter(
+            row =>
+                !row.is_read
+        ).length;
+
+    if(unread > 0){
+
+        notificationBadge.textContent =
+            unread > 99
+                ? "99+"
+                : String(unread);
+
+        notificationBadge.classList.add(
+            "show"
+        );
+
+    }else{
+
+        notificationBadge.classList.remove(
+            "show"
+        );
+    }
+}
+
+
+/* =====================================================
+   LOAD NOTIFICATIONS
 ===================================================== */
 
 async function loadNotifications(){
@@ -4431,8 +5860,17 @@ async function loadNotifications(){
             throw error;
         }
 
+        notificationsRows =
+            Array.isArray(data)
+                ? data
+                : [];
+
+        updateNotificationBadge(
+            notificationsRows
+        );
+
         renderNotifications(
-            data || []
+            notificationsRows
         );
 
     }catch(error){
@@ -4445,7 +5883,13 @@ async function loadNotifications(){
 }
 
 
-function renderNotifications(rows){
+/* =====================================================
+   RENDER NOTIFICATIONS
+===================================================== */
+
+function renderNotifications(
+    rows
+){
 
     notificationsList.innerHTML = "";
 
@@ -4455,141 +5899,246 @@ function renderNotifications(rows){
             <div class="empty-state">
                 <div class="empty-icon">🔔</div>
                 <strong>لا توجد إشعارات</strong>
-                <p>لا توجد إشعارات جديدة حالياً.</p>
+                <p>
+                    لا توجد إشعارات جديدة حالياً.
+                </p>
             </div>
         `;
 
         return;
     }
 
-    rows.forEach(function(row){
+    rows.forEach(
+        function(row,index){
 
-        const item =
-            document.createElement("div");
+            const item =
+                document.createElement("div");
 
-        item.className =
-            "notification-item " +
-            (
-                row.is_read
-                    ? ""
-                    : "unread"
-            );
+            item.className =
+                "notification-item " +
+                (
+                    row.is_read
+                        ? ""
+                        : "unread"
+                );
 
-        item.innerHTML = `
+            item.style.animation =
+                "conversationIn .28s ease both";
 
-            <div class="notification-content">
+            item.style.animationDelay =
+                Math.min(
+                    index * 35,
+                    400
+                ) + "ms";
 
-                ${escapeHtml(row.message)}
+            item.innerHTML = `
 
-                <span class="notification-time">
+                <div class="notification-icon">
+                    ${notificationIcon(row.type)}
+                </div>
+
+                <div class="notification-content">
+
                     ${escapeHtml(
-                        formatTime(
-                            row.created_at
-                        )
+                        row.message
                     )}
-                </span>
 
-            </div>
+                    <span class="notification-time">
+                        ${escapeHtml(
+                            formatTime(
+                                row.created_at
+                            )
+                        )}
+                    </span>
 
-            <button
-                type="button"
-                class="notification-delete">
-                ×
-            </button>
-        `;
+                </div>
 
-        item.querySelector(
-            ".notification-delete"
-        ).addEventListener(
-            "click",
-            async function(event){
+                <button
+                    type="button"
+                    class="notification-delete"
+                    aria-label="حذف">
+                    ×
+                </button>
+            `;
 
-                event.stopPropagation();
+            item.querySelector(
+                ".notification-delete"
+            ).addEventListener(
+                "click",
+                async function(event){
 
-                try{
+                    event.stopPropagation();
 
-                    await client.rpc(
-                        "delete_my_notification",
-                        {
-                            target_notification_id:
-                                row.id
-                        }
-                    );
+                    try{
 
-                    item.remove();
-
-                }catch(error){
-
-                    console.error(
-                        error
-                    );
-                }
-
-            }
-        );
-
-        item.addEventListener(
-            "click",
-            async function(){
-
-                if(!row.is_read){
-
-                    await client.rpc(
-                        "mark_notification_read",
-                        {
-                            target_notification_id:
-                                row.id
-                        }
-                    );
-
-                    item.classList.remove(
-                        "unread"
-                    );
-                }
-
-                if(row.conversation_id){
-
-                    const {data} =
                         await client.rpc(
-                            "get_conversation_contacts",
+                            "delete_my_notification",
                             {
-                                target_conversation_id:
-                                    row.conversation_id
+                                target_notification_id:
+                                    row.id
                             }
                         );
 
-                    const contact =
-                        Array.isArray(data)
-                            ? data[0]
-                            : data;
+                        notificationsRows =
+                            notificationsRows.filter(
+                                item =>
+                                    item.id !==
+                                    row.id
+                            );
 
-                    if(contact){
+                        item.remove();
 
-                        notificationsPanel.classList.remove(
-                            "show"
+                        updateNotificationBadge(
+                            notificationsRows
                         );
 
-                        await openConversation(
-                            row.conversation_id,
-                            contact,
-                            "direct"
+                    }catch(error){
+
+                        console.error(
+                            error
                         );
                     }
+
                 }
+            );
 
-            }
-        );
+            item.addEventListener(
+                "click",
+                async function(){
 
-        notificationsList.appendChild(
-            item
-        );
-    });
+                    if(!row.is_read){
+
+                        await client.rpc(
+                            "mark_notification_read",
+                            {
+                                target_notification_id:
+                                    row.id
+                            }
+                        );
+
+                        row.is_read =
+                            true;
+
+                        item.classList.remove(
+                            "unread"
+                        );
+
+                        updateNotificationBadge(
+                            notificationsRows
+                        );
+                    }
+
+                    /*
+                      إشعار رسالة:
+                      نفتح المحادثة مباشرة.
+                    */
+
+                    if(
+                        row.conversation_id
+                    ){
+
+                        try{
+
+                            const conversation =
+                                conversations.find(
+                                    item =>
+                                        item.conversation_id ===
+                                        row.conversation_id
+                                );
+
+                            const contact =
+                                await getConversationContact(
+                                    row.conversation_id,
+                                    conversation?.type
+                                );
+
+                            if(contact){
+
+                                notificationsPanel.classList.remove(
+                                    "show"
+                                );
+
+                                await openConversation(
+                                    row.conversation_id,
+                                    contact,
+                                    conversation?.type ||
+                                    "direct"
+                                );
+                            }
+
+                        }catch(error){
+
+                            console.error(
+                                "notification conversation",
+                                error
+                            );
+                        }
+
+                    }else if(
+                        row.actor_id
+                    ){
+
+                        /*
+                          الإشعارات المستقبلية مثل:
+                          زيارة الملف، تعليق، متابعة...
+                        */
+
+                        openProfile(
+                            row.actor_id
+                        );
+                    }
+
+                }
+            );
+
+            notificationsList.appendChild(
+                item
+            );
+        }
+    );
 }
 
+
+/* =====================================================
+   OPEN NOTIFICATIONS
+===================================================== */
+
+notificationsOpenButton.addEventListener(
+    "click",
+    async function(){
+
+        if(!currentUser){
+            return;
+        }
+
+        notificationsPanel.classList.toggle(
+            "show"
+        );
+
+        if(
+            notificationsPanel.classList.contains(
+                "show"
+            )
+        ){
+
+            await loadNotifications();
+        }
+
+    }
+);
+
+
+/* =====================================================
+   MARK ALL
+===================================================== */
 
 markAllNotifications.addEventListener(
     "click",
     async function(){
+
+        if(!currentUser){
+            return;
+        }
 
         try{
 
@@ -4597,7 +6146,18 @@ markAllNotifications.addEventListener(
                 "mark_all_notifications_read"
             );
 
-            await loadNotifications();
+            notificationsRows.forEach(
+                row =>
+                    row.is_read = true
+            );
+
+            updateNotificationBadge(
+                notificationsRows
+            );
+
+            renderNotifications(
+                notificationsRows
+            );
 
         }catch(error){
 
@@ -4611,126 +6171,32 @@ markAllNotifications.addEventListener(
 
 
 /* =====================================================
-   NOTIFICATION OPEN
+   CLOSE NOTIFICATIONS OUTSIDE
 ===================================================== */
 
-function createNotificationButton(){
+document.addEventListener(
+    "click",
+    function(event){
 
-    if(
-        document.getElementById(
-            "notificationsOpenButton"
-        )
-    ){
-        return;
-    }
+        if(
+            notificationsPanel.classList.contains(
+                "show"
+            ) &&
+            !notificationsPanel.contains(
+                event.target
+            ) &&
+            !notificationsOpenButton.contains(
+                event.target
+            )
+        ){
 
-    /*
-      نضيف زر الإشعارات داخل الهيدر
-      بدون تغيير تصميمه الأساسي.
-    */
-
-    const button =
-        document.createElement("button");
-
-    button.type =
-        "button";
-
-    button.id =
-        "notificationsOpenButton";
-
-    button.className =
-        "activity-button";
-
-    button.innerHTML =
-        "🔔";
-
-    button.style.position =
-        "absolute";
-
-    button.style.top =
-        "72px";
-
-    button.style.left =
-        "10px";
-
-    button.style.display =
-        "none";
-
-    /*
-      الإشعارات موجودة فعلياً داخل
-      النظام، لكن لا نضع زر إضافي مزعج
-      فوق التصميم.
-    */
-
-}
-
-
-/* =====================================================
-   SUPPORT
-===================================================== */
-
-async function openSupport(){
-
-    if(!currentUser){
-        return;
-    }
-
-    try{
-
-        const {data,error} =
-            await client.rpc(
-                "get_or_create_support_conversation"
-            );
-
-        if(error){
-            throw error;
-        }
-
-        const supportId =
-            data;
-
-        const contactResult =
-            await client.rpc(
-                "get_conversation_contacts",
-                {
-                    target_conversation_id:
-                        supportId
-                }
-            );
-
-        const contact =
-            Array.isArray(contactResult.data)
-                ? contactResult.data[0]
-                : contactResult.data;
-
-        if(contact){
-
-            contact.is_support =
-                true;
-
-            contact.avatar_url =
-                SUPPORT_AVATAR;
-
-            await openConversation(
-                supportId,
-                contact,
-                "support"
+            notificationsPanel.classList.remove(
+                "show"
             );
         }
 
-    }catch(error){
-
-        console.error(
-            "support",
-            error
-        );
-
-        alert(
-            error.message ||
-            "تعذر فتح دعم WFESC."
-        );
     }
-}
+);
 
 
 /* =====================================================
@@ -4758,7 +6224,9 @@ function subscribeNotifications(){
         client
             .channel(
                 "notifications-" +
-                currentUser.id
+                currentUser.id +
+                "-" +
+                Date.now()
             )
             .on(
                 "postgres_changes",
@@ -4781,7 +6249,164 @@ function subscribeNotifications(){
 
 
 /* =====================================================
-   GLOBAL PRESENCE
+   SUPPORT
+===================================================== */
+
+async function openSupport(){
+
+    if(!currentUser){
+        return;
+    }
+
+    try{
+
+        const supportId =
+            await ensureSupportConversation();
+
+        if(!supportId){
+            throw new Error(
+                "تعذر إنشاء محادثة الدعم."
+            );
+        }
+
+        const contact =
+            await getConversationContact(
+                supportId,
+                "support"
+            );
+
+        if(contact){
+
+            await openConversation(
+                supportId,
+                contact,
+                "support"
+            );
+        }
+
+    }catch(error){
+
+        console.error(
+            "support",
+            error
+        );
+
+        alert(
+            error.message ||
+            "تعذر فتح دعم WFESC."
+        );
+    }
+}
+
+
+/* =====================================================
+   CHAT NOTIFICATION BUTTON
+===================================================== */
+
+document.getElementById(
+    "chatNotificationButton"
+).addEventListener(
+    "click",
+    async function(){
+
+        if(
+            !currentConversationId ||
+            !currentUser
+        ){
+            return;
+        }
+
+        /*
+          زر سريع لكتم/إلغاء كتم المحادثة.
+        */
+
+        try{
+
+            const {data,error} =
+                await client
+                    .from(
+                        "notification_settings"
+                    )
+                    .select("muted")
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    )
+                    .eq(
+                        "conversation_id",
+                        currentConversationId
+                    )
+                    .maybeSingle();
+
+            if(error){
+                throw error;
+            }
+
+            const muted =
+                !(data?.muted === true);
+
+            const result =
+                await client
+                    .from(
+                        "notification_settings"
+                    )
+                    .upsert({
+                        user_id:
+                            currentUser.id,
+
+                        conversation_id:
+                            currentConversationId,
+
+                        muted:
+                            muted,
+
+                        updated_at:
+                            new Date().toISOString()
+
+                    },{
+                        onConflict:
+                            "user_id,conversation_id"
+                    });
+
+            if(result.error){
+                throw result.error;
+            }
+
+        }catch(error){
+
+            console.error(
+                "chat notification",
+                error
+            );
+        }
+    }
+);
+
+
+/* =====================================================
+   CHAT MENU
+===================================================== */
+
+document.getElementById(
+    "chatMenuButton"
+).addEventListener(
+    "click",
+    function(event){
+
+        if(!currentConversationId){
+            return;
+        }
+
+        openContextMenu(
+            event,
+            currentConversationId
+        );
+    }
+);
+
+
+/* =====================================================
+   OWN PRESENCE
 ===================================================== */
 
 async function updateOwnPresence(){
@@ -4792,15 +6417,11 @@ async function updateOwnPresence(){
 
     try{
 
-        const enabled =
-            activitySwitch.classList.contains(
-                "on"
-            );
-
         await client.rpc(
             "set_my_presence",
             {
-                online:enabled
+                online:
+                    activityEnabled
             }
         );
 
@@ -4815,16 +6436,85 @@ async function updateOwnPresence(){
 
 
 /* =====================================================
+   KEYBOARD / VISUAL VIEWPORT
+===================================================== */
+
+function updateKeyboardPosition(){
+
+    if(!window.visualViewport){
+        return;
+    }
+
+    const viewport =
+        window.visualViewport;
+
+    /*
+      نحسب ارتفاع الكيبورد فقط.
+      لا نغيّر navigation هنا.
+      حقل الإرسال وحده يتحرك.
+    */
+
+    const keyboardHeight =
+        Math.max(
+            0,
+            window.innerHeight -
+            viewport.height -
+            Math.max(
+                0,
+                viewport.offsetTop
+            )
+        );
+
+    const meaningfulKeyboard =
+        keyboardHeight > 80
+            ? keyboardHeight
+            : 0;
+
+    document.documentElement.style
+        .setProperty(
+            "--keyboard-height",
+            meaningfulKeyboard +
+            "px"
+        );
+}
+
+
+if(window.visualViewport){
+
+    window.visualViewport.addEventListener(
+        "resize",
+        updateKeyboardPosition
+    );
+
+    window.visualViewport.addEventListener(
+        "scroll",
+        updateKeyboardPosition
+    );
+}
+
+window.addEventListener(
+    "resize",
+    updateKeyboardPosition
+);
+
+updateKeyboardPosition();
+
+
+/* =====================================================
    AUTH STATE
 ===================================================== */
 
 function subscribeAuth(){
 
     client.auth.onAuthStateChange(
-        async function(event,session){
+        async function(
+            event,
+            session
+        ){
 
             currentUser =
-                session?.user || null;
+                session?.user ||
+                null;
 
             if(!currentUser){
 
@@ -4848,7 +6538,17 @@ function subscribeAuth(){
 
                 removePresenceRealtime();
 
-                updateActivityUI(false);
+                updateActivityUI(
+                    false,
+                    true
+                );
+
+                notificationsRows =
+                    [];
+
+                updateNotificationBadge(
+                    []
+                );
 
                 await loadConversations();
 
@@ -4856,6 +6556,8 @@ function subscribeAuth(){
             }
 
             await loadActivity();
+
+            await ensureSupportConversation();
 
             await loadConversations();
 
@@ -4866,6 +6568,69 @@ function subscribeAuth(){
         }
     );
 }
+
+
+/* =====================================================
+   VISIBILITY
+===================================================== */
+
+document.addEventListener(
+    "visibilitychange",
+    async function(){
+
+        if(
+            document.visibilityState ===
+            "visible"
+        ){
+
+            if(currentUser){
+
+                await updateOwnPresence();
+            }
+
+        }else{
+
+            if(currentUser){
+
+                try{
+
+                    await client.rpc(
+                        "set_my_presence",
+                        {
+                            online:false
+                        }
+                    );
+
+                }catch(error){}
+            }
+        }
+
+    }
+);
+
+
+/* =====================================================
+   BEFORE UNLOAD
+===================================================== */
+
+window.addEventListener(
+    "beforeunload",
+    function(){
+
+        if(currentUser){
+
+            client.rpc(
+                "set_my_presence",
+                {
+                    online:false
+                }
+            ).catch(
+                () => {}
+            );
+        }
+
+    }
+);
 
 
 /* =====================================================
@@ -4887,30 +6652,18 @@ async function initialize(){
 
         await loadActivity();
 
+        /*
+          إنشاء الدعم فوراً بعد وجود جلسة.
+          هذا يجعل محادثة الدعم تظهر بالقائمة.
+        */
+
+        await ensureSupportConversation();
+
         await loadConversations();
 
         await loadNotifications();
 
         subscribeNotifications();
-
-        /*
-          إنشاء/التأكد من محادثة الدعم
-          بدون فتحها تلقائياً.
-        */
-
-        try{
-
-            await client.rpc(
-                "get_or_create_support_conversation"
-            );
-
-        }catch(error){
-
-            console.warn(
-                "support init",
-                error
-            );
-        }
 
     }else{
 
@@ -4919,56 +6672,7 @@ async function initialize(){
 
     subscribeAuth();
 
-    document.addEventListener(
-        "visibilitychange",
-        async function(){
-
-            if(
-                document.visibilityState ===
-                "visible"
-            ){
-
-                await updateOwnPresence();
-
-            }else{
-
-                if(currentUser){
-
-                    try{
-
-                        await client.rpc(
-                            "set_my_presence",
-                            {
-                                online:false
-                            }
-                        );
-
-                    }catch(error){}
-                }
-            }
-
-        }
-    );
-
-    window.addEventListener(
-        "beforeunload",
-        function(){
-
-            if(currentUser){
-
-                client.rpc(
-                    "set_my_presence",
-                    {
-                        online:false
-                    }
-                ).catch(
-                    () => {}
-                );
-            }
-
-        }
-    );
-
+    updateKeyboardPosition();
 }
 
 
@@ -4997,7 +6701,7 @@ if(
 
 
 /* =====================================================
-   DEBUG / CLEANUP
+   DEBUG / PUBLIC API
 ===================================================== */
 
 window.WFESC_MESSAGES = {
@@ -5012,6 +6716,10 @@ window.WFESC_MESSAGES = {
 
     getCurrentConversation(){
         return currentConversationId;
+    },
+
+    getCurrentUser(){
+        return currentUser;
     }
 
 };
