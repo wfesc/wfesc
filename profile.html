@@ -1,15 +1,8 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>الملف الشخصي - WFESC</title>
 
 <!-- =================================================
@@ -17,87 +10,47 @@
 ================================================== -->
 
 <style>
-
 html.wfesc-profile-loading body{
     visibility:hidden;
 }
-
 </style>
 
 <script>
-
-document.documentElement.classList.add(
-    "wfesc-profile-loading"
-);
+document.documentElement.classList.add("wfesc-profile-loading");
 
 (function(){
-
 "use strict";
 
 try{
 
-    const theme =
-        localStorage.getItem(
-            "wfesc-theme"
-        );
+const theme = localStorage.getItem("wfesc-theme");
 
-    if(theme === "light"){
+if(theme === "light"){
+    document.documentElement.classList.add("wfesc-light-mode");
+}else{
+    document.documentElement.classList.add("wfesc-dark-mode");
+}
 
-        document.documentElement.classList.add(
-            "wfesc-light-mode"
-        );
+const animation = localStorage.getItem("wfesc-animation");
 
-    }else{
+if(animation === "off"){
+    document.documentElement.classList.add("wfesc-animation-off");
+}
 
-        document.documentElement.classList.add(
-            "wfesc-dark-mode"
-        );
+const glass = localStorage.getItem("wfesc-liquid-glass");
 
-    }
-
-    const animation =
-        localStorage.getItem(
-            "wfesc-animation"
-        );
-
-    if(animation === "off"){
-
-        document.documentElement.classList.add(
-            "wfesc-animation-off"
-        );
-
-    }
-
-    const glass =
-        localStorage.getItem(
-            "wfesc-liquid-glass"
-        );
-
-    if(
-        glass === null ||
-        glass === "on"
-    ){
-
-        document.documentElement.classList.add(
-            "wfesc-liquid-glass"
-        );
-
-    }
+if(glass === null || glass === "on"){
+    document.documentElement.classList.add("wfesc-liquid-glass");
+}
 
 }catch(error){
 
-    document.documentElement.classList.add(
-        "wfesc-dark-mode"
-    );
-
-    document.documentElement.classList.add(
-        "wfesc-liquid-glass"
-    );
+document.documentElement.classList.add("wfesc-dark-mode");
+document.documentElement.classList.add("wfesc-liquid-glass");
 
 }
 
 })();
-
 </script>
 
 <style>
@@ -107,44 +60,34 @@ RESET
 ================================================== */
 
 *{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
+box-sizing:border-box;
+margin:0;
+padding:0;
 }
 
 html{
-    scroll-behavior:smooth;
+scroll-behavior:smooth;
 }
 
 body{
-
-    min-height:100vh;
-
-    background:#050505;
-
-    color:#eee;
-
-    font-family:
-        Arial,
-        Tahoma,
-        sans-serif;
-
-    padding-bottom:100px;
-
-    transition:
-        background .3s ease,
-        color .3s ease;
-
+min-height:100vh;
+background:#050505;
+color:#eee;
+font-family:Arial,Tahoma,sans-serif;
+padding-bottom:100px;
+transition:
+background .3s ease,
+color .3s ease;
 }
 
 button,
 input,
 textarea{
-    font-family:inherit;
+font-family:inherit;
 }
 
 button{
-    -webkit-tap-highlight-color:transparent;
+-webkit-tap-highlight-color:transparent;
 }
 
 /* =================================================
@@ -152,19 +95,9 @@ PAGE
 ================================================== */
 
 .profile-page{
-
-    width:min(
-        100%,
-        760px
-    );
-
-    margin:auto;
-
-    padding:
-        20px
-        14px
-        40px;
-
+width:min(100%,760px);
+margin:auto;
+padding:20px 14px 40px;
 }
 
 /* =================================================
@@ -172,137 +105,72 @@ COVER
 ================================================== */
 
 .profile-card{
-
-    position:relative;
-
-    overflow:hidden;
-
-    background:#111;
-
-    border:
-        1px solid
-        #252525;
-
-    border-radius:24px;
-
-    box-shadow:
-        0
-        15px
-        45px
-        rgba(0,0,0,.28);
-
-    transition:
-        background .3s ease,
-        border-color .3s ease,
-        box-shadow .3s ease,
-        backdrop-filter .3s ease;
-
+position:relative;
+overflow:hidden;
+background:#111;
+border:1px solid #252525;
+border-radius:24px;
+box-shadow:0 15px 45px rgba(0,0,0,.28);
+transition:
+background .3s ease,
+border-color .3s ease,
+box-shadow .3s ease,
+backdrop-filter .3s ease;
 }
 
 .profile-cover{
-
-    position:relative;
-
-    width:100%;
-
-    height:210px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #171717,
-            #080808
-        );
-
-    overflow:hidden;
-
+position:relative;
+width:100%;
+height:210px;
+background:linear-gradient(135deg,#171717,#080808);
+overflow:hidden;
 }
 
 .profile-cover-image{
-
-    position:absolute;
-
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    object-fit:cover;
-
-    display:none;
-
-    user-select:none;
-
-    pointer-events:none;
-
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+object-fit:cover;
+display:none;
+user-select:none;
+pointer-events:none;
 }
 
 .profile-cover-default{
-
-    width:100%;
-    height:100%;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    color:#333;
-
-    font-size:55px;
-
-    font-weight:900;
-
-    letter-spacing:5px;
-
-    user-select:none;
-
+width:100%;
+height:100%;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#333;
+font-size:55px;
+font-weight:900;
+letter-spacing:5px;
+user-select:none;
 }
 
 .cover-edit{
-
-    position:absolute;
-
-    left:14px;
-    bottom:14px;
-
-    width:43px;
-    height:43px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.14);
-
-    border-radius:50%;
-
-    background:
-        rgba(0,0,0,.55);
-
-    color:#fff;
-
-    cursor:pointer;
-
-    backdrop-filter:
-        blur(15px);
-
-    -webkit-backdrop-filter:
-        blur(15px);
-
-    font-size:18px;
-
-    transition:.25s ease;
-
-    z-index:5;
-
+position:absolute;
+left:14px;
+bottom:14px;
+width:43px;
+height:43px;
+border:1px solid rgba(255,255,255,.14);
+border-radius:50%;
+background:rgba(0,0,0,.55);
+color:#fff;
+cursor:pointer;
+backdrop-filter:blur(15px);
+-webkit-backdrop-filter:blur(15px);
+font-size:18px;
+transition:.25s ease;
+z-index:5;
 }
 
 .cover-edit:hover{
-
-    transform:scale(1.06);
-
-    background:
-        rgba(255,255,255,.12);
-
+transform:scale(1.06);
+background:rgba(255,255,255,.12);
 }
 
 /* =================================================
@@ -310,122 +178,63 @@ PROFILE CONTENT
 ================================================== */
 
 .profile-content{
-
-    position:relative;
-
-    padding:
-        0
-        20px
-        25px;
-
+position:relative;
+padding:0 20px 25px;
 }
 
 .avatar-wrap{
-
-    position:relative;
-
-    width:112px;
-    height:112px;
-
-    margin-top:-56px;
-
-    margin-bottom:13px;
-
-    border-radius:50%;
-
-    background:#111;
-
-    border:
-        4px solid
-        #111;
-
-    overflow:visible;
-
-    z-index:3;
-
-    box-shadow:
-        0
-        8px
-        30px
-        rgba(0,0,0,.4);
-
+position:relative;
+width:112px;
+height:112px;
+margin-top:-56px;
+margin-bottom:13px;
+border-radius:50%;
+background:#111;
+border:4px solid #111;
+overflow:visible;
+z-index:3;
+box-shadow:0 8px 30px rgba(0,0,0,.4);
 }
 
 .profile-avatar{
-
-    width:100%;
-    height:100%;
-
-    border-radius:50%;
-
-    object-fit:cover;
-
-    display:none;
-
-    user-select:none;
-
-    pointer-events:none;
-
+width:100%;
+height:100%;
+border-radius:50%;
+object-fit:cover;
+display:none;
+user-select:none;
+pointer-events:none;
 }
 
 .avatar-fallback{
-
-    width:100%;
-    height:100%;
-
-    border-radius:50%;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    background:
-        linear-gradient(
-            135deg,
-            #222,
-            #0b0b0b
-        );
-
-    color:#eee;
-
-    font-size:38px;
-
-    font-weight:bold;
-
+width:100%;
+height:100%;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+background:linear-gradient(135deg,#222,#0b0b0b);
+color:#eee;
+font-size:38px;
+font-weight:bold;
 }
 
 .avatar-edit{
-
-    position:absolute;
-
-    left:-4px;
-    bottom:-4px;
-
-    width:35px;
-    height:35px;
-
-    border:
-        2px solid
-        #111;
-
-    border-radius:50%;
-
-    background:#eee;
-
-    color:#050505;
-
-    cursor:pointer;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    font-size:15px;
-
-    z-index:5;
-
+position:absolute;
+left:-4px;
+bottom:-4px;
+width:35px;
+height:35px;
+border:2px solid #111;
+border-radius:50%;
+background:#eee;
+color:#050505;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:15px;
+z-index:5;
 }
 
 /* =================================================
@@ -433,69 +242,41 @@ NAME
 ================================================== */
 
 .profile-name-row{
-
-    display:flex;
-
-    align-items:center;
-
-    flex-wrap:wrap;
-
-    gap:7px;
-
-    margin-bottom:5px;
-
+display:flex;
+align-items:center;
+flex-wrap:wrap;
+gap:7px;
+margin-bottom:5px;
 }
 
 .profile-name{
-
-    font-size:25px;
-
-    font-weight:900;
-
-    word-break:break-word;
-
+font-size:25px;
+font-weight:900;
+word-break:break-word;
 }
 
 .profile-verified{
-
-    width:20px;
-    height:20px;
-
-    border-radius:50%;
-
-    display:inline-flex;
-
-    align-items:center;
-    justify-content:center;
-
-    background:#22c55e;
-
-    color:#fff;
-
-    font-size:11px;
-
-    font-weight:900;
-
-    box-shadow:
-        0
-        0
-        13px
-        rgba(34,197,94,.35);
-
+width:20px;
+height:20px;
+border-radius:50%;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+background:#22c55e;
+color:#fff;
+font-size:11px;
+font-weight:900;
+box-shadow:0 0 13px rgba(34,197,94,.35);
 }
 
 .profile-verified[hidden]{
-    display:none;
+display:none;
 }
 
 .profile-username{
-
-    color:#888;
-
-    font-size:14px;
-
-    margin-bottom:14px;
-
+color:#888;
+font-size:14px;
+margin-bottom:14px;
 }
 
 /* =================================================
@@ -503,83 +284,48 @@ BIO
 ================================================== */
 
 .bio-row{
-
-    display:flex;
-
-    align-items:flex-start;
-
-    gap:8px;
-
-    max-width:650px;
-
-    margin-bottom:18px;
-
+display:flex;
+align-items:flex-start;
+gap:8px;
+max-width:650px;
+margin-bottom:18px;
 }
 
 .profile-bio{
-
-    color:#ccc;
-
-    font-size:14px;
-
-    line-height:1.7;
-
-    white-space:pre-wrap;
-
-    word-break:break-word;
-
-    flex:1;
-
-    min-width:0;
-
+color:#ccc;
+font-size:14px;
+line-height:1.7;
+white-space:pre-wrap;
+word-break:break-word;
+flex:1;
+min-width:0;
 }
 
 .profile-bio.empty{
-
-    color:#777;
-
-    font-style:italic;
-
+color:#777;
+font-style:italic;
 }
 
 .bio-edit-button{
-
-    flex:0 0 auto;
-
-    width:30px;
-    height:30px;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:9px;
-
-    background:#171717;
-
-    color:#aaa;
-
-    cursor:pointer;
-
-    font-size:13px;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    transition:.2s ease;
-
+flex:0 0 auto;
+width:30px;
+height:30px;
+border:1px solid #292929;
+border-radius:9px;
+background:#171717;
+color:#aaa;
+cursor:pointer;
+font-size:13px;
+display:flex;
+align-items:center;
+justify-content:center;
+transition:.2s ease;
 }
 
 .bio-edit-button:hover{
-
-    color:#fff;
-
-    background:#222;
-
-    border-color:#444;
-
+color:#fff;
+background:#222;
+border-color:#444;
 }
 
 /* =================================================
@@ -587,68 +333,39 @@ BIO INLINE EDITOR
 ================================================== */
 
 .bio-editor{
-
-    display:none;
-
-    margin-bottom:18px;
-
-    padding:12px;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:15px;
-
-    background:
-        rgba(255,255,255,.025);
-
+display:none;
+margin-bottom:18px;
+padding:12px;
+border:1px solid #292929;
+border-radius:15px;
+background:rgba(255,255,255,.025);
 }
 
 .bio-editor.show{
-    display:block;
+display:block;
 }
 
 .bio-editor-actions{
-
-    display:flex;
-
-    gap:8px;
-
-    margin-top:8px;
-
+display:flex;
+gap:8px;
+margin-top:8px;
 }
 
 .bio-editor-actions button{
-
-    flex:1;
-
-    min-height:42px;
-
-    border-radius:11px;
-
-    cursor:pointer;
-
-    font-weight:bold;
-
-    border:
-        1px solid
-        #292929;
-
-    background:#171717;
-
-    color:#eee;
-
+flex:1;
+min-height:42px;
+border-radius:11px;
+cursor:pointer;
+font-weight:bold;
+border:1px solid #292929;
+background:#171717;
+color:#eee;
 }
 
 .bio-editor-actions .bio-save{
-
-    background:#eee;
-
-    color:#050505;
-
-    border-color:#eee;
-
+background:#eee;
+color:#050505;
+border-color:#eee;
 }
 
 /* =================================================
@@ -656,65 +373,38 @@ ACTIONS
 ================================================== */
 
 .profile-actions{
-
-    display:flex;
-
-    gap:9px;
-
-    flex-wrap:wrap;
-
-    margin-bottom:20px;
-
+display:flex;
+gap:9px;
+flex-wrap:wrap;
+margin-bottom:20px;
 }
 
 .profile-action{
-
-    min-height:44px;
-
-    padding:
-        0
-        17px;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:12px;
-
-    background:#171717;
-
-    color:#eee;
-
-    cursor:pointer;
-
-    font-size:14px;
-
-    font-weight:bold;
-
-    transition:.25s ease;
-
+min-height:44px;
+padding:0 17px;
+border:1px solid #292929;
+border-radius:12px;
+background:#171717;
+color:#eee;
+cursor:pointer;
+font-size:14px;
+font-weight:bold;
+transition:.25s ease;
 }
 
 .profile-action:hover{
-
-    background:#222;
-
-    border-color:#444;
-
+background:#222;
+border-color:#444;
 }
 
 .profile-action.primary{
-
-    background:#eee;
-
-    color:#050505;
-
-    border-color:#eee;
-
+background:#eee;
+color:#050505;
+border-color:#eee;
 }
 
 .profile-action.primary:hover{
-    background:#fff;
+background:#fff;
 }
 
 /* =================================================
@@ -722,63 +412,34 @@ STATS
 ================================================== */
 
 .profile-stats{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            1fr
-        );
-
-    border:
-        1px solid
-        #242424;
-
-    border-radius:16px;
-
-    overflow:hidden;
-
-    margin-bottom:20px;
-
+display:grid;
+grid-template-columns:repeat(3,1fr);
+border:1px solid #242424;
+border-radius:16px;
+overflow:hidden;
+margin-bottom:20px;
 }
 
 .profile-stat{
-
-    padding:
-        15px
-        10px;
-
-    text-align:center;
-
-    border-left:
-        1px solid
-        #242424;
-
+padding:15px 10px;
+text-align:center;
+border-left:1px solid #242424;
 }
 
 .profile-stat:last-child{
-    border-left:none;
+border-left:none;
 }
 
 .profile-stat-number{
-
-    display:block;
-
-    font-size:18px;
-
-    font-weight:900;
-
-    margin-bottom:4px;
-
+display:block;
+font-size:18px;
+font-weight:900;
+margin-bottom:4px;
 }
 
 .profile-stat-label{
-
-    color:#777;
-
-    font-size:12px;
-
+color:#777;
+font-size:12px;
 }
 
 /* =================================================
@@ -786,55 +447,33 @@ ACCOUNT INFO
 ================================================== */
 
 .account-info{
-
-    border-top:
-        1px solid
-        #222;
-
-    padding-top:18px;
-
+border-top:1px solid #222;
+padding-top:18px;
 }
 
 .account-info-title{
-
-    color:#888;
-
-    font-size:13px;
-
-    margin-bottom:12px;
-
+color:#888;
+font-size:13px;
+margin-bottom:12px;
 }
 
 .account-info-row{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    gap:15px;
-
-    padding:
-        9px
-        0;
-
-    font-size:13px;
-
+display:flex;
+justify-content:space-between;
+gap:15px;
+padding:9px 0;
+font-size:13px;
 }
 
 .account-info-label{
-    color:#777;
+color:#777;
 }
 
 .account-info-value{
-
-    color:#ddd;
-
-    text-align:left;
-
-    direction:ltr;
-
-    overflow-wrap:anywhere;
-
+color:#ddd;
+text-align:left;
+direction:ltr;
+overflow-wrap:anywhere;
 }
 
 /* =================================================
@@ -842,131 +481,66 @@ MODAL
 ================================================== */
 
 .modal{
-
-    position:fixed;
-
-    inset:0;
-
-    z-index:30000;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    padding:15px;
-
-    background:
-        rgba(0,0,0,.72);
-
-    backdrop-filter:
-        blur(10px);
-
-    -webkit-backdrop-filter:
-        blur(10px);
-
-    opacity:0;
-
-    visibility:hidden;
-
-    pointer-events:none;
-
-    transition:.25s ease;
-
+position:fixed;
+inset:0;
+z-index:30000;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:15px;
+background:rgba(0,0,0,.72);
+backdrop-filter:blur(10px);
+-webkit-backdrop-filter:blur(10px);
+opacity:0;
+visibility:hidden;
+pointer-events:none;
+transition:.25s ease;
 }
 
 .modal.show{
-
-    opacity:1;
-
-    visibility:visible;
-
-    pointer-events:auto;
-
+opacity:1;
+visibility:visible;
+pointer-events:auto;
 }
 
 .modal-box{
-
-    width:min(
-        100%,
-        500px
-    );
-
-    max-height:
-        calc(
-            100vh - 30px
-        );
-
-    overflow-y:auto;
-
-    padding:20px;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:22px;
-
-    background:#111;
-
-    box-shadow:
-        0
-        25px
-        70px
-        rgba(0,0,0,.55);
-
-    transform:
-        translateY(18px)
-        scale(.97);
-
-    transition:.25s ease;
-
+width:min(100%,500px);
+max-height:calc(100vh - 30px);
+overflow-y:auto;
+padding:20px;
+border:1px solid #292929;
+border-radius:22px;
+background:#111;
+box-shadow:0 25px 70px rgba(0,0,0,.55);
+transform:translateY(18px) scale(.97);
+transition:.25s ease;
 }
 
 .modal.show .modal-box{
-
-    transform:
-        translateY(0)
-        scale(1);
-
+transform:translateY(0) scale(1);
 }
 
 .modal-header{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    gap:10px;
-
-    margin-bottom:18px;
-
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+margin-bottom:18px;
 }
 
 .modal-header h2{
-    font-size:21px;
+font-size:21px;
 }
 
 .close-modal{
-
-    width:38px;
-    height:38px;
-
-    border:0;
-
-    border-radius:50%;
-
-    background:#222;
-
-    color:#fff;
-
-    cursor:pointer;
-
-    font-size:18px;
-
+width:38px;
+height:38px;
+border:0;
+border-radius:50%;
+background:#222;
+color:#fff;
+cursor:pointer;
+font-size:18px;
 }
 
 /* =================================================
@@ -974,210 +548,120 @@ EDIT SECTION
 ================================================== */
 
 .edit-section{
-
-    padding:15px;
-
-    margin-bottom:10px;
-
-    border:
-        1px solid
-        #242424;
-
-    border-radius:16px;
-
-    background:
-        rgba(255,255,255,.025);
-
-    transition:
-        opacity .25s ease,
-        transform .25s ease;
-
+padding:15px;
+margin-bottom:10px;
+border:1px solid #242424;
+border-radius:16px;
+background:rgba(255,255,255,.025);
+transition:opacity .25s ease,transform .25s ease;
 }
 
 .edit-section.saved{
-    opacity:.65;
+opacity:.65;
 }
 
 .edit-section-title{
-
-    font-size:15px;
-
-    font-weight:bold;
-
-    margin-bottom:6px;
-
+font-size:15px;
+font-weight:bold;
+margin-bottom:6px;
 }
 
 .edit-section-description{
-
-    color:#777;
-
-    font-size:12px;
-
-    line-height:1.5;
-
-    margin-bottom:10px;
-
+color:#777;
+font-size:12px;
+line-height:1.5;
+margin-bottom:10px;
 }
 
 .form-input,
 .form-textarea{
-
-    width:100%;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:12px;
-
-    outline:none;
-
-    background:#181818;
-
-    color:#fff;
-
-    font-size:14px;
-
-    transition:
-        border-color .2s ease,
-        background .2s ease,
-        box-shadow .2s ease;
-
+width:100%;
+border:1px solid #292929;
+border-radius:12px;
+outline:none;
+background:#181818;
+color:#fff;
+font-size:14px;
+transition:
+border-color .2s ease,
+background .2s ease,
+box-shadow .2s ease;
 }
 
 .form-input{
-
-    height:48px;
-
-    padding:
-        0
-        13px;
-
+height:48px;
+padding:0 13px;
 }
 
 .form-textarea{
-
-    min-height:100px;
-
-    resize:vertical;
-
-    padding:
-        12px
-        13px;
-
-    line-height:1.6;
-
+min-height:100px;
+resize:vertical;
+padding:12px 13px;
+line-height:1.6;
 }
 
 .form-input:focus,
 .form-textarea:focus{
-
-    border-color:#555;
-
+border-color:#555;
 }
 
 .form-input.error,
 .form-textarea.error{
-
-    border-color:#ef4444 !important;
-
-    box-shadow:
-        0
-        0
-        0
-        3px
-        rgba(239,68,68,.10);
-
+border-color:#ef4444 !important;
+box-shadow:0 0 0 3px rgba(239,68,68,.10);
 }
 
 .form-input.success,
 .form-textarea.success{
-
-    border-color:#22c55e !important;
-
-    box-shadow:
-        0
-        0
-        0
-        3px
-        rgba(34,197,94,.15),
-        inset
-        0
-        0
-        18px
-        rgba(34,197,94,.04);
-
+border-color:#22c55e !important;
+box-shadow:
+0 0 0 3px rgba(34,197,94,.15),
+inset 0 0 18px rgba(34,197,94,.04);
 }
 
 .field-message{
-
-    min-height:18px;
-
-    margin-top:6px;
-
-    color:#ef4444;
-
-    font-size:12px;
-
+min-height:18px;
+margin-top:6px;
+color:#ef4444;
+font-size:12px;
 }
 
 .field-message.success{
-    color:#22c55e;
+color:#22c55e;
 }
 
 .save-button{
-
-    width:100%;
-
-    min-height:45px;
-
-    margin-top:8px;
-
-    border:0;
-
-    border-radius:12px;
-
-    background:#eee;
-
-    color:#050505;
-
-    cursor:pointer;
-
-    font-size:14px;
-
-    font-weight:bold;
-
-    transition:.2s ease;
-
+width:100%;
+min-height:45px;
+margin-top:8px;
+border:0;
+border-radius:12px;
+background:#eee;
+color:#050505;
+cursor:pointer;
+font-size:14px;
+font-weight:bold;
+transition:.2s ease;
 }
 
 .save-button:hover{
-    background:#fff;
+background:#fff;
 }
 
 .save-button:disabled{
-
-    opacity:.5;
-
-    cursor:not-allowed;
-
+opacity:.5;
+cursor:not-allowed;
 }
 
 .timer{
-
-    color:#777;
-
-    font-size:11px;
-
-    margin-top:7px;
-
-    text-align:center;
-
+color:#777;
+font-size:11px;
+margin-top:7px;
+text-align:center;
 }
 
 .timer.ready{
-    color:#22c55e;
+color:#22c55e;
 }
 
 /* =================================================
@@ -1185,223 +669,126 @@ IMAGE STUDIO
 ================================================== */
 
 .image-studio{
-
-    width:100%;
-
-    text-align:center;
-
+width:100%;
+text-align:center;
 }
 
 .studio-title{
-
-    color:#aaa;
-
-    font-size:12px;
-
-    margin-bottom:10px;
-
+color:#aaa;
+font-size:12px;
+margin-bottom:10px;
 }
 
 .studio-stage{
-
-    position:relative;
-
-    width:100%;
-
-    height:270px;
-
-    margin-bottom:15px;
-
-    overflow:hidden;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:17px;
-
-    background:
-        repeating-conic-gradient(
-            #111 0% 25%,
-            #151515 0% 50%
-        )
-        0 0 /
-        22px 22px;
-
-    touch-action:none;
-
+position:relative;
+width:100%;
+height:270px;
+margin-bottom:15px;
+overflow:hidden;
+border:1px solid #292929;
+border-radius:17px;
+background:
+repeating-conic-gradient(
+#111 0% 25%,
+#151515 0% 50%
+)
+0 0 / 22px 22px;
+touch-action:none;
 }
 
 .studio-stage.avatar-stage{
-
-    width:230px;
-
-    height:230px;
-
-    margin-left:auto;
-
-    margin-right:auto;
-
-    border-radius:50%;
-
+width:230px;
+height:230px;
+margin-left:auto;
+margin-right:auto;
+border-radius:50%;
 }
 
 .studio-image{
-
-    position:absolute;
-
-    left:50%;
-    top:50%;
-
-    max-width:none;
-
-    display:none;
-
-    user-select:none;
-
-    -webkit-user-drag:none;
-
-    transform-origin:
-        center center;
-
-    touch-action:none;
-
+position:absolute;
+left:50%;
+top:50%;
+max-width:none;
+display:none;
+user-select:none;
+-webkit-user-drag:none;
+transform-origin:center center;
+touch-action:none;
 }
 
 .studio-empty{
-
-    position:absolute;
-
-    inset:0;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    color:#555;
-
-    font-size:13px;
-
-    pointer-events:none;
-
+position:absolute;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#555;
+font-size:13px;
+pointer-events:none;
 }
 
 .studio-controls{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(
-            4,
-            1fr
-        );
-
-    gap:7px;
-
-    margin-bottom:12px;
-
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:7px;
+margin-bottom:12px;
 }
 
 .studio-control{
-
-    min-height:43px;
-
-    border:
-        1px solid
-        #292929;
-
-    border-radius:11px;
-
-    background:#171717;
-
-    color:#eee;
-
-    cursor:pointer;
-
-    font-size:17px;
-
+min-height:43px;
+border:1px solid #292929;
+border-radius:11px;
+background:#171717;
+color:#eee;
+cursor:pointer;
+font-size:17px;
 }
 
 .studio-control:hover{
-    background:#222;
+background:#222;
 }
 
 .zoom-row{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:10px;
-
-    margin-bottom:12px;
-
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:12px;
 }
 
 .zoom-row span{
-
-    color:#888;
-
-    font-size:12px;
-
-    white-space:nowrap;
-
+color:#888;
+font-size:12px;
+white-space:nowrap;
 }
 
 .zoom-range{
-
-    width:100%;
-
-    accent-color:#eee;
-
+width:100%;
+accent-color:#eee;
 }
 
 .studio-file{
-
-    width:100%;
-
-    color:#aaa;
-
-    font-size:12px;
-
-    margin-bottom:8px;
-
+width:100%;
+color:#aaa;
+font-size:12px;
+margin-bottom:8px;
 }
 
 .studio-hint{
-
-    color:#666;
-
-    font-size:11px;
-
-    line-height:1.6;
-
-    margin-bottom:8px;
-
+color:#666;
+font-size:11px;
+line-height:1.6;
+margin-bottom:8px;
 }
 
 .delete-image{
-
-    width:100%;
-
-    min-height:43px;
-
-    border:
-        1px solid
-        #442020;
-
-    background:#241010;
-
-    color:#ff7777;
-
-    border-radius:12px;
-
-    cursor:pointer;
-
-    margin-top:8px;
-
+width:100%;
+min-height:43px;
+border:1px solid #442020;
+background:#241010;
+color:#ff7777;
+border-radius:12px;
+cursor:pointer;
+margin-top:8px;
 }
 
 /* =================================================
@@ -1409,74 +796,36 @@ STATUS
 ================================================== */
 
 .profile-status{
-
-    position:fixed;
-
-    left:50%;
-
-    bottom:25px;
-
-    z-index:50000;
-
-    max-width:
-        calc(
-            100% - 30px
-        );
-
-    padding:
-        11px
-        17px;
-
-    border-radius:12px;
-
-    background:#eee;
-
-    color:#050505;
-
-    text-align:center;
-
-    font-size:13px;
-
-    opacity:0;
-
-    pointer-events:none;
-
-    transform:
-        translate(
-            -50%,
-            18px
-        );
-
-    transition:.3s ease;
-
+position:fixed;
+left:50%;
+bottom:25px;
+z-index:50000;
+max-width:calc(100% - 30px);
+padding:11px 17px;
+border-radius:12px;
+background:#eee;
+color:#050505;
+text-align:center;
+font-size:13px;
+opacity:0;
+pointer-events:none;
+transform:translate(-50%,18px);
+transition:.3s ease;
 }
 
 .profile-status.show{
-
-    opacity:1;
-
-    transform:
-        translate(
-            -50%,
-            0
-        );
-
+opacity:1;
+transform:translate(-50%,0);
 }
 
 .profile-status.error{
-
-    background:#ef4444;
-
-    color:#fff;
-
+background:#ef4444;
+color:#fff;
 }
 
 .profile-status.success{
-
-    background:#22c55e;
-
-    color:#fff;
-
+background:#22c55e;
+color:#fff;
 }
 
 /* =================================================
@@ -1484,113 +833,60 @@ IMAGE CONFIRMATION
 ================================================== */
 
 .image-confirm-box{
-
-    width:min(
-        100%,
-        380px
-    );
-
-    text-align:center;
-
-    padding:24px;
-
+width:min(100%,380px);
+text-align:center;
+padding:24px;
 }
 
 .image-confirm-icon{
-
-    width:58px;
-    height:58px;
-
-    margin:
-        0
-        auto
-        15px;
-
-    border-radius:50%;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    font-size:25px;
-
-    background:
-        rgba(255,255,255,.07);
-
-    border:
-        1px solid
-        rgba(255,255,255,.14);
-
+width:58px;
+height:58px;
+margin:0 auto 15px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:25px;
+background:rgba(255,255,255,.07);
+border:1px solid rgba(255,255,255,.14);
 }
 
 .image-confirm-title{
-
-    font-size:19px;
-
-    font-weight:900;
-
-    margin-bottom:8px;
-
+font-size:19px;
+font-weight:900;
+margin-bottom:8px;
 }
 
 .image-confirm-text{
-
-    color:#999;
-
-    font-size:13px;
-
-    line-height:1.7;
-
-    margin-bottom:18px;
-
+color:#999;
+font-size:13px;
+line-height:1.7;
+margin-bottom:18px;
 }
 
 .image-confirm-actions{
-
-    display:grid;
-
-    grid-template-columns:
-        1fr
-        1fr;
-
-    gap:9px;
-
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:9px;
 }
 
 .image-confirm-actions button{
-
-    min-height:45px;
-
-    border-radius:12px;
-
-    cursor:pointer;
-
-    font-weight:bold;
-
-    border:
-        1px solid
-        rgba(255,255,255,.13);
-
-    transition:.2s ease;
-
+min-height:45px;
+border-radius:12px;
+cursor:pointer;
+font-weight:bold;
+border:1px solid rgba(255,255,255,.13);
+transition:.2s ease;
 }
 
 .confirm-no{
-
-    background:
-        rgba(255,255,255,.05);
-
-    color:#eee;
-
+background:rgba(255,255,255,.05);
+color:#eee;
 }
 
 .confirm-yes{
-
-    background:#eee;
-
-    color:#050505;
-
+background:#eee;
+color:#050505;
 }
 
 /* =================================================
@@ -1598,52 +894,34 @@ IMAGE SUCCESS
 ================================================== */
 
 .profile-card.image-save-success{
-
-    border-color:
-        rgba(34,197,94,.9) !important;
-
-    box-shadow:
-        0
-        0
-        0
-        3px
-        rgba(34,197,94,.18),
-        0
-        15px
-        55px
-        rgba(34,197,94,.20),
-        inset
-        0
-        1px
-        0
-        rgba(34,197,94,.35) !important;
-
+border-color:rgba(34,197,94,.9) !important;
+box-shadow:
+0 0 0 3px rgba(34,197,94,.18),
+0 15px 55px rgba(34,197,94,.20),
+inset 0 1px 0 rgba(34,197,94,.35) !important;
 }
 
 @keyframes wfescSuccessPulse{
 
-    0%{
-        opacity:1;
-        transform:scale(1);
-    }
+0%{
+opacity:1;
+transform:scale(1);
+}
 
-    50%{
-        opacity:.86;
-        transform:scale(1.008);
-    }
+50%{
+opacity:.86;
+transform:scale(1.008);
+}
 
-    100%{
-        opacity:1;
-        transform:scale(1);
-    }
+100%{
+opacity:1;
+transform:scale(1);
+}
 
 }
 
 .image-save-success{
-    animation:
-        wfescSuccessPulse
-        .7s
-        ease;
+animation:wfescSuccessPulse .7s ease;
 }
 
 /* =================================================
@@ -1651,441 +929,195 @@ LIQUID GLASS
 ================================================== */
 
 html.wfesc-liquid-glass .profile-card{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.075),
-            rgba(255,255,255,.025)
-        );
-
-    border-color:
-        rgba(255,255,255,.13);
-
-    box-shadow:
-        0
-        15px
-        45px
-        rgba(0,0,0,.30),
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.08);
-
-    backdrop-filter:
-        blur(28px)
-        saturate(170%);
-
-    -webkit-backdrop-filter:
-        blur(28px)
-        saturate(170%);
-
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.075),
+rgba(255,255,255,.025)
+);
+border-color:rgba(255,255,255,.13);
+box-shadow:
+0 15px 45px rgba(0,0,0,.30),
+inset 0 1px 0 rgba(255,255,255,.08);
+backdrop-filter:blur(28px) saturate(170%);
+-webkit-backdrop-filter:blur(28px) saturate(170%);
 }
 
 html.wfesc-liquid-glass .profile-cover{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.08),
-            rgba(255,255,255,.025)
-        );
-
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.08),
+rgba(255,255,255,.025)
+);
 }
 
 html.wfesc-liquid-glass .avatar-wrap{
-
-    background:
-        rgba(255,255,255,.055);
-
-    border-color:
-        rgba(255,255,255,.15);
-
-    box-shadow:
-        0
-        8px
-        30px
-        rgba(0,0,0,.35),
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.10);
-
+background:rgba(255,255,255,.055);
+border-color:rgba(255,255,255,.15);
+box-shadow:
+0 8px 30px rgba(0,0,0,.35),
+inset 0 1px 0 rgba(255,255,255,.10);
 }
 
 html.wfesc-liquid-glass .profile-action{
-
-    background:
-        rgba(255,255,255,.045);
-
-    border-color:
-        rgba(255,255,255,.12);
-
-    backdrop-filter:
-        blur(20px)
-        saturate(160%);
-
-    -webkit-backdrop-filter:
-        blur(20px)
-        saturate(160%);
-
-    box-shadow:
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.06);
-
+background:rgba(255,255,255,.045);
+border-color:rgba(255,255,255,.12);
+backdrop-filter:blur(20px) saturate(160%);
+-webkit-backdrop-filter:blur(20px) saturate(160%);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 html.wfesc-liquid-glass .profile-action:hover{
-
-    background:
-        rgba(255,255,255,.085);
-
-    border-color:
-        rgba(255,255,255,.17);
-
+background:rgba(255,255,255,.085);
+border-color:rgba(255,255,255,.17);
 }
 
 html.wfesc-liquid-glass .profile-action.primary{
-
-    background:
-        rgba(255,255,255,.88);
-
-    color:#050505;
-
-    border-color:
-        rgba(255,255,255,.8);
-
+background:rgba(255,255,255,.88);
+color:#050505;
+border-color:rgba(255,255,255,.8);
 }
 
 html.wfesc-liquid-glass .profile-stats{
-
-    border-color:
-        rgba(255,255,255,.12);
-
-    background:
-        rgba(255,255,255,.025);
-
-    backdrop-filter:
-        blur(20px);
-
-    -webkit-backdrop-filter:
-        blur(20px);
-
+border-color:rgba(255,255,255,.12);
+background:rgba(255,255,255,.025);
+backdrop-filter:blur(20px);
+-webkit-backdrop-filter:blur(20px);
 }
 
 html.wfesc-liquid-glass .profile-stat{
-
-    border-color:
-        rgba(255,255,255,.09);
-
+border-color:rgba(255,255,255,.09);
 }
 
 html.wfesc-liquid-glass .bio-editor{
-
-    background:
-        rgba(255,255,255,.035);
-
-    border-color:
-        rgba(255,255,255,.11);
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
-
+background:rgba(255,255,255,.035);
+border-color:rgba(255,255,255,.11);
+backdrop-filter:blur(18px);
+-webkit-backdrop-filter:blur(18px);
 }
 
 html.wfesc-liquid-glass .bio-edit-button{
-
-    background:
-        rgba(255,255,255,.045);
-
-    border-color:
-        rgba(255,255,255,.12);
-
-    backdrop-filter:
-        blur(15px);
-
-    -webkit-backdrop-filter:
-        blur(15px);
-
+background:rgba(255,255,255,.045);
+border-color:rgba(255,255,255,.12);
+backdrop-filter:blur(15px);
+-webkit-backdrop-filter:blur(15px);
 }
 
 html.wfesc-liquid-glass .edit-section{
-
-    background:
-        rgba(255,255,255,.035);
-
-    border-color:
-        rgba(255,255,255,.11);
-
-    backdrop-filter:
-        blur(18px)
-        saturate(150%);
-
-    -webkit-backdrop-filter:
-        blur(18px)
-        saturate(150%);
-
+background:rgba(255,255,255,.035);
+border-color:rgba(255,255,255,.11);
+backdrop-filter:blur(18px) saturate(150%);
+-webkit-backdrop-filter:blur(18px) saturate(150%);
 }
 
 html.wfesc-liquid-glass .modal-box{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(25,25,25,.82),
-            rgba(10,10,10,.74)
-        );
-
-    border-color:
-        rgba(255,255,255,.14);
-
-    box-shadow:
-        0
-        25px
-        70px
-        rgba(0,0,0,.5),
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.08);
-
-    backdrop-filter:
-        blur(32px)
-        saturate(165%);
-
-    -webkit-backdrop-filter:
-        blur(32px)
-        saturate(165%);
-
+background:
+linear-gradient(
+135deg,
+rgba(25,25,25,.82),
+rgba(10,10,10,.74)
+);
+border-color:rgba(255,255,255,.14);
+box-shadow:
+0 25px 70px rgba(0,0,0,.5),
+inset 0 1px 0 rgba(255,255,255,.08);
+backdrop-filter:blur(32px) saturate(165%);
+-webkit-backdrop-filter:blur(32px) saturate(165%);
 }
 
 html.wfesc-liquid-glass .form-input,
 html.wfesc-liquid-glass .form-textarea{
-
-    background:
-        rgba(255,255,255,.045);
-
-    border-color:
-        rgba(255,255,255,.13);
-
-    backdrop-filter:
-        blur(17px);
-
-    -webkit-backdrop-filter:
-        blur(17px);
-
-    box-shadow:
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.05);
-
+background:rgba(255,255,255,.045);
+border-color:rgba(255,255,255,.13);
+backdrop-filter:blur(17px);
+-webkit-backdrop-filter:blur(17px);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 html.wfesc-liquid-glass .cover-edit{
-
-    background:
-        rgba(0,0,0,.38);
-
-    border-color:
-        rgba(255,255,255,.15);
-
+background:rgba(0,0,0,.38);
+border-color:rgba(255,255,255,.15);
 }
 
 html.wfesc-liquid-glass .studio-stage{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.055),
-            rgba(255,255,255,.018)
-        );
-
-    border-color:
-        rgba(255,255,255,.12);
-
-    backdrop-filter:
-        blur(20px);
-
-    -webkit-backdrop-filter:
-        blur(20px);
-
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.055),
+rgba(255,255,255,.018)
+);
+border-color:rgba(255,255,255,.12);
+backdrop-filter:blur(20px);
+-webkit-backdrop-filter:blur(20px);
 }
 
 /* GLASS FOR EVERY CONTROL */
 
 html.wfesc-liquid-glass .save-button{
-
-    background:
-        rgba(255,255,255,.78);
-
-    border:
-        1px solid
-        rgba(255,255,255,.35);
-
-    backdrop-filter:
-        blur(18px)
-        saturate(160%);
-
-    -webkit-backdrop-filter:
-        blur(18px)
-        saturate(160%);
-
-    box-shadow:
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.65),
-        0
-        8px
-        25px
-        rgba(0,0,0,.15);
-
+background:rgba(255,255,255,.78);
+border:1px solid rgba(255,255,255,.35);
+backdrop-filter:blur(18px) saturate(160%);
+-webkit-backdrop-filter:blur(18px) saturate(160%);
+box-shadow:
+inset 0 1px 0 rgba(255,255,255,.65),
+0 8px 25px rgba(0,0,0,.15);
 }
 
 html.wfesc-liquid-glass .studio-control{
-
-    background:
-        rgba(255,255,255,.045);
-
-    border-color:
-        rgba(255,255,255,.13);
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
-
-    box-shadow:
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.06);
-
+background:rgba(255,255,255,.045);
+border-color:rgba(255,255,255,.13);
+backdrop-filter:blur(18px);
+-webkit-backdrop-filter:blur(18px);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 html.wfesc-liquid-glass .close-modal{
-
-    background:
-        rgba(255,255,255,.07);
-
-    border:
-        1px solid
-        rgba(255,255,255,.12);
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
-
+background:rgba(255,255,255,.07);
+border:1px solid rgba(255,255,255,.12);
+backdrop-filter:blur(18px);
+-webkit-backdrop-filter:blur(18px);
 }
 
 html.wfesc-liquid-glass .bio-editor-actions button{
-
-    background:
-        rgba(255,255,255,.055);
-
-    border-color:
-        rgba(255,255,255,.12);
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
-
+background:rgba(255,255,255,.055);
+border-color:rgba(255,255,255,.12);
+backdrop-filter:blur(18px);
+-webkit-backdrop-filter:blur(18px);
 }
 
 html.wfesc-liquid-glass .bio-editor-actions .bio-save{
-
-    background:
-        rgba(255,255,255,.78);
-
-    color:#050505;
-
+background:rgba(255,255,255,.78);
+color:#050505;
 }
 
 html.wfesc-liquid-glass .delete-image{
-
-    background:
-        rgba(100,20,20,.25);
-
-    border-color:
-        rgba(255,100,100,.25);
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
-
+background:rgba(100,20,20,.25);
+border-color:rgba(255,100,100,.25);
+backdrop-filter:blur(18px);
+-webkit-backdrop-filter:blur(18px);
 }
 
 html.wfesc-liquid-glass .image-confirm-box{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(30,30,30,.82),
-            rgba(10,10,10,.72)
-        );
-
-    border:
-        1px solid
-        rgba(255,255,255,.14);
-
-    border-radius:22px;
-
-    box-shadow:
-        0
-        25px
-        70px
-        rgba(0,0,0,.55),
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.09);
-
-    backdrop-filter:
-        blur(32px)
-        saturate(170%);
-
-    -webkit-backdrop-filter:
-        blur(32px)
-        saturate(170%);
-
+background:
+linear-gradient(
+135deg,
+rgba(30,30,30,.82),
+rgba(10,10,10,.72)
+);
+border:1px solid rgba(255,255,255,.14);
+border-radius:22px;
+box-shadow:
+0 25px 70px rgba(0,0,0,.55),
+inset 0 1px 0 rgba(255,255,255,.09);
+backdrop-filter:blur(32px) saturate(170%);
+-webkit-backdrop-filter:blur(32px) saturate(170%);
 }
 
 html.wfesc-liquid-glass .image-confirm-actions button{
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
-
-    box-shadow:
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.07);
-
+backdrop-filter:blur(18px);
+-webkit-backdrop-filter:blur(18px);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
 }
 
 /* =================================================
@@ -2093,180 +1125,116 @@ LIGHT MODE
 ================================================== */
 
 html.wfesc-light-mode body{
-
-    background:#f3f3f3;
-
-    color:#111;
-
+background:#f3f3f3;
+color:#111;
 }
 
 html.wfesc-light-mode .profile-card{
-
-    background:#fff;
-
-    border-color:#ddd;
-
-    box-shadow:
-        0
-        15px
-        45px
-        rgba(0,0,0,.08);
-
+background:#fff;
+border-color:#ddd;
+box-shadow:0 15px 45px rgba(0,0,0,.08);
 }
 
 html.wfesc-light-mode .profile-cover{
-
-    background:
-        linear-gradient(
-            135deg,
-            #eee,
-            #ddd
-        );
-
+background:linear-gradient(135deg,#eee,#ddd);
 }
 
 html.wfesc-light-mode .avatar-wrap{
-
-    background:#fff;
-
-    border-color:#fff;
-
+background:#fff;
+border-color:#fff;
 }
 
 html.wfesc-light-mode .avatar-fallback{
-
-    background:
-        linear-gradient(
-            135deg,
-            #eee,
-            #ddd
-        );
-
-    color:#111;
-
+background:linear-gradient(135deg,#eee,#ddd);
+color:#111;
 }
 
 html.wfesc-light-mode .profile-username{
-    color:#777;
+color:#777;
 }
 
 html.wfesc-light-mode .profile-bio{
-    color:#444;
+color:#444;
 }
 
 html.wfesc-light-mode .profile-bio.empty{
-    color:#888;
+color:#888;
 }
 
 html.wfesc-light-mode .profile-action{
-
-    background:#f4f4f4;
-
-    color:#111;
-
-    border-color:#ddd;
-
+background:#f4f4f4;
+color:#111;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .profile-action:hover{
-    background:#e9e9e9;
+background:#e9e9e9;
 }
 
 html.wfesc-light-mode .profile-action.primary{
-
-    background:#111;
-
-    color:#fff;
-
-    border-color:#111;
-
+background:#111;
+color:#fff;
+border-color:#111;
 }
 
 html.wfesc-light-mode .profile-stats{
-    border-color:#ddd;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .profile-stat{
-    border-color:#ddd;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .profile-stat-label{
-    color:#777;
+color:#777;
 }
 
 html.wfesc-light-mode .account-info{
-    border-color:#e5e5e5;
+border-color:#e5e5e5;
 }
 
 html.wfesc-light-mode .account-info-value{
-    color:#222;
+color:#222;
 }
 
 html.wfesc-light-mode .edit-section{
-
-    background:#fafafa;
-
-    border-color:#ddd;
-
+background:#fafafa;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .bio-editor{
-
-    background:#fafafa;
-
-    border-color:#ddd;
-
+background:#fafafa;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .bio-edit-button{
-
-    background:#f4f4f4;
-
-    color:#222;
-
-    border-color:#ddd;
-
+background:#f4f4f4;
+color:#222;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .modal-box{
-
-    background:#fff;
-
-    color:#111;
-
-    border-color:#ddd;
-
+background:#fff;
+color:#111;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .close-modal{
-
-    background:#eee;
-
-    color:#111;
-
+background:#eee;
+color:#111;
 }
 
 html.wfesc-light-mode .form-input,
 html.wfesc-light-mode .form-textarea{
-
-    background:#f6f6f6;
-
-    color:#111;
-
-    border-color:#ddd;
-
+background:#f6f6f6;
+color:#111;
+border-color:#ddd;
 }
 
 html.wfesc-light-mode .cover-edit{
-
-    background:
-        rgba(255,255,255,.75);
-
-    color:#111;
-
-    border-color:
-        rgba(0,0,0,.10);
-
+background:rgba(255,255,255,.75);
+color:#111;
+border-color:rgba(0,0,0,.10);
 }
 
 /* =================================================
@@ -2274,93 +1242,53 @@ LIGHT + GLASS
 ================================================== */
 
 html.wfesc-light-mode.wfesc-liquid-glass .profile-card{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.72),
-            rgba(255,255,255,.48)
-        );
-
-    border-color:
-        rgba(0,0,0,.10);
-
-    box-shadow:
-        0
-        15px
-        45px
-        rgba(0,0,0,.10),
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.9);
-
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.72),
+rgba(255,255,255,.48)
+);
+border-color:rgba(0,0,0,.10);
+box-shadow:
+0 15px 45px rgba(0,0,0,.10),
+inset 0 1px 0 rgba(255,255,255,.9);
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .edit-section,
 html.wfesc-light-mode.wfesc-liquid-glass .bio-editor{
-
-    background:
-        rgba(255,255,255,.42);
-
-    border-color:
-        rgba(0,0,0,.10);
-
+background:rgba(255,255,255,.42);
+border-color:rgba(0,0,0,.10);
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .form-input,
 html.wfesc-light-mode.wfesc-liquid-glass .form-textarea{
-
-    background:
-        rgba(255,255,255,.42);
-
-    color:#111;
-
-    border-color:
-        rgba(0,0,0,.10);
-
+background:rgba(255,255,255,.42);
+color:#111;
+border-color:rgba(0,0,0,.10);
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .modal-box{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.88),
-            rgba(245,245,245,.78)
-        );
-
-    border-color:
-        rgba(0,0,0,.10);
-
-    box-shadow:
-        0
-        25px
-        70px
-        rgba(0,0,0,.18),
-        inset
-        0
-        1px
-        0
-        rgba(255,255,255,.95);
-
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.88),
+rgba(245,245,245,.78)
+);
+border-color:rgba(0,0,0,.10);
+box-shadow:
+0 25px 70px rgba(0,0,0,.18),
+inset 0 1px 0 rgba(255,255,255,.95);
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .image-confirm-box{
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.88),
-            rgba(245,245,245,.78)
-        );
-
-    border-color:
-        rgba(0,0,0,.10);
-
-    color:#111;
-
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.88),
+rgba(245,245,245,.78)
+);
+border-color:rgba(0,0,0,.10);
+color:#111;
 }
 
 /* =================================================
@@ -2370,15 +1298,10 @@ ANIMATION OFF
 html.wfesc-animation-off *,
 html.wfesc-animation-off *::before,
 html.wfesc-animation-off *::after{
-
-    animation-duration:0s !important;
-
-    animation-delay:0s !important;
-
-    transition-duration:0s !important;
-
-    scroll-behavior:auto !important;
-
+animation-duration:0s !important;
+animation-delay:0s !important;
+transition-duration:0s !important;
+scroll-behavior:auto !important;
 }
 
 /* =================================================
@@ -2387,36 +1310,30 @@ SHAKE
 
 @keyframes wfescShake{
 
-    0%,
-    100%{
-        transform:translateX(0);
-    }
+0%,100%{
+transform:translateX(0);
+}
 
-    20%{
-        transform:translateX(7px);
-    }
+20%{
+transform:translateX(7px);
+}
 
-    40%{
-        transform:translateX(-7px);
-    }
+40%{
+transform:translateX(-7px);
+}
 
-    60%{
-        transform:translateX(5px);
-    }
+60%{
+transform:translateX(5px);
+}
 
-    80%{
-        transform:translateX(-5px);
-    }
+80%{
+transform:translateX(-5px);
+}
 
 }
 
 .shake{
-
-    animation:
-        wfescShake
-        .38s
-        ease;
-
+animation:wfescShake .38s ease;
 }
 
 /* =================================================
@@ -2425,131 +1342,100 @@ MOBILE
 
 @media(max-width:500px){
 
-    .profile-page{
+.profile-page{
+padding:12px 10px 30px;
+}
 
-        padding:
-            12px
-            10px
-            30px;
+.profile-cover{
+height:175px;
+}
 
-    }
+.profile-content{
+padding:0 15px 22px;
+}
 
-    .profile-cover{
-        height:175px;
-    }
+.avatar-wrap{
+width:94px;
+height:94px;
+margin-top:-47px;
+}
 
-    .profile-content{
+.avatar-fallback{
+font-size:31px;
+}
 
-        padding:
-            0
-            15px
-            22px;
+.profile-name{
+font-size:22px;
+}
 
-    }
+.profile-actions{
+display:grid;
+grid-template-columns:1fr 1fr;
+}
 
-    .avatar-wrap{
+.profile-action{
+width:100%;
+}
 
-        width:94px;
-        height:94px;
+.profile-stats{
+border-radius:13px;
+}
 
-        margin-top:-47px;
+.profile-stat{
+padding:12px 6px;
+}
 
-    }
+.modal{
+padding:10px;
+}
 
-    .avatar-fallback{
-        font-size:31px;
-    }
+.modal-box{
+border-radius:19px;
+padding:15px;
+}
 
-    .profile-name{
-        font-size:22px;
-    }
+.studio-stage{
+height:220px;
+}
 
-    .profile-actions{
-
-        display:grid;
-
-        grid-template-columns:
-            1fr
-            1fr;
-
-    }
-
-    .profile-action{
-        width:100%;
-    }
-
-    .profile-stats{
-        border-radius:13px;
-    }
-
-    .profile-stat{
-
-        padding:
-            12px
-            6px;
-
-    }
-
-    .modal{
-        padding:10px;
-    }
-
-    .modal-box{
-
-        border-radius:19px;
-
-        padding:15px;
-
-    }
-
-    .studio-stage{
-        height:220px;
-    }
-
-    .studio-stage.avatar-stage{
-
-        width:200px;
-        height:200px;
-
-    }
+.studio-stage.avatar-stage{
+width:200px;
+height:200px;
+}
 
 }
 
 </style>
-
 </head>
 
 <body>
 
 <main class="profile-page">
 
-<section
-    class="profile-card"
-    id="profileCard"
->
+<section class="profile-card" id="profileCard">
 
 <div class="profile-cover">
 
 <div
-    class="profile-cover-default"
-    id="coverDefault"
+class="profile-cover-default"
+id="coverDefault"
 >
-    WFESC
+WFESC
 </div>
 
 <img
-    id="profileCoverImage"
-    class="profile-cover-image"
-    alt="غلاف الملف الشخصي"
+id="profileCoverImage"
+class="profile-cover-image"
+alt="غلاف الملف الشخصي"
 >
 
 <button
-    type="button"
-    class="cover-edit"
-    id="editCoverButton"
-    title="تعديل الغلاف"
+type="button"
+class="cover-edit"
+id="editCoverButton"
+title="تعديل الغلاف"
 >
-    ✎
+✎
 </button>
 
 </div>
@@ -2559,25 +1445,25 @@ MOBILE
 <div class="avatar-wrap">
 
 <img
-    id="profileAvatar"
-    class="profile-avatar"
-    alt="الصورة الشخصية"
+id="profileAvatar"
+class="profile-avatar"
+alt="الصورة الشخصية"
 >
 
 <div
-    id="avatarFallback"
-    class="avatar-fallback"
+id="avatarFallback"
+class="avatar-fallback"
 >
-    W
+W
 </div>
 
 <button
-    type="button"
-    class="avatar-edit"
-    id="editAvatarButton"
-    title="تعديل الصورة"
+type="button"
+class="avatar-edit"
+id="editAvatarButton"
+title="تعديل الصورة"
 >
-    ✎
+✎
 </button>
 
 </div>
@@ -2585,85 +1471,85 @@ MOBILE
 <div class="profile-name-row">
 
 <h1
-    class="profile-name"
-    id="profileName"
+class="profile-name"
+id="profileName"
 >
-    WFESC
+WFESC
 </h1>
 
 <span
-    id="profileVerified"
-    class="profile-verified"
-    title="حساب موثّق"
-    hidden
+id="profileVerified"
+class="profile-verified"
+title="حساب موثّق"
+hidden
 >
-    ✓
+✓
 </span>
 
 </div>
 
 <div
-    class="profile-username"
-    id="profileUsername"
+class="profile-username"
+id="profileUsername"
 >
-    @wfesc
+@wfesc
 </div>
 
 <div
-    class="bio-row"
-    id="bioDisplayRow"
+class="bio-row"
+id="bioDisplayRow"
 >
 
 <div
-    class="profile-bio empty"
-    id="profileBio"
+class="profile-bio empty"
+id="profileBio"
 >
-    كيف حالك اليوم؟
+كيف حالك اليوم؟
 </div>
 
 <button
-    type="button"
-    class="bio-edit-button"
-    id="editBioButton"
-    title="تعديل البايو"
+type="button"
+class="bio-edit-button"
+id="editBioButton"
+title="تعديل البايو"
 >
-    ✎
+✎
 </button>
 
 </div>
 
 <div
-    class="bio-editor"
-    id="bioEditor"
+class="bio-editor"
+id="bioEditor"
 >
 
 <textarea
-    class="form-textarea"
-    id="bioInput"
-    maxlength="500"
-    placeholder="كيف حالك اليوم؟"
+class="form-textarea"
+id="bioInput"
+maxlength="500"
+placeholder="كيف حالك اليوم?"
 ></textarea>
 
 <div
-    class="field-message"
-    id="bioMessage"
+class="field-message"
+id="bioMessage"
 ></div>
 
 <div class="bio-editor-actions">
 
 <button
-    type="button"
-    id="cancelBioButton"
+type="button"
+id="cancelBioButton"
 >
-    إلغاء
+إلغاء
 </button>
 
 <button
-    type="button"
-    class="bio-save"
-    id="saveBioButton"
+type="button"
+class="bio-save"
+id="saveBioButton"
 >
-    حفظ البايو
+حفظ البايو
 </button>
 
 </div>
@@ -2673,19 +1559,19 @@ MOBILE
 <div class="profile-actions">
 
 <button
-    type="button"
-    class="profile-action primary"
-    id="editProfileButton"
+type="button"
+class="profile-action primary"
+id="editProfileButton"
 >
-    تعديل الملف الشخصي
+تعديل الملف الشخصي
 </button>
 
 <button
-    type="button"
-    class="profile-action"
-    id="shareProfileButton"
+type="button"
+class="profile-action"
+id="shareProfileButton"
 >
-    مشاركة الملف
+مشاركة الملف
 </button>
 
 </div>
@@ -2695,14 +1581,14 @@ MOBILE
 <div class="profile-stat">
 
 <span
-    class="profile-stat-number"
-    id="followersCount"
+class="profile-stat-number"
+id="followersCount"
 >
-    0
+0
 </span>
 
 <span class="profile-stat-label">
-    المتابعون
+المتابعون
 </span>
 
 </div>
@@ -2710,14 +1596,14 @@ MOBILE
 <div class="profile-stat">
 
 <span
-    class="profile-stat-number"
-    id="followingCount"
+class="profile-stat-number"
+id="followingCount"
 >
-    0
+0
 </span>
 
 <span class="profile-stat-label">
-    يتابع
+يتابع
 </span>
 
 </div>
@@ -2725,14 +1611,14 @@ MOBILE
 <div class="profile-stat">
 
 <span
-    class="profile-stat-number"
-    id="postsCount"
+class="profile-stat-number"
+id="postsCount"
 >
-    0
+0
 </span>
 
 <span class="profile-stat-label">
-    المنشورات
+المنشورات
 </span>
 
 </div>
@@ -2742,20 +1628,20 @@ MOBILE
 <div class="account-info">
 
 <div class="account-info-title">
-    معلومات الحساب
+معلومات الحساب
 </div>
 
 <div class="account-info-row">
 
 <span class="account-info-label">
-    البريد الإلكتروني
+البريد الإلكتروني
 </span>
 
 <span
-    class="account-info-value"
-    id="accountEmail"
+class="account-info-value"
+id="accountEmail"
 >
-    —
+—
 </span>
 
 </div>
@@ -2763,14 +1649,14 @@ MOBILE
 <div class="account-info-row">
 
 <span class="account-info-label">
-    تاريخ إنشاء الحساب
+تاريخ إنشاء الحساب
 </span>
 
 <span
-    class="account-info-value"
-    id="accountCreated"
+class="account-info-value"
+id="accountCreated"
 >
-    —
+—
 </span>
 
 </div>
@@ -2778,18 +1664,16 @@ MOBILE
 </div>
 
 </div>
-
 </section>
-
 </main>
 
 <!-- =================================================
-     EDIT PROFILE MODAL
+EDIT PROFILE MODAL
 ================================================== -->
 
 <div
-    class="modal"
-    id="editProfileModal"
+class="modal"
+id="editProfileModal"
 >
 
 <div class="modal-box">
@@ -2797,162 +1681,159 @@ MOBILE
 <div class="modal-header">
 
 <h2>
-    تعديل الملف الشخصي
+تعديل الملف الشخصي
 </h2>
 
 <button
-    type="button"
-    class="close-modal"
-    id="closeEditProfile"
+type="button"
+class="close-modal"
+id="closeEditProfile"
 >
-    ×
+×
 </button>
 
 </div>
 
 <section
-    class="edit-section"
-    id="nameEditSection"
+class="edit-section"
+id="nameEditSection"
 >
 
 <div class="edit-section-title">
-    تغيير الاسم
+تغيير الاسم
 </div>
 
 <div class="edit-section-description">
-    يمكنك تغيير اسم العرض كل 4 دقائق.
+يمكنك تغيير اسم العرض كل 4 دقائق.
 </div>
 
 <input
-    type="text"
-    class="form-input"
-    id="nameInput"
-    maxlength="15"
-    autocomplete="nickname"
-    placeholder="الاسم"
+type="text"
+class="form-input"
+id="nameInput"
+maxlength="15"
+autocomplete="nickname"
+placeholder="الاسم"
 >
 
 <div
-    class="field-message"
-    id="nameMessage"
+class="field-message"
+id="nameMessage"
 ></div>
 
 <div
-    class="timer"
-    id="nameTimer"
+class="timer"
+id="nameTimer"
 ></div>
 
 <button
-    type="button"
-    class="save-button"
-    id="saveNameButton"
+type="button"
+class="save-button"
+id="saveNameButton"
 >
-    تغيير الاسم
+تغيير الاسم
 </button>
 
 </section>
 
 <section
-    class="edit-section"
-    id="usernameEditSection"
+class="edit-section"
+id="usernameEditSection"
 >
 
 <div class="edit-section-title">
-    تغيير اليوزر
+تغيير اليوزر
 </div>
 
 <div class="edit-section-description">
-    3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل 4 دقائق.
+3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل 4 دقائق.
 </div>
 
 <input
-    type="text"
-    class="form-input"
-    id="usernameInput"
-    maxlength="9"
-    autocomplete="username"
-    spellcheck="false"
-    placeholder="اسم المستخدم"
+type="text"
+class="form-input"
+id="usernameInput"
+maxlength="9"
+autocomplete="username"
+spellcheck="false"
+placeholder="اسم المستخدم"
 >
 
 <div
-    class="field-message"
-    id="usernameMessage"
+class="field-message"
+id="usernameMessage"
 ></div>
 
 <div
-    class="timer"
-    id="usernameTimer"
+class="timer"
+id="usernameTimer"
 ></div>
 
 <button
-    type="button"
-    class="save-button"
-    id="saveUsernameButton"
+type="button"
+class="save-button"
+id="saveUsernameButton"
 >
-    تغيير اليوزر
+تغيير اليوزر
 </button>
 
 </section>
 
 </div>
-
 </div>
 
 <!-- =================================================
-     IMAGE CONFIRMATION
+IMAGE CONFIRMATION
 ================================================== -->
 
 <div
-    class="modal"
-    id="imageConfirmModal"
+class="modal"
+id="imageConfirmModal"
 >
 
 <div class="modal-box image-confirm-box">
 
 <div class="image-confirm-icon">
-    ✎
+✎
 </div>
 
 <div class="image-confirm-title">
-    تغيير الصورة
+تغيير الصورة
 </div>
 
 <div class="image-confirm-text">
-    هل تريد تغيير الصورة؟
+هل تريد تغيير الصورة؟
 </div>
 
 <div class="image-confirm-actions">
 
 <button
-    type="button"
-    class="confirm-no"
-    id="imageConfirmNo"
+type="button"
+class="confirm-no"
+id="imageConfirmNo"
 >
-    لا
+لا
 </button>
 
 <button
-    type="button"
-    class="confirm-yes"
-    id="imageConfirmYes"
+type="button"
+class="confirm-yes"
+id="imageConfirmYes"
 >
-    نعم
+نعم
 </button>
 
 </div>
-
 </div>
-
 </div>
 
 <!-- =================================================
-     IMAGE STUDIO MODAL
+IMAGE STUDIO MODAL
 ================================================== -->
 
 <div
-    class="modal"
-    id="imageModal"
+class="modal"
+id="imageModal"
 >
 
 <div class="modal-box">
@@ -2960,15 +1841,15 @@ MOBILE
 <div class="modal-header">
 
 <h2 id="imageModalTitle">
-    استوديو الصور
+استوديو الصور
 </h2>
 
 <button
-    type="button"
-    class="close-modal"
-    id="closeImageModal"
+type="button"
+class="close-modal"
+id="closeImageModal"
 >
-    ×
+×
 </button>
 
 </div>
@@ -2976,29 +1857,29 @@ MOBILE
 <div class="image-studio">
 
 <div
-    class="studio-title"
-    id="studioTitle"
+class="studio-title"
+id="studioTitle"
 >
-    اضبط الصورة بالشكل المناسب
+اضبط الصورة بالشكل المناسب
 </div>
 
 <div
-    class="studio-stage"
-    id="studioStage"
+class="studio-stage"
+id="studioStage"
 >
 
 <div
-    class="studio-empty"
-    id="studioEmpty"
+class="studio-empty"
+id="studioEmpty"
 >
-    اختر صورة لبدء التعديل
+اختر صورة لبدء التعديل
 </div>
 
 <img
-    id="studioImage"
-    class="studio-image"
-    alt="استوديو الصورة"
-    draggable="false"
+id="studioImage"
+class="studio-image"
+alt="استوديو الصورة"
+draggable="false"
 >
 
 </div>
@@ -3006,39 +1887,39 @@ MOBILE
 <div class="studio-controls">
 
 <button
-    type="button"
-    class="studio-control"
-    id="moveLeft"
-    title="يسار"
+type="button"
+class="studio-control"
+id="moveLeft"
+title="يسار"
 >
-    ←
+←
 </button>
 
 <button
-    type="button"
-    class="studio-control"
-    id="moveUp"
-    title="أعلى"
+type="button"
+class="studio-control"
+id="moveUp"
+title="أعلى"
 >
-    ↑
+↑
 </button>
 
 <button
-    type="button"
-    class="studio-control"
-    id="moveDown"
-    title="أسفل"
+type="button"
+class="studio-control"
+id="moveDown"
+title="أسفل"
 >
-    ↓
+↓
 </button>
 
 <button
-    type="button"
-    class="studio-control"
-    id="moveRight"
-    title="يمين"
+type="button"
+class="studio-control"
+id="moveRight"
+title="يمين"
 >
-    →
+→
 </button>
 
 </div>
@@ -3046,96 +1927,94 @@ MOBILE
 <div class="zoom-row">
 
 <span>
-    الزوم
+الزوم
 </span>
 
 <input
-    type="range"
-    id="zoomRange"
-    class="zoom-range"
-    min="0.5"
-    max="3"
-    step="0.01"
-    value="1"
+type="range"
+id="zoomRange"
+class="zoom-range"
+min="0.5"
+max="3"
+step="0.01"
+value="1"
 >
 
 </div>
 
 <input
-    type="file"
-    id="imageFile"
-    class="studio-file"
-    accept="image/*"
+type="file"
+id="imageFile"
+class="studio-file"
+accept="image/*"
 >
 
 <div class="studio-hint">
-    بعد اختيار الصورة اسحبها داخل الإطار، أو استخدم أزرار الاتجاهات والزوم.
+بعد اختيار الصورة اسحبها داخل الإطار، أو استخدم أزرار الاتجاهات والزوم.
 </div>
 
 <button
-    type="button"
-    class="save-button"
-    id="saveImageButton"
+type="button"
+class="save-button"
+id="saveImageButton"
 >
-    حفظ الصورة
+حفظ الصورة
 </button>
 
 <button
-    type="button"
-    class="delete-image"
-    id="deleteImageButton"
+type="button"
+class="delete-image"
+id="deleteImageButton"
 >
-    حذف الصورة
+حذف الصورة
 </button>
 
 </div>
-
 </div>
-
 </div>
 
 <!-- STATUS -->
 
 <div
-    class="profile-status"
-    id="profileStatus"
-    aria-live="polite"
+class="profile-status"
+id="profileStatus"
+aria-live="polite"
 ></div>
 
 <!-- =================================================
-     SUPABASE
+SUPABASE
 ================================================== -->
 
 <script
-    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ></script>
 
 <!-- =================================================
-     WFESC AUTH
+WFESC AUTH
 ================================================== -->
 
 <script
-    src="./settings-features/settings-auth-config.js"
+src="./settings-features/settings-auth-config.js"
 ></script>
 
 <script
-    src="./settings-features/settings-auth.js"
+src="./settings-features/settings-auth.js"
 ></script>
 
 <!-- =================================================
-     PROFILE FEATURES
+PROFILE FEATURES
 ================================================== -->
 
 <script
-    src="./profile-features/profile-storage.js"
+src="./profile-features/profile-storage.js"
 ></script>
 
 <script
-    src="./profile-features/profile-edit.js"
+src="./profile-features/profile-edit.js"
 ></script>
 
 <!-- =================================================
-     PROFILE SYSTEM
+PROFILE SYSTEM
 ================================================== -->
 
 <script>
@@ -3145,51 +2024,41 @@ MOBILE
 "use strict";
 
 if(window.WFESCProfileStarted){
-    return;
+return;
 }
 
 window.WFESCProfileStarted = true;
 
 const CONFIG =
-    window.WFESCSettingsAuthConfig || {};
+window.WFESCSettingsAuthConfig || {};
 
 const auth =
-    window.WFESCSettingsAuth;
+window.WFESCSettingsAuth;
 
 const profileEdit =
-    window.WFESCProfileEdit;
+window.WFESCProfileEdit;
 
 const profileStorage =
-    window.WFESCProfileStorage;
+window.WFESCProfileStorage;
 
 /* =================================================
 CONSTANTS
 ================================================== */
 
-const LOCK_TIME =
-    4 * 60 * 1000;
+const LOCK_TIME = 4 * 60 * 1000;
 
-const DEFAULT_NAME =
-    "WFESC";
+const DEFAULT_NAME = "WFESC";
 
-const DEFAULT_USERNAME =
-    "wfesc";
+const DEFAULT_USERNAME = "wfesc";
 
-const DEFAULT_BIO =
-    "كيف حالك اليوم؟";
+const DEFAULT_BIO = "كيف حالك اليوم؟";
 
 let currentUser = null;
-
 let currentProfile = {};
-
 let imageType = "avatar";
-
 let selectedImageData = null;
-
 let timerInterval = null;
-
 let statusTimer = null;
-
 let imageConfirmType = "avatar";
 
 /* =================================================
@@ -3197,199 +2066,121 @@ ELEMENTS
 ================================================== */
 
 const profileCard =
-    document.getElementById(
-        "profileCard"
-    );
+document.getElementById("profileCard");
 
 const profileName =
-    document.getElementById(
-        "profileName"
-    );
+document.getElementById("profileName");
 
 const profileUsername =
-    document.getElementById(
-        "profileUsername"
-    );
+document.getElementById("profileUsername");
 
 const profileBio =
-    document.getElementById(
-        "profileBio"
-    );
+document.getElementById("profileBio");
 
 const profileVerified =
-    document.getElementById(
-        "profileVerified"
-    );
+document.getElementById("profileVerified");
 
 const profileAvatar =
-    document.getElementById(
-        "profileAvatar"
-    );
+document.getElementById("profileAvatar");
 
 const avatarFallback =
-    document.getElementById(
-        "avatarFallback"
-    );
+document.getElementById("avatarFallback");
 
 const profileCoverImage =
-    document.getElementById(
-        "profileCoverImage"
-    );
+document.getElementById("profileCoverImage");
 
 const coverDefault =
-    document.getElementById(
-        "coverDefault"
-    );
+document.getElementById("coverDefault");
 
 const accountEmail =
-    document.getElementById(
-        "accountEmail"
-    );
+document.getElementById("accountEmail");
 
 const accountCreated =
-    document.getElementById(
-        "accountCreated"
-    );
+document.getElementById("accountCreated");
 
 const followersCount =
-    document.getElementById(
-        "followersCount"
-    );
+document.getElementById("followersCount");
 
 const followingCount =
-    document.getElementById(
-        "followingCount"
-    );
+document.getElementById("followingCount");
 
 const postsCount =
-    document.getElementById(
-        "postsCount"
-    );
+document.getElementById("postsCount");
 
 const editProfileModal =
-    document.getElementById(
-        "editProfileModal"
-    );
+document.getElementById("editProfileModal");
 
 const imageModal =
-    document.getElementById(
-        "imageModal"
-    );
+document.getElementById("imageModal");
 
 const imageConfirmModal =
-    document.getElementById(
-        "imageConfirmModal"
-    );
+document.getElementById("imageConfirmModal");
 
 const nameInput =
-    document.getElementById(
-        "nameInput"
-    );
+document.getElementById("nameInput");
 
 const usernameInput =
-    document.getElementById(
-        "usernameInput"
-    );
+document.getElementById("usernameInput");
 
 const bioInput =
-    document.getElementById(
-        "bioInput"
-    );
+document.getElementById("bioInput");
 
 const nameMessage =
-    document.getElementById(
-        "nameMessage"
-    );
+document.getElementById("nameMessage");
 
 const usernameMessage =
-    document.getElementById(
-        "usernameMessage"
-    );
+document.getElementById("usernameMessage");
 
 const bioMessage =
-    document.getElementById(
-        "bioMessage"
-    );
+document.getElementById("bioMessage");
 
 const nameTimer =
-    document.getElementById(
-        "nameTimer"
-    );
+document.getElementById("nameTimer");
 
 const usernameTimer =
-    document.getElementById(
-        "usernameTimer"
-    );
+document.getElementById("usernameTimer");
 
 const saveNameButton =
-    document.getElementById(
-        "saveNameButton"
-    );
+document.getElementById("saveNameButton");
 
 const saveUsernameButton =
-    document.getElementById(
-        "saveUsernameButton"
-    );
+document.getElementById("saveUsernameButton");
 
 const saveBioButton =
-    document.getElementById(
-        "saveBioButton"
-    );
+document.getElementById("saveBioButton");
 
 const cancelBioButton =
-    document.getElementById(
-        "cancelBioButton"
-    );
+document.getElementById("cancelBioButton");
 
 const bioEditor =
-    document.getElementById(
-        "bioEditor"
-    );
+document.getElementById("bioEditor");
 
 const profileStatus =
-    document.getElementById(
-        "profileStatus"
-    );
+document.getElementById("profileStatus");
 
 const imagePreview =
-    document.getElementById(
-        "studioImage"
-    );
+document.getElementById("studioImage");
 
 const imageFile =
-    document.getElementById(
-        "imageFile"
-    );
+document.getElementById("imageFile");
 
 const imageModalTitle =
-    document.getElementById(
-        "imageModalTitle"
-    );
+document.getElementById("imageModalTitle");
 
 const studioStage =
-    document.getElementById(
-        "studioStage"
-    );
+document.getElementById("studioStage");
 
 const studioEmpty =
-    document.getElementById(
-        "studioEmpty"
-    );
+document.getElementById("studioEmpty");
 
 const zoomRange =
-    document.getElementById(
-        "zoomRange"
-    );
+document.getElementById("zoomRange");
 
 const saveImageButton =
-    document.getElementById(
-        "saveImageButton"
-    );
+document.getElementById("saveImageButton");
 
 const deleteImageButton =
-    document.getElementById(
-        "deleteImageButton"
-    );
+document.getElementById("deleteImageButton");
 
 /* =================================================
 ERROR HANDLING
@@ -3397,99 +2188,84 @@ ERROR HANDLING
 
 function getErrorText(error){
 
-    if(!error){
-        return "حدث خطأ غير معروف.";
-    }
+if(!error){
+return "حدث خطأ غير معروف.";
+}
 
-    const message =
-        error.message ||
-        error.error_description ||
-        error.details ||
-        error.hint ||
-        error.code ||
-        String(error);
+const message =
+error.message ||
+error.error_description ||
+error.details ||
+error.hint ||
+error.code ||
+String(error);
 
-    return String(message).trim();
+return String(message).trim();
 
 }
 
 function isDuplicateError(error){
 
-    if(!error){
-        return false;
-    }
+if(!error){
+return false;
+}
 
-    const text =
-        (
-            getErrorText(error) +
-            " " +
-            String(
-                error.code || ""
-            )
-        ).toLowerCase();
+const text =
+(
+getErrorText(error) +
+" " +
+String(error.code || "")
+).toLowerCase();
 
-    return (
-        text.includes("23505") ||
-        text.includes("duplicate") ||
-        text.includes("unique") ||
-        text.includes("username_taken") ||
-        text.includes("username_exists") ||
-        text.includes("username_already_exists")
-    );
+return (
+text.includes("23505") ||
+text.includes("duplicate") ||
+text.includes("unique") ||
+text.includes("username_taken") ||
+text.includes("username_exists") ||
+text.includes("username_already_exists")
+);
 
 }
 
-function formatSaveError(
-    error,
-    type
+function formatSaveError(error,type){
+
+const text =
+getErrorText(error);
+
+const code =
+String(
+error && error.code
+? error.code
+: ""
+);
+
+if(
+type === "username" &&
+isDuplicateError(error)
 ){
+return "اسم المستخدم مأخوذ مسبقًا";
+}
 
-    const text =
-        getErrorText(error);
+if(code === "42501"){
+return "ليس لديك صلاحية لتعديل بيانات الحساب. تحقق من صلاحيات RLS في Supabase.";
+}
 
-    const code =
-        String(
-            error && error.code
-                ? error.code
-                : ""
-        );
+if(code === "PGRST116"){
+return "لم يتم العثور على سجل الملف الشخصي في قاعدة البيانات.";
+}
 
-    if(
-        type === "username" &&
-        isDuplicateError(error)
-    ){
-        return "اسم المستخدم مأخوذ مسبقًا";
-    }
+if(code === "23505"){
+return type === "username"
+? "اسم المستخدم مأخوذ مسبقًا"
+: "القيمة التي أدخلتها مستخدمة مسبقًا.";
+}
 
-    if(code === "42501"){
-        return (
-            "ليس لديك صلاحية لتعديل بيانات الحساب. " +
-            "تحقق من صلاحيات RLS في Supabase."
-        );
-    }
+if(!text || text === "[object Object]"){
+return "تعذر حفظ التغيير.";
+}
 
-    if(code === "PGRST116"){
-        return (
-            "لم يتم العثور على سجل الملف الشخصي في قاعدة البيانات."
-        );
-    }
-
-    if(code === "23505"){
-        return (
-            type === "username"
-                ? "اسم المستخدم مأخوذ مسبقًا"
-                : "القيمة التي أدخلتها مستخدمة مسبقًا."
-        );
-    }
-
-    if(
-        !text ||
-        text === "[object Object]"
-    ){
-        return "تعذر حفظ التغيير.";
-    }
-
-    return "خطأ: " + text;
+return "خطأ: " + text;
 
 }
 
@@ -3497,42 +2273,29 @@ function formatSaveError(
 STATUS
 ================================================== */
 
-function showStatus(
-    message,
-    type = ""
-){
+function showStatus(message,type = ""){
 
-    if(!profileStatus){
-        return;
-    }
+if(!profileStatus){
+return;
+}
 
-    profileStatus.textContent =
-        message;
+profileStatus.textContent = message;
 
-    profileStatus.className =
-        "profile-status show";
+profileStatus.className = "profile-status show";
 
-    if(type){
-        profileStatus.classList.add(
-            type
-        );
-    }
+if(type){
+profileStatus.classList.add(type);
+}
 
-    clearTimeout(
-        statusTimer
-    );
+clearTimeout(statusTimer);
 
-    statusTimer =
-        setTimeout(
-            function(){
-
-                profileStatus.classList.remove(
-                    "show"
-                );
-
-            },
-            3000
-        );
+statusTimer =
+setTimeout(
+function(){
+profileStatus.classList.remove("show");
+},
+3000
+);
 
 }
 
@@ -3542,31 +2305,28 @@ AUTH REQUIRED
 
 function requireLogin(){
 
-    showStatus(
-        "هذه الميزة تحتاج إلى تسجيل الدخول.",
-        "error"
-    );
+showStatus(
+"هذه الميزة تحتاج إلى تسجيل الدخول.",
+"error"
+);
 
-    setTimeout(
-        function(){
+setTimeout(
+function(){
 
-            const go =
-                window.confirm(
-                    "يجب تسجيل الدخول أو إنشاء حساب حتى تستخدم هذه الميزة.\n\nهل تريد الانتقال إلى صفحة الحساب؟"
-                );
+const go =
+window.confirm(
+"يجب تسجيل الدخول أو إنشاء حساب حتى تستخدم هذه الميزة.\n\nهل تريد الانتقال إلى صفحة الحساب؟"
+);
 
-            if(go){
+if(go){
+window.location.href = "settings.html";
+}
 
-                window.location.href =
-                    "settings.html";
+},
+100
+);
 
-            }
-
-        },
-        100
-    );
-
-    return false;
+return false;
 
 }
 
@@ -3576,113 +2336,101 @@ AUTH
 
 async function getCurrentUserSafe(){
 
-    try{
+try{
 
-        if(
-            auth &&
-            typeof auth.getCurrentUser ===
-            "function"
-        ){
+if(
+auth &&
+typeof auth.getCurrentUser === "function"
+){
 
-            const result =
-                await auth.getCurrentUser();
+const result =
+await auth.getCurrentUser();
 
-            if(
-                result &&
-                result.user
-            ){
-                return result.user;
-            }
+if(result && result.user){
+return result.user;
+}
 
-            if(
-                result &&
-                result.data &&
-                result.data.user
-            ){
-                return result.data.user;
-            }
+if(result && result.data && result.data.user){
+return result.data.user;
+}
 
-            if(
-                result &&
-                result.id
-            ){
-                return result;
-            }
+if(result && result.id){
+return result;
+}
 
-        }
+}
 
-    }catch(error){
+}catch(error){
 
-        console.warn(
-            "WFESC profile user:",
-            error
-        );
+console.warn(
+"WFESC profile user:",
+error
+);
 
-    }
+}
 
-    try{
+try{
 
-        if(
-            auth &&
-            typeof auth.getSession ===
-            "function"
-        ){
+if(
+auth &&
+typeof auth.getSession === "function"
+){
 
-            const result =
-                await auth.getSession();
+const result =
+await auth.getSession();
 
-            if(
-                result &&
-                result.session &&
-                result.session.user
-            ){
-                return result.session.user;
-            }
+if(
+result &&
+result.session &&
+result.session.user
+){
+return result.session.user;
+}
 
-            if(
-                result &&
-                result.data &&
-                result.data.session &&
-                result.data.session.user
-            ){
-                return result.data.session.user;
-            }
+if(
+result &&
+result.data &&
+result.data.session &&
+result.data.session.user
+){
+return result.data.session.user;
+}
 
-        }
+}
 
-    }catch(error){
+}catch(error){
 
-        console.warn(
-            "WFESC profile session:",
-            error
-        );
+console.warn(
+"WFESC profile session:",
+error
+);
 
-    }
+}
 
-    try{
+try{
 
-        if(
-            window.WFESCSupabase &&
-            window.WFESCSupabase.auth
-        ){
+if(
+window.WFESCSupabase &&
+window.WFESCSupabase.auth
+){
 
-            const result =
-                await window.WFESCSupabase.auth.getSession();
+const result =
+await window.WFESCSupabase.auth.getSession();
 
-            if(
-                result &&
-                result.data &&
-                result.data.session &&
-                result.data.session.user
-            ){
-                return result.data.session.user;
-            }
+if(
+result &&
+result.data &&
+result.data.session &&
+result.data.session.user
+){
+return result.data.session.user;
+}
 
-        }
+}
 
-    }catch(error){}
+}catch(error){}
 
-    return null;
+return null;
 
 }
 
@@ -3692,30 +2440,28 @@ SUPABASE CLIENT
 
 function getSupabaseClient(){
 
-    if(
-        window.WFESCSupabase
-    ){
-        return window.WFESCSupabase;
-    }
+if(window.WFESCSupabase){
+return window.WFESCSupabase;
+}
 
-    if(
-        window.supabase &&
-        typeof window.supabase.createClient ===
-        "function" &&
-        CONFIG.supabaseUrl &&
-        CONFIG.supabaseKey
-    ){
+if(
+window.supabase &&
+typeof window.supabase.createClient === "function" &&
+CONFIG.supabaseUrl &&
+CONFIG.supabaseKey
+){
 
-        window.WFESCSupabase =
-            window.supabase.createClient(
-                CONFIG.supabaseUrl,
-                CONFIG.supabaseKey
-            );
+window.WFESCSupabase =
+window.supabase.createClient(
+CONFIG.supabaseUrl,
+CONFIG.supabaseKey
+);
 
-        return window.WFESCSupabase;
-    }
+return window.WFESCSupabase;
 
-    return null;
+}
+
+return null;
 
 }
 
@@ -3725,96 +2471,83 @@ PROFILE FETCH
 
 async function getProfile(user){
 
-    if(!user){
-        return {};
-    }
+if(!user){
+return {};
+}
 
-    try{
+try{
 
-        if(
-            auth &&
-            typeof auth.fetchProfile ===
-            "function"
-        ){
+if(
+auth &&
+typeof auth.fetchProfile === "function"
+){
 
-            const result =
-                await auth.fetchProfile(
-                    user.id
-                );
+const result =
+await auth.fetchProfile(user.id);
 
-            if(
-                result &&
-                result.data
-            ){
-                return result.data;
-            }
+if(result && result.data){
+return result.data;
+}
 
-            if(
-                result &&
-                result.profile
-            ){
-                return result.profile;
-            }
+if(result && result.profile){
+return result.profile;
+}
 
-            if(
-                result &&
-                typeof result ===
-                "object"
-            ){
-                return result;
-            }
+if(
+result &&
+typeof result === "object"
+){
+return result;
+}
 
-        }
+}
 
-    }catch(error){
+}catch(error){
 
-        console.warn(
-            "WFESC profile fetch:",
-            error
-        );
+console.warn(
+"WFESC profile fetch:",
+error
+);
 
-    }
+}
 
-    try{
+try{
 
-        const client =
-            getSupabaseClient();
+const client =
+getSupabaseClient();
 
-        if(!client){
-            return {};
-        }
+if(!client){
+return {};
+}
 
-        const table =
-            CONFIG.profilesTable ||
-            "profiles";
+const table =
+CONFIG.profilesTable ||
+"profiles";
 
-        const result =
-            await client
-                .from(table)
-                .select("*")
-                .eq(
-                    "id",
-                    user.id
-                )
-                .maybeSingle();
+const result =
+await client
+.from(table)
+.select("*")
+.eq("id",user.id)
+.maybeSingle();
 
-        if(
-            !result.error &&
-            result.data
-        ){
-            return result.data;
-        }
+if(
+!result.error &&
+result.data
+){
+return result.data;
+}
 
-    }catch(error){
+}catch(error){
 
-        console.warn(
-            "WFESC direct profile fetch:",
-            error
-        );
+console.warn(
+"WFESC direct profile fetch:",
+error
+);
 
-    }
+}
 
-    return {};
+return {};
 
 }
 
@@ -3824,60 +2557,43 @@ HELPERS
 
 function sanitizeUsername(value){
 
-    return String(value || "")
-        .toLowerCase()
-        .replace(
-            /[^a-z0-9]/g,
-            ""
-        )
-        .slice(
-            0,
-            9
-        );
+return String(value || "")
+.toLowerCase()
+.replace(/[^a-z0-9]/g,"")
+.slice(0,9);
 
 }
 
-function getNameFromUser(
-    user,
-    profile
-){
+function getNameFromUser(user,profile){
 
-    const metadata =
-        user &&
-        user.user_metadata
-            ? user.user_metadata
-            : {};
+const metadata =
+user && user.user_metadata
+? user.user_metadata
+: {};
 
-    profile =
-        profile || {};
+profile =
+profile || {};
 
-    return String(
-        profile.name ||
-        profile.display_name ||
-        metadata.display_name ||
-        metadata.name ||
-        DEFAULT_NAME
-    ).slice(
-        0,
-        15
-    );
+return String(
+profile.name ||
+profile.display_name ||
+metadata.display_name ||
+metadata.name ||
+DEFAULT_NAME
+).slice(0,15);
 
 }
 
-function getUsernameFromProfile(
-    profile
-){
+function getUsernameFromProfile(profile){
 
-    profile =
-        profile || {};
+profile =
+profile || {};
 
-    const username =
-        sanitizeUsername(
-            profile.username
-        );
+const username =
+sanitizeUsername(profile.username);
 
-    return username ||
-        DEFAULT_USERNAME;
+return username ||
+DEFAULT_USERNAME;
 
 }
 
@@ -3885,31 +2601,25 @@ function getUsernameFromProfile(
 VERIFIED
 ================================================== */
 
-function applyVerification(
-    profile,
-    user
-){
+function applyVerification(profile,user){
 
-    profile =
-        profile || {};
+profile =
+profile || {};
 
-    const metadata =
-        user &&
-        user.user_metadata
-            ? user.user_metadata
-            : {};
+const metadata =
+user && user.user_metadata
+? user.user_metadata
+: {};
 
-    const verified =
-        profile.is_verified === true ||
-        profile.verified === true ||
-        profile.verification_status === "verified" ||
-        metadata.is_verified === true ||
-        metadata.verified === true;
+const verified =
+profile.is_verified === true ||
+profile.verified === true ||
+profile.verification_status === "verified" ||
+metadata.is_verified === true ||
+metadata.verified === true;
 
-    profileVerified.hidden =
-        !Boolean(
-            verified
-        );
+profileVerified.hidden =
+!Boolean(verified);
 
 }
 
@@ -3919,50 +2629,38 @@ DEFAULT PROFILE
 
 function renderGuestProfile(){
 
-    currentUser = null;
+currentUser = null;
+currentProfile = {};
 
-    currentProfile = {};
+closeEditProfile();
+closeBioEditor();
+closeImageConfirmation();
+closeImageModal();
 
-    closeEditProfile();
-    closeBioEditor();
-    closeImageConfirmation();
-    closeImageModal();
+profileName.textContent =
+DEFAULT_NAME;
 
-    profileName.textContent =
-        DEFAULT_NAME;
+profileUsername.textContent =
+"@" + DEFAULT_USERNAME;
 
-    profileUsername.textContent =
-        "@" + DEFAULT_USERNAME;
+profileBio.textContent =
+DEFAULT_BIO;
 
-    profileBio.textContent =
-        DEFAULT_BIO;
+profileBio.classList.add("empty");
 
-    profileBio.classList.add(
-        "empty"
-    );
+profileVerified.hidden = true;
 
-    profileVerified.hidden =
-        true;
+accountEmail.textContent = "—";
+accountCreated.textContent = "—";
 
-    accountEmail.textContent =
-        "—";
+followersCount.textContent = "0";
+followingCount.textContent = "0";
+postsCount.textContent = "0";
 
-    accountCreated.textContent =
-        "—";
+applyAvatar();
+applyCover();
 
-    followersCount.textContent =
-        "0";
-
-    followingCount.textContent =
-        "0";
-
-    postsCount.textContent =
-        "0";
-
-    applyAvatar();
-    applyCover();
-
-    updateTimers();
+updateTimers();
 
 }
 
@@ -3972,118 +2670,99 @@ RENDER
 
 function renderProfile(){
 
-    if(!currentUser){
+if(!currentUser){
+renderGuestProfile();
+return;
+}
 
-        renderGuestProfile();
+const metadata =
+currentUser.user_metadata || {};
 
-        return;
+const name =
+getNameFromUser(
+currentUser,
+currentProfile
+);
 
-    }
+const username =
+getUsernameFromProfile(
+currentProfile
+);
 
-    const metadata =
-        currentUser.user_metadata || {};
+const bio =
+typeof currentProfile.bio === "string"
+? currentProfile.bio.trim()
+: "";
 
-    const name =
-        getNameFromUser(
-            currentUser,
-            currentProfile
-        );
+profileName.textContent = name;
 
-    const username =
-        getUsernameFromProfile(
-            currentProfile
-        );
+profileUsername.textContent =
+"@" + username;
 
-    const bio =
-        typeof currentProfile.bio ===
-        "string"
-            ? currentProfile.bio.trim()
-            : "";
+if(bio){
 
-    profileName.textContent =
-        name;
+profileBio.textContent = bio;
 
-    profileUsername.textContent =
-        "@" + username;
+profileBio.classList.remove("empty");
 
-    if(bio){
+}else{
 
-        profileBio.textContent =
-            bio;
+profileBio.textContent =
+DEFAULT_BIO;
 
-        profileBio.classList.remove(
-            "empty"
-        );
+profileBio.classList.add("empty");
 
-    }else{
+}
 
-        profileBio.textContent =
-            DEFAULT_BIO;
+accountEmail.textContent =
+currentUser.email || "—";
 
-        profileBio.classList.add(
-            "empty"
-        );
+const created =
+currentUser.created_at ||
+metadata.created_at;
 
-    }
+if(created){
 
-    accountEmail.textContent =
-        currentUser.email ||
-        "—";
+try{
 
-    const created =
-        currentUser.created_at ||
-        metadata.created_at;
+accountCreated.textContent =
+new Date(created)
+.toLocaleDateString("ar-IQ");
 
-    if(created){
+}catch(error){
 
-        try{
+accountCreated.textContent = "—";
 
-            accountCreated.textContent =
-                new Date(
-                    created
-                ).toLocaleDateString(
-                    "ar-IQ"
-                );
+}
 
-        }catch(error){
+}else{
 
-            accountCreated.textContent =
-                "—";
+accountCreated.textContent = "—";
 
-        }
+}
 
-    }else{
+followersCount.textContent =
+Number(
+currentProfile.followers_count || 0
+);
 
-        accountCreated.textContent =
-            "—";
+followingCount.textContent =
+Number(
+currentProfile.following_count || 0
+);
 
-    }
+postsCount.textContent =
+Number(
+currentProfile.posts_count || 0
+);
 
-    followersCount.textContent =
-        Number(
-            currentProfile.followers_count ||
-            0
-        );
+applyVerification(
+currentProfile,
+currentUser
+);
 
-    followingCount.textContent =
-        Number(
-            currentProfile.following_count ||
-            0
-        );
-
-    postsCount.textContent =
-        Number(
-            currentProfile.posts_count ||
-            0
-        );
-
-    applyVerification(
-        currentProfile,
-        currentUser
-    );
-
-    applyAvatar();
-    applyCover();
+applyAvatar();
+applyCover();
 
 }
 
@@ -4093,42 +2772,39 @@ AVATAR
 
 function applyAvatar(){
 
-    const url =
-        currentProfile &&
-        currentProfile.avatar_url;
+const url =
+currentProfile &&
+currentProfile.avatar_url;
 
-    if(url){
+if(url){
 
-        profileAvatar.src =
-            url;
+profileAvatar.src = url;
 
-        profileAvatar.style.display =
-            "block";
+profileAvatar.style.display =
+"block";
 
-        avatarFallback.style.display =
-            "none";
+avatarFallback.style.display =
+"none";
 
-    }else{
+}else{
 
-        profileAvatar.removeAttribute(
-            "src"
-        );
+profileAvatar.removeAttribute("src");
 
-        profileAvatar.style.display =
-            "none";
+profileAvatar.style.display =
+"none";
 
-        avatarFallback.style.display =
-            "flex";
+avatarFallback.style.display =
+"flex";
 
-        const name =
-            profileName.textContent.trim();
+const name =
+profileName.textContent.trim();
 
-        avatarFallback.textContent =
-            name
-                ? name.charAt(0).toUpperCase()
-                : "W";
+avatarFallback.textContent =
+name
+? name.charAt(0).toUpperCase()
+: "W";
 
-    }
+}
 
 }
 
@@ -4138,34 +2814,31 @@ COVER
 
 function applyCover(){
 
-    const url =
-        currentProfile &&
-        currentProfile.cover_url;
+const url =
+currentProfile &&
+currentProfile.cover_url;
 
-    if(url){
+if(url){
 
-        profileCoverImage.src =
-            url;
+profileCoverImage.src = url;
 
-        profileCoverImage.style.display =
-            "block";
+profileCoverImage.style.display =
+"block";
 
-        coverDefault.style.display =
-            "none";
+coverDefault.style.display =
+"none";
 
-    }else{
+}else{
 
-        profileCoverImage.removeAttribute(
-            "src"
-        );
+profileCoverImage.removeAttribute("src");
 
-        profileCoverImage.style.display =
-            "none";
+profileCoverImage.style.display =
+"none";
 
-        coverDefault.style.display =
-            "flex";
+coverDefault.style.display =
+"flex";
 
-    }
+}
 
 }
 
@@ -4175,149 +2848,120 @@ PROFILE MODAL
 
 function openEditProfile(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+nameInput.value =
+getNameFromUser(
+currentUser,
+currentProfile
+);
 
-    nameInput.value =
-        getNameFromUser(
-            currentUser,
-            currentProfile
-        );
+usernameInput.value =
+getUsernameFromProfile(
+currentProfile
+);
 
-    usernameInput.value =
-        getUsernameFromProfile(
-            currentProfile
-        );
+clearMessages();
 
-    clearMessages();
+editProfileModal.classList.add("show");
 
-    editProfileModal.classList.add(
-        "show"
-    );
-
-    updateTimers();
+updateTimers();
 
 }
 
 function closeEditProfile(){
 
-    editProfileModal.classList.remove(
-        "show"
-    );
+editProfileModal.classList.remove("show");
 
 }
 
 function clearMessages(){
 
-    [
-        nameMessage,
-        usernameMessage
-    ].forEach(
-        function(element){
+[
+nameMessage,
+usernameMessage
+].forEach(
+function(element){
 
-            element.textContent =
-                "";
+element.textContent = "";
 
-            element.classList.remove(
-                "success"
-            );
+element.classList.remove("success");
 
-        }
-    );
+}
+);
 
-    [
-        nameInput,
-        usernameInput
-    ].forEach(
-        function(element){
+[
+nameInput,
+usernameInput
+].forEach(
+function(element){
 
-            element.classList.remove(
-                "error"
-            );
+element.classList.remove("error");
+element.classList.remove("success");
 
-            element.classList.remove(
-                "success"
-            );
-
-        }
-    );
+}
+);
 
 }
 
 function setFieldMessage(
-    element,
-    message,
-    success = false
+element,
+message,
+success = false
 ){
 
-    element.textContent =
-        message;
+element.textContent =
+message;
 
-    element.classList.toggle(
-        "success",
-        success
-    );
+element.classList.toggle(
+"success",
+success
+);
 
 }
 
 function markFieldSuccess(
-    input,
-    messageElement
+input,
+messageElement
 ){
 
-    input.classList.remove(
-        "error"
-    );
+input.classList.remove("error");
 
-    input.classList.add(
-        "success"
-    );
+input.classList.add("success");
 
-    shake(
-        input
-    );
+shake(input);
 
-    if(messageElement){
+if(messageElement){
 
-        messageElement.classList.add(
-            "success"
-        );
+messageElement.classList.add("success");
 
-    }
+}
 
 }
 
 function shake(element){
 
-    if(!element){
-        return;
-    }
+if(!element){
+return;
+}
 
-    element.classList.remove(
-        "shake"
-    );
+element.classList.remove("shake");
 
-    void element.offsetWidth;
+void element.offsetWidth;
 
-    element.classList.add(
-        "shake"
-    );
+element.classList.add("shake");
 
-    setTimeout(
-        function(){
-
-            element.classList.remove(
-                "shake"
-            );
-
-        },
-        500
-    );
+setTimeout(
+function(){
+element.classList.remove("shake");
+},
+500
+);
 
 }
 
@@ -4325,164 +2969,127 @@ function shake(element){
 4 MINUTE LOCK
 ================================================== */
 
-function getLockRemaining(
-    timestamp
-){
+function getLockRemaining(timestamp){
 
-    if(!timestamp){
-        return 0;
-    }
+if(!timestamp){
+return 0;
+}
 
-    const time =
-        new Date(
-            timestamp
-        ).getTime();
+const time =
+new Date(timestamp).getTime();
 
-    if(!Number.isFinite(time)){
-        return 0;
-    }
+if(!Number.isFinite(time)){
+return 0;
+}
 
-    return Math.max(
-        0,
-        time +
-        LOCK_TIME -
-        Date.now()
-    );
+return Math.max(
+0,
+time + LOCK_TIME - Date.now()
+);
 
 }
 
-function formatRemaining(
-    milliseconds
-){
+function formatRemaining(milliseconds){
 
-    if(
-        milliseconds <= 0
-    ){
-        return "متاح الآن";
-    }
+if(milliseconds <= 0){
+return "متاح الآن";
+}
 
-    const totalSeconds =
-        Math.ceil(
-            milliseconds /
-            1000
-        );
+const totalSeconds =
+Math.ceil(milliseconds / 1000);
 
-    const minutes =
-        Math.floor(
-            totalSeconds /
-            60
-        );
+const minutes =
+Math.floor(totalSeconds / 60);
 
-    const seconds =
-        totalSeconds %
-        60;
+const seconds =
+totalSeconds % 60;
 
-    return (
-        "متبقي " +
-        minutes +
-        " دقيقة " +
-        seconds +
-        " ثانية"
-    );
+return (
+"متبقي " +
+minutes +
+" دقيقة " +
+seconds +
+" ثانية"
+);
 
 }
 
 function updateOneTimer(
-    timestamp,
-    timer,
-    button
+timestamp,
+timer,
+button
 ){
 
-    const remaining =
-        getLockRemaining(
-            timestamp
-        );
+const remaining =
+getLockRemaining(timestamp);
 
-    if(remaining <= 0){
+if(remaining <= 0){
 
-        timer.textContent =
-            "متاح الآن";
+timer.textContent =
+"متاح الآن";
 
-        timer.classList.add(
-            "ready"
-        );
+timer.classList.add("ready");
 
-        button.disabled =
-            false;
+button.disabled = false;
 
-    }else{
+}else{
 
-        timer.textContent =
-            formatRemaining(
-                remaining
-            );
+timer.textContent =
+formatRemaining(remaining);
 
-        timer.classList.remove(
-            "ready"
-        );
+timer.classList.remove("ready");
 
-        button.disabled =
-            true;
+button.disabled = true;
 
-    }
+}
 
 }
 
 function updateTimers(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        nameTimer.textContent =
-            "سجل الدخول لاستخدام هذه الميزة.";
+nameTimer.textContent =
+"سجل الدخول لاستخدام هذه الميزة.";
 
-        usernameTimer.textContent =
-            "سجل الدخول لاستخدام هذه الميزة.";
+usernameTimer.textContent =
+"سجل الدخول لاستخدام هذه الميزة.";
 
-        nameTimer.classList.remove(
-            "ready"
-        );
+nameTimer.classList.remove("ready");
+usernameTimer.classList.remove("ready");
 
-        usernameTimer.classList.remove(
-            "ready"
-        );
+saveNameButton.disabled = false;
+saveUsernameButton.disabled = false;
 
-        saveNameButton.disabled =
-            false;
+return;
 
-        saveUsernameButton.disabled =
-            false;
+}
 
-        return;
+updateOneTimer(
+currentProfile.last_display_name_change_at,
+nameTimer,
+saveNameButton
+);
 
-    }
-
-    updateOneTimer(
-        currentProfile.last_display_name_change_at,
-        nameTimer,
-        saveNameButton
-    );
-
-    updateOneTimer(
-        currentProfile.last_username_change_at,
-        usernameTimer,
-        saveUsernameButton
-    );
+updateOneTimer(
+currentProfile.last_username_change_at,
+usernameTimer,
+saveUsernameButton
+);
 
 }
 
 function startTimers(){
 
-    clearInterval(
-        timerInterval
-    );
+clearInterval(timerInterval);
 
-    updateTimers();
+updateTimers();
 
-    timerInterval =
-        setInterval(
-            updateTimers,
-            1000
-        );
+timerInterval =
+setInterval(
+updateTimers,
+1000
+);
 
 }
 
@@ -4492,204 +3099,167 @@ SAVE NAME
 
 async function saveName(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+const value =
+String(nameInput.value || "")
+.trim()
+.slice(0,15);
 
-    const value =
-        String(
-            nameInput.value || ""
-        )
-        .trim()
-        .slice(
-            0,
-            15
-        );
+nameInput.value = value;
 
-    nameInput.value =
-        value;
+nameInput.classList.remove("error");
+nameInput.classList.remove("success");
 
-    nameInput.classList.remove(
-        "error"
-    );
+if(!value){
 
-    nameInput.classList.remove(
-        "success"
-    );
+nameInput.classList.add("error");
 
-    if(!value){
+setFieldMessage(
+nameMessage,
+"يرجى إدخال اسم صحيح."
+);
 
-        nameInput.classList.add(
-            "error"
-        );
+shake(nameInput);
 
-        setFieldMessage(
-            nameMessage,
-            "يرجى إدخال اسم صحيح."
-        );
+return;
 
-        shake(
-            nameInput
-        );
+}
 
-        return;
-    }
+if(
+getLockRemaining(
+currentProfile.last_display_name_change_at
+) > 0
+){
 
-    if(
-        getLockRemaining(
-            currentProfile.last_display_name_change_at
-        ) > 0
-    ){
+setFieldMessage(
+nameMessage,
+"لا يمكنك تغيير الاسم الآن."
+);
 
-        setFieldMessage(
-            nameMessage,
-            "لا يمكنك تغيير الاسم الآن."
-        );
+shake(nameInput);
 
-        shake(
-            nameInput
-        );
+return;
 
-        return;
-    }
+}
 
-    const oldName =
-        getNameFromUser(
-            currentUser,
-            currentProfile
-        );
+const oldName =
+getNameFromUser(
+currentUser,
+currentProfile
+);
 
-    if(value === oldName){
+if(value === oldName){
 
-        setFieldMessage(
-            nameMessage,
-            "الاسم لم يتغير.",
-            true
-        );
+setFieldMessage(
+nameMessage,
+"الاسم لم يتغير.",
+true
+);
 
-        return;
-    }
+return;
 
-    saveNameButton.disabled =
-        true;
+}
 
-    try{
+saveNameButton.disabled = true;
 
-        if(
-            !profileEdit ||
-            typeof profileEdit.saveDisplayName !==
-            "function"
-        ){
+try{
 
-            throw new Error(
-                "ملف profile-edit.js غير متاح."
-            );
+if(
+!profileEdit ||
+typeof profileEdit.saveDisplayName !==
+"function"
+){
 
-        }
+throw new Error(
+"ملف profile-edit.js غير متاح."
+);
 
-        const result =
-            await profileEdit.saveDisplayName(
-                value
-            );
+}
 
-        if(
-            result &&
-            result.error
-        ){
+const result =
+await profileEdit.saveDisplayName(value);
 
-            throw result.error;
+if(result && result.error){
+throw result.error;
+}
 
-        }
+const refreshed =
+await getProfile(currentUser);
 
-        const refreshed =
-            await getProfile(
-                currentUser
-            );
+if(
+refreshed &&
+typeof refreshed === "object" &&
+Object.keys(refreshed).length
+){
 
-        if(
-            refreshed &&
-            typeof refreshed ===
-            "object" &&
-            Object.keys(refreshed).length
-        ){
+currentProfile = refreshed;
 
-            currentProfile =
-                refreshed;
+}else{
 
-        }else{
+currentProfile.name = value;
+currentProfile.display_name = value;
 
-            currentProfile.name =
-                value;
+currentProfile.last_display_name_change_at =
+new Date().toISOString();
 
-            currentProfile.display_name =
-                value;
+}
 
-            currentProfile.last_display_name_change_at =
-                new Date().toISOString();
+currentUser.user_metadata =
+currentUser.user_metadata || {};
 
-        }
+currentUser.user_metadata.name = value;
+currentUser.user_metadata.display_name = value;
 
-        currentUser.user_metadata =
-            currentUser.user_metadata || {};
+renderProfile();
 
-        currentUser.user_metadata.name =
-            value;
+setFieldMessage(
+nameMessage,
+"تم تغيير الاسم بنجاح",
+true
+);
 
-        currentUser.user_metadata.display_name =
-            value;
+markFieldSuccess(
+nameInput,
+nameMessage
+);
 
-        renderProfile();
+showStatus(
+"تم تغيير الاسم بنجاح",
+"success"
+);
 
-        setFieldMessage(
-            nameMessage,
-            "تم تغيير الاسم بنجاح",
-            true
-        );
+updateTimers();
 
-        markFieldSuccess(
-            nameInput,
-            nameMessage
-        );
+}catch(error){
 
-        showStatus(
-            "تم تغيير الاسم بنجاح",
-            "success"
-        );
+console.error(
+"WFESC name:",
+error
+);
 
-        updateTimers();
+nameInput.classList.add("error");
 
-    }catch(error){
+setFieldMessage(
+nameMessage,
+formatSaveError(
+error,
+"name"
+)
+);
 
-        console.error(
-            "WFESC name:",
-            error
-        );
+shake(nameInput);
 
-        nameInput.classList.add(
-            "error"
-        );
+}finally{
 
-        setFieldMessage(
-            nameMessage,
-            formatSaveError(
-                error,
-                "name"
-            )
-        );
+updateTimers();
 
-        shake(
-            nameInput
-        );
-
-    }finally{
-
-        updateTimers();
-
-    }
+}
 
 }
 
@@ -4699,199 +3269,172 @@ SAVE USERNAME
 
 async function saveUsername(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+const username =
+sanitizeUsername(
+usernameInput.value
+);
 
-    const username =
-        sanitizeUsername(
-            usernameInput.value
-        );
+usernameInput.value = username;
 
-    usernameInput.value =
-        username;
+usernameInput.classList.remove("error");
+usernameInput.classList.remove("success");
 
-    usernameInput.classList.remove(
-        "error"
-    );
+if(
+username.length < 3 ||
+username.length > 9
+){
 
-    usernameInput.classList.remove(
-        "success"
-    );
+usernameInput.classList.add("error");
 
-    if(
-        username.length < 3 ||
-        username.length > 9
-    ){
+setFieldMessage(
+usernameMessage,
+"اسم المستخدم يجب أن يتكون من 3 إلى 9 أحرف أو أرقام."
+);
 
-        usernameInput.classList.add(
-            "error"
-        );
+shake(usernameInput);
 
-        setFieldMessage(
-            usernameMessage,
-            "اسم المستخدم يجب أن يتكون من 3 إلى 9 أحرف أو أرقام."
-        );
+return;
 
-        shake(
-            usernameInput
-        );
+}
 
-        return;
-    }
+if(
+getLockRemaining(
+currentProfile.last_username_change_at
+) > 0
+){
 
-    if(
-        getLockRemaining(
-            currentProfile.last_username_change_at
-        ) > 0
-    ){
+setFieldMessage(
+usernameMessage,
+"لا يمكنك تغيير اليوزر الآن."
+);
 
-        setFieldMessage(
-            usernameMessage,
-            "لا يمكنك تغيير اليوزر الآن."
-        );
+shake(usernameInput);
 
-        shake(
-            usernameInput
-        );
+return;
 
-        return;
-    }
+}
 
-    const oldUsername =
-        getUsernameFromProfile(
-            currentProfile
-        );
+const oldUsername =
+getUsernameFromProfile(
+currentProfile
+);
 
-    if(
-        username === oldUsername
-    ){
+if(username === oldUsername){
 
-        setFieldMessage(
-            usernameMessage,
-            "اليوزر لم يتغير.",
-            true
-        );
+setFieldMessage(
+usernameMessage,
+"اليوزر لم يتغير.",
+true
+);
 
-        return;
-    }
+return;
 
-    saveUsernameButton.disabled =
-        true;
+}
 
-    try{
+saveUsernameButton.disabled = true;
 
-        if(
-            !profileEdit ||
-            typeof profileEdit.saveUsername !==
-            "function"
-        ){
+try{
 
-            throw new Error(
-                "ملف profile-edit.js غير متاح."
-            );
+if(
+!profileEdit ||
+typeof profileEdit.saveUsername !==
+"function"
+){
 
-        }
+throw new Error(
+"ملف profile-edit.js غير متاح."
+);
 
-        const result =
-            await profileEdit.saveUsername(
-                username
-            );
+}
 
-        if(
-            result &&
-            result.error
-        ){
+const result =
+await profileEdit.saveUsername(
+username
+);
 
-            throw result.error;
+if(result && result.error){
+throw result.error;
+}
 
-        }
+const refreshed =
+await getProfile(currentUser);
 
-        const refreshed =
-            await getProfile(
-                currentUser
-            );
+if(
+refreshed &&
+typeof refreshed === "object" &&
+Object.keys(refreshed).length
+){
 
-        if(
-            refreshed &&
-            typeof refreshed ===
-            "object" &&
-            Object.keys(refreshed).length
-        ){
+currentProfile = refreshed;
 
-            currentProfile =
-                refreshed;
+}else{
 
-        }else{
+currentProfile.username = username;
 
-            currentProfile.username =
-                username;
+currentProfile.last_username_change_at =
+new Date().toISOString();
 
-            currentProfile.last_username_change_at =
-                new Date().toISOString();
+}
 
-        }
+currentUser.user_metadata =
+currentUser.user_metadata || {};
 
-        currentUser.user_metadata =
-            currentUser.user_metadata || {};
+currentUser.user_metadata.username =
+username;
 
-        currentUser.user_metadata.username =
-            username;
+renderProfile();
 
-        renderProfile();
+setFieldMessage(
+usernameMessage,
+"تم تعيين اسم المستخدم بنجاح",
+true
+);
 
-        setFieldMessage(
-            usernameMessage,
-            "تم تعيين اسم المستخدم بنجاح",
-            true
-        );
+markFieldSuccess(
+usernameInput,
+usernameMessage
+);
 
-        markFieldSuccess(
-            usernameInput,
-            usernameMessage
-        );
+showStatus(
+"تم تعيين اسم المستخدم بنجاح",
+"success"
+);
 
-        showStatus(
-            "تم تعيين اسم المستخدم بنجاح",
-            "success"
-        );
+updateTimers();
 
-        updateTimers();
+}catch(error){
 
-    }catch(error){
+console.error(
+"WFESC username:",
+error
+);
 
-        console.error(
-            "WFESC username:",
-            error
-        );
+usernameInput.classList.add("error");
 
-        usernameInput.classList.add(
-            "error"
-        );
+setFieldMessage(
+usernameMessage,
+isDuplicateError(error)
+? "اسم المستخدم مأخوذ مسبقًا"
+: formatSaveError(
+error,
+"username"
+)
+);
 
-        setFieldMessage(
-            usernameMessage,
-            isDuplicateError(error)
-                ? "اسم المستخدم مأخوذ مسبقًا"
-                : formatSaveError(
-                    error,
-                    "username"
-                )
-        );
+shake(usernameInput);
 
-        shake(
-            usernameInput
-        );
+}finally{
 
-    }finally{
+updateTimers();
 
-        updateTimers();
-
-    }
+}
 
 }
 
@@ -4901,168 +3444,126 @@ BIO
 
 function openBioEditor(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+bioInput.value =
+typeof currentProfile.bio === "string"
+? currentProfile.bio
+: "";
 
-    bioInput.value =
-        typeof currentProfile.bio ===
-        "string"
-            ? currentProfile.bio
-            : "";
+bioMessage.textContent = "";
 
-    bioMessage.textContent =
-        "";
+bioMessage.classList.remove("success");
 
-    bioMessage.classList.remove(
-        "success"
-    );
+bioInput.classList.remove("error");
+bioInput.classList.remove("success");
 
-    bioInput.classList.remove(
-        "error"
-    );
+bioEditor.classList.add("show");
 
-    bioInput.classList.remove(
-        "success"
-    );
-
-    bioEditor.classList.add(
-        "show"
-    );
-
-    bioInput.focus();
+bioInput.focus();
 
 }
 
 function closeBioEditor(){
 
-    bioEditor.classList.remove(
-        "show"
-    );
+bioEditor.classList.remove("show");
 
 }
 
 async function saveBio(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+const bio =
+String(bioInput.value || "")
+.trim()
+.slice(0,160);
 
-    const bio =
-        String(
-            bioInput.value || ""
-        )
-        .trim()
-        .slice(
-            0,
-            160
-        );
+saveBioButton.disabled = true;
 
-    saveBioButton.disabled =
-        true;
+bioInput.classList.remove("error");
 
-    bioInput.classList.remove(
-        "error"
-    );
+try{
 
-    try{
+if(
+!profileEdit ||
+typeof profileEdit.saveBio !==
+"function"
+){
 
-        if(
-            !profileEdit ||
-            typeof profileEdit.saveBio !==
-            "function"
-        ){
+throw new Error(
+"ملف profile-edit.js غير متاح."
+);
 
-            throw new Error(
-                "ملف profile-edit.js غير متاح."
-            );
+}
 
-        }
+const result =
+await profileEdit.saveBio(bio);
 
-        const result =
-            await profileEdit.saveBio(
-                bio
-            );
+if(result && result.error){
+throw result.error;
+}
 
-        if(
-            result &&
-            result.error
-        ){
+const refreshed =
+await getProfile(currentUser);
 
-            throw result.error;
+if(
+refreshed &&
+typeof refreshed === "object" &&
+Object.keys(refreshed).length
+){
 
-        }
+currentProfile = refreshed;
 
-        const refreshed =
-            await getProfile(
-                currentUser
-            );
+}else{
 
-        if(
-            refreshed &&
-            typeof refreshed ===
-            "object" &&
-            Object.keys(refreshed).length
-        ){
+currentProfile.bio = bio;
 
-            currentProfile =
-                refreshed;
+}
 
-        }else{
+renderProfile();
 
-            currentProfile.bio =
-                bio;
+closeBioEditor();
 
-        }
+showStatus(
+"تم حفظ البايو بنجاح.",
+"success"
+);
 
-        renderProfile();
+}catch(error){
 
-        closeBioEditor();
+console.error(
+"WFESC bio:",
+error
+);
 
-        showStatus(
-            "تم حفظ البايو بنجاح.",
-            "success"
-        );
+bioInput.classList.add("error");
 
-    }catch(error){
+bioMessage.textContent =
+formatSaveError(
+error,
+"bio"
+);
 
-        console.error(
-            "WFESC bio:",
-            error
-        );
+bioMessage.classList.remove("success");
 
-        bioInput.classList.add(
-            "error"
-        );
+shake(bioInput);
 
-        bioMessage.textContent =
-            formatSaveError(
-                error,
-                "bio"
-            );
+}finally{
 
-        bioMessage.classList.remove(
-            "success"
-        );
+saveBioButton.disabled = false;
 
-        shake(
-            bioInput
-        );
-
-    }finally{
-
-        saveBioButton.disabled =
-            false;
-
-    }
+}
 
 }
 
@@ -5071,61 +3572,40 @@ INPUTS
 ================================================== */
 
 usernameInput.addEventListener(
-    "input",
-    function(){
+"input",
+function(){
 
-        usernameInput.value =
-            sanitizeUsername(
-                usernameInput.value
-            );
+usernameInput.value =
+sanitizeUsername(
+usernameInput.value
+);
 
-        usernameInput.classList.remove(
-            "error"
-        );
+usernameInput.classList.remove("error");
+usernameInput.classList.remove("success");
 
-        usernameInput.classList.remove(
-            "success"
-        );
+usernameMessage.textContent = "";
 
-        usernameMessage.textContent =
-            "";
+usernameMessage.classList.remove("success");
 
-        usernameMessage.classList.remove(
-            "success"
-        );
-
-    }
+}
 );
 
 nameInput.addEventListener(
-    "input",
-    function(){
+"input",
+function(){
 
-        nameInput.value =
-            String(
-                nameInput.value || ""
-            )
-            .slice(
-                0,
-                15
-            );
+nameInput.value =
+String(nameInput.value || "")
+.slice(0,15);
 
-        nameInput.classList.remove(
-            "error"
-        );
+nameInput.classList.remove("error");
+nameInput.classList.remove("success");
 
-        nameInput.classList.remove(
-            "success"
-        );
+nameMessage.textContent = "";
 
-        nameMessage.textContent =
-            "";
+nameMessage.classList.remove("success");
 
-        nameMessage.classList.remove(
-            "success"
-        );
-
-    }
+}
 );
 
 /* =================================================
@@ -5134,267 +3614,200 @@ IMAGE STUDIO STATE
 
 const studioState = {
 
-    image:null,
-
-    naturalWidth:0,
-
-    naturalHeight:0,
-
-    scale:1,
-
-    x:0,
-
-    y:0,
-
-    dragging:false,
-
-    startX:0,
-
-    startY:0,
-
-    startImageX:0,
-
-    startImageY:0
+image:null,
+naturalWidth:0,
+naturalHeight:0,
+scale:1,
+x:0,
+y:0,
+dragging:false,
+startX:0,
+startY:0,
+startImageX:0,
+startImageY:0
 
 };
 
 function resetStudioState(){
 
-    studioState.image =
-        null;
+studioState.image = null;
+studioState.naturalWidth = 0;
+studioState.naturalHeight = 0;
+studioState.scale = 1;
+studioState.x = 0;
+studioState.y = 0;
+studioState.dragging = false;
 
-    studioState.naturalWidth =
-        0;
+imagePreview.style.display = "none";
 
-    studioState.naturalHeight =
-        0;
+imagePreview.removeAttribute("src");
 
-    studioState.scale =
-        1;
+studioEmpty.style.display = "flex";
 
-    studioState.x =
-        0;
+zoomRange.value = "1";
 
-    studioState.y =
-        0;
-
-    studioState.dragging =
-        false;
-
-    imagePreview.style.display =
-        "none";
-
-    imagePreview.removeAttribute(
-        "src"
-    );
-
-    studioEmpty.style.display =
-        "flex";
-
-    zoomRange.value =
-        "1";
-
-    imageFile.value =
-        "";
+imageFile.value = "";
 
 }
 
-function setStudioImage(
-    data
-){
+function setStudioImage(data){
 
-    if(!data){
-        return;
-    }
+if(!data){
+return;
+}
 
-    const image =
-        new Image();
+const image = new Image();
 
-    image.onload =
-        function(){
+image.onload =
+function(){
 
-            studioState.image =
-                image;
+studioState.image = image;
 
-            studioState.naturalWidth =
-                image.naturalWidth;
+studioState.naturalWidth =
+image.naturalWidth;
 
-            studioState.naturalHeight =
-                image.naturalHeight;
+studioState.naturalHeight =
+image.naturalHeight;
 
-            studioState.scale =
-                calculateInitialScale();
+studioState.scale =
+calculateInitialScale();
 
-            studioState.x =
-                0;
+studioState.x = 0;
+studioState.y = 0;
 
-            studioState.y =
-                0;
+imagePreview.src = data;
 
-            imagePreview.src =
-                data;
+imagePreview.style.display = "block";
 
-            imagePreview.style.display =
-                "block";
+studioEmpty.style.display = "none";
 
-            studioEmpty.style.display =
-                "none";
+zoomRange.value =
+String(studioState.scale);
 
-            zoomRange.value =
-                String(
-                    studioState.scale
-                );
+applyStudioTransform();
 
-            applyStudioTransform();
+};
 
-        };
+image.onerror =
+function(){
 
-    image.onerror =
-        function(){
+showStatus(
+"تعذر قراءة الصورة.",
+"error"
+);
 
-            showStatus(
-                "تعذر قراءة الصورة.",
-                "error"
-            );
+};
 
-        };
-
-    image.src =
-        data;
+image.src = data;
 
 }
 
 function calculateInitialScale(){
 
-    if(
-        !studioState.naturalWidth ||
-        !studioState.naturalHeight
-    ){
-        return 1;
-    }
+if(
+!studioState.naturalWidth ||
+!studioState.naturalHeight
+){
+return 1;
+}
 
-    const stageWidth =
-        studioStage.clientWidth;
+const stageWidth =
+studioStage.clientWidth;
 
-    const stageHeight =
-        studioStage.clientHeight;
+const stageHeight =
+studioStage.clientHeight;
 
-    const ratio =
-        Math.max(
-            stageWidth /
-                studioState.naturalWidth,
+const ratio =
+Math.max(
+stageWidth / studioState.naturalWidth,
+stageHeight / studioState.naturalHeight
+);
 
-            stageHeight /
-                studioState.naturalHeight
-        );
-
-    return Math.max(
-        .5,
-        Math.min(
-            3,
-            ratio
-        )
-    );
+return Math.max(
+.5,
+Math.min(3,ratio)
+);
 
 }
 
 function applyStudioTransform(){
 
-    if(!studioState.image){
-        return;
-    }
+if(!studioState.image){
+return;
+}
 
-    imagePreview.style.width =
-        studioState.naturalWidth *
-        studioState.scale +
-        "px";
+imagePreview.style.width =
+studioState.naturalWidth *
+studioState.scale +
+"px";
 
-    imagePreview.style.height =
-        studioState.naturalHeight *
-        studioState.scale +
-        "px";
+imagePreview.style.height =
+studioState.naturalHeight *
+studioState.scale +
+"px";
 
-    imagePreview.style.transform =
-        "translate(-50%, -50%) translate(" +
-        studioState.x +
-        "px, " +
-        studioState.y +
-        "px)";
+imagePreview.style.transform =
+"translate(-50%, -50%) translate(" +
+studioState.x +
+"px, " +
+studioState.y +
+"px)";
 
 }
 
 function clampStudioPosition(){
 
-    if(!studioState.image){
-        return;
-    }
+if(!studioState.image){
+return;
+}
 
-    const stageWidth =
-        studioStage.clientWidth;
+const stageWidth =
+studioStage.clientWidth;
 
-    const stageHeight =
-        studioStage.clientHeight;
+const stageHeight =
+studioStage.clientHeight;
 
-    const imageWidth =
-        studioState.naturalWidth *
-        studioState.scale;
+const imageWidth =
+studioState.naturalWidth *
+studioState.scale;
 
-    const imageHeight =
-        studioState.naturalHeight *
-        studioState.scale;
+const imageHeight =
+studioState.naturalHeight *
+studioState.scale;
 
-    const maxX =
-        Math.max(
-            0,
-            (
-                imageWidth -
-                stageWidth
-            ) / 2
-        );
+const maxX =
+Math.max(
+0,
+(imageWidth - stageWidth) / 2
+);
 
-    const maxY =
-        Math.max(
-            0,
-            (
-                imageHeight -
-                stageHeight
-            ) / 2
-        );
+const maxY =
+Math.max(
+0,
+(imageHeight - stageHeight) / 2
+);
 
-    studioState.x =
-        Math.max(
-            -maxX,
-            Math.min(
-                maxX,
-                studioState.x
-            )
-        );
+studioState.x =
+Math.max(
+-maxX,
+Math.min(maxX,studioState.x)
+);
 
-    studioState.y =
-        Math.max(
-            -maxY,
-            Math.min(
-                maxY,
-                studioState.y
-            )
-        );
+studioState.y =
+Math.max(
+-maxY,
+Math.min(maxY,studioState.y)
+);
 
 }
 
-function moveStudio(
-    x,
-    y
-){
+function moveStudio(x,y){
 
-    studioState.x +=
-        x;
+studioState.x += x;
+studioState.y += y;
 
-    studioState.y +=
-        y;
-
-    clampStudioPosition();
-
-    applyStudioTransform();
+clampStudioPosition();
+applyStudioTransform();
 
 }
 
@@ -5402,150 +3815,122 @@ function moveStudio(
 IMAGE CONFIRMATION
 ================================================== */
 
-function askImageChange(
-    type
-){
+function askImageChange(type){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+imageConfirmType = type;
 
-    imageConfirmType =
-        type;
-
-    imageConfirmModal.classList.add(
-        "show"
-    );
+imageConfirmModal.classList.add("show");
 
 }
 
 function closeImageConfirmation(){
 
-    imageConfirmModal.classList.remove(
-        "show"
-    );
+imageConfirmModal.classList.remove("show");
 
 }
 
 document
-    .getElementById(
-        "imageConfirmNo"
-    )
-    .addEventListener(
-        "click",
-        closeImageConfirmation
-    );
+.getElementById("imageConfirmNo")
+.addEventListener(
+"click",
+closeImageConfirmation
+);
 
 document
-    .getElementById(
-        "imageConfirmYes"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("imageConfirmYes")
+.addEventListener(
+"click",
+function(){
 
-            if(!currentUser){
+if(!currentUser){
 
-                closeImageConfirmation();
+closeImageConfirmation();
+requireLogin();
+return;
 
-                requireLogin();
+}
 
-                return;
+const type =
+imageConfirmType;
 
-            }
+closeImageConfirmation();
 
-            const type =
-                imageConfirmType;
+openImageModal(type);
 
-            closeImageConfirmation();
-
-            openImageModal(
-                type
-            );
-
-        }
-    );
+}
+);
 
 imageConfirmModal.addEventListener(
-    "click",
-    function(event){
+"click",
+function(event){
 
-        if(
-            event.target ===
-            imageConfirmModal
-        ){
+if(event.target === imageConfirmModal){
 
-            closeImageConfirmation();
+closeImageConfirmation();
 
-        }
+}
 
-    }
+}
 );
 
 /* =================================================
 OPEN IMAGE MODAL
 ================================================== */
 
-function openImageModal(
-    type
-){
+function openImageModal(type){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+imageType = type;
 
-    imageType =
-        type;
+selectedImageData = null;
 
-    selectedImageData =
-        null;
+resetStudioState();
 
-    resetStudioState();
+if(type === "avatar"){
 
-    if(type === "avatar"){
+imageModalTitle.textContent =
+"استوديو الصورة الشخصية";
 
-        imageModalTitle.textContent =
-            "استوديو الصورة الشخصية";
+studioStage.classList.add(
+"avatar-stage"
+);
 
-        studioStage.classList.add(
-            "avatar-stage"
-        );
+}else{
 
-    }else{
+imageModalTitle.textContent =
+"استوديو غلاف WFESC";
 
-        imageModalTitle.textContent =
-            "استوديو غلاف WFESC";
+studioStage.classList.remove(
+"avatar-stage"
+);
 
-        studioStage.classList.remove(
-            "avatar-stage"
-        );
+}
 
-    }
+imageModal.classList.add("show");
 
-    imageModal.classList.add(
-        "show"
-    );
+const existing =
+type === "avatar"
+? currentProfile.avatar_url
+: currentProfile.cover_url;
 
-    const existing =
-        type === "avatar"
-            ? currentProfile.avatar_url
-            : currentProfile.cover_url;
+if(existing){
 
-    if(existing){
+setStudioImage(existing);
 
-        setStudioImage(
-            existing
-        );
-
-    }
+}
 
 }
 
@@ -5555,14 +3940,11 @@ CLOSE IMAGE MODAL
 
 function closeImageModal(){
 
-    imageModal.classList.remove(
-        "show"
-    );
+imageModal.classList.remove("show");
 
-    selectedImageData =
-        null;
+selectedImageData = null;
 
-    resetStudioState();
+resetStudioState();
 
 }
 
@@ -5571,95 +3953,84 @@ IMAGE FILE
 ================================================== */
 
 imageFile.addEventListener(
-    "change",
-    function(){
+"change",
+function(){
 
-        if(!currentUser){
+if(!currentUser){
 
-            imageFile.value =
-                "";
+imageFile.value = "";
 
-            requireLogin();
+requireLogin();
 
-            return;
+return;
 
-        }
+}
 
-        const file =
-            imageFile.files &&
-            imageFile.files[0];
+const file =
+imageFile.files &&
+imageFile.files[0];
 
-        if(!file){
-            return;
-        }
+if(!file){
+return;
+}
 
-        if(
-            !file.type.startsWith(
-                "image/"
-            )
-        ){
+if(!file.type.startsWith("image/")){
 
-            showStatus(
-                "يرجى اختيار صورة صحيحة.",
-                "error"
-            );
+showStatus(
+"يرجى اختيار صورة صحيحة.",
+"error"
+);
 
-            imageFile.value =
-                "";
+imageFile.value = "";
 
-            return;
+return;
 
-        }
+}
 
-        if(
-            file.size >
-            15 *
-            1024 *
-            1024
-        ){
+if(
+file.size >
+15 * 1024 * 1024
+){
 
-            showStatus(
-                "حجم الصورة كبير جدًا.",
-                "error"
-            );
+showStatus(
+"حجم الصورة كبير جدًا.",
+"error"
+);
 
-            imageFile.value =
-                "";
+imageFile.value = "";
 
-            return;
+return;
 
-        }
+}
 
-        const reader =
-            new FileReader();
+const reader =
+new FileReader();
 
-        reader.onload =
-            function(event){
+reader.onload =
+function(event){
 
-                selectedImageData =
-                    event.target.result;
+selectedImageData =
+event.target.result;
 
-                setStudioImage(
-                    selectedImageData
-                );
+setStudioImage(
+selectedImageData
+);
 
-            };
+};
 
-        reader.onerror =
-            function(){
+reader.onerror =
+function(){
 
-                showStatus(
-                    "تعذر قراءة الصورة.",
-                    "error"
-                );
+showStatus(
+"تعذر قراءة الصورة.",
+"error"
+);
 
-            };
+};
 
-        reader.readAsDataURL(
-            file
-        );
+reader.readAsDataURL(file);
 
-    }
+}
 );
 
 /* =================================================
@@ -5667,88 +4038,84 @@ DRAG IMAGE
 ================================================== */
 
 studioStage.addEventListener(
-    "pointerdown",
-    function(event){
+"pointerdown",
+function(event){
 
-        if(
-            !currentUser ||
-            !studioState.image
-        ){
-            return;
-        }
+if(
+!currentUser ||
+!studioState.image
+){
+return;
+}
 
-        studioState.dragging =
-            true;
+studioState.dragging = true;
 
-        studioState.startX =
-            event.clientX;
+studioState.startX =
+event.clientX;
 
-        studioState.startY =
-            event.clientY;
+studioState.startY =
+event.clientY;
 
-        studioState.startImageX =
-            studioState.x;
+studioState.startImageX =
+studioState.x;
 
-        studioState.startImageY =
-            studioState.y;
+studioState.startImageY =
+studioState.y;
 
-        try{
+try{
 
-            studioStage.setPointerCapture(
-                event.pointerId
-            );
+studioStage.setPointerCapture(
+event.pointerId
+);
 
-        }catch(error){}
+}catch(error){}
 
-    }
+}
 );
 
 studioStage.addEventListener(
-    "pointermove",
-    function(event){
+"pointermove",
+function(event){
 
-        if(
-            !studioState.dragging
-        ){
-            return;
-        }
+if(!studioState.dragging){
+return;
+}
 
-        studioState.x =
-            studioState.startImageX +
-            (
-                event.clientX -
-                studioState.startX
-            );
+studioState.x =
+studioState.startImageX +
+(
+event.clientX -
+studioState.startX
+);
 
-        studioState.y =
-            studioState.startImageY +
-            (
-                event.clientY -
-                studioState.startY
-            );
+studioState.y =
+studioState.startImageY +
+(
+event.clientY -
+studioState.startY
+);
 
-        clampStudioPosition();
+clampStudioPosition();
 
-        applyStudioTransform();
+applyStudioTransform();
 
-    }
+}
 );
 
 function stopStudioDrag(){
 
-    studioState.dragging =
-        false;
+studioState.dragging = false;
 
 }
 
 studioStage.addEventListener(
-    "pointerup",
-    stopStudioDrag
+"pointerup",
+stopStudioDrag
 );
 
 studioStage.addEventListener(
-    "pointercancel",
-    stopStudioDrag
+"pointercancel",
+stopStudioDrag
 );
 
 /* =================================================
@@ -5756,58 +4123,49 @@ ZOOM
 ================================================== */
 
 zoomRange.addEventListener(
-    "input",
-    function(){
+"input",
+function(){
 
-        if(
-            !currentUser ||
-            !studioState.image
-        ){
-            return;
-        }
+if(
+!currentUser ||
+!studioState.image
+){
+return;
+}
 
-        const oldScale =
-            studioState.scale;
+const oldScale =
+studioState.scale;
 
-        studioState.scale =
-            Number(
-                zoomRange.value
-            );
+studioState.scale =
+Number(zoomRange.value);
 
-        if(
-            !Number.isFinite(
-                studioState.scale
-            ) ||
-            studioState.scale <= 0
-        ){
+if(
+!Number.isFinite(studioState.scale) ||
+studioState.scale <= 0
+){
 
-            studioState.scale =
-                oldScale;
+studioState.scale =
+oldScale;
 
-            zoomRange.value =
-                String(
-                    oldScale
-                );
+zoomRange.value =
+String(oldScale);
 
-            return;
+return;
 
-        }
+}
 
-        const ratio =
-            studioState.scale /
-            oldScale;
+const ratio =
+studioState.scale /
+oldScale;
 
-        studioState.x *=
-            ratio;
+studioState.x *= ratio;
+studioState.y *= ratio;
 
-        studioState.y *=
-            ratio;
+clampStudioPosition();
 
-        clampStudioPosition();
+applyStudioTransform();
 
-        applyStudioTransform();
-
-    }
+}
 );
 
 /* =================================================
@@ -5815,100 +4173,76 @@ MOVEMENT
 ================================================== */
 
 document
-    .getElementById(
-        "moveLeft"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("moveLeft")
+.addEventListener(
+"click",
+function(){
 
-            if(!currentUser){
+if(!currentUser){
 
-                requireLogin();
+requireLogin();
+return;
 
-                return;
+}
 
-            }
+moveStudio(-15,0);
 
-            moveStudio(
-                -15,
-                0
-            );
-
-        }
-    );
+}
+);
 
 document
-    .getElementById(
-        "moveRight"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("moveRight")
+.addEventListener(
+"click",
+function(){
 
-            if(!currentUser){
+if(!currentUser){
 
-                requireLogin();
+requireLogin();
+return;
 
-                return;
+}
 
-            }
+moveStudio(15,0);
 
-            moveStudio(
-                15,
-                0
-            );
-
-        }
-    );
+}
+);
 
 document
-    .getElementById(
-        "moveUp"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("moveUp")
+.addEventListener(
+"click",
+function(){
 
-            if(!currentUser){
+if(!currentUser){
 
-                requireLogin();
+requireLogin();
+return;
 
-                return;
+}
 
-            }
+moveStudio(0,-15);
 
-            moveStudio(
-                0,
-                -15
-            );
-
-        }
-    );
+}
+);
 
 document
-    .getElementById(
-        "moveDown"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("moveDown")
+.addEventListener(
+"click",
+function(){
 
-            if(!currentUser){
+if(!currentUser){
 
-                requireLogin();
+requireLogin();
+return;
 
-                return;
+}
 
-            }
+moveStudio(0,15);
 
-            moveStudio(
-                0,
-                15
-            );
-
-        }
-    );
+}
+);
 
 /* =================================================
 EXPORT CROPPED IMAGE
@@ -5916,159 +4250,123 @@ EXPORT CROPPED IMAGE
 
 function createCroppedImage(){
 
-    if(!studioState.image){
-        return null;
-    }
+if(!studioState.image){
+return null;
+}
 
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
+const canvas =
+document.createElement("canvas");
 
-    let outputWidth;
+let outputWidth;
+let outputHeight;
 
-    let outputHeight;
+if(imageType === "avatar"){
 
-    if(
-        imageType ===
-        "avatar"
-    ){
+outputWidth = 600;
+outputHeight = 600;
 
-        outputWidth =
-            600;
+}else{
 
-        outputHeight =
-            600;
+outputWidth = 1200;
+outputHeight = 500;
 
-    }else{
+}
 
-        outputWidth =
-            1200;
+canvas.width = outputWidth;
+canvas.height = outputHeight;
 
-        outputHeight =
-            500;
+const context =
+canvas.getContext("2d");
 
-    }
+if(!context){
+return null;
+}
 
-    canvas.width =
-        outputWidth;
+const stageWidth =
+studioStage.clientWidth;
 
-    canvas.height =
-        outputHeight;
+const stageHeight =
+studioStage.clientHeight;
 
-    const context =
-        canvas.getContext(
-            "2d"
-        );
+if(!stageWidth || !stageHeight){
+return null;
+}
 
-    if(!context){
-        return null;
-    }
+const imageWidth =
+studioState.naturalWidth *
+studioState.scale;
 
-    const stageWidth =
-        studioStage.clientWidth;
+const imageHeight =
+studioState.naturalHeight *
+studioState.scale;
 
-    const stageHeight =
-        studioStage.clientHeight;
+const factorX =
+outputWidth / stageWidth;
 
-    if(
-        !stageWidth ||
-        !stageHeight
-    ){
-        return null;
-    }
+const factorY =
+outputHeight / stageHeight;
 
-    const imageWidth =
-        studioState.naturalWidth *
-        studioState.scale;
+const drawWidth =
+imageWidth * factorX;
 
-    const imageHeight =
-        studioState.naturalHeight *
-        studioState.scale;
+const drawHeight =
+imageHeight * factorY;
 
-    const factorX =
-        outputWidth /
-        stageWidth;
+const centerX =
+outputWidth / 2 +
+studioState.x * factorX;
 
-    const factorY =
-        outputHeight /
-        stageHeight;
+const centerY =
+outputHeight / 2 +
+studioState.y * factorY;
 
-    const drawWidth =
-        imageWidth *
-        factorX;
+const drawX =
+centerX - drawWidth / 2;
 
-    const drawHeight =
-        imageHeight *
-        factorY;
+const drawY =
+centerY - drawHeight / 2;
 
-    const centerX =
-        outputWidth / 2 +
-        studioState.x *
-        factorX;
+context.clearRect(
+0,
+0,
+outputWidth,
+outputHeight
+);
 
-    const centerY =
-        outputHeight / 2 +
-        studioState.y *
-        factorY;
+if(imageType === "avatar"){
 
-    const drawX =
-        centerX -
-        drawWidth / 2;
+context.save();
 
-    const drawY =
-        centerY -
-        drawHeight / 2;
+context.beginPath();
 
-    context.clearRect(
-        0,
-        0,
-        outputWidth,
-        outputHeight
-    );
+context.arc(
+outputWidth / 2,
+outputHeight / 2,
+outputWidth / 2,
+0,
+Math.PI * 2
+);
 
-    if(
-        imageType ===
-        "avatar"
-    ){
+context.clip();
 
-        context.save();
+}
 
-        context.beginPath();
+context.drawImage(
+studioState.image,
+drawX,
+drawY,
+drawWidth,
+drawHeight
+);
 
-        context.arc(
-            outputWidth / 2,
-            outputHeight / 2,
-            outputWidth / 2,
-            0,
-            Math.PI * 2
-        );
+if(imageType === "avatar"){
+context.restore();
+}
 
-        context.clip();
-
-    }
-
-    context.drawImage(
-        studioState.image,
-        drawX,
-        drawY,
-        drawWidth,
-        drawHeight
-    );
-
-    if(
-        imageType ===
-        "avatar"
-    ){
-
-        context.restore();
-
-    }
-
-    return canvas.toDataURL(
-        "image/jpeg",
-        0.88
-    );
+return canvas.toDataURL(
+"image/jpeg",
+.88
+);
 
 }
 
@@ -6078,31 +4376,29 @@ IMAGE SUCCESS
 
 function imageSaveSuccess(){
 
-    profileCard.classList.add(
-        "image-save-success"
-    );
+profileCard.classList.add(
+"image-save-success"
+);
 
-    shake(
-        profileCard
-    );
+shake(profileCard);
 
-    showStatus(
-        "تم الحفظ بنجاح",
-        "success"
-    );
+showStatus(
+"تم الحفظ بنجاح",
+"success"
+);
 
-    setTimeout(
-        function(){
+setTimeout(
+function(){
 
-            profileCard.classList.remove(
-                "image-save-success"
-            );
+profileCard.classList.remove(
+"image-save-success"
+);
 
-            closeImageModal();
+closeImageModal();
 
-        },
-        2000
-    );
+},
+2000
+);
 
 }
 
@@ -6112,153 +4408,153 @@ SAVE IMAGE
 
 async function saveImage(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+if(!studioState.image){
 
-    if(!studioState.image){
+showStatus(
+"اختر صورة أولًا.",
+"error"
+);
 
-        showStatus(
-            "اختر صورة أولًا.",
-            "error"
-        );
+return;
 
-        return;
-    }
+}
 
-    if(
-        !profileStorage ||
-        typeof profileStorage.uploadImage !==
-        "function"
-    ){
+if(
+!profileStorage ||
+typeof profileStorage.uploadImage !==
+"function"
+){
 
-        showStatus(
-            "ملف profile-storage.js غير متاح.",
-            "error"
-        );
+showStatus(
+"ملف profile-storage.js غير متاح.",
+"error"
+);
 
-        return;
-    }
+return;
 
-    if(
-        !profileEdit ||
-        typeof profileEdit.updateProfileSafely !==
-        "function"
-    ){
+}
 
-        showStatus(
-            "ملف profile-edit.js غير متاح.",
-            "error"
-        );
+if(
+!profileEdit ||
+typeof profileEdit.updateProfileSafely !==
+"function"
+){
 
-        return;
-    }
+showStatus(
+"ملف profile-edit.js غير متاح.",
+"error"
+);
 
-    saveImageButton.disabled =
-        true;
+return;
 
-    try{
+}
 
-        const cropped =
-            createCroppedImage();
+saveImageButton.disabled = true;
 
-        if(!cropped){
+try{
 
-            throw new Error(
-                "IMAGE_EXPORT_FAILED"
-            );
+const cropped =
+createCroppedImage();
 
-        }
+if(!cropped){
 
-        const uploadResult =
-            await profileStorage.uploadImage({
-                type:imageType,
-                dataUrl:cropped,
-                userId:currentUser.id
-            });
+throw new Error(
+"IMAGE_EXPORT_FAILED"
+);
 
-        if(
-            !uploadResult ||
-            uploadResult.success === false
-        ){
+}
 
-            throw (
-                uploadResult &&
-                uploadResult.error
-                    ? uploadResult.error
-                    : new Error(
-                        "IMAGE_UPLOAD_FAILED"
-                    )
-            );
+const uploadResult =
+await profileStorage.uploadImage({
+type:imageType,
+dataUrl:cropped,
+userId:currentUser.id
+});
 
-        }
+if(
+!uploadResult ||
+uploadResult.success === false
+){
 
-        const publicUrl =
-            uploadResult.cleanUrl ||
-            uploadResult.publicUrl;
+throw(
+uploadResult &&
+uploadResult.error
+? uploadResult.error
+: new Error(
+"IMAGE_UPLOAD_FAILED"
+)
+);
 
-        if(!publicUrl){
+}
 
-            throw new Error(
-                "IMAGE_PUBLIC_URL_FAILED"
-            );
+const publicUrl =
+uploadResult.cleanUrl ||
+uploadResult.publicUrl;
 
-        }
+if(!publicUrl){
 
-        const field =
-            imageType === "avatar"
-                ? "avatar_url"
-                : "cover_url";
+throw new Error(
+"IMAGE_PUBLIC_URL_FAILED"
+);
 
-        const updateResult =
-            await profileEdit.updateProfileSafely(
-                currentUser.id,
-                {
-                    [field]:publicUrl
-                }
-            );
+}
 
-        if(
-            updateResult &&
-            updateResult.error
-        ){
+const field =
+imageType === "avatar"
+? "avatar_url"
+: "cover_url";
 
-            throw updateResult.error;
+const updateResult =
+await profileEdit.updateProfileSafely(
+currentUser.id,
+{
+[field]:publicUrl
+}
+);
 
-        }
+if(
+updateResult &&
+updateResult.error
+){
 
-        currentProfile[field] =
-            publicUrl;
+throw updateResult.error;
 
-        renderProfile();
+}
 
-        imageSaveSuccess();
+currentProfile[field] =
+publicUrl;
 
-    }catch(error){
+renderProfile();
 
-        console.error(
-            "WFESC image:",
-            error
-        );
+imageSaveSuccess();
 
-        showStatus(
-            formatSaveError(
-                error,
-                "image"
-            ),
-            "error"
-        );
+}catch(error){
 
-    }finally{
+console.error(
+"WFESC image:",
+error
+);
 
-        saveImageButton.disabled =
-            false;
+showStatus(
+formatSaveError(
+error,
+"image"
+),
+"error"
+);
 
-    }
+}finally{
+
+saveImageButton.disabled = false;
+
+}
 
 }
 
@@ -6268,104 +4564,100 @@ DELETE IMAGE
 
 async function deleteImage(){
 
-    if(!currentUser){
+if(!currentUser){
 
-        requireLogin();
+requireLogin();
+return;
 
-        return;
+}
 
-    }
+if(
+!profileEdit ||
+typeof profileEdit.updateProfileSafely !==
+"function"
+){
 
-    if(
-        !profileEdit ||
-        typeof profileEdit.updateProfileSafely !==
-        "function"
-    ){
+showStatus(
+"ملف profile-edit.js غير متاح.",
+"error"
+);
 
-        showStatus(
-            "ملف profile-edit.js غير متاح.",
-            "error"
-        );
+return;
 
-        return;
+}
 
-    }
+deleteImageButton.disabled = true;
 
-    deleteImageButton.disabled =
-        true;
+try{
 
-    try{
+const field =
+imageType === "avatar"
+? "avatar_url"
+: "cover_url";
 
-        const field =
-            imageType === "avatar"
-                ? "avatar_url"
-                : "cover_url";
+const result =
+await profileEdit.updateProfileSafely(
+currentUser.id,
+{
+[field]:""
+}
+);
 
-        const result =
-            await profileEdit.updateProfileSafely(
-                currentUser.id,
-                {
-                    [field]:""
-                }
-            );
+if(
+result &&
+result.error
+){
 
-        if(
-            result &&
-            result.error
-        ){
+throw result.error;
 
-            throw result.error;
+}
 
-        }
+if(
+profileStorage &&
+typeof profileStorage.deleteImage ===
+"function"
+){
 
-        if(
-            profileStorage &&
-            typeof profileStorage.deleteImage ===
-            "function"
-        ){
+await profileStorage.deleteImage({
+type:imageType,
+userId:currentUser.id
+});
 
-            await profileStorage.deleteImage({
-                type:imageType,
-                userId:currentUser.id
-            });
+}
 
-        }
+currentProfile[field] = "";
 
-        currentProfile[field] =
-            "";
+renderProfile();
 
-        renderProfile();
+closeImageModal();
 
-        closeImageModal();
+showStatus(
+imageType === "avatar"
+? "تم حذف الصورة الشخصية."
+: "تم حذف الغلاف.",
+"success"
+);
 
-        showStatus(
-            imageType === "avatar"
-                ? "تم حذف الصورة الشخصية."
-                : "تم حذف الغلاف.",
-            "success"
-        );
+}catch(error){
 
-    }catch(error){
+console.error(
+"WFESC delete image:",
+error
+);
 
-        console.error(
-            "WFESC delete image:",
-            error
-        );
+showStatus(
+formatSaveError(
+error,
+"image"
+),
+"error"
+);
 
-        showStatus(
-            formatSaveError(
-                error,
-                "image"
-            ),
-            "error"
-        );
+}finally{
 
-    }finally{
+deleteImageButton.disabled = false;
 
-        deleteImageButton.disabled =
-            false;
-
-    }
+}
 
 }
 
@@ -6375,60 +4667,54 @@ SHARING
 
 async function shareProfile(){
 
-    const username =
-        getUsernameFromProfile(
-            currentProfile
-        );
+const username =
+getUsernameFromProfile(
+currentProfile
+);
 
-    const url =
-        new URL(
-            "profile.html",
-            window.location.href
-        ).href;
+const url =
+new URL(
+"profile.html",
+window.location.href
+).href;
 
-    try{
+try{
 
-        if(
-            navigator.share
-        ){
+if(navigator.share){
 
-            await navigator.share({
-                title:
-                    getNameFromUser(
-                        currentUser,
-                        currentProfile
-                    ),
+await navigator.share({
+title:
+getNameFromUser(
+currentUser,
+currentProfile
+),
 
-                text:
-                    "ملف @" +
-                    username +
-                    " على WFESC",
+text:
+"ملف @" +
+username +
+" على WFESC",
 
-                url:url
-            });
+url:url
+});
 
-        }else if(
-            navigator.clipboard
-        ){
+}else if(navigator.clipboard){
 
-            await navigator.clipboard.writeText(
-                url
-            );
+await navigator.clipboard.writeText(
+url
+);
 
-            showStatus(
-                "تم نسخ رابط الملف.",
-                "success"
-            );
+showStatus(
+"تم نسخ رابط الملف.",
+"success"
+);
 
-        }else{
+}else{
 
-            showStatus(
-                url
-            );
+showStatus(url);
 
-        }
+}
 
-    }catch(error){}
+}catch(error){}
 
 }
 
@@ -6438,165 +4724,148 @@ SETTINGS CONNECTION
 
 function applyThemeFromSettings(){
 
-    let theme =
-        "dark";
+let theme = "dark";
 
-    try{
+try{
 
-        theme =
-            localStorage.getItem(
-                "wfesc-theme"
-            ) ||
-            "dark";
+theme =
+localStorage.getItem(
+"wfesc-theme"
+) || "dark";
 
-    }catch(error){}
+}catch(error){}
 
-    const html =
-        document.documentElement;
+const html =
+document.documentElement;
 
-    html.classList.toggle(
-        "wfesc-light-mode",
-        theme === "light"
-    );
+html.classList.toggle(
+"wfesc-light-mode",
+theme === "light"
+);
 
-    html.classList.toggle(
-        "wfesc-dark-mode",
-        theme !== "light"
-    );
+html.classList.toggle(
+"wfesc-dark-mode",
+theme !== "light"
+);
 
 }
 
 function applyAnimationFromSettings(){
 
-    let state =
-        "on";
+let state = "on";
 
-    try{
+try{
 
-        state =
-            localStorage.getItem(
-                "wfesc-animation"
-            ) ||
-            "on";
+state =
+localStorage.getItem(
+"wfesc-animation"
+) || "on";
 
-    }catch(error){}
+}catch(error){}
 
-    document.documentElement.classList.toggle(
-        "wfesc-animation-off",
-        state === "off"
-    );
+document.documentElement.classList.toggle(
+"wfesc-animation-off",
+state === "off"
+);
 
 }
 
 function applyGlassFromSettings(){
 
-    let state =
-        "on";
+let state = "on";
 
-    try{
+try{
 
-        state =
-            localStorage.getItem(
-                "wfesc-liquid-glass"
-            ) ||
-            "on";
+state =
+localStorage.getItem(
+"wfesc-liquid-glass"
+) || "on";
 
-    }catch(error){}
+}catch(error){}
 
-    document.documentElement.classList.toggle(
-        "wfesc-liquid-glass",
-        state !== "off"
-    );
+document.documentElement.classList.toggle(
+"wfesc-liquid-glass",
+state !== "off"
+);
 
 }
 
 function applyAllSettings(){
 
-    applyThemeFromSettings();
-
-    applyAnimationFromSettings();
-
-    applyGlassFromSettings();
+applyThemeFromSettings();
+applyAnimationFromSettings();
+applyGlassFromSettings();
 
 }
 
 window.addEventListener(
-    "WFESCLiquidGlassChanged",
-    function(event){
+"WFESCLiquidGlassChanged",
+function(event){
 
-        const enabled =
-            event &&
-            event.detail &&
-            event.detail.enabled;
+const enabled =
+event &&
+event.detail &&
+event.detail.enabled;
 
-        document.documentElement.classList.toggle(
-            "wfesc-liquid-glass",
-            Boolean(
-                enabled
-            )
-        );
+document.documentElement.classList.toggle(
+"wfesc-liquid-glass",
+Boolean(enabled)
+);
 
-    }
+}
 );
 
 window.addEventListener(
-    "WFESCAnimationChanged",
-    function(event){
+"WFESCAnimationChanged",
+function(event){
 
-        const enabled =
-            !(
-                event &&
-                event.detail &&
-                event.detail.enabled === false
-            );
+const enabled =
+!(
+event &&
+event.detail &&
+event.detail.enabled === false
+);
 
-        document.documentElement.classList.toggle(
-            "wfesc-animation-off",
-            !enabled
-        );
+document.documentElement.classList.toggle(
+"wfesc-animation-off",
+!enabled
+);
 
-    }
+}
 );
 
 window.addEventListener(
-    "storage",
-    function(event){
+"storage",
+function(event){
 
-        if(
-            event.key === "wfesc-theme" ||
-            event.key === "wfesc-animation" ||
-            event.key === "wfesc-liquid-glass"
-        ){
+if(
+event.key === "wfesc-theme" ||
+event.key === "wfesc-animation" ||
+event.key === "wfesc-liquid-glass"
+){
 
-            applyAllSettings();
+applyAllSettings();
 
-        }
+}
 
-    }
+}
 );
 
 document.addEventListener(
-    "visibilitychange",
-    function(){
+"visibilitychange",
+function(){
 
-        if(
-            document.visibilityState ===
-            "visible"
-        ){
+if(
+document.visibilityState === "visible"
+){
 
-            applyAllSettings();
+applyAllSettings();
 
-            /*
-             * عند الرجوع للصفحة نعيد فحص
-             * الجلسة حتى ينعكس تسجيل الدخول
-             * أو تسجيل الخروج من Settings.
-             */
+refreshSessionState();
 
-            refreshSessionState();
+}
 
-        }
-
-    }
+}
 );
 
 /* =================================================
@@ -6605,49 +4874,37 @@ CENTRAL SESSION REFRESH
 
 async function refreshSessionState(){
 
-    const user =
-        await getCurrentUserSafe();
+const user =
+await getCurrentUserSafe();
 
-    if(!user){
+if(!user){
 
-        if(currentUser){
+renderGuestProfile();
 
-            renderGuestProfile();
+return;
 
-        }else{
+}
 
-            renderGuestProfile();
+const userChanged =
+!currentUser ||
+currentUser.id !== user.id;
 
-        }
+currentUser = user;
 
-        return;
+try{
 
-    }
+currentProfile =
+await getProfile(user);
 
-    const userChanged =
-        !currentUser ||
-        currentUser.id !== user.id;
+}catch(error){
 
-    currentUser =
-        user;
+currentProfile = {};
 
-    try{
+}
 
-        currentProfile =
-            await getProfile(
-                user
-            );
+renderProfile();
 
-    }catch(error){
-
-        currentProfile =
-            {};
-
-    }
-
-    renderProfile();
-
-    updateTimers();
+updateTimers();
 
 }
 
@@ -6656,75 +4913,66 @@ EVENTS
 ================================================== */
 
 document
-    .getElementById(
-        "editProfileButton"
-    )
-    .addEventListener(
-        "click",
-        openEditProfile
-    );
+.getElementById("editProfileButton")
+.addEventListener(
+"click",
+openEditProfile
+);
 
 document
-    .getElementById(
-        "closeEditProfile"
-    )
-    .addEventListener(
-        "click",
-        closeEditProfile
-    );
+.getElementById("closeEditProfile")
+.addEventListener(
+"click",
+closeEditProfile
+);
 
 editProfileModal.addEventListener(
-    "click",
-    function(event){
+"click",
+function(event){
 
-        if(
-            event.target ===
-            editProfileModal
-        ){
+if(
+event.target === editProfileModal
+){
 
-            closeEditProfile();
+closeEditProfile();
 
-        }
+}
 
-    }
+}
 );
 
 saveNameButton.addEventListener(
-    "click",
-    saveName
+"click",
+saveName
 );
 
 saveUsernameButton.addEventListener(
-    "click",
-    saveUsername
+"click",
+saveUsername
 );
 
 document
-    .getElementById(
-        "editBioButton"
-    )
-    .addEventListener(
-        "click",
-        openBioEditor
-    );
+.getElementById("editBioButton")
+.addEventListener(
+"click",
+openBioEditor
+);
 
 cancelBioButton.addEventListener(
-    "click",
-    closeBioEditor
+"click",
+closeBioEditor
 );
 
 saveBioButton.addEventListener(
-    "click",
-    saveBio
+"click",
+saveBio
 );
 
 document
-    .getElementById(
-        "shareProfileButton"
-    )
-    .addEventListener(
-        "click",
-        shareProfile
+.getElementById("shareProfileButton")
+.addEventListener(
+"click",
+shareProfile
 );
 
 /* =================================================
@@ -6732,68 +4980,55 @@ IMAGE CONFIRMATION EVENTS
 ================================================== */
 
 document
-    .getElementById(
-        "editAvatarButton"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("editAvatarButton")
+.addEventListener(
+"click",
+function(){
 
-            askImageChange(
-                "avatar"
-            );
+askImageChange("avatar");
 
-        }
-    );
+}
+);
 
 document
-    .getElementById(
-        "editCoverButton"
-    )
-    .addEventListener(
-        "click",
-        function(){
+.getElementById("editCoverButton")
+.addEventListener(
+"click",
+function(){
 
-            askImageChange(
-                "cover"
-            );
+askImageChange("cover");
 
-        }
-    );
+}
+);
 
 document
-    .getElementById(
-        "closeImageModal"
-    )
-    .addEventListener(
-        "click",
-        closeImageModal
-    );
+.getElementById("closeImageModal")
+.addEventListener(
+"click",
+closeImageModal
+);
 
 imageModal.addEventListener(
-    "click",
-    function(event){
+"click",
+function(event){
 
-        if(
-            event.target ===
-            imageModal
-        ){
+if(event.target === imageModal){
 
-            closeImageModal();
+closeImageModal();
 
-        }
+}
 
-    }
+}
 );
 
 saveImageButton.addEventListener(
-    "click",
-    saveImage
+"click",
+saveImage
 );
 
 deleteImageButton.addEventListener(
-    "click",
-    deleteImage
+"click",
+deleteImage
 );
 
 /* =================================================
@@ -6802,83 +5037,74 @@ LOAD PROFILE
 
 async function loadProfile(){
 
-    applyAllSettings();
+applyAllSettings();
 
-    document.documentElement.classList.add(
-        "wfesc-profile-loading"
-    );
+document.documentElement.classList.add(
+"wfesc-profile-loading"
+);
 
-    /*
-     * ننتظر الجلسة لفترة قصيرة فقط.
-     * إذا لا توجد جلسة، لا نعيد التوجيه.
-     * نعرض البروفايل الافتراضي مباشرة.
-     */
+let user = null;
 
-    let user =
-        null;
+for(
+let attempt = 0;
+attempt < 8;
+attempt++
+){
 
-    for(
-        let attempt = 0;
-        attempt < 8;
-        attempt++
-    ){
+user =
+await getCurrentUserSafe();
 
-        user =
-            await getCurrentUserSafe();
+if(user){
+break;
+}
 
-        if(user){
-            break;
-        }
+await new Promise(
+function(resolve){
 
-        await new Promise(
-            function(resolve){
+setTimeout(
+resolve,
+300
+);
 
-                setTimeout(
-                    resolve,
-                    300
-                );
+}
+);
 
-            }
-        );
+}
 
-    }
+if(!user){
 
-    if(!user){
+renderGuestProfile();
 
-        renderGuestProfile();
+startTimers();
 
-        startTimers();
+document.documentElement.classList.remove(
+"wfesc-profile-loading"
+);
 
-        document.documentElement.classList.remove(
-            "wfesc-profile-loading"
-        );
+return;
 
-        return;
+}
 
-    }
+currentUser = user;
 
-    currentUser =
-        user;
+const profile =
+await getProfile(
+currentUser
+);
 
-    const profile =
-        await getProfile(
-            currentUser
-        );
+currentProfile =
+profile &&
+typeof profile === "object"
+? profile
+: {};
 
-    currentProfile =
-        profile &&
-        typeof profile ===
-        "object"
-            ? profile
-            : {};
+renderProfile();
 
-    renderProfile();
+startTimers();
 
-    startTimers();
-
-    document.documentElement.classList.remove(
-        "wfesc-profile-loading"
-    );
+document.documentElement.classList.remove(
+"wfesc-profile-loading"
+);
 
 }
 
@@ -6888,79 +5114,66 @@ AUTH STATE
 
 try{
 
-    if(
-        auth &&
-        typeof auth.onAuthStateChange ===
-        "function"
-    ){
+if(
+auth &&
+typeof auth.onAuthStateChange ===
+"function"
+){
 
-        auth.onAuthStateChange(
-            function(
-                event,
-                user
-            ){
+auth.onAuthStateChange(
+function(event,user){
 
-                /*
-                 * لا ننفذ استدعاءات Supabase مباشرة
-                 * داخل callback حتى لا يحدث تعليق.
-                 */
+setTimeout(
+async function(){
 
-                setTimeout(
-                    async function(){
+if(
+event === "SIGNED_OUT" ||
+!user
+){
 
-                        if(
-                            event ===
-                            "SIGNED_OUT" ||
-                            !user
-                        ){
+renderGuestProfile();
 
-                            renderGuestProfile();
+return;
 
-                            return;
+}
 
-                        }
+currentUser = user;
 
-                        currentUser =
-                            user;
+try{
 
-                        try{
-
-                            currentProfile =
-                                await getProfile(
-                                    user
-                                );
-
-                        }catch(error){
-
-                            console.warn(
-                                "WFESC profile refresh:",
-                                error
-                            );
-
-                            currentProfile =
-                                {};
-
-                        }
-
-                        renderProfile();
-
-                        updateTimers();
-
-                    },
-                    0
-                );
-
-            }
-        );
-
-    }
+currentProfile =
+await getProfile(user);
 
 }catch(error){
 
-    console.warn(
-        "WFESC auth listener:",
-        error
-    );
+console.warn(
+"WFESC profile refresh:",
+error
+);
+
+currentProfile = {};
+
+}
+
+renderProfile();
+
+updateTimers();
+
+},
+0
+);
+
+}
+);
+
+}
+
+}catch(error){
+
+console.warn(
+"WFESC auth listener:",
+error
+);
 
 }
 
@@ -6969,19 +5182,19 @@ CROSS-PAGE WFESC AUTH EVENT
 ================================================== */
 
 window.addEventListener(
-    "WFESCAuthChanged",
-    function(){
+"WFESCAuthChanged",
+function(){
 
-        setTimeout(
-            function(){
+setTimeout(
+function(){
 
-                refreshSessionState();
+refreshSessionState();
 
-            },
-            0
-        );
+},
+0
+);
 
-    }
+}
 );
 
 /* =================================================
@@ -6999,9 +5212,8 @@ NAVIGATION
 ================================================== -->
 
 <script
-    src="./navigation/navigation-loader.js"
+src="./navigation/navigation-loader.js"
 ></script>
 
 </body>
-
 </html>
