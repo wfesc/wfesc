@@ -4,16 +4,17 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       الإصدار المحسن النهائي
+       الإصدار المحسن
 
        مسؤول عن:
        - Supabase
        - المستخدم الحالي
        - المحادثات
        - فتح المحادثة
+       - فتح المحادثة مباشرة من آخر رسالة
+       - Slide Up animation عند فتح المحادثة
        - تحميل الرسائل
-       - فتح المحادثة من آخر رسالة
-       - Realtime للرسائل
+       - Realtime
        - جاري الكتابة
        - بيانات جهة الاتصال
        - رسم الرسائل
@@ -93,10 +94,6 @@
         `);
 
 
-    /*
-       مدة صلاحية حالة جاري الكتابة عند الطرف الآخر.
-       يتم تمديدها مع كل نبضة كتابة.
-    */
     const TYPING_REMOTE_TIMEOUT =
         2600;
 
@@ -140,6 +137,8 @@
     let realtimeConversationId = null;
 
     let lastRenderedMessageId = null;
+
+    let openingConversation = false;
 
 
     /* =========================================================
@@ -203,6 +202,112 @@
 
 
     /* =========================================================
+       OPEN ANIMATION STYLE
+    ========================================================= */
+
+    function ensureChatOpenAnimation() {
+
+        const styleId =
+            "wfesc-chat-open-animation-style";
+
+
+        if (
+            document.getElementById(
+                styleId
+            )
+        ) {
+            return;
+        }
+
+
+        const style =
+            document.createElement(
+                "style"
+            );
+
+
+        style.id =
+            styleId;
+
+
+        style.textContent = `
+
+            @keyframes wfescChatSlideUp {
+
+                0% {
+                    opacity: 0;
+                    transform:
+                        translate3d(
+                            0,
+                            42px,
+                            0
+                        );
+                }
+
+                55% {
+                    opacity: 1;
+                }
+
+                100% {
+                    opacity: 1;
+                    transform:
+                        translate3d(
+                            0,
+                            0,
+                            0
+                        );
+                }
+            }
+
+
+            #chatView.wfesc-chat-opening {
+
+                animation:
+                    wfescChatSlideUp
+                    .34s
+                    cubic-bezier(
+                        .22,
+                        .75,
+                        .25,
+                        1
+                    )
+                    both;
+
+                will-change:
+                    transform,
+                    opacity;
+            }
+
+
+            @media (
+                prefers-reduced-motion: reduce
+            ) {
+
+                #chatView.wfesc-chat-opening {
+
+                    animation:
+                        none !important;
+
+                    opacity:
+                        1 !important;
+
+                    transform:
+                        none !important;
+                }
+            }
+        `;
+
+
+        document.head.appendChild(
+            style
+        );
+    }
+
+
+    ensureChatOpenAnimation();
+
+
+    /* =========================================================
        HELPERS
     ========================================================= */
 
@@ -223,8 +328,10 @@
             return "";
         }
 
+
         const date =
             new Date(value);
+
 
         if (
             Number.isNaN(
@@ -233,6 +340,7 @@
         ) {
             return "";
         }
+
 
         return date.toLocaleTimeString(
             "ar-IQ",
@@ -249,6 +357,7 @@
         if (!contact) {
             return "مستخدم";
         }
+
 
         return (
             contact.display_name ||
@@ -272,6 +381,7 @@
         if (!message) {
             return null;
         }
+
 
         return (
             message.id ??
@@ -321,6 +431,7 @@
                 message
             );
 
+
         return (
             senderId != null &&
             currentUser?.id != null &&
@@ -342,12 +453,14 @@
             return;
         }
 
+
         const target =
             Math.max(
                 0,
                 chatMessages.scrollHeight -
                 chatMessages.clientHeight
             );
+
 
         if (
             typeof chatMessages.scrollTo ===
@@ -373,6 +486,7 @@
             return;
         }
 
+
         chatMessages.scrollTop =
             chatMessages.scrollHeight;
     }
@@ -384,6 +498,7 @@
             return true;
         }
 
+
         return (
             chatMessages.scrollHeight -
             chatMessages.scrollTop -
@@ -392,36 +507,139 @@
     }
 
 
-    function revealChatAtBottom() {
+    /*
+    ============================================================
+       أهم دالة في الإصدار الجديد
+
+       تضمن أن المحادثة تكون على آخر رسالة
+       قبل أن يشاهد المستخدم المحادثة.
+    ============================================================
+    */
+
+    function prepareChatAtBottom() {
 
         if (!chatMessages) {
             return;
         }
 
-        chatMessages.style.visibility =
-            "hidden";
 
+        /*
+           إلغاء smooth أثناء الفتح.
+           حتى لا نرى حركة من الأعلى للأسفل.
+        */
+        const oldBehavior =
+            chatMessages.style.scrollBehavior;
+
+
+        chatMessages.style.scrollBehavior =
+            "auto";
+
+
+        /*
+           أول ضبط.
+        */
         forceScrollToBottom();
 
+
+        /*
+           ضبط ثاني بعد Layout.
+        */
         requestAnimationFrame(() => {
 
             forceScrollToBottom();
 
-            chatMessages.style.visibility =
-                "visible";
 
-            setTimeout(() => {
+            requestAnimationFrame(() => {
 
                 forceScrollToBottom();
 
-            }, 50);
-
-            setTimeout(() => {
-
-                forceScrollToBottom();
-
-            }, 180);
+            });
         });
+
+
+        /*
+           في حال الصور أو الخطوط غيرت ارتفاع الصفحة.
+        */
+        setTimeout(() => {
+
+            forceScrollToBottom();
+
+        }, 20);
+
+
+        setTimeout(() => {
+
+            forceScrollToBottom();
+
+        }, 80);
+
+
+        setTimeout(() => {
+
+            forceScrollToBottom();
+
+            chatMessages.style.scrollBehavior =
+                oldBehavior || "";
+
+        }, 180);
+    }
+
+
+    /* =========================================================
+       CHAT OPEN ANIMATION
+    ========================================================= */
+
+    function playChatOpenAnimation() {
+
+        if (!chatView) {
+            return;
+        }
+
+
+        chatView.classList.remove(
+            "wfesc-chat-opening"
+        );
+
+
+        /*
+           إجبار المتصفح على إعادة بناء الحالة
+           حتى يعمل الأنميشن عند كل فتح.
+        */
+        void chatView.offsetWidth;
+
+
+        chatView.classList.add(
+            "wfesc-chat-opening"
+        );
+
+
+        const removeAnimation =
+            () => {
+
+                chatView.classList.remove(
+                    "wfesc-chat-opening"
+                );
+
+                chatView.removeEventListener(
+                    "animationend",
+                    removeAnimation
+                );
+            };
+
+
+        chatView.addEventListener(
+            "animationend",
+            removeAnimation
+        );
+
+
+        /*
+           fallback إذا animationend لم يعمل.
+        */
+        setTimeout(
+            removeAnimation,
+            450
+        );
     }
 
 
@@ -435,6 +653,7 @@
 
             const settings =
                 window.WFESC_MESSAGE_SETTINGS;
+
 
             if (!settings) {
                 return;
@@ -459,6 +678,7 @@
 
                     settings.apply();
                 }
+
 
                 return;
             }
@@ -556,6 +776,7 @@
             return getSupportContact();
         }
 
+
         const {
             data,
             error
@@ -567,6 +788,7 @@
             }
         );
 
+
         if (error) {
 
             console.error(
@@ -577,13 +799,16 @@
             return null;
         }
 
+
         if (!data) {
             return null;
         }
 
+
         if (Array.isArray(data)) {
             return data[0] || null;
         }
+
 
         return data;
     }
@@ -604,6 +829,7 @@
                 "get_or_create_support_conversation"
             );
 
+
             if (error) {
 
                 console.error(
@@ -614,9 +840,11 @@
                 return null;
             }
 
+
             if (!data) {
                 return null;
             }
+
 
             if (
                 typeof data ===
@@ -625,6 +853,7 @@
 
                 return data;
             }
+
 
             return (
                 data.conversation_id ||
@@ -656,12 +885,14 @@
             return [];
         }
 
+
         const {
             data,
             error
         } = await client.rpc(
             "get_my_conversations"
         );
+
 
         if (error) {
 
@@ -672,6 +903,7 @@
 
             return [];
         }
+
 
         conversations =
             Array.isArray(data)
@@ -689,6 +921,7 @@
                         0
                     ).getTime();
 
+
                 const second =
                     new Date(
                         b.last_message_at ||
@@ -696,12 +929,14 @@
                         0
                     ).getTime();
 
+
                 return second - first;
             }
         );
 
 
         renderConversations();
+
 
         return conversations;
     }
@@ -717,7 +952,9 @@
             return;
         }
 
+
         conversationList.innerHTML = "";
+
 
         if (!conversations.length) {
 
@@ -751,6 +988,7 @@
                         conversation
                     );
 
+
                 conversationList.appendChild(
                     card
                 );
@@ -771,6 +1009,7 @@
             document.createElement(
                 "article"
             );
+
 
         card.className =
             "conversation-card";
@@ -960,9 +1199,7 @@
 
 
     /* =========================================================
-       TYPING INDICATOR ELEMENT
-       خارج chatMessages
-       فوق حقل الكتابة مباشرة
+       TYPING INDICATOR
     ========================================================= */
 
     function ensureTypingElement() {
@@ -1012,10 +1249,6 @@
         `;
 
 
-        /*
-           نخليه فوق composer مباشرة.
-           لا يدخل ضمن scroll الخاص بالرسائل.
-        */
         typing.style.cssText = `
             position:absolute;
             right:12px;
@@ -1032,7 +1265,7 @@
             gap:8px;
 
             min-height:34px;
-            padding:4px 4px;
+            padding:4px;
 
             color:#999;
             font-size:12px;
@@ -1065,6 +1298,7 @@
                     "style"
                 );
 
+
             style.id =
                 styleId;
 
@@ -1090,26 +1324,20 @@
                     0%,
                     60%,
                     100% {
-
                         transform:translateY(0);
                         opacity:.35;
-
                     }
 
                     30% {
-
                         transform:translateY(-4px);
                         opacity:1;
-
                     }
 
                 }
 
 
                 .wfesc-typing-indicator {
-
                     box-sizing:border-box;
-
                 }
 
 
@@ -1131,14 +1359,23 @@
 
                     border-radius:14px;
 
-                    background:rgba(255,255,255,.07);
+                    background:rgba(
+                        255,
+                        255,
+                        255,
+                        .07
+                    );
 
-                    border:1px solid rgba(255,255,255,.08);
+                    border:1px solid rgba(
+                        255,
+                        255,
+                        255,
+                        .08
+                    );
 
                     backdrop-filter:blur(10px);
 
                     -webkit-backdrop-filter:blur(10px);
-
                 }
 
 
@@ -1156,32 +1393,25 @@
                         wfescTypingDot
                         1.1s
                         infinite;
-
                 }
 
 
                 .wfesc-typing-bubble span:nth-child(2) {
-
                     animation-delay:.15s;
-
                 }
 
 
                 .wfesc-typing-bubble span:nth-child(3) {
-
                     animation-delay:.3s;
-
                 }
 
 
                 .wfesc-typing-text {
-
                     white-space:nowrap;
-
                     line-height:28px;
-
                 }
             `;
+
 
             document.head.appendChild(
                 style
@@ -1189,10 +1419,6 @@
         }
 
 
-        /*
-           مهم:
-           نضيفه إلى chatView وليس chatMessages.
-        */
         chatView.appendChild(
             typing
         );
@@ -1228,10 +1454,6 @@
             );
 
 
-        /*
-           إذا وجد composer نقيس ارتفاعه
-           حتى يبقى المؤشر فوقه مباشرة.
-        */
         if (composer) {
 
             const composerHeight =
@@ -1315,10 +1537,6 @@
 
         setTimeout(() => {
 
-            /*
-               لا نخفيه إذا رجع typing
-               أثناء فترة الأنميشن.
-            */
             if (
                 typingUsers.size === 0
             ) {
@@ -1351,7 +1569,7 @@
 
 
     /* =========================================================
-       CLEAR REMOTE TYPING USER
+       CLEAR REMOTE TYPING
     ========================================================= */
 
     function clearTypingUser(
@@ -1520,9 +1738,6 @@
         }
 
 
-        /*
-           كل ضغطة تمدد المؤقت المحلي.
-        */
         if (typingTimer) {
 
             clearTimeout(
@@ -1531,9 +1746,6 @@
         }
 
 
-        /*
-           أول مرة فقط نرسل true.
-        */
         if (!isTyping) {
 
             isTyping =
@@ -1571,11 +1783,6 @@
         }
 
 
-        /*
-           نجدد الإرسال بشكل دوري أثناء الكتابة.
-           هذا يمنع الطرف الثاني من اعتبار المستخدم
-           متوقفاً عن الكتابة أثناء كتابة رسالة طويلة.
-        */
         typingTimer =
             setTimeout(
                 async () => {
@@ -1805,10 +2012,10 @@
 
 
     /* =========================================================
-       INPUT TYPING EVENTS
+       INPUT EVENTS
     ========================================================= */
 
-    function setupTypingInput() {
+    function setupInputEvents() {
 
         const input =
             document.getElementById(
@@ -1821,9 +2028,6 @@
         }
 
 
-        /*
-           بداية / استمرار الكتابة.
-        */
         input.addEventListener(
             "input",
             () => {
@@ -1842,10 +2046,6 @@
         );
 
 
-        /*
-           رفع اليد / خروج التركيز:
-           يختفي جاري الكتابة فوراً.
-        */
         input.addEventListener(
             "blur",
             () => {
@@ -1856,11 +2056,6 @@
         );
 
 
-        /*
-           رجوع التركيز للحقل:
-           إذا توجد كتابة غير مرسلة،
-           نرسل حالة الكتابة من جديد.
-        */
         input.addEventListener(
             "focus",
             () => {
@@ -1895,17 +2090,12 @@
             payload;
 
 
-        if (!record) {
-            return null;
-        }
-
-
-        return record;
+        return record || null;
     }
 
 
     /* =========================================================
-       MESSAGE BELONGS TO CURRENT CONVERSATION
+       MESSAGE BELONGS
     ========================================================= */
 
     function messageBelongsToCurrentConversation(
@@ -1935,7 +2125,7 @@
 
 
     /* =========================================================
-       FIND MESSAGE IN STATE BY ID
+       FIND STATE MESSAGE
     ========================================================= */
 
     function findMessageInStateById(
@@ -1958,6 +2148,7 @@
                             existing
                         );
 
+
                     return (
                         existingId != null &&
                         String(existingId) ===
@@ -1971,7 +2162,7 @@
 
 
     /* =========================================================
-       FIND DOM MESSAGE BY ID
+       FIND DOM BY ID
     ========================================================= */
 
     function findDomMessageById(
@@ -2015,10 +2206,10 @@
 
 
     /* =========================================================
-       FIND DOM MESSAGE BY CONTENT
+       FIND OPTIMISTIC MESSAGE
     ========================================================= */
 
-    function findExistingMessageElement(
+    function findOptimisticMessageElement(
         message
     ) {
 
@@ -2044,55 +2235,20 @@
             ).trim();
 
 
-        if (
-            senderId == null ||
-            !content
-        ) {
-
-            return null;
-        }
-
-
         const rows =
             chatMessages.querySelectorAll(
-                ".message-row"
+                ".message-row.optimistic"
             );
 
 
-        /*
-           نبحث من الأخير إلى الأول.
-           لأن الرسالة الجديدة غالباً هي آخر نسخة
-           تحمل نفس النص.
-        */
         for (
-            let index =
-                rows.length - 1;
-
-            index >= 0;
-
-            index--
+            const row
+            of rows
         ) {
-
-            const row =
-                rows[index];
-
 
             const rowSenderId =
                 row.dataset.senderId ||
                 "";
-
-
-            if (
-                String(
-                    rowSenderId
-                ) !==
-                String(
-                    senderId
-                )
-            ) {
-
-                continue;
-            }
 
 
             const contentElement =
@@ -2101,19 +2257,16 @@
                 );
 
 
-            if (!contentElement) {
-                continue;
-            }
-
-
             const rowContent =
                 String(
-                    contentElement.textContent ||
+                    contentElement?.textContent ||
                     ""
                 ).trim();
 
 
             if (
+                String(rowSenderId) ===
+                String(senderId) &&
                 rowContent ===
                 content
             ) {
@@ -2128,7 +2281,27 @@
 
 
     /* =========================================================
-       MESSAGE DUPLICATE CHECK
+       FIND EXISTING MESSAGE
+    ========================================================= */
+
+    function findExistingMessageElement(
+        message
+    ) {
+
+        /*
+           مهم:
+           فقط optimistic حتى ما نعتبر رسالتين
+           حقيقيتين متشابهتين رسالة واحدة.
+        */
+
+        return findOptimisticMessageElement(
+            message
+        );
+    }
+
+
+    /* =========================================================
+       MESSAGE EXISTS
     ========================================================= */
 
     function messageAlreadyExists(
@@ -2141,9 +2314,6 @@
             );
 
 
-        /*
-           الحالة الداخلية أولاً.
-        */
         if (
             messageId != null &&
             findMessageInStateById(
@@ -2155,9 +2325,6 @@
         }
 
 
-        /*
-           DOM ثانياً.
-        */
         if (
             messageId != null &&
             findDomMessageById(
@@ -2202,9 +2369,6 @@
             );
 
 
-        /*
-           إزالة حالة المؤقت.
-        */
         element.classList.remove(
             "optimistic"
         );
@@ -2278,7 +2442,7 @@
 
 
     /* =========================================================
-       ADD REAL MESSAGE TO STATE ONLY
+       ADD REAL MESSAGE TO STATE
     ========================================================= */
 
     function addRealMessageToState(
@@ -2362,7 +2526,9 @@
                         conversation.id ??
                         conversation.conversation_id
                     ) ===
-                    String(conversationId)
+                    String(
+                        conversationId
+                    )
             );
 
 
@@ -2449,13 +2615,9 @@
 
 
         /*
-        ========================================================
-           الحالة 1:
-           الرسالة موجودة بالحالة الداخلية.
-           لا نرسمها مرة ثانية.
-        ========================================================
+           إذا الرسالة موجودة بالحالة:
+           لا نرسم نسخة ثانية.
         */
-
         const stateMessage =
             messageId != null
                 ? findMessageInStateById(
@@ -2466,11 +2628,6 @@
 
         if (stateMessage) {
 
-            /*
-               قد يكون السجل في الحالة موجوداً
-               كنسخة Optimistic/مؤقتة.
-               نحدّث بياناته بالسجل الحقيقي.
-            */
             const stateIndex =
                 currentMessages.indexOf(
                     stateMessage
@@ -2503,23 +2660,20 @@
             }
 
 
-            typingUsers.clear();
+            clearTypingUser(
+                getMessageSenderId(
+                    message
+                )
+            );
 
-            hideTypingIndicator();
 
             return;
         }
 
 
         /*
-        ========================================================
-           الحالة 2:
-           Realtime وصل بعد أن send.js أكد النسخة المؤقتة.
-           هنا قد يكون العنصر موجوداً بالـDOM لكن الحالة
-           الداخلية لا تحتويه بعد.
-        ========================================================
+           إذا DOM يحتوي الرسالة بنفس ID.
         */
-
         let existingElement =
             messageId != null
                 ? findDomMessageById(
@@ -2529,16 +2683,9 @@
 
 
         /*
-        ========================================================
-           الحالة 3:
-           لم نجد ID.
-           نبحث بنفس المستخدم + النص.
-           هذه أهم حالة لمنع:
-           هلو
-           هلو
-        ========================================================
+           إذا ماكو ID، نحاول نربط Realtime
+           مع optimistic فقط.
         */
-
         if (!existingElement) {
 
             existingElement =
@@ -2556,31 +2703,25 @@
             );
 
 
-            /*
-               نضيف الرسالة إلى الحالة فقط.
-               لا ننشئ عنصر DOM جديد.
-            */
             addRealMessageToState(
                 message
             );
 
 
-            typingUsers.clear();
+            clearTypingUser(
+                getMessageSenderId(
+                    message
+                )
+            );
 
-            hideTypingIndicator();
 
             return;
         }
 
 
         /*
-        ========================================================
-           الحالة 4:
-           رسالة جديدة فعلاً.
-           فقط هنا ننشئ عنصر جديد.
-        ========================================================
+           رسالة جديدة فعلياً.
         */
-
         const wasAtBottom =
             isNearBottom();
 
@@ -2621,9 +2762,11 @@
         }
 
 
-        typingUsers.clear();
-
-        hideTypingIndicator();
+        clearTypingUser(
+            getMessageSenderId(
+                message
+            )
+        );
     }
 
 
@@ -2720,6 +2863,7 @@
                     realtimeStarted =
                         true;
 
+
                     console.log(
                         "WFESC: Messages Realtime connected"
                     );
@@ -2738,6 +2882,7 @@
 
     /* =========================================================
        OPEN CONVERSATION
+       الإصدار الجديد
     ========================================================= */
 
     async function openConversation(
@@ -2746,15 +2891,26 @@
         type = null
     ) {
 
-        if (!conversationId) {
+        if (
+            !conversationId ||
+            openingConversation
+        ) {
+
             return;
         }
+
+
+        openingConversation =
+            true;
 
 
         const loadToken =
             ++conversationLoadToken;
 
 
+        /*
+           تنظيف typing من المحادثة السابقة.
+        */
         await removeTypingChannel();
 
 
@@ -2780,6 +2936,9 @@
         }
 
 
+        /*
+           جلب جهة الاتصال قبل إظهار المحادثة.
+        */
         if (
             !currentConversationContact
         ) {
@@ -2795,6 +2954,9 @@
                 loadToken !==
                 conversationLoadToken
             ) {
+
+                openingConversation =
+                    false;
 
                 return;
             }
@@ -2822,32 +2984,16 @@
         }
 
 
-        page?.classList.add(
-            "chat-active"
-        );
-
-
-        chatView?.classList.add(
-            "open"
-        );
-
-
-        if (searchSection) {
-
-            searchSection.classList.add(
-                "hidden"
-            );
-        }
-
-
+        /*
+           تحديث الهيدر قبل الفتح.
+        */
         updateChatHeader();
 
 
-        setupTypingChannel(
-            conversationId
-        );
-
-
+        /*
+           تحميل الرسائل أولاً.
+           chatView لا نفتحها بعد.
+        */
         await loadConversationMessages(
             loadToken
         );
@@ -2858,30 +3004,105 @@
             conversationLoadToken
         ) {
 
+            openingConversation =
+                false;
+
             return;
         }
 
 
+        /*
+           تأكيد مكان آخر رسالة
+           قبل إظهار المحادثة.
+        */
+        prepareChatAtBottom();
+
+
+        /*
+           إعداد Realtime typing.
+        */
+        await setupTypingChannel(
+            conversationId
+        );
+
+
+        /*
+           تعليم المحادثة كمقروءة.
+        */
         await markConversationRead(
             conversationId
         );
 
 
-        revealChatAtBottom();
+        /*
+           إظهار المحادثة الآن فقط.
+           المستخدم لن يرى الرسائل وهي تصعد
+           من البداية إلى النهاية.
+        */
+        if (page) {
+
+            page.classList.add(
+                "chat-active"
+            );
+        }
+
+
+        if (searchSection) {
+
+            searchSection.classList.add(
+                "hidden"
+            );
+        }
+
+
+        if (chatView) {
+
+            chatView.classList.add(
+                "open"
+            );
+
+
+            /*
+               إعادة ضبط أخيرة بعد أن صار العنصر
+               visible فعلياً.
+            */
+            prepareChatAtBottom();
+
+
+            /*
+               Slide Up مرتب.
+            */
+            requestAnimationFrame(() => {
+
+                prepareChatAtBottom();
+
+                playChatOpenAnimation();
+
+            });
+        }
 
 
         /*
-           تحديث مكان مؤشر الكتابة
-           بعد فتح المحادثة.
+           تحديث مكان جاري الكتابة.
         */
         requestAnimationFrame(
             updateTypingIndicatorPosition
         );
+
+
+        setTimeout(
+            updateTypingIndicatorPosition,
+            100
+        );
+
+
+        openingConversation =
+            false;
     }
 
 
     /* =========================================================
-       LOAD MESSAGES
+       LOAD CONVERSATION MESSAGES
     ========================================================= */
 
     async function loadConversationMessages(
@@ -2898,33 +3119,19 @@
             currentConversationId;
 
 
+        /*
+           نخفي الرسائل أثناء التحميل.
+           لكن chatView أصلاً مغلق، لذلك المستخدم
+           لن يشاهد عملية البناء.
+        */
         if (chatMessages) {
 
             chatMessages.style.visibility =
                 "hidden";
 
 
-            chatMessages.innerHTML = `
-                <div
-                    class="empty-state"
-                    style="
-                        min-height:120px;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                    "
-                >
-
-                    <div class="empty-icon">
-                        ⏳
-                    </div>
-
-                    <strong>
-                        جاري تحميل الرسائل
-                    </strong>
-
-                </div>
-            `;
+            chatMessages.innerHTML =
+                "";
         }
 
 
@@ -2964,10 +3171,6 @@
 
             if (chatMessages) {
 
-                chatMessages.style.visibility =
-                    "visible";
-
-
                 chatMessages.innerHTML = `
                     <div class="empty-state">
 
@@ -2985,7 +3188,12 @@
 
                     </div>
                 `;
+
+
+                chatMessages.style.visibility =
+                    "visible";
             }
+
 
             return;
         }
@@ -3017,6 +3225,13 @@
             initialLoad:
                 true
         });
+
+
+        /*
+           هنا نضمن أن آخر رسالة جاهزة
+           قبل فتح chatView.
+        */
+        prepareChatAtBottom();
     }
 
 
@@ -3106,6 +3321,7 @@
                         message
                     );
 
+
                 fragment.appendChild(
                     element
                 );
@@ -3123,6 +3339,15 @@
 
         if (initialLoad) {
 
+            /*
+               أهم نقطة:
+               الرسائل ترسم وهي مخفية،
+               وبعدها نضع scrollTop على النهاية.
+            */
+            chatMessages.style.scrollBehavior =
+                "auto";
+
+
             forceScrollToBottom();
 
 
@@ -3130,39 +3355,34 @@
 
                 forceScrollToBottom();
 
-                chatMessages.style.visibility =
-                    "visible";
 
-
-                setTimeout(() => {
+                requestAnimationFrame(() => {
 
                     forceScrollToBottom();
 
-                }, 40);
-
-
-                setTimeout(() => {
-
-                    forceScrollToBottom();
-
-                }, 160);
-
+                });
             });
 
 
+            /*
+               لا نكشفها هنا بشكل مستقل.
+               openConversation هو الذي يفتح chatView.
+            */
             return;
         }
 
 
         if (wasNear) {
 
-            requestAnimationFrame(() => {
+            requestAnimationFrame(
+                () => {
 
-                scrollChatToBottom(
-                    "smooth"
-                );
+                    scrollChatToBottom(
+                        "smooth"
+                    );
 
-            });
+                }
+            );
 
         } else {
 
@@ -3210,6 +3430,16 @@
             );
 
 
+        if (
+            message?.optimistic
+        ) {
+
+            row.classList.add(
+                "optimistic"
+            );
+        }
+
+
         const messageId =
             getMessageId(
                 message
@@ -3230,6 +3460,12 @@
                 getMessageSenderId(
                     message
                 ) || ""
+            );
+
+
+        row.dataset.content =
+            getMessageContent(
+                message
             );
 
 
@@ -3488,6 +3724,10 @@
         conversationLoadToken++;
 
 
+        openingConversation =
+            false;
+
+
         await removeTypingChannel();
 
 
@@ -3506,14 +3746,25 @@
         typingUsers.clear();
 
 
-        chatView?.classList.remove(
-            "open"
-        );
+        if (chatView) {
+
+            chatView.classList.remove(
+                "wfesc-chat-opening"
+            );
 
 
-        page?.classList.remove(
-            "chat-active"
-        );
+            chatView.classList.remove(
+                "open"
+            );
+        }
+
+
+        if (page) {
+
+            page.classList.remove(
+                "chat-active"
+            );
+        }
 
 
         if (searchSection) {
@@ -3528,6 +3779,7 @@
 
             chatMessages.innerHTML =
                 "";
+
 
             chatMessages.style.visibility =
                 "visible";
@@ -3549,7 +3801,7 @@
 
 
     /* =========================================================
-       WINDOW RESIZE
+       RESIZE
     ========================================================= */
 
     window.addEventListener(
@@ -3562,14 +3814,19 @@
     );
 
 
-    window.visualViewport?.addEventListener(
-        "resize",
-        () => {
+    if (
+        window.visualViewport
+    ) {
 
-            updateTypingIndicatorPosition();
+        window.visualViewport.addEventListener(
+            "resize",
+            () => {
 
-        }
-    );
+                updateTypingIndicatorPosition();
+
+            }
+        );
+    }
 
 
     /* =========================================================
@@ -3707,77 +3964,6 @@
 
 
     /* =========================================================
-       INITIAL INPUT EVENTS
-    ========================================================= */
-
-    function setupInputEvents() {
-
-        const input =
-            document.getElementById(
-                "messageInput"
-            );
-
-
-        if (!input) {
-            return;
-        }
-
-
-        /*
-           input الأساسي للكتابة.
-        */
-        input.addEventListener(
-            "input",
-            () => {
-
-                if (
-                    input.value.trim()
-                ) {
-
-                    sendTypingState();
-
-                } else {
-
-                    stopTyping();
-                }
-            }
-        );
-
-
-        /*
-           إذا خرج المستخدم من الحقل:
-           يختفي جاري الكتابة.
-        */
-        input.addEventListener(
-            "blur",
-            () => {
-
-                stopTyping();
-
-            }
-        );
-
-
-        /*
-           إذا رجع للحقل وكانت هناك رسالة
-           غير مرسلة، يرجع جاري الكتابة.
-        */
-        input.addEventListener(
-            "focus",
-            () => {
-
-                if (
-                    input.value.trim()
-                ) {
-
-                    sendTypingState();
-                }
-            }
-        );
-    }
-
-
-    /* =========================================================
        PUBLIC API
     ========================================================= */
 
@@ -3840,6 +4026,8 @@
         scrollChatToBottom,
 
         forceScrollToBottom,
+
+        prepareChatAtBottom,
 
         setupMessageRealtime,
 
