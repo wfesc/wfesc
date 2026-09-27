@@ -14,10 +14,20 @@
 
 
     <!-- =================================================
-         APPLY WFESC SETTINGS BEFORE PAGE LOAD
+         HIDE PAGE UNTIL PROFILE IS READY
     ================================================== -->
 
+    <style>
+        html.wfesc-profile-loading body {
+            visibility: hidden;
+        }
+    </style>
+
     <script>
+
+        document.documentElement.classList.add(
+            "wfesc-profile-loading"
+        );
 
         (function () {
 
@@ -232,14 +242,27 @@
 
         .profile-cover-image {
 
+            position: absolute;
+
+            inset: 0;
+
             width: 100%;
             height: 100%;
 
             object-fit: cover;
 
             display: none;
+
+            user-select: none;
+
+            pointer-events: none;
         }
 
+
+        /*
+         * هذا هو المستطيل الأصلي الخافت.
+         * لم يتم تغيير شكله أو لونه.
+         */
 
         .profile-cover-default {
 
@@ -295,6 +318,8 @@
             font-size: 18px;
 
             transition: .25s ease;
+
+            z-index: 5;
         }
 
 
@@ -364,6 +389,10 @@
             object-fit: cover;
 
             display: none;
+
+            user-select: none;
+
+            pointer-events: none;
         }
 
 
@@ -455,8 +484,6 @@
         }
 
 
-        /* VERIFIED IS HIDDEN UNTIL ACCOUNT IS VERIFIED */
-
         .profile-verified {
 
             width: 20px;
@@ -505,6 +532,20 @@
            BIO
         ================================================= */
 
+        .bio-row {
+
+            display: flex;
+
+            align-items: flex-start;
+
+            gap: 8px;
+
+            max-width: 650px;
+
+            margin-bottom: 18px;
+        }
+
+
         .profile-bio {
 
             color: #ccc;
@@ -513,13 +554,13 @@
 
             line-height: 1.7;
 
-            max-width: 620px;
-
             white-space: pre-wrap;
 
             word-break: break-word;
 
-            margin-bottom: 18px;
+            flex: 1;
+
+            min-width: 0;
         }
 
 
@@ -528,6 +569,118 @@
             color: #777;
 
             font-style: italic;
+        }
+
+
+        .bio-edit-button {
+
+            flex: 0 0 auto;
+
+            width: 30px;
+            height: 30px;
+
+            border:
+                1px solid
+                #292929;
+
+            border-radius: 9px;
+
+            background:
+                #171717;
+
+            color: #aaa;
+
+            cursor: pointer;
+
+            font-size: 13px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            transition: .2s ease;
+        }
+
+
+        .bio-edit-button:hover {
+
+            color: #fff;
+
+            background: #222;
+
+            border-color: #444;
+        }
+
+
+        /* =================================================
+           BIO INLINE EDITOR
+        ================================================= */
+
+        .bio-editor {
+
+            display: none;
+
+            margin-bottom: 18px;
+
+            padding: 12px;
+
+            border:
+                1px solid
+                #292929;
+
+            border-radius: 15px;
+
+            background:
+                rgba(255,255,255,.025);
+        }
+
+
+        .bio-editor.show {
+
+            display: block;
+        }
+
+
+        .bio-editor-actions {
+
+            display: flex;
+
+            gap: 8px;
+
+            margin-top: 8px;
+        }
+
+
+        .bio-editor-actions button {
+
+            flex: 1;
+
+            min-height: 42px;
+
+            border-radius: 11px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+            border:
+                1px solid
+                #292929;
+
+            background: #171717;
+
+            color: #eee;
+        }
+
+
+        .bio-editor-actions .bio-save {
+
+            background: #eee;
+
+            color: #050505;
+
+            border-color: #eee;
         }
 
 
@@ -724,7 +877,7 @@
 
 
         /* =================================================
-           EDIT MODAL
+           MODAL
         ================================================= */
 
         .modal {
@@ -1059,96 +1212,205 @@
 
 
         /* =================================================
-           SHAKE
+           IMAGE STUDIO
         ================================================= */
 
-        @keyframes wfescShake {
+        .image-studio {
 
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            20% {
-                transform: translateX(7px);
-            }
-
-            40% {
-                transform: translateX(-7px);
-            }
-
-            60% {
-                transform: translateX(5px);
-            }
-
-            80% {
-                transform: translateX(-5px);
-            }
-        }
-
-
-        .shake {
-
-            animation:
-                wfescShake
-                .38s
-                ease;
-        }
-
-
-        /* =================================================
-           IMAGE MODAL
-        ================================================= */
-
-        .image-editor {
+            width: 100%;
 
             text-align: center;
         }
 
 
-        .image-preview {
+        .studio-title {
 
-            width: 180px;
-            height: 180px;
+            color: #aaa;
 
-            margin:
-                0
-                auto
-                15px;
+            font-size: 12px;
 
-            border-radius: 50%;
-
-            object-fit: cover;
-
-            display: none;
-
-            border:
-                2px solid
-                #333;
+            margin-bottom: 10px;
         }
 
 
-        .image-preview.cover-preview {
+        .studio-stage {
+
+            position: relative;
 
             width: 100%;
 
-            height: 170px;
+            height: 270px;
 
-            border-radius: 15px;
+            margin-bottom: 15px;
 
-            object-fit: cover;
+            overflow: hidden;
+
+            border:
+                1px solid
+                #292929;
+
+            border-radius: 17px;
+
+            background:
+                repeating-conic-gradient(
+                    #111 0% 25%,
+                    #151515 0% 50%
+                )
+                0 0 /
+                22px 22px;
+
+            touch-action: none;
         }
 
 
-        .image-file {
+        .studio-stage.avatar-stage {
+
+            width: 230px;
+
+            height: 230px;
+
+            margin-left: auto;
+            margin-right: auto;
+
+            border-radius: 50%;
+        }
+
+
+        .studio-image {
+
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            max-width: none;
+
+            display: none;
+
+            user-select: none;
+
+            -webkit-user-drag: none;
+
+            transform-origin:
+                center center;
+
+            touch-action: none;
+        }
+
+
+        .studio-empty {
+
+            position: absolute;
+
+            inset: 0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #555;
+
+            font-size: 13px;
+
+            pointer-events: none;
+        }
+
+
+        .studio-controls {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    1fr
+                );
+
+            gap: 7px;
+
+            margin-bottom: 12px;
+        }
+
+
+        .studio-control {
+
+            min-height: 43px;
+
+            border:
+                1px solid
+                #292929;
+
+            border-radius: 11px;
+
+            background: #171717;
+
+            color: #eee;
+
+            cursor: pointer;
+
+            font-size: 17px;
+        }
+
+
+        .studio-control:hover {
+
+            background: #222;
+        }
+
+
+        .zoom-row {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            margin-bottom: 12px;
+        }
+
+
+        .zoom-row span {
+
+            color: #888;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+        }
+
+
+        .zoom-range {
+
+            width: 100%;
+
+            accent-color: #eee;
+        }
+
+
+        .studio-file {
 
             width: 100%;
 
             color: #aaa;
 
-            font-size: 13px;
+            font-size: 12px;
 
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+        }
+
+
+        .studio-hint {
+
+            color: #666;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+
+            margin-bottom: 8px;
         }
 
 
@@ -1279,12 +1541,12 @@
                 rgba(255,255,255,.08);
 
             backdrop-filter:
-                blur(24px)
-                saturate(150%);
+                blur(28px)
+                saturate(170%);
 
             -webkit-backdrop-filter:
-                blur(24px)
-                saturate(150%);
+                blur(28px)
+                saturate(170%);
         }
 
 
@@ -1332,12 +1594,12 @@
                 rgba(255,255,255,.12);
 
             backdrop-filter:
-                blur(18px)
-                saturate(145%);
+                blur(20px)
+                saturate(160%);
 
             -webkit-backdrop-filter:
-                blur(18px)
-                saturate(145%);
+                blur(20px)
+                saturate(160%);
 
             box-shadow:
                 inset
@@ -1380,6 +1642,12 @@
 
             background:
                 rgba(255,255,255,.025);
+
+            backdrop-filter:
+                blur(20px);
+
+            -webkit-backdrop-filter:
+                blur(20px);
         }
 
 
@@ -1388,6 +1656,40 @@
 
             border-color:
                 rgba(255,255,255,.09);
+        }
+
+
+        html.wfesc-liquid-glass
+        .bio-editor {
+
+            background:
+                rgba(255,255,255,.035);
+
+            border-color:
+                rgba(255,255,255,.11);
+
+            backdrop-filter:
+                blur(18px);
+
+            -webkit-backdrop-filter:
+                blur(18px);
+        }
+
+
+        html.wfesc-liquid-glass
+        .bio-edit-button {
+
+            background:
+                rgba(255,255,255,.045);
+
+            border-color:
+                rgba(255,255,255,.12);
+
+            backdrop-filter:
+                blur(15px);
+
+            -webkit-backdrop-filter:
+                blur(15px);
         }
 
 
@@ -1402,11 +1704,11 @@
 
             backdrop-filter:
                 blur(18px)
-                saturate(145%);
+                saturate(150%);
 
             -webkit-backdrop-filter:
                 blur(18px)
-                saturate(145%);
+                saturate(150%);
         }
 
 
@@ -1416,8 +1718,8 @@
             background:
                 linear-gradient(
                     135deg,
-                    rgba(25,25,25,.88),
-                    rgba(10,10,10,.82)
+                    rgba(25,25,25,.82),
+                    rgba(10,10,10,.74)
                 );
 
             border-color:
@@ -1435,12 +1737,12 @@
                 rgba(255,255,255,.08);
 
             backdrop-filter:
-                blur(30px)
-                saturate(155%);
+                blur(32px)
+                saturate(165%);
 
             -webkit-backdrop-filter:
-                blur(30px)
-                saturate(155%);
+                blur(32px)
+                saturate(165%);
         }
 
 
@@ -1456,10 +1758,10 @@
                 rgba(255,255,255,.13);
 
             backdrop-filter:
-                blur(16px);
+                blur(17px);
 
             -webkit-backdrop-filter:
-                blur(16px);
+                blur(17px);
 
             box-shadow:
                 inset
@@ -1478,6 +1780,27 @@
 
             border-color:
                 rgba(255,255,255,.15);
+        }
+
+
+        html.wfesc-liquid-glass
+        .studio-stage {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,255,255,.055),
+                    rgba(255,255,255,.018)
+                );
+
+            border-color:
+                rgba(255,255,255,.12);
+
+            backdrop-filter:
+                blur(20px);
+
+            -webkit-backdrop-filter:
+                blur(20px);
         }
 
 
@@ -1638,6 +1961,26 @@
 
 
         html.wfesc-light-mode
+        .bio-editor {
+
+            background: #fafafa;
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
+        .bio-edit-button {
+
+            background: #f4f4f4;
+
+            color: #222;
+
+            border-color: #ddd;
+        }
+
+
+        html.wfesc-light-mode
         .modal-box {
 
             background: #fff;
@@ -1713,7 +2056,9 @@
 
 
         html.wfesc-light-mode.wfesc-liquid-glass
-        .edit-section {
+        .edit-section,
+        html.wfesc-light-mode.wfesc-liquid-glass
+        .bio-editor {
 
             background:
                 rgba(255,255,255,.42);
@@ -1783,6 +2128,44 @@
 
             scroll-behavior:
                 auto !important;
+        }
+
+
+        /* =================================================
+           SHAKE
+        ================================================= */
+
+        @keyframes wfescShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(7px);
+            }
+
+            40% {
+                transform: translateX(-7px);
+            }
+
+            60% {
+                transform: translateX(5px);
+            }
+
+            80% {
+                transform: translateX(-5px);
+            }
+        }
+
+
+        .shake {
+
+            animation:
+                wfescShake
+                .38s
+                ease;
         }
 
 
@@ -1880,6 +2263,19 @@
                 padding: 15px;
             }
 
+
+            .studio-stage {
+
+                height: 220px;
+            }
+
+
+            .studio-stage.avatar-stage {
+
+                width: 200px;
+                height: 200px;
+            }
+
         }
 
     </style>
@@ -1924,7 +2320,7 @@
                 type="button"
                 class="cover-edit"
                 id="editCoverButton"
-                title="تغيير الغلاف"
+                title="تعديل الغلاف"
             >
                 ✎
             </button>
@@ -1961,7 +2357,7 @@
                     type="button"
                     class="avatar-edit"
                     id="editAvatarButton"
-                    title="تغيير الصورة"
+                    title="تعديل الصورة"
                 >
                     ✎
                 </button>
@@ -1980,8 +2376,6 @@
                     WFESC
                 </h1>
 
-
-                <!-- يظهر فقط للحساب الموثق -->
 
                 <span
                     id="profileVerified"
@@ -2006,10 +2400,71 @@
             <!-- BIO -->
 
             <div
-                class="profile-bio empty"
-                id="profileBio"
+                class="bio-row"
+                id="bioDisplayRow"
             >
-                كيف حالك اليوم؟
+
+                <div
+                    class="profile-bio empty"
+                    id="profileBio"
+                >
+                    كيف حالك اليوم؟
+                </div>
+
+
+                <button
+                    type="button"
+                    class="bio-edit-button"
+                    id="editBioButton"
+                    title="تعديل البايو"
+                >
+                    ✎
+                </button>
+
+            </div>
+
+
+            <!-- BIO INLINE EDITOR -->
+
+            <div
+                class="bio-editor"
+                id="bioEditor"
+            >
+
+                <textarea
+                    class="form-textarea"
+                    id="bioInput"
+                    maxlength="500"
+                    placeholder="كيف حالك اليوم؟"
+                ></textarea>
+
+
+                <div
+                    class="field-message"
+                    id="bioMessage"
+                ></div>
+
+
+                <div class="bio-editor-actions">
+
+                    <button
+                        type="button"
+                        id="cancelBioButton"
+                    >
+                        إلغاء
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="bio-save"
+                        id="saveBioButton"
+                    >
+                        حفظ البايو
+                    </button>
+
+                </div>
+
             </div>
 
 
@@ -2097,7 +2552,6 @@
 
             <div class="account-info">
 
-
                 <div class="account-info-title">
                     معلومات الحساب
                 </div>
@@ -2173,9 +2627,7 @@
         </div>
 
 
-        <!-- =================================================
-             NAME
-        ================================================== -->
+        <!-- NAME -->
 
         <section
             class="edit-section"
@@ -2188,7 +2640,7 @@
 
 
             <div class="edit-section-description">
-                يمكنك تغيير اسم العرض كل ساعة.
+                يمكنك تغيير اسم العرض كل 4 دقائق.
             </div>
 
 
@@ -2225,9 +2677,7 @@
         </section>
 
 
-        <!-- =================================================
-             USERNAME
-        ================================================== -->
+        <!-- USERNAME -->
 
         <section
             class="edit-section"
@@ -2240,7 +2690,7 @@
 
 
             <div class="edit-section-description">
-                3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل ساعة.
+                3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل 4 دقائق.
             </div>
 
 
@@ -2278,57 +2728,13 @@
         </section>
 
 
-        <!-- =================================================
-             BIO
-        ================================================== -->
-
-        <section
-            class="edit-section"
-            id="bioEditSection"
-        >
-
-            <div class="edit-section-title">
-                تغيير البايو
-            </div>
-
-
-            <div class="edit-section-description">
-                يمكنك كتابة نبذة عن نفسك، أو تركها فارغة.
-            </div>
-
-
-            <textarea
-                class="form-textarea"
-                id="bioInput"
-                maxlength="500"
-                placeholder="كيف حالك اليوم؟"
-            ></textarea>
-
-
-            <div
-                class="field-message"
-                id="bioMessage"
-            ></div>
-
-
-            <button
-                type="button"
-                class="save-button"
-                id="saveBioButton"
-            >
-                حفظ البايو
-            </button>
-
-        </section>
-
-
     </div>
 
 </div>
 
 
 <!-- =================================================
-     IMAGE MODAL
+     IMAGE STUDIO MODAL
 ================================================== -->
 
 <div
@@ -2342,7 +2748,7 @@
         <div class="modal-header">
 
             <h2 id="imageModalTitle">
-                تغيير الصورة
+                استوديو الصور
             </h2>
 
 
@@ -2357,22 +2763,114 @@
         </div>
 
 
-        <div class="image-editor">
+        <div class="image-studio">
 
 
-            <img
-                id="imagePreview"
-                class="image-preview"
-                alt="معاينة الصورة"
+            <div
+                class="studio-title"
+                id="studioTitle"
             >
+                اضبط الصورة بالشكل المناسب
+            </div>
+
+
+            <div
+                class="studio-stage"
+                id="studioStage"
+            >
+
+                <div
+                    class="studio-empty"
+                    id="studioEmpty"
+                >
+                    اختر صورة لبدء التعديل
+                </div>
+
+
+                <img
+                    id="studioImage"
+                    class="studio-image"
+                    alt="استوديو الصورة"
+                    draggable="false"
+                >
+
+            </div>
+
+
+            <div class="studio-controls">
+
+                <button
+                    type="button"
+                    class="studio-control"
+                    id="moveLeft"
+                    title="يسار"
+                >
+                    ←
+                </button>
+
+
+                <button
+                    type="button"
+                    class="studio-control"
+                    id="moveUp"
+                    title="أعلى"
+                >
+                    ↑
+                </button>
+
+
+                <button
+                    type="button"
+                    class="studio-control"
+                    id="moveDown"
+                    title="أسفل"
+                >
+                    ↓
+                </button>
+
+
+                <button
+                    type="button"
+                    class="studio-control"
+                    id="moveRight"
+                    title="يمين"
+                >
+                    →
+                </button>
+
+            </div>
+
+
+            <div class="zoom-row">
+
+                <span>
+                    الزوم
+                </span>
+
+                <input
+                    type="range"
+                    id="zoomRange"
+                    class="zoom-range"
+                    min="0.5"
+                    max="3"
+                    step="0.01"
+                    value="1"
+                >
+
+            </div>
 
 
             <input
                 type="file"
                 id="imageFile"
-                class="image-file"
+                class="studio-file"
                 accept="image/*"
             >
+
+
+            <div class="studio-hint">
+                بعد اختيار الصورة اسحبها داخل الإطار، أو استخدم أزرار الاتجاهات والزوم.
+            </div>
 
 
             <button
@@ -2399,9 +2897,7 @@
 </div>
 
 
-<!-- =================================================
-     STATUS
-================================================== -->
+<!-- STATUS -->
 
 <div
     class="profile-status"
@@ -2410,18 +2906,14 @@
 ></div>
 
 
-<!-- =================================================
-     SUPABASE
-================================================== -->
+<!-- SUPABASE -->
 
 <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ></script>
 
 
-<!-- =================================================
-     WFESC AUTH
-================================================== -->
+<!-- WFESC AUTH -->
 
 <script
     src="./settings-features/settings-auth-config.js"
@@ -2450,10 +2942,6 @@
     window.WFESCProfileStarted = true;
 
 
-    /* =================================================
-       CONFIG
-    ================================================= */
-
     const CONFIG =
         window.WFESCSettingsAuthConfig || {};
 
@@ -2462,8 +2950,12 @@
         window.WFESCSettingsAuth;
 
 
-    const HOUR =
-        60 * 60 * 1000;
+    /*
+     * 4 دقائق
+     */
+
+    const LOCK_TIME =
+        4 * 60 * 1000;
 
 
     const DEFAULT_NAME =
@@ -2475,7 +2967,7 @@
 
 
     const DEFAULT_BIO =
-        "كيف حالك اليوم?";
+        "كيف حالك اليوم؟";
 
 
     let currentUser = null;
@@ -2488,209 +2980,164 @@
 
     let timerInterval = null;
 
+    let statusTimer = null;
+
 
     /* =================================================
        ELEMENTS
-    ================================================= */
+    ================================================== */
 
     const profileName =
-        document.getElementById(
-            "profileName"
-        );
+        document.getElementById("profileName");
 
 
     const profileUsername =
-        document.getElementById(
-            "profileUsername"
-        );
+        document.getElementById("profileUsername");
 
 
     const profileBio =
-        document.getElementById(
-            "profileBio"
-        );
+        document.getElementById("profileBio");
 
 
     const profileVerified =
-        document.getElementById(
-            "profileVerified"
-        );
+        document.getElementById("profileVerified");
 
 
     const profileAvatar =
-        document.getElementById(
-            "profileAvatar"
-        );
+        document.getElementById("profileAvatar");
 
 
     const avatarFallback =
-        document.getElementById(
-            "avatarFallback"
-        );
+        document.getElementById("avatarFallback");
 
 
     const profileCoverImage =
-        document.getElementById(
-            "profileCoverImage"
-        );
+        document.getElementById("profileCoverImage");
 
 
     const coverDefault =
-        document.getElementById(
-            "coverDefault"
-        );
+        document.getElementById("coverDefault");
 
 
     const accountEmail =
-        document.getElementById(
-            "accountEmail"
-        );
+        document.getElementById("accountEmail");
 
 
     const accountCreated =
-        document.getElementById(
-            "accountCreated"
-        );
+        document.getElementById("accountCreated");
 
 
     const followersCount =
-        document.getElementById(
-            "followersCount"
-        );
+        document.getElementById("followersCount");
 
 
     const followingCount =
-        document.getElementById(
-            "followingCount"
-        );
+        document.getElementById("followingCount");
 
 
     const postsCount =
-        document.getElementById(
-            "postsCount"
-        );
+        document.getElementById("postsCount");
 
 
     const editProfileModal =
-        document.getElementById(
-            "editProfileModal"
-        );
+        document.getElementById("editProfileModal");
 
 
     const imageModal =
-        document.getElementById(
-            "imageModal"
-        );
+        document.getElementById("imageModal");
 
 
     const nameInput =
-        document.getElementById(
-            "nameInput"
-        );
+        document.getElementById("nameInput");
 
 
     const usernameInput =
-        document.getElementById(
-            "usernameInput"
-        );
+        document.getElementById("usernameInput");
 
 
     const bioInput =
-        document.getElementById(
-            "bioInput"
-        );
+        document.getElementById("bioInput");
 
 
     const nameMessage =
-        document.getElementById(
-            "nameMessage"
-        );
+        document.getElementById("nameMessage");
 
 
     const usernameMessage =
-        document.getElementById(
-            "usernameMessage"
-        );
+        document.getElementById("usernameMessage");
 
 
     const bioMessage =
-        document.getElementById(
-            "bioMessage"
-        );
+        document.getElementById("bioMessage");
 
 
     const nameTimer =
-        document.getElementById(
-            "nameTimer"
-        );
+        document.getElementById("nameTimer");
 
 
     const usernameTimer =
-        document.getElementById(
-            "usernameTimer"
-        );
+        document.getElementById("usernameTimer");
 
 
     const saveNameButton =
-        document.getElementById(
-            "saveNameButton"
-        );
+        document.getElementById("saveNameButton");
 
 
     const saveUsernameButton =
-        document.getElementById(
-            "saveUsernameButton"
-        );
+        document.getElementById("saveUsernameButton");
 
 
     const saveBioButton =
-        document.getElementById(
-            "saveBioButton"
-        );
+        document.getElementById("saveBioButton");
+
+
+    const cancelBioButton =
+        document.getElementById("cancelBioButton");
+
+
+    const bioEditor =
+        document.getElementById("bioEditor");
 
 
     const profileStatus =
-        document.getElementById(
-            "profileStatus"
-        );
+        document.getElementById("profileStatus");
 
 
     const imagePreview =
-        document.getElementById(
-            "imagePreview"
-        );
+        document.getElementById("studioImage");
 
 
     const imageFile =
-        document.getElementById(
-            "imageFile"
-        );
+        document.getElementById("imageFile");
 
 
     const imageModalTitle =
-        document.getElementById(
-            "imageModalTitle"
-        );
+        document.getElementById("imageModalTitle");
+
+
+    const studioStage =
+        document.getElementById("studioStage");
+
+
+    const studioEmpty =
+        document.getElementById("studioEmpty");
+
+
+    const zoomRange =
+        document.getElementById("zoomRange");
 
 
     const saveImageButton =
-        document.getElementById(
-            "saveImageButton"
-        );
+        document.getElementById("saveImageButton");
 
 
     const deleteImageButton =
-        document.getElementById(
-            "deleteImageButton"
-        );
+        document.getElementById("deleteImageButton");
 
 
     /* =================================================
        STATUS
     ================================================== */
-
-    let statusTimer = null;
-
 
     function showStatus(
         message,
@@ -2719,9 +3166,7 @@
         }
 
 
-        clearTimeout(
-            statusTimer
-        );
+        clearTimeout(statusTimer);
 
 
         statusTimer =
@@ -2740,7 +3185,7 @@
 
 
     /* =================================================
-       AUTH USER
+       AUTH
     ================================================== */
 
     async function getCurrentUserSafe() {
@@ -2761,9 +3206,7 @@
                     result &&
                     result.user
                 ) {
-
                     return result.user;
-
                 }
 
 
@@ -2772,9 +3215,7 @@
                     result.data &&
                     result.data.user
                 ) {
-
                     return result.data.user;
-
                 }
 
 
@@ -2782,9 +3223,7 @@
                     result &&
                     result.id
                 ) {
-
                     return result;
-
                 }
 
             }
@@ -2816,9 +3255,7 @@
                     result.session &&
                     result.session.user
                 ) {
-
                     return result.session.user;
-
                 }
 
 
@@ -2828,9 +3265,7 @@
                     result.data.session &&
                     result.data.session.user
                 ) {
-
                     return result.data.session.user;
-
                 }
 
             }
@@ -2845,40 +3280,35 @@
         }
 
 
+        /*
+         * إذا كان auth.js يعرّض عميل Supabase
+         */
+
         try {
 
             if (
-                window.supabase &&
-                typeof window.supabase.auth !==
-                "undefined"
+                window.WFESCSupabase &&
+                window.WFESCSupabase.auth
             ) {
 
-                /*
-                 * لا نعتمد على هذا الفرع إلا
-                 * إذا كان عميل Supabase متاحًا.
-                 */
+                const result =
+                    await window
+                        .WFESCSupabase
+                        .auth
+                        .getSession();
+
 
                 if (
-                    window.WFESCSupabase &&
-                    window.WFESCSupabase.auth
+                    result &&
+                    result.data &&
+                    result.data.session &&
+                    result.data.session.user
                 ) {
 
-                    const result =
-                        await window
-                            .WFESCSupabase
-                            .auth
-                            .getUser();
-
-
-                    if (
-                        result &&
-                        result.data &&
-                        result.data.user
-                    ) {
-
-                        return result.data.user;
-
-                    }
+                    return result
+                        .data
+                        .session
+                        .user;
 
                 }
 
@@ -2890,10 +3320,6 @@
 
     }
 
-
-    /* =================================================
-       PROFILE
-    ================================================== */
 
     async function getProfile(user) {
 
@@ -2919,9 +3345,7 @@
                     result &&
                     result.data
                 ) {
-
                     return result.data;
-
                 }
 
 
@@ -2929,19 +3353,16 @@
                     result &&
                     result.profile
                 ) {
-
                     return result.profile;
-
                 }
 
 
                 if (
                     result &&
-                    typeof result === "object"
+                    typeof result ===
+                    "object"
                 ) {
-
                     return result;
-
                 }
 
             }
@@ -2962,25 +3383,15 @@
 
 
     /* =================================================
-       TEXT HELPERS
+       HELPERS
     ================================================== */
 
-    function sanitizeUsername(
-        value
-    ) {
+    function sanitizeUsername(value) {
 
-        return String(
-            value || ""
-        )
+        return String(value || "")
             .toLowerCase()
-            .replace(
-                /[^a-z0-9]/g,
-                ""
-            )
-            .slice(
-                0,
-                9
-            );
+            .replace(/[^a-z0-9]/g, "")
+            .slice(0, 9);
 
     }
 
@@ -3004,10 +3415,7 @@
             metadata.name ||
             DEFAULT_NAME
         )
-            .slice(
-                0,
-                15
-            );
+        .slice(0, 15);
 
     }
 
@@ -3038,9 +3446,10 @@
     ) {
 
         const verified =
-            Boolean(
-                profile.is_verified === true ||
-                profile.verified === true ||
+            profile.is_verified === true ||
+            profile.verified === true ||
+            profile.verification_status === "verified" ||
+            (
                 user &&
                 user.user_metadata &&
                 (
@@ -3050,18 +3459,14 @@
             );
 
 
-        if (profileVerified) {
-
-            profileVerified.hidden =
-                !verified;
-
-        }
+        profileVerified.hidden =
+            !Boolean(verified);
 
     }
 
 
     /* =================================================
-       RENDER PROFILE
+       RENDER
     ================================================== */
 
     function renderProfile() {
@@ -3115,7 +3520,7 @@
         } else {
 
             profileBio.textContent =
-                "كيف حالك اليوم؟";
+                DEFAULT_BIO;
 
             profileBio.classList
                 .add("empty");
@@ -3187,7 +3592,6 @@
 
 
         applyAvatar();
-
 
         applyCover();
 
@@ -3275,6 +3679,10 @@
             profileCoverImage.style.display =
                 "none";
 
+            /*
+             * يرجع للمستطيل الأصلي الخافت WFESC
+             */
+
             coverDefault.style.display =
                 "flex";
 
@@ -3284,7 +3692,7 @@
 
 
     /* =================================================
-       OPEN EDIT
+       PROFILE MODAL
     ================================================== */
 
     function openEditProfile() {
@@ -3300,13 +3708,6 @@
             getUsernameFromProfile(
                 currentProfile
             );
-
-
-        bioInput.value =
-            typeof currentProfile.bio ===
-            "string"
-                ? currentProfile.bio
-                : "";
 
 
         clearMessages();
@@ -3331,23 +3732,14 @@
     }
 
 
-    /* =================================================
-       MESSAGES
-    ================================================== */
-
     function clearMessages() {
 
         [
             nameMessage,
-            usernameMessage,
-            bioMessage
+            usernameMessage
         ]
         .forEach(
             function (element) {
-
-                if (!element) {
-                    return;
-                }
 
                 element.textContent = "";
 
@@ -3360,15 +3752,10 @@
 
         [
             nameInput,
-            usernameInput,
-            bioInput
+            usernameInput
         ]
         .forEach(
             function (element) {
-
-                if (!element) {
-                    return;
-                }
 
                 element.classList
                     .remove("error");
@@ -3385,14 +3772,8 @@
         success = false
     ) {
 
-        if (!element) {
-            return;
-        }
-
-
         element.textContent =
             message;
-
 
         element.classList.toggle(
             "success",
@@ -3402,9 +3783,7 @@
     }
 
 
-    function shake(
-        element
-    ) {
+    function shake(element) {
 
         if (!element) {
             return;
@@ -3436,12 +3815,10 @@
 
 
     /* =================================================
-       TIMER
+       4 MINUTE LOCK
     ================================================== */
 
-    function getLockRemaining(
-        timestamp
-    ) {
+    function getLockRemaining(timestamp) {
 
         if (!timestamp) {
             return 0;
@@ -3454,24 +3831,16 @@
             ).getTime();
 
 
-        if (
-            !Number.isFinite(time)
-        ) {
-
+        if (!Number.isFinite(time)) {
             return 0;
-
         }
-
-
-        const remaining =
-            time +
-            HOUR -
-            Date.now();
 
 
         return Math.max(
             0,
-            remaining
+            time +
+            LOCK_TIME -
+            Date.now()
         );
 
     }
@@ -3484,9 +3853,7 @@
         if (
             milliseconds <= 0
         ) {
-
             return "متاح الآن";
-
         }
 
 
@@ -3496,33 +3863,14 @@
             );
 
 
-        const hours =
-            Math.floor(
-                totalSeconds / 3600
-            );
-
-
         const minutes =
             Math.floor(
-                (totalSeconds % 3600) / 60
+                totalSeconds / 60
             );
 
 
         const seconds =
             totalSeconds % 60;
-
-
-        if (hours > 0) {
-
-            return (
-                "متبقي " +
-                hours +
-                " ساعة " +
-                minutes +
-                " دقيقة"
-            );
-
-        }
 
 
         return (
@@ -3548,11 +3896,6 @@
             );
 
 
-        if (!timer) {
-            return;
-        }
-
-
         if (remaining <= 0) {
 
             timer.textContent =
@@ -3562,12 +3905,8 @@
                 .add("ready");
 
 
-            if (button) {
-
-                button.disabled =
-                    false;
-
-            }
+            button.disabled =
+                false;
 
         } else {
 
@@ -3580,12 +3919,8 @@
                 .remove("ready");
 
 
-            if (button) {
-
-                button.disabled =
-                    true;
-
-            }
+            button.disabled =
+                true;
 
         }
 
@@ -3630,7 +3965,7 @@
 
 
     /* =================================================
-       NAME SAVE
+       SAVE NAME
     ================================================== */
 
     async function saveName() {
@@ -3643,11 +3978,9 @@
         const value =
             String(
                 nameInput.value || ""
-            ).trim()
-            .slice(
-                0,
-                15
-            );
+            )
+            .trim()
+            .slice(0, 15);
 
 
         nameInput.value =
@@ -3671,13 +4004,11 @@
         }
 
 
-        const remaining =
+        if (
             getLockRemaining(
                 currentProfile.last_display_name_change_at
-            );
-
-
-        if (remaining > 0) {
+            ) > 0
+        ) {
 
             setFieldMessage(
                 nameMessage,
@@ -3685,8 +4016,6 @@
             );
 
             shake(nameInput);
-
-            updateTimers();
 
             return;
 
@@ -3748,12 +4077,22 @@
 
                 await auth.updateProfile(
                     {
+                        name: value,
+                        display_name: value,
                         last_display_name_change_at:
                             now
                     }
                 );
 
             }
+
+
+            currentProfile.name =
+                value;
+
+
+            currentProfile.display_name =
+                value;
 
 
             currentProfile
@@ -3770,8 +4109,7 @@
                 value;
 
 
-            currentUser.user_metadata
-                .display_name =
+            currentUser.user_metadata.display_name =
                 value;
 
 
@@ -3780,23 +4118,15 @@
 
             setFieldMessage(
                 nameMessage,
-                "تم تغيير الاسم بنجاح.",
+                "تم تغيير الاسم بنجاح",
                 true
             );
 
 
             showStatus(
-                "تم تغيير الاسم بنجاح.",
+                "تم تغيير الاسم بنجاح",
                 "success"
             );
-
-
-            document
-                .getElementById(
-                    "nameEditSection"
-                )
-                .classList
-                .add("saved");
 
 
             updateTimers();
@@ -3816,6 +4146,9 @@
 
         } finally {
 
+            saveNameButton.disabled =
+                false;
+
             updateTimers();
 
         }
@@ -3824,7 +4157,7 @@
 
 
     /* =================================================
-       USERNAME SAVE
+       USERNAME
     ================================================== */
 
     async function saveUsername() {
@@ -3866,13 +4199,11 @@
         }
 
 
-        const remaining =
+        if (
             getLockRemaining(
                 currentProfile.last_username_change_at
-            );
-
-
-        if (remaining > 0) {
+            ) > 0
+        ) {
 
             setFieldMessage(
                 usernameMessage,
@@ -3881,8 +4212,6 @@
 
 
             shake(usernameInput);
-
-            updateTimers();
 
             return;
 
@@ -3896,8 +4225,7 @@
 
 
         if (
-            username ===
-            oldUsername
+            username === oldUsername
         ) {
 
             setFieldMessage(
@@ -3916,10 +4244,6 @@
 
 
         try {
-
-            /*
-             * فحص مباشر قبل الحفظ
-             */
 
             if (
                 auth &&
@@ -3976,52 +4300,44 @@
                     .toISOString();
 
 
-            if (
-                auth &&
-                typeof auth.updateProfile ===
-                "function"
-            ) {
+            try {
 
-                try {
+                await auth.updateProfile(
+                    {
+                        username:
+                            username,
 
-                    await auth.updateProfile(
-                        {
-                            username:
-                                username,
+                        last_username_change_at:
+                            now
+                    }
+                );
 
-                            last_username_change_at:
-                                now
-                        }
+            } catch (error) {
+
+                if (
+                    isUsernameTakenError(
+                        error
+                    )
+                ) {
+
+                    usernameInput.classList
+                        .add("error");
+
+
+                    setFieldMessage(
+                        usernameMessage,
+                        "اسم المستخدم مأخوذ مسبقًا"
                     );
 
-                } catch (error) {
 
-                    if (
-                        isUsernameTakenError(
-                            error
-                        )
-                    ) {
+                    shake(usernameInput);
 
-                        usernameInput.classList
-                            .add("error");
-
-
-                        setFieldMessage(
-                            usernameMessage,
-                            "اسم المستخدم مأخوذ مسبقًا"
-                        );
-
-
-                        shake(usernameInput);
-
-                        return;
-
-                    }
-
-
-                    throw error;
+                    return;
 
                 }
+
+
+                throw error;
 
             }
 
@@ -4040,23 +4356,15 @@
 
             setFieldMessage(
                 usernameMessage,
-                "تم تغيير اليوزر بنجاح.",
+                "تم تعيين اسم المستخدم بنجاح",
                 true
             );
 
 
             showStatus(
-                "تم تغيير اليوزر بنجاح.",
+                "تم تعيين اسم المستخدم بنجاح",
                 "success"
             );
-
-
-            document
-                .getElementById(
-                    "usernameEditSection"
-                )
-                .classList
-                .add("saved");
 
 
             updateTimers();
@@ -4098,6 +4406,9 @@
 
         } finally {
 
+            saveUsernameButton.disabled =
+                false;
+
             updateTimers();
 
         }
@@ -4125,35 +4436,53 @@
 
 
         return (
-            text.includes(
-                "username_already_exists"
-            ) ||
-            text.includes(
-                "username_exists"
-            ) ||
-            text.includes(
-                "username_taken"
-            ) ||
-            text.includes(
-                "duplicate_username"
-            ) ||
-            text.includes(
-                "23505"
-            ) ||
-            text.includes(
-                "اسم المستخدم مأخوذ"
-            ) ||
-            text.includes(
-                "اسم المستخدم مستخدم"
-            )
+            text.includes("username_already_exists") ||
+            text.includes("username_exists") ||
+            text.includes("username_taken") ||
+            text.includes("duplicate_username") ||
+            text.includes("23505") ||
+            text.includes("اسم المستخدم مأخوذ") ||
+            text.includes("اسم المستخدم مستخدم")
         );
 
     }
 
 
     /* =================================================
-       BIO SAVE
+       BIO
     ================================================== */
+
+    function openBioEditor() {
+
+        bioInput.value =
+            typeof currentProfile.bio ===
+            "string"
+                ? currentProfile.bio
+                : "";
+
+
+        bioMessage.textContent = "";
+
+        bioMessage.classList
+            .remove("success");
+
+
+        bioEditor.classList
+            .add("show");
+
+
+        bioInput.focus();
+
+    }
+
+
+    function closeBioEditor() {
+
+        bioEditor.classList
+            .remove("show");
+
+    }
+
 
     async function saveBio() {
 
@@ -4167,10 +4496,7 @@
                 bioInput.value || ""
             )
             .trim()
-            .slice(
-                0,
-                500
-            );
+            .slice(0, 500);
 
 
         saveBioButton.disabled =
@@ -4179,19 +4505,11 @@
 
         try {
 
-            if (
-                auth &&
-                typeof auth.updateProfile ===
-                "function"
-            ) {
-
-                await auth.updateProfile(
-                    {
-                        bio: bio
-                    }
-                );
-
-            }
+            await auth.updateProfile(
+                {
+                    bio: bio
+                }
+            );
 
 
             currentProfile.bio =
@@ -4201,25 +4519,13 @@
             renderProfile();
 
 
-            setFieldMessage(
-                bioMessage,
-                "تم حفظ البايو.",
-                true
-            );
+            closeBioEditor();
 
 
             showStatus(
                 "تم حفظ البايو بنجاح.",
                 "success"
             );
-
-
-            document
-                .getElementById(
-                    "bioEditSection"
-                )
-                .classList
-                .add("saved");
 
         } catch (error) {
 
@@ -4229,10 +4535,8 @@
             );
 
 
-            setFieldMessage(
-                bioMessage,
-                "تعذر حفظ البايو حاليًا."
-            );
+            bioMessage.textContent =
+                "تعذر حفظ البايو حاليًا.";
 
         } finally {
 
@@ -4245,37 +4549,25 @@
 
 
     /* =================================================
-       USERNAME INPUT
+       INPUTS
     ================================================== */
 
     usernameInput.addEventListener(
         "input",
         function () {
 
-            const value =
+            usernameInput.value =
                 sanitizeUsername(
                     usernameInput.value
                 );
-
-
-            usernameInput.value =
-                value;
 
 
             usernameInput.classList
                 .remove("error");
 
 
-            if (
-                value.length >= 3
-            ) {
-
-                setFieldMessage(
-                    usernameMessage,
-                    ""
-                );
-
-            }
+            usernameMessage.textContent =
+                "";
 
         }
     );
@@ -4289,10 +4581,7 @@
                 String(
                     nameInput.value || ""
                 )
-                .slice(
-                    0,
-                    15
-                );
+                .slice(0, 15);
 
 
             nameInput.classList
@@ -4302,20 +4591,272 @@
     );
 
 
-    bioInput.addEventListener(
-        "input",
-        function () {
-
-            bioInput.classList
-                .remove("error");
-
-        }
-    );
-
-
     /* =================================================
-       IMAGE
+       IMAGE STUDIO
     ================================================== */
+
+    const studioState = {
+
+        image: null,
+
+        naturalWidth: 0,
+
+        naturalHeight: 0,
+
+        scale: 1,
+
+        x: 0,
+
+        y: 0,
+
+        dragging: false,
+
+        startX: 0,
+
+        startY: 0,
+
+        startImageX: 0,
+
+        startImageY: 0
+
+    };
+
+
+    function resetStudioState() {
+
+        studioState.image = null;
+
+        studioState.naturalWidth = 0;
+
+        studioState.naturalHeight = 0;
+
+        studioState.scale = 1;
+
+        studioState.x = 0;
+
+        studioState.y = 0;
+
+        studioState.dragging = false;
+
+        imagePreview.style.display =
+            "none";
+
+        imagePreview.removeAttribute(
+            "src"
+        );
+
+        studioEmpty.style.display =
+            "flex";
+
+        zoomRange.value =
+            "1";
+
+    }
+
+
+    function setStudioImage(
+        data
+    ) {
+
+        const image =
+            new Image();
+
+
+        image.onload =
+            function () {
+
+                studioState.image =
+                    image;
+
+                studioState.naturalWidth =
+                    image.naturalWidth;
+
+                studioState.naturalHeight =
+                    image.naturalHeight;
+
+
+                studioState.scale =
+                    calculateInitialScale();
+
+
+                studioState.x = 0;
+
+                studioState.y = 0;
+
+
+                imagePreview.src =
+                    data;
+
+
+                imagePreview.style.display =
+                    "block";
+
+
+                studioEmpty.style.display =
+                    "none";
+
+
+                zoomRange.value =
+                    String(
+                        studioState.scale
+                    );
+
+
+                applyStudioTransform();
+
+            };
+
+
+        image.src =
+            data;
+
+    }
+
+
+    function calculateInitialScale() {
+
+        if (
+            !studioState.naturalWidth ||
+            !studioState.naturalHeight
+        ) {
+            return 1;
+        }
+
+
+        const stageWidth =
+            studioStage.clientWidth;
+
+
+        const stageHeight =
+            studioStage.clientHeight;
+
+
+        const ratio =
+            Math.max(
+                stageWidth /
+                    studioState.naturalWidth,
+
+                stageHeight /
+                    studioState.naturalHeight
+            );
+
+
+        return Math.max(
+            0.5,
+            Math.min(
+                3,
+                ratio
+            )
+        );
+
+    }
+
+
+    function applyStudioTransform() {
+
+        if (!studioState.image) {
+            return;
+        }
+
+
+        imagePreview.style.width =
+            studioState.naturalWidth *
+            studioState.scale +
+            "px";
+
+
+        imagePreview.style.height =
+            studioState.naturalHeight *
+            studioState.scale +
+            "px";
+
+
+        imagePreview.style.transform =
+            "translate(-50%, -50%) translate(" +
+            studioState.x +
+            "px, " +
+            studioState.y +
+            "px)";
+
+    }
+
+
+    function clampStudioPosition() {
+
+        if (!studioState.image) {
+            return;
+        }
+
+
+        const stageWidth =
+            studioStage.clientWidth;
+
+
+        const stageHeight =
+            studioStage.clientHeight;
+
+
+        const imageWidth =
+            studioState.naturalWidth *
+            studioState.scale;
+
+
+        const imageHeight =
+            studioState.naturalHeight *
+            studioState.scale;
+
+
+        const maxX =
+            Math.max(
+                0,
+                (imageWidth - stageWidth) / 2
+            );
+
+
+        const maxY =
+            Math.max(
+                0,
+                (imageHeight - stageHeight) / 2
+            );
+
+
+        studioState.x =
+            Math.max(
+                -maxX,
+                Math.min(
+                    maxX,
+                    studioState.x
+                )
+            );
+
+
+        studioState.y =
+            Math.max(
+                -maxY,
+                Math.min(
+                    maxY,
+                    studioState.y
+                )
+            );
+
+    }
+
+
+    function moveStudio(
+        x,
+        y
+    ) {
+
+        studioState.x += x;
+
+        studioState.y += y;
+
+        clampStudioPosition();
+
+        applyStudioTransform();
+
+    }
+
 
     function openImageModal(
         type
@@ -4329,28 +4870,43 @@
             null;
 
 
-        imagePreview.style.display =
-            "none";
-
-
-        imagePreview.removeAttribute(
-            "src"
-        );
-
-
-        imageFile.value =
-            "";
+        resetStudioState();
 
 
         if (type === "avatar") {
 
             imageModalTitle.textContent =
-                "تغيير الصورة الشخصية";
+                "استوديو الصورة الشخصية";
+
+            studioStage.classList
+                .add("avatar-stage");
 
         } else {
 
             imageModalTitle.textContent =
-                "تغيير الغلاف";
+                "استوديو غلاف WFESC";
+
+            studioStage.classList
+                .remove("avatar-stage");
+
+        }
+
+
+        /*
+         * إذا توجد صورة حالية، افتحها مباشرة داخل الاستوديو
+         */
+
+        const existing =
+            type === "avatar"
+                ? currentProfile.avatar_url
+                : currentProfile.cover_url;
+
+
+        if (existing) {
+
+            setStudioImage(
+                existing
+            );
 
         }
 
@@ -4365,6 +4921,11 @@
 
         imageModal.classList
             .remove("show");
+
+        selectedImageData =
+            null;
+
+        resetStudioState();
 
     }
 
@@ -4402,6 +4963,24 @@
             }
 
 
+            if (
+                file.size >
+                15 * 1024 * 1024
+            ) {
+
+                showStatus(
+                    "حجم الصورة كبير جدًا.",
+                    "error"
+                );
+
+                imageFile.value =
+                    "";
+
+                return;
+
+            }
+
+
             const reader =
                 new FileReader();
 
@@ -4413,28 +4992,9 @@
                         event.target.result;
 
 
-                    imagePreview.src =
-                        selectedImageData;
-
-
-                    imagePreview.style.display =
-                        "block";
-
-
-                    if (
-                        imageType ===
-                        "cover"
-                    ) {
-
-                        imagePreview.classList
-                            .add("cover-preview");
-
-                    } else {
-
-                        imagePreview.classList
-                            .remove("cover-preview");
-
-                    }
+                    setStudioImage(
+                        selectedImageData
+                    );
 
                 };
 
@@ -4447,9 +5007,409 @@
     );
 
 
+    /* =================================================
+       DRAG IMAGE
+    ================================================== */
+
+    studioStage.addEventListener(
+        "pointerdown",
+        function (event) {
+
+            if (!studioState.image) {
+                return;
+            }
+
+
+            studioState.dragging =
+                true;
+
+
+            studioState.startX =
+                event.clientX;
+
+
+            studioState.startY =
+                event.clientY;
+
+
+            studioState.startImageX =
+                studioState.x;
+
+
+            studioState.startImageY =
+                studioState.y;
+
+
+            try {
+
+                studioStage.setPointerCapture(
+                    event.pointerId
+                );
+
+            } catch (error) {}
+
+        }
+    );
+
+
+    studioStage.addEventListener(
+        "pointermove",
+        function (event) {
+
+            if (
+                !studioState.dragging
+            ) {
+                return;
+            }
+
+
+            studioState.x =
+                studioState.startImageX +
+                (
+                    event.clientX -
+                    studioState.startX
+                );
+
+
+            studioState.y =
+                studioState.startImageY +
+                (
+                    event.clientY -
+                    studioState.startY
+                );
+
+
+            clampStudioPosition();
+
+            applyStudioTransform();
+
+        }
+    );
+
+
+    function stopStudioDrag() {
+
+        studioState.dragging =
+            false;
+
+    }
+
+
+    studioStage.addEventListener(
+        "pointerup",
+        stopStudioDrag
+    );
+
+
+    studioStage.addEventListener(
+        "pointercancel",
+        stopStudioDrag
+    );
+
+
+    studioStage.addEventListener(
+        "pointerleave",
+        function () {
+
+            /*
+             * لا نوقف السحب بالقوة
+             * لأن الهاتف قد يستمر بالسحب.
+             */
+
+        }
+    );
+
+
+    /* =================================================
+       ZOOM
+    ================================================== */
+
+    zoomRange.addEventListener(
+        "input",
+        function () {
+
+            if (!studioState.image) {
+                return;
+            }
+
+
+            const oldScale =
+                studioState.scale;
+
+
+            studioState.scale =
+                Number(
+                    zoomRange.value
+                );
+
+
+            /*
+             * نحافظ تقريبًا على مركز الصورة
+             */
+
+            const ratio =
+                studioState.scale /
+                oldScale;
+
+
+            studioState.x *=
+                ratio;
+
+
+            studioState.y *=
+                ratio;
+
+
+            clampStudioPosition();
+
+            applyStudioTransform();
+
+        }
+    );
+
+
+    document
+        .getElementById("moveLeft")
+        .addEventListener(
+            "click",
+            function () {
+
+                moveStudio(
+                    -15,
+                    0
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById("moveRight")
+        .addEventListener(
+            "click",
+            function () {
+
+                moveStudio(
+                    15,
+                    0
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById("moveUp")
+        .addEventListener(
+            "click",
+            function () {
+
+                moveStudio(
+                    0,
+                    -15
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById("moveDown")
+        .addEventListener(
+            "click",
+            function () {
+
+                moveStudio(
+                    0,
+                    15
+                );
+
+            }
+        );
+
+
+    /* =================================================
+       EXPORT CROPPED IMAGE
+    ================================================== */
+
+    function createCroppedImage() {
+
+        if (!studioState.image) {
+            return null;
+        }
+
+
+        const canvas =
+            document.createElement(
+                "canvas"
+            );
+
+
+        let outputWidth;
+
+        let outputHeight;
+
+
+        if (
+            imageType ===
+            "avatar"
+        ) {
+
+            outputWidth = 600;
+            outputHeight = 600;
+
+        } else {
+
+            outputWidth = 1200;
+            outputHeight = 500;
+
+        }
+
+
+        canvas.width =
+            outputWidth;
+
+
+        canvas.height =
+            outputHeight;
+
+
+        const context =
+            canvas.getContext(
+                "2d"
+            );
+
+
+        if (!context) {
+            return null;
+        }
+
+
+        const stageWidth =
+            studioStage.clientWidth;
+
+
+        const stageHeight =
+            studioStage.clientHeight;
+
+
+        const imageWidth =
+            studioState.naturalWidth *
+            studioState.scale;
+
+
+        const imageHeight =
+            studioState.naturalHeight *
+            studioState.scale;
+
+
+        /*
+         * تحويل إحداثيات شاشة الاستوديو
+         * إلى إحداثيات الناتج النهائي.
+         */
+
+        const factorX =
+            outputWidth /
+            stageWidth;
+
+
+        const factorY =
+            outputHeight /
+            stageHeight;
+
+
+        const drawWidth =
+            imageWidth *
+            factorX;
+
+
+        const drawHeight =
+            imageHeight *
+            factorY;
+
+
+        const centerX =
+            outputWidth / 2 +
+            studioState.x *
+            factorX;
+
+
+        const centerY =
+            outputHeight / 2 +
+            studioState.y *
+            factorY;
+
+
+        const drawX =
+            centerX -
+            drawWidth / 2;
+
+
+        const drawY =
+            centerY -
+            drawHeight / 2;
+
+
+        context.clearRect(
+            0,
+            0,
+            outputWidth,
+            outputHeight
+        );
+
+
+        if (
+            imageType ===
+            "avatar"
+        ) {
+
+            context.save();
+
+            context.beginPath();
+
+            context.arc(
+                outputWidth / 2,
+                outputHeight / 2,
+                outputWidth / 2,
+                0,
+                Math.PI * 2
+            );
+
+            context.clip();
+
+        }
+
+
+        context.drawImage(
+            studioState.image,
+            drawX,
+            drawY,
+            drawWidth,
+            drawHeight
+        );
+
+
+        if (
+            imageType ===
+            "avatar"
+        ) {
+
+            context.restore();
+
+        }
+
+
+        return canvas.toDataURL(
+            "image/jpeg",
+            0.88
+        );
+
+    }
+
+
     async function saveImage() {
 
-        if (!selectedImageData) {
+        if (!studioState.image) {
 
             showStatus(
                 "اختر صورة أولًا.",
@@ -4467,6 +5427,19 @@
 
         try {
 
+            const cropped =
+                createCroppedImage();
+
+
+            if (!cropped) {
+
+                throw new Error(
+                    "IMAGE_EXPORT_FAILED"
+                );
+
+            }
+
+
             const data = {};
 
 
@@ -4476,27 +5449,19 @@
             ) {
 
                 data.avatar_url =
-                    selectedImageData;
+                    cropped;
 
             } else {
 
                 data.cover_url =
-                    selectedImageData;
+                    cropped;
 
             }
 
 
-            if (
-                auth &&
-                typeof auth.updateProfile ===
-                "function"
-            ) {
-
-                await auth.updateProfile(
-                    data
-                );
-
-            }
+            await auth.updateProfile(
+                data
+            );
 
 
             if (
@@ -4505,12 +5470,12 @@
             ) {
 
                 currentProfile.avatar_url =
-                    selectedImageData;
+                    cropped;
 
             } else {
 
                 currentProfile.cover_url =
-                    selectedImageData;
+                    cropped;
 
             }
 
@@ -4546,13 +5511,14 @@
             saveImageButton.disabled =
                 false;
 
-            selectedImageData =
-                null;
-
         }
 
     }
 
+
+    /* =================================================
+       DELETE IMAGE
+    ================================================== */
 
     async function deleteImage() {
 
@@ -4562,50 +5528,21 @@
 
         try {
 
-            if (
-                auth &&
-                typeof auth.updateProfile ===
-                "function"
-            ) {
+            const field =
+                imageType === "avatar"
+                    ? "avatar_url"
+                    : "cover_url";
 
-                if (
-                    imageType ===
-                    "avatar"
-                ) {
 
-                    await auth.updateProfile(
-                        {
-                            avatar_url: ""
-                        }
-                    );
-
-                } else {
-
-                    await auth.updateProfile(
-                        {
-                            cover_url: ""
-                        }
-                    );
-
+            await auth.updateProfile(
+                {
+                    [field]: ""
                 }
+            );
 
-            }
 
-
-            if (
-                imageType ===
-                "avatar"
-            ) {
-
-                currentProfile.avatar_url =
-                    "";
-
-            } else {
-
-                currentProfile.cover_url =
-                    "";
-
-            }
+            currentProfile[field] =
+                "";
 
 
             renderProfile();
@@ -4615,7 +5552,9 @@
 
 
             showStatus(
-                "تم حذف الصورة.",
+                imageType === "avatar"
+                    ? "تم حذف الصورة الشخصية."
+                    : "تم حذف الغلاف.",
                 "success"
             );
 
@@ -4685,40 +5624,30 @@
                     }
                 );
 
-            } else {
+            } else if (
+                navigator.clipboard
+            ) {
 
-                if (
-                    navigator.clipboard
-                ) {
-
-                    await navigator.clipboard
-                        .writeText(
-                            url
-                        );
-
-                    showStatus(
-                        "تم نسخ رابط الملف.",
-                        "success"
-                    );
-
-                } else {
-
-                    showStatus(
+                await navigator.clipboard
+                    .writeText(
                         url
                     );
 
-                }
+
+                showStatus(
+                    "تم نسخ رابط الملف.",
+                    "success"
+                );
+
+            } else {
+
+                showStatus(
+                    url
+                );
 
             }
 
-        } catch (error) {
-
-            /*
-             * إلغاء نافذة المشاركة
-             * لا يعتبر خطأ.
-             */
-
-        }
+        } catch (error) {}
 
     }
 
@@ -4729,8 +5658,7 @@
 
     function applyThemeFromSettings() {
 
-        let theme =
-            "dark";
+        let theme = "dark";
 
 
         try {
@@ -4764,8 +5692,7 @@
 
     function applyAnimationFromSettings() {
 
-        let state =
-            "on";
+        let state = "on";
 
 
         try {
@@ -4791,8 +5718,7 @@
 
     function applyGlassFromSettings() {
 
-        let state =
-            "on";
+        let state = "on";
 
 
         try {
@@ -4827,10 +5753,6 @@
     }
 
 
-    /*
-     * تشغيل مباشر عند تغيير Liquid Glass
-     */
-
     window.addEventListener(
         "WFESCLiquidGlassChanged",
         function (event) {
@@ -4852,24 +5774,37 @@
     );
 
 
-    /*
-     * إذا تم تغيير الإعدادات من صفحة أخرى
-     * ثم رجع المستخدم للبروفايل.
-     */
+    window.addEventListener(
+        "WFESCAnimationChanged",
+        function (event) {
+
+            const enabled =
+                !(
+                    event &&
+                    event.detail &&
+                    event.detail.enabled === false
+                );
+
+
+            document.documentElement
+                .classList
+                .toggle(
+                    "wfesc-animation-off",
+                    !enabled
+                );
+
+        }
+    );
+
 
     window.addEventListener(
         "storage",
         function (event) {
 
             if (
-                event.key ===
-                "wfesc-theme" ||
-
-                event.key ===
-                "wfesc-animation" ||
-
-                event.key ===
-                "wfesc-liquid-glass"
+                event.key === "wfesc-theme" ||
+                event.key === "wfesc-animation" ||
+                event.key === "wfesc-liquid-glass"
             ) {
 
                 applyAllSettings();
@@ -4879,10 +5814,6 @@
         }
     );
 
-
-    /*
-     * فحص الإعدادات عند رجوع الصفحة
-     */
 
     document.addEventListener(
         "visibilitychange",
@@ -4906,9 +5837,7 @@
     ================================================== */
 
     document
-        .getElementById(
-            "editProfileButton"
-        )
+        .getElementById("editProfileButton")
         .addEventListener(
             "click",
             openEditProfile
@@ -4916,9 +5845,7 @@
 
 
     document
-        .getElementById(
-            "closeEditProfile"
-        )
+        .getElementById("closeEditProfile")
         .addEventListener(
             "click",
             closeEditProfile
@@ -4942,40 +5869,40 @@
     );
 
 
+    saveNameButton.addEventListener(
+        "click",
+        saveName
+    );
+
+
+    saveUsernameButton.addEventListener(
+        "click",
+        saveUsername
+    );
+
+
     document
-        .getElementById(
-            "saveNameButton"
-        )
+        .getElementById("editBioButton")
         .addEventListener(
             "click",
-            saveName
+            openBioEditor
         );
 
 
-    document
-        .getElementById(
-            "saveUsernameButton"
-        )
-        .addEventListener(
-            "click",
-            saveUsername
-        );
+    cancelBioButton.addEventListener(
+        "click",
+        closeBioEditor
+    );
+
+
+    saveBioButton.addEventListener(
+        "click",
+        saveBio
+    );
 
 
     document
-        .getElementById(
-            "saveBioButton"
-        )
-        .addEventListener(
-            "click",
-            saveBio
-        );
-
-
-    document
-        .getElementById(
-            "shareProfileButton"
-        )
+        .getElementById("shareProfileButton")
         .addEventListener(
             "click",
             shareProfile
@@ -4983,9 +5910,7 @@
 
 
     document
-        .getElementById(
-            "editAvatarButton"
-        )
+        .getElementById("editAvatarButton")
         .addEventListener(
             "click",
             function () {
@@ -4999,9 +5924,7 @@
 
 
     document
-        .getElementById(
-            "editCoverButton"
-        )
+        .getElementById("editCoverButton")
         .addEventListener(
             "click",
             function () {
@@ -5015,9 +5938,7 @@
 
 
     document
-        .getElementById(
-            "closeImageModal"
-        )
+        .getElementById("closeImageModal")
         .addEventListener(
             "click",
             closeImageModal
@@ -5054,7 +5975,7 @@
 
 
     /* =================================================
-       LOAD
+       LOAD PROFILE
     ================================================== */
 
     async function loadProfile() {
@@ -5066,13 +5987,18 @@
 
 
         /*
-         * ننتظر قليلًا إذا كانت جلسة Supabase
-         * ما زالت قيد الاستعادة.
+         * لا نعرض البروفايل أثناء البحث
+         * عن الجلسة.
          */
+
+        document.documentElement
+            .classList
+            .add("wfesc-profile-loading");
+
 
         for (
             let attempt = 0;
-            attempt < 4;
+            attempt < 8;
             attempt++
         ) {
 
@@ -5090,7 +6016,7 @@
 
                     setTimeout(
                         resolve,
-                        350
+                        300
                     );
 
                 }
@@ -5101,8 +6027,14 @@
 
         if (!user) {
 
-            window.location.href =
-                "settings.html";
+            /*
+             * لا نعرض البروفايل الافتراضي.
+             * نذهب مباشرة إلى Settings.
+             */
+
+            window.location.replace(
+                "settings.html"
+            );
 
             return;
 
@@ -5113,27 +6045,39 @@
             user;
 
 
-        currentProfile =
+        const profile =
             await getProfile(
                 currentUser
             );
 
 
-        if (
-            !currentProfile ||
-            typeof currentProfile !==
-            "object"
-        ) {
+        currentProfile =
+            profile &&
+            typeof profile === "object"
+                ? profile
+                : {};
 
-            currentProfile = {};
 
-        }
-
+        /*
+         * أول رسم حقيقي بعد اكتمال الجلسة
+         * وبيانات الحساب.
+         */
 
         renderProfile();
 
 
         startTimers();
+
+
+        /*
+         * الآن فقط نظهر الصفحة.
+         */
+
+        document.documentElement
+            .classList
+            .remove(
+                "wfesc-profile-loading"
+            );
 
     }
 
@@ -5151,7 +6095,7 @@
         ) {
 
             auth.onAuthStateChange(
-                function (
+                async function (
                     event,
                     user
                 ) {
@@ -5161,8 +6105,9 @@
                         "SIGNED_OUT"
                     ) {
 
-                        window.location.href =
-                            "settings.html";
+                        window.location.replace(
+                            "settings.html"
+                        );
 
                         return;
 
@@ -5175,6 +6120,23 @@
 
                         currentUser =
                             user;
+
+
+                        /*
+                         * إذا تغيرت الجلسة،
+                         * نجلب البروفايل من جديد.
+                         */
+
+                        try {
+
+                            currentProfile =
+                                await getProfile(
+                                    user
+                                );
+
+                            renderProfile();
+
+                        } catch (error) {}
 
                     }
 
