@@ -4,23 +4,20 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       الإصدار المحسن
+       الإصدار النهائي
 
-       مسؤول عن:
        - Supabase
        - المستخدم الحالي
        - المحادثات
-       - فتح المحادثة
-       - فتح المحادثة مباشرة من آخر رسالة
-       - Slide Up animation عند فتح المحادثة
-       - تحميل الرسائل
+       - فتح المحادثة من آخر رسالة مباشرة
+       - بدون ظهور انتقال من أعلى إلى أسفل
+       - Slide Up عند فتح المحادثة
+       - لا تختفي الرسائل القديمة
        - Realtime
        - جاري الكتابة
-       - بيانات جهة الاتصال
-       - رسم الرسائل
        - منع تكرار الرسائل
        - دمج Optimistic + Realtime
-       - ربط إعدادات الفقاعات
+       - إعدادات الرسائل
     ============================================================
     */
 
@@ -202,7 +199,7 @@
 
 
     /* =========================================================
-       OPEN ANIMATION STYLE
+       OPEN ANIMATION
     ========================================================= */
 
     function ensureChatOpenAnimation() {
@@ -239,13 +236,9 @@
                     transform:
                         translate3d(
                             0,
-                            42px,
+                            34px,
                             0
                         );
-                }
-
-                55% {
-                    opacity: 1;
                 }
 
                 100% {
@@ -264,7 +257,7 @@
 
                 animation:
                     wfescChatSlideUp
-                    .34s
+                    .30s
                     cubic-bezier(
                         .22,
                         .75,
@@ -442,7 +435,7 @@
 
 
     /* =========================================================
-       SCROLL SYSTEM
+       SCROLL
     ========================================================= */
 
     function scrollChatToBottom(
@@ -488,7 +481,11 @@
 
 
         chatMessages.scrollTop =
-            chatMessages.scrollHeight;
+            Math.max(
+                0,
+                chatMessages.scrollHeight -
+                chatMessages.clientHeight
+            );
     }
 
 
@@ -509,10 +506,11 @@
 
     /*
     ============================================================
-       أهم دالة في الإصدار الجديد
+       تجهيز آخر رسالة قبل إظهار المحادثة
 
-       تضمن أن المحادثة تكون على آخر رسالة
-       قبل أن يشاهد المستخدم المحادثة.
+       مهم جداً:
+       هذه الدالة لا تستخدم smooth.
+       لذلك لا توجد حركة من أول رسالة إلى آخر رسالة.
     ============================================================
     */
 
@@ -523,10 +521,6 @@
         }
 
 
-        /*
-           إلغاء smooth أثناء الفتح.
-           حتى لا نرى حركة من الأعلى للأسفل.
-        */
         const oldBehavior =
             chatMessages.style.scrollBehavior;
 
@@ -535,15 +529,9 @@
             "auto";
 
 
-        /*
-           أول ضبط.
-        */
         forceScrollToBottom();
 
 
-        /*
-           ضبط ثاني بعد Layout.
-        */
         requestAnimationFrame(() => {
 
             forceScrollToBottom();
@@ -554,39 +542,38 @@
                 forceScrollToBottom();
 
             });
+
         });
 
 
-        /*
-           في حال الصور أو الخطوط غيرت ارتفاع الصفحة.
-        */
         setTimeout(() => {
 
             forceScrollToBottom();
 
-        }, 20);
-
-
-        setTimeout(() => {
-
-            forceScrollToBottom();
-
-        }, 80);
+        }, 30);
 
 
         setTimeout(() => {
 
             forceScrollToBottom();
+
+        }, 100);
+
+
+        setTimeout(() => {
+
+            forceScrollToBottom();
+
 
             chatMessages.style.scrollBehavior =
                 oldBehavior || "";
 
-        }, 180);
+        }, 220);
     }
 
 
     /* =========================================================
-       CHAT OPEN ANIMATION
+       OPEN ANIMATION
     ========================================================= */
 
     function playChatOpenAnimation() {
@@ -601,10 +588,6 @@
         );
 
 
-        /*
-           إجبار المتصفح على إعادة بناء الحالة
-           حتى يعمل الأنميشن عند كل فتح.
-        */
         void chatView.offsetWidth;
 
 
@@ -633,12 +616,9 @@
         );
 
 
-        /*
-           fallback إذا animationend لم يعمل.
-        */
         setTimeout(
             removeAnimation,
-            450
+            500
         );
     }
 
@@ -764,7 +744,7 @@
 
 
     /* =========================================================
-       GET CONTACT
+       CONTACT
     ========================================================= */
 
     async function getConversationContact(
@@ -953,7 +933,8 @@
         }
 
 
-        conversationList.innerHTML = "";
+        conversationList.innerHTML =
+            "";
 
 
         if (!conversations.length) {
@@ -998,7 +979,7 @@
 
 
     /* =========================================================
-       CREATE CONVERSATION CARD
+       CONVERSATION CARD
     ========================================================= */
 
     function createConversationCard(
@@ -1199,7 +1180,7 @@
 
 
     /* =========================================================
-       TYPING INDICATOR
+       TYPING ELEMENT
     ========================================================= */
 
     function ensureTypingElement() {
@@ -1315,7 +1296,6 @@
                         opacity:1;
                         transform:translateY(0);
                     }
-
                 }
 
 
@@ -1332,7 +1312,6 @@
                         transform:translateY(-4px);
                         opacity:1;
                     }
-
                 }
 
 
@@ -1344,15 +1323,11 @@
                 .wfesc-typing-bubble {
 
                     display:flex;
-
                     align-items:center;
-
                     justify-content:center;
-
                     gap:3px;
 
                     min-width:34px;
-
                     height:28px;
 
                     padding:0 8px;
@@ -1374,7 +1349,6 @@
                     );
 
                     backdrop-filter:blur(10px);
-
                     -webkit-backdrop-filter:blur(10px);
                 }
 
@@ -1382,7 +1356,6 @@
                 .wfesc-typing-bubble span {
 
                     width:5px;
-
                     height:5px;
 
                     border-radius:50%;
@@ -1454,28 +1427,39 @@
             );
 
 
-        if (composer) {
-
-            const composerHeight =
-                composer.getBoundingClientRect()
-                    .height;
-
-
-            const safeHeight =
-                Math.max(
-                    42,
-                    Math.ceil(
-                        composerHeight
-                    )
-                );
-
-
-            element.style.bottom =
-                `calc(
-                    var(--composer-bottom, 82px) +
-                    ${safeHeight + 4}px
-                )`;
+        if (!composer) {
+            return;
         }
+
+
+        const composerRect =
+            composer.getBoundingClientRect();
+
+
+        const chatRect =
+            chatView?.getBoundingClientRect();
+
+
+        if (!chatRect) {
+            return;
+        }
+
+
+        /*
+           وضع المؤشر مباشرة فوق الـcomposer.
+           لا يعتمد على ارتفاع ثابت.
+        */
+        const bottom =
+            Math.max(
+                0,
+                chatRect.bottom -
+                composerRect.top +
+                6
+            );
+
+
+        element.style.bottom =
+            `${bottom}px`;
     }
 
 
@@ -1550,7 +1534,7 @@
 
 
     /* =========================================================
-       UPDATE TYPING INDICATOR
+       UPDATE TYPING
     ========================================================= */
 
     function updateTypingIndicator() {
@@ -1569,12 +1553,17 @@
 
 
     /* =========================================================
-       CLEAR REMOTE TYPING
+       CLEAR TYPING USER
     ========================================================= */
 
     function clearTypingUser(
         userId
     ) {
+
+        if (userId == null) {
+            return;
+        }
+
 
         const key =
             String(
@@ -1610,12 +1599,17 @@
 
 
     /* =========================================================
-       REGISTER REMOTE TYPING
+       REGISTER TYPING USER
     ========================================================= */
 
     function registerTypingUser(
         userId
     ) {
+
+        if (userId == null) {
+            return;
+        }
+
 
         const key =
             String(
@@ -1724,7 +1718,7 @@
 
 
     /* =========================================================
-       SEND LOCAL TYPING STATE
+       SEND LOCAL TYPING
     ========================================================= */
 
     async function sendTypingState() {
@@ -1978,6 +1972,7 @@
                 clearTimeout(
                     timer
                 );
+
             }
         );
 
@@ -2206,7 +2201,7 @@
 
 
     /* =========================================================
-       FIND OPTIMISTIC MESSAGE
+       FIND OPTIMISTIC
     ========================================================= */
 
     function findOptimisticMessageElement(
@@ -2281,7 +2276,7 @@
 
 
     /* =========================================================
-       FIND EXISTING MESSAGE
+       EXISTING MESSAGE
     ========================================================= */
 
     function findExistingMessageElement(
@@ -2289,9 +2284,8 @@
     ) {
 
         /*
-           مهم:
-           فقط optimistic حتى ما نعتبر رسالتين
-           حقيقيتين متشابهتين رسالة واحدة.
+           لا نبحث بين الرسائل الحقيقية
+           لأن رسالتين قد تكونان متطابقتين.
         */
 
         return findOptimisticMessageElement(
@@ -2301,47 +2295,7 @@
 
 
     /* =========================================================
-       MESSAGE EXISTS
-    ========================================================= */
-
-    function messageAlreadyExists(
-        message
-    ) {
-
-        const messageId =
-            getMessageId(
-                message
-            );
-
-
-        if (
-            messageId != null &&
-            findMessageInStateById(
-                messageId
-            )
-        ) {
-
-            return true;
-        }
-
-
-        if (
-            messageId != null &&
-            findDomMessageById(
-                messageId
-            )
-        ) {
-
-            return true;
-        }
-
-
-        return false;
-    }
-
-
-    /* =========================================================
-       RECONCILE EXISTING MESSAGE
+       RECONCILE
     ========================================================= */
 
     function reconcileExistingMessage(
@@ -2497,7 +2451,7 @@
 
 
     /* =========================================================
-       UPDATE CONVERSATION PREVIEW
+       CONVERSATION PREVIEW
     ========================================================= */
 
     function updateConversationPreview(
@@ -2575,7 +2529,7 @@
 
 
     /* =========================================================
-       HANDLE REALTIME MESSAGE
+       HANDLE REALTIME
     ========================================================= */
 
     function handleRealtimeMessage(
@@ -2614,10 +2568,6 @@
             );
 
 
-        /*
-           إذا الرسالة موجودة بالحالة:
-           لا نرسم نسخة ثانية.
-        */
         const stateMessage =
             messageId != null
                 ? findMessageInStateById(
@@ -2671,9 +2621,6 @@
         }
 
 
-        /*
-           إذا DOM يحتوي الرسالة بنفس ID.
-        */
         let existingElement =
             messageId != null
                 ? findDomMessageById(
@@ -2682,10 +2629,6 @@
                 : null;
 
 
-        /*
-           إذا ماكو ID، نحاول نربط Realtime
-           مع optimistic فقط.
-        */
         if (!existingElement) {
 
             existingElement =
@@ -2719,9 +2662,6 @@
         }
 
 
-        /*
-           رسالة جديدة فعلياً.
-        */
         const wasAtBottom =
             isNearBottom();
 
@@ -2882,7 +2822,6 @@
 
     /* =========================================================
        OPEN CONVERSATION
-       الإصدار الجديد
     ========================================================= */
 
     async function openConversation(
@@ -2908,9 +2847,6 @@
             ++conversationLoadToken;
 
 
-        /*
-           تنظيف typing من المحادثة السابقة.
-        */
         await removeTypingChannel();
 
 
@@ -2936,9 +2872,6 @@
         }
 
 
-        /*
-           جلب جهة الاتصال قبل إظهار المحادثة.
-        */
         if (
             !currentConversationContact
         ) {
@@ -2984,19 +2917,50 @@
         }
 
 
-        /*
-           تحديث الهيدر قبل الفتح.
-        */
         updateChatHeader();
 
 
         /*
-           تحميل الرسائل أولاً.
-           chatView لا نفتحها بعد.
+        ========================================================
+           مهم جداً
+
+           لا نخلي chatView يبقى display:none أثناء تجهيز
+           الـscroll، لأن العناصر داخله وقتها ما عندها
+           clientHeight حقيقي.
+
+           نفتح chatView لكن نخفي chatMessages فقط.
+           المستخدم لن يرى أي حركة.
+        ========================================================
         */
-        await loadConversationMessages(
-            loadToken
-        );
+
+        if (chatView) {
+
+            chatView.classList.remove(
+                "wfesc-chat-opening"
+            );
+
+
+            chatView.classList.add(
+                "open"
+            );
+        }
+
+
+        if (chatMessages) {
+
+            chatMessages.style.visibility =
+                "hidden";
+        }
+
+
+        /*
+           تحميل كل ما يرجعه RPC بدون حذف المحادثة
+           أو إعادة إنشاء قائمة المحادثات.
+        */
+        const loaded =
+            await loadConversationMessages(
+                loadToken
+            );
 
 
         if (
@@ -3011,15 +2975,63 @@
         }
 
 
+        if (!loaded) {
+
+            /*
+               حتى في حالة الخطأ لا نبقي الشاشة سوداء.
+            */
+
+            if (chatMessages) {
+
+                chatMessages.style.visibility =
+                    "visible";
+            }
+
+
+            openingConversation =
+                false;
+
+            return;
+        }
+
+
         /*
-           تأكيد مكان آخر رسالة
-           قبل إظهار المحادثة.
+        ========================================================
+           الآن chatView مفتوح فعلياً
+           وبالتالي scrollHeight/clientHeight صحيحين.
+        ========================================================
         */
+
         prepareChatAtBottom();
 
 
         /*
-           إعداد Realtime typing.
+           ننتظر frame حتى يتأكد الـlayout.
+        */
+        await new Promise(
+            resolve =>
+                requestAnimationFrame(
+                    resolve
+                )
+        );
+
+
+        prepareChatAtBottom();
+
+
+        /*
+           الآن فقط نكشف الرسائل.
+           المستخدم سيشاهد آخر الرسائل مباشرة.
+        */
+        if (chatMessages) {
+
+            chatMessages.style.visibility =
+                "visible";
+        }
+
+
+        /*
+           إعداد typing.
         */
         await setupTypingChannel(
             conversationId
@@ -3027,7 +3039,7 @@
 
 
         /*
-           تعليم المحادثة كمقروءة.
+           تعليم كمقروء.
         */
         await markConversationRead(
             conversationId
@@ -3035,9 +3047,7 @@
 
 
         /*
-           إظهار المحادثة الآن فقط.
-           المستخدم لن يرى الرسائل وهي تصعد
-           من البداية إلى النهاية.
+           إخفاء قائمة البحث بعد نجاح فتح المحادثة.
         */
         if (page) {
 
@@ -3055,36 +3065,25 @@
         }
 
 
-        if (chatView) {
-
-            chatView.classList.add(
-                "open"
-            );
-
-
-            /*
-               إعادة ضبط أخيرة بعد أن صار العنصر
-               visible فعلياً.
-            */
-            prepareChatAtBottom();
-
-
-            /*
-               Slide Up مرتب.
-            */
-            requestAnimationFrame(() => {
-
-                prepareChatAtBottom();
-
-                playChatOpenAnimation();
-
-            });
-        }
+        /*
+           ضبط نهائي سريع بدون animation للـscroll.
+        */
+        prepareChatAtBottom();
 
 
         /*
-           تحديث مكان جاري الكتابة.
+           Slide Up فقط للشاشة نفسها.
+           لا يوجد Slide للرسائل من الأعلى للأسفل.
         */
+        requestAnimationFrame(() => {
+
+            prepareChatAtBottom();
+
+            playChatOpenAnimation();
+
+        });
+
+
         requestAnimationFrame(
             updateTypingIndicatorPosition
         );
@@ -3111,7 +3110,7 @@
     ) {
 
         if (!currentConversationId) {
-            return;
+            return false;
         }
 
 
@@ -3119,12 +3118,12 @@
             currentConversationId;
 
 
-        /*
-           نخفي الرسائل أثناء التحميل.
-           لكن chatView أصلاً مغلق، لذلك المستخدم
-           لن يشاهد عملية البناء.
-        */
         if (chatMessages) {
+
+            /*
+               نخفي محتوى الرسائل فقط أثناء البناء.
+               لا نخفي chatView نفسه.
+            */
 
             chatMessages.style.visibility =
                 "hidden";
@@ -3157,7 +3156,7 @@
             currentConversationId
         ) {
 
-            return;
+            return false;
         }
 
 
@@ -3195,7 +3194,7 @@
             }
 
 
-            return;
+            return false;
         }
 
 
@@ -3205,6 +3204,10 @@
                 : [];
 
 
+        /*
+           الأقدم أولاً → الأحدث أخيراً.
+           لا نحذف أي رسالة من البيانات.
+        */
         currentMessages.sort(
             (a, b) => {
 
@@ -3228,10 +3231,13 @@
 
 
         /*
-           هنا نضمن أن آخر رسالة جاهزة
-           قبل فتح chatView.
+           ضبط أولي.
+           chatView مفتوح لكن الرسائل مخفية.
         */
         prepareChatAtBottom();
+
+
+        return true;
     }
 
 
@@ -3299,11 +3305,29 @@
             `;
 
 
-            chatMessages.style.visibility =
-                "visible";
+            /*
+               لا نتركها hidden إذا كانت هذه محادثة
+               فارغة، حتى تظهر رسالة البداية.
+            */
+            if (!initialLoad) {
+
+                chatMessages.style.visibility =
+                    "visible";
+            }
 
 
             scheduleMessageSettingsApply();
+
+
+            if (initialLoad) {
+
+                requestAnimationFrame(() => {
+
+                    forceScrollToBottom();
+
+                });
+            }
+
 
             return;
         }
@@ -3340,10 +3364,20 @@
         if (initialLoad) {
 
             /*
-               أهم نقطة:
-               الرسائل ترسم وهي مخفية،
-               وبعدها نضع scrollTop على النهاية.
+            ====================================================
+               الأهم:
+
+               الرسائل تنرسم وهي مخفية.
+               نضع scrollTop مباشرة في النهاية.
+               لا smooth.
+               لا يرى المستخدم أي انتقال.
+            ====================================================
             */
+
+            const oldBehavior =
+                chatMessages.style.scrollBehavior;
+
+
             chatMessages.style.scrollBehavior =
                 "auto";
 
@@ -3361,13 +3395,54 @@
                     forceScrollToBottom();
 
                 });
+
             });
 
 
+            setTimeout(() => {
+
+                forceScrollToBottom();
+
+            }, 40);
+
+
+            setTimeout(() => {
+
+                forceScrollToBottom();
+
+            }, 120);
+
+
             /*
-               لا نكشفها هنا بشكل مستقل.
-               openConversation هو الذي يفتح chatView.
+               لا نعيد visibility هنا.
+               openConversation هو المسؤول عن كشفها
+               بعد اكتمال الـlayout.
             */
+
+            setTimeout(() => {
+
+                /*
+                   إذا لم تكن هناك عملية فتح جارية،
+                   لا نترك الرسائل مخفية.
+                */
+                if (
+                    !openingConversation &&
+                    chatView?.classList.contains(
+                        "open"
+                    )
+                ) {
+
+                    chatMessages.style.visibility =
+                        "visible";
+                }
+
+
+                chatMessages.style.scrollBehavior =
+                    oldBehavior || "";
+
+            }, 220);
+
+
             return;
         }
 
