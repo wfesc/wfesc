@@ -1,19 +1,21 @@
-
 (() => {
     "use strict";
 
     /*
     ============================================================
-    WFESC MESSAGES CORE
-    مسؤول عن:
-    - Supabase
-    - المستخدم الحالي
-    - المحادثات
-    - فتح المحادثة
-    - تحميل الرسائل
-    - بيانات جهة الاتصال
+       WFESC MESSAGES CORE
+       مسؤول عن:
+       - Supabase
+       - المستخدم الحالي
+       - المحادثات
+       - فتح المحادثة
+       - تحميل الرسائل
+       - بيانات جهة الاتصال
+       - رسم الرسائل
+       - ربط إعدادات الفقاعات بالرسائل
     ============================================================
     */
+
 
     /* =========================================================
        SUPABASE
@@ -33,6 +35,7 @@
         );
 
     if (!client) {
+
         console.error(
             "WFESC: Supabase client لم يتم تحميله."
         );
@@ -106,6 +109,13 @@
     let notificationChannel = null;
 
     let initialized = false;
+
+    /*
+       رقم متزايد لكل عملية تحميل.
+       يمنع نتيجة محادثة قديمة من الكتابة فوق المحادثة الحالية
+       إذا المستخدم انتقل بسرعة بين المحادثات.
+    */
+    let conversationLoadToken = 0;
 
 
     /* =========================================================
@@ -228,6 +238,9 @@
     }
 
 
+    /*
+       تمرير آمن إلى أسفل المحادثة.
+    */
     function scrollChatToBottom(
         behavior = "smooth"
     ) {
@@ -243,6 +256,72 @@
     }
 
 
+    /*
+       إعادة تطبيق إعدادات الفقاعات بعد إنشاء عناصر الرسائل.
+
+       لا نفترض أن settings module موجود لحظة تشغيل Core،
+       لذلك يتم التحقق منه فقط إذا كان محملًا.
+    */
+    function applyMessageSettings() {
+
+        try {
+
+            const settings =
+                window.WFESC_MESSAGE_SETTINGS;
+
+            if (
+                settings &&
+                typeof settings.applySettings === "function"
+            ) {
+
+                if (
+                    typeof settings.getSettings === "function"
+                ) {
+
+                    settings.applySettings(
+                        settings.getSettings()
+                    );
+
+                } else {
+
+                    settings.applySettings();
+                }
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC message settings apply:",
+                error
+            );
+        }
+    }
+
+
+    /*
+       إعادة تطبيق إعدادات الفقاعات بعد أن تنتهي
+       المتصفحات من إدخال العناصر في DOM.
+    */
+    function scheduleMessageSettingsApply() {
+
+        if (typeof requestAnimationFrame === "function") {
+
+            requestAnimationFrame(() => {
+
+                applyMessageSettings();
+
+            });
+
+        } else {
+
+            setTimeout(
+                applyMessageSettings,
+                0
+            );
+        }
+    }
+
+
     /* =========================================================
        SUPPORT CONTACT
     ========================================================= */
@@ -250,6 +329,7 @@
     function getSupportContact() {
 
         return {
+
             user_id: null,
 
             display_name:
@@ -310,6 +390,7 @@
         }
 
         if (Array.isArray(data)) {
+
             return data[0] || null;
         }
 
@@ -347,6 +428,7 @@
             }
 
             if (typeof data === "string") {
+
                 return data;
             }
 
@@ -638,6 +720,14 @@
         }
 
 
+        /*
+           نرفع رقم العملية قبل أي await.
+           أي عملية تحميل قديمة ستصبح غير صالحة.
+        */
+        const loadToken =
+            ++conversationLoadToken;
+
+
         currentConversationId =
             conversationId;
 
@@ -650,7 +740,6 @@
 
             currentConversationContact =
                 getSupportContact();
-
         }
 
 
@@ -663,12 +752,25 @@
                     conversationId,
                     type
                 );
+
+
+            /*
+               المستخدم ربما فتح محادثة أخرى
+               أثناء انتظار RPC.
+            */
+            if (
+                loadToken !==
+                conversationLoadToken
+            ) {
+                return;
+            }
         }
 
 
         if (!currentConversationContact) {
 
             currentConversationContact = {
+
                 display_name:
                     "مستخدم",
 
@@ -695,6 +797,7 @@
 
 
         if (searchSection) {
+
             searchSection.classList.add(
                 "hidden"
             );
@@ -704,7 +807,21 @@
         updateChatHeader();
 
 
-        await loadConversationMessages();
+        await loadConversationMessages(
+            loadToken
+        );
+
+
+        /*
+           إذا تغيرت المحادثة أثناء التحميل،
+           لا ننفذ بقية العملية على المحادثة القديمة.
+        */
+        if (
+            loadToken !==
+            conversationLoadToken
+        ) {
+            return;
+        }
 
 
         markConversationRead(
@@ -779,11 +896,17 @@
        LOAD MESSAGES
     ========================================================= */
 
-    async function loadConversationMessages() {
+    async function loadConversationMessages(
+        expectedLoadToken = conversationLoadToken
+    ) {
 
         if (!currentConversationId) {
             return;
         }
+
+
+        const requestedConversationId =
+            currentConversationId;
 
 
         if (chatMessages) {
@@ -811,12 +934,26 @@
             "get_conversation_messages",
             {
                 target_conversation_id:
-                    currentConversationId,
+                    requestedConversationId,
 
                 message_limit:
                     100
             }
         );
+
+
+        /*
+           لا تسمح لنتيجة قديمة بتغيير المحادثة الحالية.
+        */
+        if (
+            expectedLoadToken !==
+            conversationLoadToken ||
+            requestedConversationId !==
+            currentConversationId
+        ) {
+
+            return;
+        }
 
 
         if (error) {
@@ -893,6 +1030,29 @@
         }
 
 
+        /*
+           نحتفظ بموضع التمرير قبل إعادة الرسم.
+           إذا كانت المحادثة جديدة أو كانت في الأسفل،
+           سننزل إلى الأسفل بعد الرسم.
+        */
+        const oldScrollTop =
+            chatMessages.scrollTop;
+
+        const oldScrollHeight =
+            chatMessages.scrollHeight;
+
+        const oldClientHeight =
+            chatMessages.clientHeight;
+
+
+        const wasNearBottom =
+            (
+                oldScrollHeight -
+                oldScrollTop -
+                oldClientHeight
+            ) < 120;
+
+
         chatMessages.innerHTML = "";
 
 
@@ -916,8 +1076,14 @@
                 </div>
             `;
 
+            scheduleMessageSettingsApply();
+
             return;
         }
+
+
+        const fragment =
+            document.createDocumentFragment();
 
 
         currentMessages.forEach(
@@ -928,11 +1094,56 @@
                         message
                     );
 
-                chatMessages.appendChild(
+                fragment.appendChild(
                     element
                 );
             }
         );
+
+
+        chatMessages.appendChild(
+            fragment
+        );
+
+
+        /*
+           تطبيق إعدادات الفقاعات بعد إنشاء كل العناصر.
+        */
+        scheduleMessageSettingsApply();
+
+
+        /*
+           المحادثة الجديدة تنزل للأسفل.
+           أما إذا المستخدم كان يقرأ رسالة قديمة،
+           لا نقفز به إلى النهاية.
+        */
+        requestAnimationFrame(() => {
+
+            if (!chatMessages) {
+                return;
+            }
+
+
+            if (wasNearBottom) {
+
+                chatMessages.scrollTop =
+                    chatMessages.scrollHeight;
+
+            } else {
+
+                const heightDifference =
+                    chatMessages.scrollHeight -
+                    oldScrollHeight;
+
+                chatMessages.scrollTop =
+                    oldScrollTop +
+                    Math.max(
+                        0,
+                        heightDifference
+                    );
+            }
+
+        });
     }
 
 
@@ -961,6 +1172,11 @@
             );
 
 
+        /*
+           مهم جدًا:
+           هذه الكلاسات هي التي يعتمد عليها
+           نظام إعدادات الفقاعات.
+        */
         row.className =
             "message-row " +
             (
@@ -986,6 +1202,16 @@
 
         bubble.className =
             "message-bubble";
+
+
+        /*
+           يمكن للملفات المستقبلية معرفة جهة الرسالة
+           بدون الحاجة لتحليل الأب.
+        */
+        bubble.dataset.side =
+            isMine
+                ? "mine"
+                : "theirs";
 
 
         const content =
@@ -1039,6 +1265,143 @@
 
 
     /* =========================================================
+       ADD MESSAGE LOCALLY
+       يستخدمه messages-send.js لاحقًا.
+    ========================================================= */
+
+    function addMessageToCurrentConversation(
+        message,
+        options = {}
+    ) {
+
+        if (!message) {
+            return null;
+        }
+
+
+        /*
+           لا نضيف الرسالة إذا كانت لمحادثة أخرى.
+        */
+        if (
+            options.conversationId &&
+            String(
+                options.conversationId
+            ) !== String(
+                currentConversationId
+            )
+        ) {
+
+            return null;
+        }
+
+
+        /*
+           منع التكرار إذا كانت الرسالة موجودة أصلًا.
+        */
+        const messageId =
+            message.id ??
+            message.message_id;
+
+
+        if (
+            messageId != null &&
+            currentMessages.some(
+                existing =>
+                    String(
+                        existing.id ??
+                        existing.message_id
+                    ) === String(messageId)
+            )
+        ) {
+
+            return null;
+        }
+
+
+        currentMessages.push(
+            message
+        );
+
+
+        currentMessages.sort(
+            (a, b) => {
+
+                return (
+                    new Date(
+                        a.created_at ||
+                        a.sent_at ||
+                        0
+                    ).getTime()
+                    -
+                    new Date(
+                        b.created_at ||
+                        b.sent_at ||
+                        0
+                    ).getTime()
+                );
+            }
+        );
+
+
+        /*
+           إذا كان مطلوبًا فقط الإضافة بدون إعادة رسم
+           كامل المحادثة، نضيف العنصر مباشرة.
+        */
+        if (
+            options.appendOnly &&
+            chatMessages
+        ) {
+
+            const element =
+                createMessageElement(
+                    message
+                );
+
+            chatMessages.appendChild(
+                element
+            );
+
+            scheduleMessageSettingsApply();
+
+            if (
+                options.scroll !== false
+            ) {
+
+                requestAnimationFrame(() => {
+
+                    scrollChatToBottom(
+                        "smooth"
+                    );
+
+                });
+            }
+
+            return element;
+        }
+
+
+        renderMessages();
+
+
+        if (
+            options.scroll !== false
+        ) {
+
+            requestAnimationFrame(() => {
+
+                scrollChatToBottom(
+                    "smooth"
+                );
+
+            });
+        }
+
+
+        return true;
+    }
+
+
+    /* =========================================================
        MARK READ
     ========================================================= */
 
@@ -1088,28 +1451,45 @@
 
     function closeConversation() {
 
+        /*
+           إلغاء صلاحية أي تحميل سابق.
+        */
+        conversationLoadToken++;
+
+
         currentConversationId =
             null;
+
 
         currentConversationContact =
             null;
 
+
         currentMessages =
             [];
+
 
         chatView?.classList.remove(
             "open"
         );
 
+
         page?.classList.remove(
             "chat-active"
         );
+
 
         if (searchSection) {
 
             searchSection.classList.remove(
                 "hidden"
             );
+        }
+
+
+        if (chatMessages) {
+
+            chatMessages.innerHTML = "";
         }
     }
 
@@ -1240,6 +1620,7 @@
                     await ensureSupportConversation();
 
                 if (supportId) {
+
                     await loadConversations();
                 }
             }
@@ -1255,43 +1636,78 @@
 
         client,
 
+
         getCurrentUser() {
+
             return currentUser;
         },
 
+
         getCurrentConversation() {
+
             return currentConversationId;
         },
 
+
         getCurrentContact() {
+
             return currentConversationContact;
         },
 
+
         getConversations() {
+
             return [
                 ...conversations
             ];
         },
 
+
         getMessages() {
+
             return [
                 ...currentMessages
             ];
         },
 
+
         loadConversations,
+
 
         loadConversationMessages,
 
+
         openConversation,
+
 
         closeConversation,
 
+
         ensureSupportConversation,
+
 
         getConversationContact,
 
-        markConversationRead
+
+        markConversationRead,
+
+
+        /*
+           API جديدة للملفات الأخرى.
+        */
+        renderMessages,
+
+
+        createMessageElement,
+
+
+        addMessageToCurrentConversation,
+
+
+        applyMessageSettings,
+
+
+        scrollChatToBottom
     };
 
 
@@ -1308,7 +1724,7 @@
             "DOMContentLoaded",
             initializeAuth,
             {
-                once:true
+                once: true
             }
         );
 
