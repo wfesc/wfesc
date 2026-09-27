@@ -4,7 +4,7 @@
     /*
     ============================================================
     WFESC MESSAGES SEND
-    النسخة المستقرة
+    النسخة المستقرة + اتصال نظام الكيبورد
 
     مسؤول عن:
     - كتابة الرسالة
@@ -16,7 +16,7 @@
     - ظهور الرسالة فوراً
     - عدم إعادة رسم المحادثة بعد الإرسال
     - الحفاظ على المحادثة مفتوحة
-    - الحفاظ على التركيز داخل حقل الكتابة
+    - الاتصال بملف messages-keyboard.js
     ============================================================
     */
 
@@ -53,6 +53,44 @@
     let isSending = false;
 
     /* =========================================================
+       KEYBOARD MODULE
+    ========================================================= */
+
+    function keepKeyboardOpen() {
+
+        const keyboard =
+            window.WFESC_MESSAGES_KEYBOARD;
+
+        if (
+            keyboard &&
+            typeof keyboard.keepKeyboardOpen ===
+                "function"
+        ) {
+            keyboard.keepKeyboardOpen();
+            return true;
+        }
+
+        /*
+           احتياط إذا كان ملف الكيبورد لم يجهز بعد.
+        */
+        if (messageInput) {
+
+            try {
+                messageInput.focus({
+                    preventScroll: true
+                });
+            } catch (_) {
+
+                try {
+                    messageInput.focus();
+                } catch (_) {}
+            }
+        }
+
+        return false;
+    }
+
+    /* =========================================================
        HELPERS
     ========================================================= */
 
@@ -64,21 +102,27 @@
         }
 
         requestAnimationFrame(() => {
+
             chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
+                top:
+                    chatMessages.scrollHeight,
                 behavior
             });
+
         });
     }
 
     function resizeTextarea() {
+
         if (!messageInput) {
             return;
         }
 
-        messageInput.style.height = "auto";
+        messageInput.style.height =
+            "auto";
 
-        const maxHeight = 100;
+        const maxHeight =
+            100;
 
         const nextHeight =
             Math.min(
@@ -91,10 +135,14 @@
     }
 
     function setSendingState(state) {
-        isSending = Boolean(state);
+
+        isSending =
+            Boolean(state);
 
         if (sendButton) {
-            sendButton.disabled = isSending;
+
+            sendButton.disabled =
+                isSending;
 
             sendButton.classList.toggle(
                 "sending",
@@ -102,14 +150,16 @@
             );
 
             sendButton.textContent =
-                isSending ? "…" : "↑";
+                isSending
+                    ? "…"
+                    : "↑";
         }
 
         /*
            لا نعطل حقل الكتابة.
-           هذا مهم للكيبورد.
         */
         if (messageInput) {
+
             messageInput.classList.toggle(
                 "sending",
                 isSending
@@ -121,7 +171,9 @@
         content,
         userId
     ) {
+
         return {
+
             id:
                 `temp-${Date.now()}-${Math.random()
                     .toString(36)
@@ -135,21 +187,19 @@
             created_at:
                 new Date().toISOString(),
 
-            optimistic: true
+            optimistic:
+                true
         };
     }
 
     function renderTemporaryMessage(
         message
     ) {
+
         if (!chatMessages) {
             return null;
         }
 
-        /*
-           حذف حالة "لا توجد رسائل"
-           فقط إذا كانت موجودة.
-        */
         const emptyState =
             chatMessages.querySelector(
                 ".empty-state"
@@ -165,6 +215,7 @@
             typeof core.createMessageElement ===
             "function"
         ) {
+
             row =
                 core.createMessageElement(
                     message
@@ -172,6 +223,7 @@
         }
 
         if (!row) {
+
             console.error(
                 "WFESC: تعذر إنشاء عنصر الرسالة."
             );
@@ -187,13 +239,15 @@
         row.dataset.optimisticId =
             String(message.id);
 
-        chatMessages.appendChild(row);
+        chatMessages.appendChild(
+            row
+        );
 
         /*
-           لا نعيد رسم المحادثة.
-           فقط نطلب تطبيق الإعدادات إن كانت متاحة.
+           تطبيق إعدادات الرسائل إذا كانت موجودة.
         */
         try {
+
             const settings =
                 window.WFESC_MESSAGE_SETTINGS;
 
@@ -202,6 +256,7 @@
                 typeof settings.apply ===
                     "function"
             ) {
+
                 settings.apply(
                     typeof settings.get ===
                         "function"
@@ -209,7 +264,9 @@
                         : undefined
                 );
             }
+
         } catch (error) {
+
             console.warn(
                 "WFESC message settings:",
                 error
@@ -221,11 +278,12 @@
         return row;
     }
 
-    /*
-       استخراج صف الرسالة الحقيقي من أي شكل محتمل
-       يرجعه RPC.
-    */
+    /* =========================================================
+       EXTRACT SENT MESSAGE
+    ========================================================= */
+
     function extractSentMessage(data) {
+
         if (!data) {
             return null;
         }
@@ -236,7 +294,8 @@
 
         if (
             data.message &&
-            typeof data.message === "object"
+            typeof data.message ===
+                "object"
         ) {
             return data.message;
         }
@@ -250,24 +309,19 @@
 
         if (
             data.data &&
-            typeof data.data === "object"
+            typeof data.data ===
+                "object"
         ) {
             return data.data;
         }
 
-        /*
-           إذا كان RPC يرجع UUID أو قيمة بسيطة،
-           لا نحاول اعتبارها رسالة كاملة.
-        */
         if (
-            typeof data !== "object"
+            typeof data !==
+            "object"
         ) {
             return null;
         }
 
-        /*
-           نتأكد أن الكائن يشبه رسالة فعلية.
-        */
         if (
             data.content !== undefined ||
             data.message !== undefined ||
@@ -282,14 +336,15 @@
         return null;
     }
 
-    /*
-       تحديث الرسالة المؤقتة بالبيانات الحقيقية
-       بدون حذف العنصر من DOM.
-    */
+    /* =========================================================
+       CONFIRM TEMPORARY MESSAGE
+    ========================================================= */
+
     function confirmTemporaryMessage(
         temporaryRow,
         sentMessage
     ) {
+
         if (!temporaryRow) {
             return;
         }
@@ -306,18 +361,17 @@
             "true";
 
         if (sentMessage) {
+
             const realId =
                 sentMessage.id ??
                 sentMessage.message_id;
 
             if (realId != null) {
+
                 temporaryRow.dataset.messageId =
                     String(realId);
             }
 
-            /*
-               تحديث وقت الرسالة إذا أعاده الخادم.
-            */
             const timeElement =
                 temporaryRow.querySelector(
                     ".message-time"
@@ -330,6 +384,7 @@
                     sentMessage.sent_at
                 )
             ) {
+
                 const date =
                     new Date(
                         sentMessage.created_at ||
@@ -341,12 +396,16 @@
                         date.getTime()
                     )
                 ) {
+
                     timeElement.textContent =
                         date.toLocaleTimeString(
                             "ar-IQ",
                             {
-                                hour: "2-digit",
-                                minute: "2-digit"
+                                hour:
+                                    "2-digit",
+
+                                minute:
+                                    "2-digit"
                             }
                         );
                 }
@@ -375,16 +434,20 @@
             core.getCurrentConversation();
 
         if (!user) {
+
             console.warn(
                 "WFESC: لا يوجد مستخدم."
             );
+
             return;
         }
 
         if (!conversationId) {
+
             console.warn(
                 "WFESC: لم يتم فتح محادثة."
             );
+
             return;
         }
 
@@ -397,9 +460,6 @@
             return;
         }
 
-        /*
-           نحفظ المحادثة والنص.
-        */
         const sendingConversationId =
             conversationId;
 
@@ -407,8 +467,8 @@
             content;
 
         /*
-           هل كان الحقل مركزاً قبل الإرسال؟
-           مهم جداً للكيبورد.
+           مهم:
+           نعرف هل المستخدم كان يكتب والكيبورد مفتوح.
         */
         const hadFocus =
             document.activeElement ===
@@ -416,11 +476,9 @@
 
         setSendingState(true);
 
-        /*
-        ========================================================
-        1. إظهار الرسالة فوراً
-        ========================================================
-        */
+        /* =====================================================
+           1. الرسالة تظهر فوراً
+           ===================================================== */
 
         const optimistic =
             createOptimisticMessage(
@@ -433,21 +491,17 @@
                 optimistic
             );
 
-        /*
-        ========================================================
-        2. تفريغ الحقل فقط
-        ========================================================
-        */
+        /* =====================================================
+           2. تفريغ الحقل
+           ===================================================== */
 
         messageInput.value = "";
 
         resizeTextarea();
 
-        /*
-        ========================================================
-        3. الإرسال إلى Supabase
-        ========================================================
-        */
+        /* =====================================================
+           3. الإرسال إلى Supabase
+           ===================================================== */
 
         try {
 
@@ -469,57 +523,40 @@
                 throw error;
             }
 
-            /*
-            ====================================================
-            تأكد أن المستخدم ما زال بنفس المحادثة.
-            ====================================================
-            */
+            /* =================================================
+               التأكد من بقاء نفس المحادثة
+               ================================================= */
 
             const stillSameConversation =
                 String(
                     core.getCurrentConversation()
-                ) === String(
+                ) ===
+                String(
                     sendingConversationId
                 );
 
             if (
                 !stillSameConversation
             ) {
-                /*
-                   لا نلمس المحادثة الحالية إذا المستخدم
-                   انتقل إلى محادثة أخرى أثناء الإرسال.
-                */
+
                 return;
             }
 
-            /*
-            ====================================================
-            استخراج الرسالة الحقيقية إذا كانت موجودة.
-            ====================================================
-            */
+            /* =================================================
+               استخراج الرسالة الحقيقية
+               ================================================= */
 
             const sentMessage =
                 extractSentMessage(data);
 
-            /*
-            ====================================================
-            مهم:
-            لا نحذف الرسالة المؤقتة.
-            نحولها إلى رسالة مؤكدة.
-            ====================================================
-            */
+            /* =================================================
+               تأكيد الرسالة بدون إعادة الرسم
+               ================================================= */
 
             confirmTemporaryMessage(
                 temporaryRow,
                 sentMessage
             );
-
-            /*
-            ====================================================
-            إذا رجع RPC رسالة كاملة،
-            نحدّث currentMessages بدون renderMessages().
-            ====================================================
-            */
 
             if (
                 sentMessage &&
@@ -527,27 +564,15 @@
                     "function"
             ) {
 
-                /*
-                   لا نستخدم addMessageToCurrentConversation
-                   هنا حتى لا نضيف الرسالة مرة ثانية
-                   إذا كانت موجودة بالفعل في الحالة.
-
-                   الرسالة الظاهرة هي نفسها الرسالة
-                   التي أنشأناها فورياً.
-                */
                 console.log(
                     "WFESC message confirmed:",
                     sentMessage
                 );
             }
 
-            /*
-            ====================================================
-            إبقاء الشاشة عند آخر رسالة.
-            ====================================================
-            */
-
-            scrollToBottom("smooth");
+            scrollToBottom(
+                "smooth"
+            );
 
         } catch (error) {
 
@@ -556,35 +581,17 @@
                 error
             );
 
-            /*
-            ====================================================
-            فشل الإرسال:
-            إزالة الرسالة المؤقتة فقط.
-            ====================================================
-            */
-
             if (temporaryRow) {
                 temporaryRow.remove();
             }
-
-            /*
-            ====================================================
-            إعادة النص للمستخدم.
-            ====================================================
-            */
 
             messageInput.value =
                 originalContent;
 
             resizeTextarea();
 
-            /*
-            ====================================================
-            تنبيه بصري بسيط بدون تغيير الصفحة.
-            ====================================================
-            */
-
             try {
+
                 messageInput.animate(
                     [
                         {
@@ -605,48 +612,47 @@
                         }
                     ],
                     {
-                        duration: 240
+                        duration:
+                            240
                     }
                 );
+
             } catch (_) {}
 
         } finally {
 
-            setSendingState(false);
-
-            /*
-            ====================================================
-            لا نعمل focus إجباري إذا المستخدم فقد التركيز.
-            هذا مهم جداً للكيبورد.
-
-            إذا كان الحقل هو الذي كان عليه التركيز أصلاً،
-            نعيده بعد انتهاء العملية.
-            ====================================================
-            */
-
-            if (
-                hadFocus &&
-                messageInput &&
-                document.activeElement !==
-                    messageInput
-            ) {
-                try {
-                    messageInput.focus({
-                        preventScroll: true
-                    });
-                } catch (_) {
-                    try {
-                        messageInput.focus();
-                    } catch (_) {}
-                }
-            }
+            setSendingState(
+                false
+            );
 
             resizeTextarea();
 
             /*
-               لا نعمل scroll إضافي هنا.
-               حتى لا نسبب حركة ثانية للـ viewport.
+            ====================================================
+            إعادة إبقاء الكيبورد مفتوح
+            ====================================================
+
+            إذا كان المستخدم يكتب قبل الإرسال،
+            نطلب من messages-keyboard.js أن يتولى
+            إبقاء الكيبورد مفتوحاً.
+
+            لا نتحكم بالـ keyboard من هذا الملف مباشرة.
+            ====================================================
             */
+
+            if (hadFocus) {
+
+                /*
+                   ننتظر انتهاء عملية الإرسال بالكامل
+                   ثم نسلم التحكم لملف الكيبورد.
+                */
+                requestAnimationFrame(() => {
+
+                    keepKeyboardOpen();
+
+                });
+
+            }
         }
     }
 
@@ -663,6 +669,7 @@
                 event.preventDefault();
 
                 sendCurrentMessage();
+
             }
         );
     }
@@ -690,14 +697,11 @@
                     event.preventDefault();
 
                     sendCurrentMessage();
+
                 }
             }
         );
 
-        /*
-           عند فتح الكيبورد:
-           لا نعيد رسم الرسائل.
-        */
         messageInput.addEventListener(
             "focus",
             () => {
@@ -708,7 +712,20 @@
                         "smooth"
                     );
 
+                    const keyboard =
+                        window.WFESC_MESSAGES_KEYBOARD;
+
+                    if (
+                        keyboard &&
+                        typeof keyboard.updateInputPosition ===
+                            "function"
+                    ) {
+
+                        keyboard.updateInputPosition();
+                    }
+
                 });
+
             }
         );
     }
@@ -726,6 +743,7 @@
         },
 
         resizeTextarea
+
     };
 
     /* =========================================================
