@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#050505">
 <title>الرسائل | WFESC</title>
 
 <style>
@@ -13,89 +13,18 @@
     padding:0;
 }
 
-:root{
-    --bg:#030303;
-    --glass:rgba(255,255,255,.055);
-    --glass-strong:rgba(255,255,255,.085);
-    --glass-border:rgba(255,255,255,.11);
-    --text:#f4f4f4;
-    --muted:#999;
-    --green:#42e88b;
-    --red:#ff5f6d;
-    --blue:#62a8ff;
-    --shadow:0 20px 60px rgba(0,0,0,.45);
-    --blur:24px;
-}
-
-/* =========================
-   CENTRAL APPEARANCE HOOKS
-========================= */
-
-html.wfesc-no-animation *,
-html.wfesc-no-animation *::before,
-html.wfesc-no-animation *::after{
-    animation:none !important;
-    transition:none !important;
-    scroll-behavior:auto !important;
-}
-
-html.wfesc-no-glass .glass,
-html.wfesc-no-glass .search-input,
-html.wfesc-no-glass .activity-box,
-html.wfesc-no-glass .conversation-menu{
-    backdrop-filter:none !important;
-    -webkit-backdrop-filter:none !important;
-    box-shadow:none !important;
-}
-
-html.wfesc-light{
-    --bg:#f3f5f8;
-    --glass:rgba(255,255,255,.78);
-    --glass-strong:rgba(255,255,255,.9);
-    --glass-border:rgba(0,0,0,.09);
-    --text:#171717;
-    --muted:#666;
-    --shadow:0 20px 50px rgba(0,0,0,.12);
-}
-
-html.wfesc-light body{
-    background:
-        radial-gradient(circle at 15% 10%,rgba(80,130,255,.12),transparent 30%),
-        radial-gradient(circle at 85% 20%,rgba(0,200,120,.08),transparent 28%),
-        #f3f5f8;
-    color:var(--text);
-}
-
-html.wfesc-light .search-input,
-html.wfesc-light .activity-box,
-html.wfesc-light .icon-btn,
-html.wfesc-light .search-mode,
-html.wfesc-light .message-input{
-    color:#171717;
-}
-
-html.wfesc-light .message-content,
-html.wfesc-light .conversation-name,
-html.wfesc-light .chat-user-name{
-    color:#171717;
-}
-
-/* =========================
-   BASE
-========================= */
-
-html{
-    scroll-behavior:smooth;
+html,
+body{
+    width:100%;
+    min-height:100%;
 }
 
 body{
-    min-height:100vh;
     background:
-        radial-gradient(circle at 15% 10%,rgba(80,130,255,.08),transparent 30%),
-        radial-gradient(circle at 85% 20%,rgba(0,255,150,.055),transparent 28%),
-        radial-gradient(circle at 50% 100%,rgba(130,70,255,.06),transparent 35%),
-        var(--bg);
-    color:var(--text);
+        radial-gradient(circle at 15% 10%,rgba(255,255,255,.055),transparent 28%),
+        radial-gradient(circle at 85% 20%,rgba(255,255,255,.035),transparent 25%),
+        #050505;
+    color:#fff;
     font-family:Arial,Tahoma,sans-serif;
     overflow-x:hidden;
 }
@@ -103,237 +32,170 @@ body{
 button,
 input,
 textarea{
-    font-family:inherit;
+    font:inherit;
 }
 
 button{
-    -webkit-tap-highlight-color:transparent;
+    cursor:pointer;
+}
+
+.hidden{
+    display:none!important;
 }
 
 /* =========================
-   LIQUID GLASS
+   الصفحة
+========================= */
+
+.messages-page{
+    width:100%;
+    min-height:100vh;
+    padding:22px;
+    display:flex;
+    justify-content:center;
+}
+
+.messages-shell{
+    width:min(1100px,100%);
+    min-height:calc(100vh - 44px);
+    position:relative;
+}
+
+/* =========================
+   Liquid Glass
 ========================= */
 
 .glass{
-    background:linear-gradient(
-        135deg,
-        rgba(255,255,255,.075),
-        rgba(255,255,255,.025)
-    );
-    border:1px solid var(--glass-border);
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.09);
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.06),
-        var(--shadow);
-    backdrop-filter:blur(var(--blur)) saturate(140%);
-    -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);
-}
-
-.page{
-    width:min(1050px,94%);
-    margin:0 auto;
-    padding:30px 0 70px;
+        0 20px 70px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
 }
 
 /* =========================
-   HEADER
+   الهيدر
 ========================= */
 
-.messages-header{
-    position:relative;
-    padding:24px;
-    border-radius:28px;
-    margin-bottom:18px;
-    overflow:hidden;
-}
-
-.messages-header::before{
-    content:"";
-    position:absolute;
-    width:180px;
-    height:180px;
-    border-radius:50%;
-    background:rgba(70,130,255,.12);
-    filter:blur(35px);
-    top:-80px;
-    right:-50px;
-    pointer-events:none;
-}
-
-.header-row{
-    position:relative;
+.main-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:15px;
+    gap:14px;
+    margin-bottom:16px;
 }
 
 .header-title{
     display:flex;
     align-items:center;
-    gap:13px;
+    gap:12px;
 }
 
 .header-icon{
-    width:52px;
-    height:52px;
-    border-radius:17px;
+    width:48px;
+    height:48px;
+    border-radius:16px;
     display:flex;
     align-items:center;
     justify-content:center;
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.09);
-    font-size:25px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);
+    font-size:23px;
 }
 
 .header-title h1{
-    font-size:26px;
-    margin-bottom:5px;
+    font-size:24px;
+    margin-bottom:4px;
 }
 
 .header-title p{
-    color:var(--muted);
+    color:#8e8e8e;
     font-size:13px;
 }
 
-/* =========================
-   HEADER NAV
-========================= */
+.header-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
 
-.header-nav{
+.icon-button{
+    width:43px;
+    height:43px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.09);
+    background:rgba(255,255,255,.045);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.2s;
+}
+
+.icon-button:hover{
+    background:rgba(255,255,255,.09);
+    transform:translateY(-1px);
+}
+
+.activity-button{
     display:flex;
     align-items:center;
     gap:7px;
-}
-
-.header-nav-btn{
-    min-height:40px;
-    padding:0 14px;
-    border-radius:13px;
-    border:1px solid rgba(255,255,255,.08);
+    min-height:43px;
+    padding:0 13px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.09);
     background:rgba(255,255,255,.045);
-    color:#aaa;
-    cursor:pointer;
-    transition:.22s;
-}
-
-.header-nav-btn:hover{
-    background:rgba(255,255,255,.08);
     color:#fff;
-}
-
-.header-nav-btn.active{
-    background:rgba(98,168,255,.13);
-    border-color:rgba(98,168,255,.28);
-    color:#fff;
-}
-
-.notification-indicator{
-    position:relative;
-}
-
-.notification-indicator::after{
-    content:"";
-    position:absolute;
-    width:7px;
-    height:7px;
-    border-radius:50%;
-    background:var(--red);
-    top:7px;
-    right:7px;
-    box-shadow:0 0 9px rgba(255,95,109,.7);
-    display:none;
-}
-
-.notification-indicator.has-notifications::after{
-    display:block;
-}
-
-/* =========================
-   ACTIVITY
-========================= */
-
-.activity-box{
-    position:relative;
-    display:flex;
-    align-items:center;
-    gap:9px;
-    padding:10px 14px;
-    border-radius:15px;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.08);
-    cursor:pointer;
-    transition:.25s;
-    user-select:none;
-    color:inherit;
-}
-
-.activity-box:hover{
-    background:rgba(255,255,255,.08);
-    transform:translateY(-1px);
 }
 
 .activity-dot{
     width:9px;
     height:9px;
     border-radius:50%;
-    background:#555;
-    box-shadow:0 0 0 transparent;
-    transition:.3s;
+    background:#777;
 }
 
-.activity-dot.active{
-    background:var(--green);
-    box-shadow:0 0 12px rgba(66,232,139,.8);
-    animation:activityPulse 2s infinite;
-}
-
-@keyframes activityPulse{
-    0%,100%{
-        box-shadow:0 0 0 0 rgba(66,232,139,.25)
-    }
-    50%{
-        box-shadow:0 0 0 6px rgba(66,232,139,0)
-    }
-}
-
-.activity-text{
-    font-size:12px;
+.activity-dot.online{
+    background:#36e06f;
+    box-shadow:0 0 12px rgba(54,224,111,.7);
 }
 
 /* =========================
-   SEARCH
+   البحث
 ========================= */
 
-.search-area{
-    display:grid;
-    grid-template-columns:1fr auto;
+.search-panel{
+    padding:14px;
+    border-radius:22px;
+    margin-bottom:15px;
+}
+
+.search-row{
+    display:flex;
     gap:10px;
-    margin-bottom:16px;
 }
 
-.search-input-wrap{
+.search-box{
     position:relative;
+    flex:1;
 }
 
-.search-input{
+.search-box input{
     width:100%;
-    height:50px;
-    padding:0 45px 0 16px;
-    color:#fff;
-    background:rgba(255,255,255,.045);
+    height:48px;
+    border-radius:15px;
     border:1px solid rgba(255,255,255,.09);
-    border-radius:17px;
+    background:rgba(0,0,0,.28);
+    color:#fff;
     outline:none;
-    font-size:14px;
-    transition:.25s;
-    backdrop-filter:blur(20px);
-    -webkit-backdrop-filter:blur(20px);
+    padding:0 45px 0 15px;
 }
 
-.search-input:focus{
-    border-color:rgba(98,168,255,.5);
-    background:rgba(255,255,255,.065);
-    box-shadow:0 0 0 4px rgba(98,168,255,.06);
+.search-box input:focus{
+    border-color:rgba(255,255,255,.22);
 }
 
 .search-icon{
@@ -341,337 +203,289 @@ button{
     right:15px;
     top:50%;
     transform:translateY(-50%);
-    opacity:.55;
+    color:#777;
 }
 
-.search-buttons{
+.search-modes{
     display:flex;
-    gap:8px;
+    gap:7px;
+    margin-top:10px;
 }
 
 .search-mode{
-    min-width:105px;
-    border:1px solid rgba(255,255,255,.09);
-    background:rgba(255,255,255,.05);
-    color:#ddd;
-    border-radius:16px;
-    cursor:pointer;
-    transition:.25s;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.035);
+    color:#999;
+    padding:9px 13px;
+    border-radius:12px;
+    transition:.2s;
 }
 
 .search-mode.active{
-    background:rgba(98,168,255,.12);
-    border-color:rgba(98,168,255,.35);
     color:#fff;
+    background:rgba(255,255,255,.10);
 }
 
-.search-results{
-    display:none;
-    margin-bottom:16px;
-    border-radius:22px;
-    overflow:hidden;
-}
+/* =========================
+   قائمة الرسائل
+========================= */
 
-.search-results.show{
+.messages-list-view{
     display:block;
-    animation:slideDown .25s ease;
 }
 
-@keyframes slideDown{
-    from{
-        opacity:0;
-        transform:translateY(-7px);
-    }
+.messages-list{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+}
+
+.conversation-card{
+    width:100%;
+    min-height:76px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.075);
+    background:rgba(255,255,255,.035);
+    transition:
+        transform .2s,
+        background .2s,
+        border-color .2s;
+    opacity:0;
+    transform:translateY(15px);
+    animation:conversationIn .38s ease forwards;
+}
+
+.conversation-card:hover{
+    transform:translateY(-2px);
+    background:rgba(255,255,255,.065);
+    border-color:rgba(255,255,255,.13);
+}
+
+@keyframes conversationIn{
     to{
         opacity:1;
         transform:translateY(0);
     }
 }
 
-.results-head{
-    padding:14px 16px;
-    border-bottom:1px solid rgba(255,255,255,.07);
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.avatar-wrap{
+    position:relative;
+    flex-shrink:0;
 }
 
-.results-head span{
-    color:var(--muted);
-    font-size:12px;
+.avatar{
+    width:52px;
+    height:52px;
+    border-radius:17px;
+    object-fit:cover;
+    display:block;
+    background:#111;
+    border:1px solid rgba(255,255,255,.09);
 }
 
-.close-search{
-    background:none;
-    border:0;
-    color:#aaa;
-    cursor:pointer;
-    font-size:18px;
-}
-
-.result-item{
-    padding:13px 15px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    cursor:pointer;
-    border-bottom:1px solid rgba(255,255,255,.05);
-    transition:.2s;
-}
-
-.result-item:last-child{
-    border-bottom:0;
-}
-
-.result-item:hover{
-    background:rgba(255,255,255,.05);
-}
-
-.result-avatar{
-    width:45px;
-    height:45px;
+.avatar-small{
+    width:42px;
+    height:42px;
     border-radius:14px;
-    object-fit:cover;
-    background:#171717;
-    flex:none;
-    cursor:pointer;
-}
-
-.result-info{
-    min-width:0;
-    flex:1;
-}
-
-.result-name{
-    font-weight:bold;
-    margin-bottom:5px;
-}
-
-.result-snippet{
-    color:#aaa;
-    font-size:12px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-
-.result-count{
-    color:#72aaff;
-    font-size:11px;
-    white-space:nowrap;
-}
-
-.support-search{
-    background:rgba(66,232,139,.045);
-}
-
-.support-search .result-avatar{
-    border-color:rgba(66,232,139,.2);
-}
-
-.support-search-label{
-    color:#7ee8a8;
-    font-size:11px;
-}
-
-/* =========================
-   MAIN LAYOUT
-========================= */
-
-.messages-layout{
-    display:grid;
-    grid-template-columns:340px 1fr;
-    gap:16px;
-    min-height:610px;
-}
-
-.conversations-panel,
-.chat-panel{
-    border-radius:26px;
-    overflow:hidden;
-    min-width:0;
-}
-
-.panel-head{
-    height:62px;
-    padding:0 17px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom:1px solid rgba(255,255,255,.07);
-}
-
-.panel-title{
-    font-weight:bold;
-}
-
-.panel-subtitle{
-    color:#777;
-    font-size:11px;
-    margin-top:3px;
-}
-
-/* =========================
-   CONVERSATIONS
-========================= */
-
-.conversation-list{
-    max-height:548px;
-    overflow-y:auto;
-}
-
-.conversation-list::-webkit-scrollbar,
-.chat-messages::-webkit-scrollbar{
-    width:4px;
-}
-
-.conversation-list::-webkit-scrollbar-thumb,
-.chat-messages::-webkit-scrollbar-thumb{
-    background:#333;
-    border-radius:10px;
-}
-
-.conversation{
-    position:relative;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:14px 15px;
-    cursor:pointer;
-    transition:.2s;
-    border-bottom:1px solid rgba(255,255,255,.045);
-}
-
-.conversation:hover{
-    background:rgba(255,255,255,.045);
-}
-
-.conversation.active{
-    background:rgba(98,168,255,.075);
-}
-
-.conversation-avatar-wrap{
-    position:relative;
-    flex:none;
-}
-
-.conversation-avatar{
-    width:49px;
-    height:49px;
-    border-radius:16px;
-    object-fit:cover;
-    background:#171717;
-    border:1px solid rgba(255,255,255,.08);
-    cursor:pointer;
 }
 
 .online-small{
     position:absolute;
-    left:-1px;
-    bottom:-1px;
-    width:12px;
-    height:12px;
+    width:11px;
+    height:11px;
     border-radius:50%;
-    background:#555;
-    border:2px solid #101010;
+    background:#777;
+    border:2px solid #080808;
+    bottom:0;
+    left:0;
 }
 
 .online-small.active{
-    background:var(--green);
+    background:#36e06f;
+    box-shadow:0 0 10px rgba(54,224,111,.6);
 }
 
-.conversation-content{
+.conversation-info{
     min-width:0;
     flex:1;
 }
 
 .conversation-top{
     display:flex;
+    align-items:center;
     justify-content:space-between;
-    gap:8px;
-    margin-bottom:5px;
+    gap:10px;
 }
 
 .conversation-name{
     font-weight:bold;
-    font-size:14px;
+    white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    white-space:nowrap;
 }
 
 .conversation-time{
-    color:#666;
-    font-size:10px;
+    color:#777;
+    font-size:11px;
     white-space:nowrap;
 }
 
 .conversation-preview{
     color:#888;
-    font-size:12px;
+    font-size:13px;
+    margin-top:7px;
+    white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    white-space:nowrap;
 }
 
-.unread-dot{
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:#63a9ff;
-    box-shadow:0 0 10px rgba(99,169,255,.7);
-    flex:none;
-}
-
-.support-badge{
-    color:#8cbcff;
-    font-size:10px;
-    margin-right:5px;
+.unread-badge{
+    min-width:21px;
+    height:21px;
+    padding:0 6px;
+    border-radius:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+    color:#000;
+    font-size:11px;
+    font-weight:bold;
 }
 
 /* =========================
-   CHAT
+   نتائج البحث
 ========================= */
 
-.chat-panel{
+.search-results{
     display:flex;
     flex-direction:column;
+    gap:9px;
 }
 
-.chat-head{
-    height:70px;
-    padding:0 17px;
+.search-result{
     display:flex;
     align-items:center;
     gap:12px;
-    border-bottom:1px solid rgba(255,255,255,.07);
+    padding:13px;
+    border-radius:19px;
+    border:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.035);
+    animation:conversationIn .35s ease forwards;
 }
 
-.back-mobile{
-    display:none;
-    border:0;
-    background:none;
+.search-result-content{
+    flex:1;
+    min-width:0;
+}
+
+.search-result-name{
+    font-weight:bold;
+}
+
+.search-result-username{
+    color:#777;
+    font-size:12px;
+    direction:ltr;
+    text-align:right;
+    margin-top:3px;
+}
+
+.search-result-snippet{
+    color:#999;
+    font-size:13px;
+    margin-top:7px;
+}
+
+.search-result-count{
+    font-size:11px;
     color:#aaa;
-    font-size:22px;
-    cursor:pointer;
+    white-space:nowrap;
+}
+
+/* =========================
+   حالة فارغة
+========================= */
+
+.empty-state{
+    min-height:220px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:#777;
+    gap:8px;
+}
+
+.empty-icon{
+    font-size:38px;
+    opacity:.55;
+}
+
+.empty-state strong{
+    color:#aaa;
+}
+
+/* =========================
+   شاشة المحادثة
+========================= */
+
+.chat-view{
+    display:none;
+    height:calc(100vh - 44px);
+    min-height:500px;
+    border-radius:26px;
+    overflow:hidden;
+    flex-direction:column;
+}
+
+.chat-view.open{
+    display:flex;
+    animation:chatOpen .28s ease;
+}
+
+@keyframes chatOpen{
+    from{
+        opacity:0;
+        transform:translateX(12px);
+    }
+    to{
+        opacity:1;
+        transform:translateX(0);
+    }
+}
+
+.chat-header{
+    min-height:70px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-bottom:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.035);
+}
+
+.back-button{
+    width:42px;
+    height:42px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.04);
+    color:#fff;
+    font-size:20px;
 }
 
 .chat-user{
     display:flex;
     align-items:center;
-    gap:11px;
-    min-width:0;
+    gap:10px;
     flex:1;
-    cursor:pointer;
-}
-
-.chat-avatar{
-    width:45px;
-    height:45px;
-    border-radius:15px;
-    object-fit:cover;
-    background:#171717;
-    cursor:pointer;
+    min-width:0;
 }
 
 .chat-user-info{
@@ -680,76 +494,55 @@ button{
 
 .chat-user-name{
     font-weight:bold;
-    font-size:14px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
-.chat-status{
-    color:#777;
+.chat-user-status{
     font-size:11px;
-    margin-top:4px;
+    color:#777;
+    margin-top:3px;
 }
 
-.chat-actions{
-    display:flex;
-    gap:5px;
+.chat-user-status.online{
+    color:#45d976;
 }
 
-.icon-btn{
-    width:38px;
-    height:38px;
-    border-radius:12px;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.07);
-    color:#bbb;
-    cursor:pointer;
-    transition:.2s;
-}
-
-.icon-btn:hover{
-    background:rgba(255,255,255,.08);
-    color:#fff;
-}
-
-/* =========================
-   MESSAGES
-========================= */
-
-.chat-messages{
+.chat-body{
     flex:1;
-    min-height:470px;
-    max-height:470px;
+    min-height:0;
     overflow-y:auto;
-    padding:20px 17px;
+    padding:20px 14px;
     scroll-behavior:smooth;
 }
 
-.chat-empty{
-    height:100%;
+.messages-container{
     display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    color:#666;
-    padding:30px;
-}
-
-.chat-empty-icon{
-    font-size:38px;
-    margin-bottom:10px;
-    opacity:.6;
+    flex-direction:column;
+    gap:8px;
+    max-width:850px;
+    margin:auto;
 }
 
 .message-row{
-    display:flex;
     width:100%;
-    margin:8px 0;
-    animation:messageIn .25s cubic-bezier(.2,.8,.2,1);
+    display:flex;
+    animation:messageIn .32s cubic-bezier(.2,.8,.2,1);
+}
+
+.message-row.mine{
+    justify-content:flex-start;
+}
+
+.message-row.theirs{
+    justify-content:flex-end;
 }
 
 @keyframes messageIn{
     from{
         opacity:0;
-        transform:translateY(9px) scale(.96);
+        transform:translateY(15px) scale(.97);
     }
     to{
         opacity:1;
@@ -757,236 +550,301 @@ button{
     }
 }
 
-.message-row.mine{
-    justify-content:flex-start;
-}
-
-.message-row.other{
-    justify-content:flex-end;
-}
-
 .message-bubble{
-    width:max-content;
-    max-width:min(75%,520px);
-    padding:9px 12px 6px;
-    border-radius:17px;
-    background:rgba(255,255,255,.055);
-    border:1px solid rgba(255,255,255,.07);
+    max-width:min(75%,600px);
+    padding:11px 14px;
+    border-radius:18px;
+    line-height:1.55;
+    word-break:break-word;
     position:relative;
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
 }
 
 .message-row.mine .message-bubble{
-    background:rgba(78,145,255,.11);
-    border-color:rgba(98,168,255,.12);
-    border-bottom-right-radius:5px;
+    background:#f1f1f1;
+    color:#050505;
+    border-bottom-right-radius:6px;
 }
 
-.message-row.other .message-bubble{
-    border-bottom-left-radius:5px;
+.message-row.theirs .message-bubble{
+    background:rgba(255,255,255,.075);
+    border:1px solid rgba(255,255,255,.08);
+    color:#fff;
+    border-bottom-left-radius:6px;
 }
 
-.message-content{
-    font-size:13px;
-    line-height:1.65;
-    white-space:pre-wrap;
-    overflow-wrap:anywhere;
-    word-break:break-word;
-}
-
-.message-meta{
-    display:flex;
-    justify-content:flex-end;
-    align-items:center;
-    gap:5px;
-    color:#666;
+.message-time{
+    display:block;
+    margin-top:5px;
     font-size:9px;
-    margin-top:3px;
-    line-height:1;
-}
-
-.message-send-animation{
-    animation:sentPop .32s cubic-bezier(.2,.9,.2,1);
-}
-
-@keyframes sentPop{
-    0%{
-        opacity:0;
-        transform:translateY(8px) scale(.9);
-    }
-    70%{
-        opacity:1;
-        transform:translateY(-2px) scale(1.02);
-    }
-    100%{
-        opacity:1;
-        transform:none;
-    }
+    opacity:.45;
+    direction:ltr;
 }
 
 .message-highlight{
-    animation:messageHighlight 1.5s ease;
+    animation:highlightMessage 1.5s ease;
 }
 
-@keyframes messageHighlight{
+@keyframes highlightMessage{
     0%,100%{
         box-shadow:none;
     }
     25%,70%{
-        box-shadow:0 0 0 3px rgba(98,168,255,.28);
+        box-shadow:0 0 0 3px rgba(255,255,255,.14);
     }
 }
 
-.typing{
-    height:24px;
-    padding:0 18px;
-    display:none;
+/* =========================
+   يكتب
+========================= */
+
+.typing-area{
+    min-height:27px;
+    padding:0 18px 4px;
+    color:#888;
+    font-size:12px;
+}
+
+.typing-indicator{
+    display:flex;
     align-items:center;
-    gap:7px;
-    color:#777;
-    font-size:11px;
+    gap:4px;
 }
 
-.typing.show{
-    display:flex;
-}
-
-.typing-dots{
-    display:flex;
-    gap:3px;
-}
-
-.typing-dots i{
-    width:4px;
-    height:4px;
+.typing-dot{
+    width:5px;
+    height:5px;
     border-radius:50%;
     background:#aaa;
-    animation:typingDot 1s infinite;
+    animation:typingDot .8s infinite;
 }
 
-.typing-dots i:nth-child(2){
+.typing-dot:nth-child(2){
     animation-delay:.15s;
 }
 
-.typing-dots i:nth-child(3){
+.typing-dot:nth-child(3){
     animation-delay:.3s;
 }
 
 @keyframes typingDot{
     0%,60%,100%{
+        opacity:.25;
         transform:translateY(0);
-        opacity:.4
     }
     30%{
-        transform:translateY(-4px);
-        opacity:1
+        opacity:1;
+        transform:translateY(-3px);
     }
 }
 
 /* =========================
-   COMPOSER
+   إرسال
 ========================= */
 
-.composer{
-    padding:12px;
+.chat-input-area{
+    padding:11px;
     border-top:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.025);
+}
+
+.chat-form{
     display:flex;
-    gap:8px;
+    align-items:flex-end;
+    gap:9px;
 }
 
-.message-input{
+.chat-input{
     flex:1;
-    min-width:0;
     resize:none;
-    min-height:44px;
-    max-height:120px;
-    padding:12px 14px;
+    min-height:45px;
+    max-height:130px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.09);
+    background:rgba(0,0,0,.3);
     color:#fff;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:15px;
+    padding:12px 14px;
     outline:none;
-    font-family:inherit;
-    font-size:13px;
 }
 
-.message-input:focus{
-    border-color:rgba(98,168,255,.35);
+.chat-input:focus{
+    border-color:rgba(255,255,255,.22);
 }
 
-.send-btn{
-    width:48px;
-    border:0;
+.send-button{
+    width:47px;
+    height:47px;
+    flex-shrink:0;
     border-radius:15px;
-    background:rgba(98,168,255,.15);
-    border:1px solid rgba(98,168,255,.25);
-    color:#9fc7ff;
-    cursor:pointer;
+    border:1px solid rgba(255,255,255,.13);
+    background:#fff;
+    color:#000;
+    font-size:18px;
     transition:.2s;
-    position:relative;
-    overflow:hidden;
 }
 
-.send-btn:hover{
-    background:rgba(98,168,255,.23);
+.send-button:hover{
+    transform:scale(1.04);
 }
 
-.send-btn:disabled{
+.send-button:disabled{
     opacity:.35;
     cursor:not-allowed;
 }
 
-.send-btn.sending{
-    animation:sendButtonPulse .5s ease;
-}
-
-@keyframes sendButtonPulse{
-    0%{
-        transform:scale(1);
-    }
-    40%{
-        transform:scale(.88);
-    }
-    75%{
-        transform:scale(1.08);
-    }
-    100%{
-        transform:scale(1);
-    }
-}
-
 /* =========================
-   EMPTY
+   الإشعارات
 ========================= */
 
-.empty-state{
-    padding:45px 20px;
-    text-align:center;
-    color:#666;
+.notifications-panel{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    z-index:100;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
 }
 
-.empty-state .big{
-    font-size:38px;
+.notifications-panel.open{
+    display:flex;
+}
+
+.notifications-box{
+    width:min(520px,100%);
+    max-height:80vh;
+    overflow:auto;
+    border-radius:25px;
+    padding:16px;
+}
+
+.notifications-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
     margin-bottom:12px;
 }
 
+.notifications-actions{
+    display:flex;
+    gap:7px;
+}
+
+.small-action{
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.045);
+    color:#aaa;
+    border-radius:11px;
+    padding:8px 10px;
+    font-size:11px;
+}
+
+.notification-item{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:12px;
+    border-radius:16px;
+    margin-bottom:7px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.06);
+}
+
+.notification-item.unread{
+    background:rgba(255,255,255,.07);
+}
+
+.notification-text{
+    flex:1;
+    color:#ddd;
+    font-size:13px;
+    line-height:1.5;
+}
+
+.notification-delete{
+    border:0;
+    background:transparent;
+    color:#777;
+    font-size:15px;
+}
+
 /* =========================
-   CONTEXT MENU
+   مودال النشاط
+========================= */
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    z-index:110;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+}
+
+.modal.open{
+    display:flex;
+}
+
+.modal-box{
+    width:min(450px,100%);
+    border-radius:25px;
+    padding:22px;
+}
+
+.modal-box h2{
+    font-size:20px;
+    margin-bottom:8px;
+}
+
+.modal-box p{
+    color:#888;
+    font-size:13px;
+    line-height:1.6;
+}
+
+.activity-options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin-top:18px;
+}
+
+.activity-option{
+    padding:14px;
+    border-radius:15px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.04);
+    color:#aaa;
+}
+
+.activity-option.active{
+    color:#fff;
+    background:rgba(255,255,255,.1);
+}
+
+/* =========================
+   Context menu
 ========================= */
 
 .context-menu{
     position:fixed;
-    z-index:2000;
+    z-index:200;
+    min-width:190px;
+    padding:7px;
+    border-radius:16px;
     display:none;
-    width:210px;
-    border-radius:18px;
-    overflow:hidden;
-    padding:5px;
 }
 
-.context-menu.show{
+.context-menu.open{
     display:block;
-    animation:menuIn .15s ease;
+    animation:menuIn .16s ease;
 }
 
 @keyframes menuIn{
@@ -996,472 +854,347 @@ button{
     }
     to{
         opacity:1;
-        transform:none;
+        transform:scale(1);
     }
 }
 
-.menu-item{
+.context-item{
     width:100%;
-    padding:12px;
+    text-align:right;
     border:0;
     background:transparent;
     color:#ddd;
-    text-align:right;
-    border-radius:12px;
-    cursor:pointer;
-    font-family:inherit;
+    padding:11px;
+    border-radius:11px;
 }
 
-.menu-item:hover{
-    background:rgba(255,255,255,.07);
+.context-item:hover{
+    background:rgba(255,255,255,.08);
 }
 
-.menu-item.danger{
-    color:#ff747d;
+.context-item.danger{
+    color:#ff7777;
 }
 
 /* =========================
-   ACTIVITY MODAL
+   رسالة تسجيل الدخول
 ========================= */
 
-.modal-overlay{
-    position:fixed;
-    z-index:1500;
-    inset:0;
-    display:none;
+.auth-required{
+    min-height:300px;
+    display:flex;
     align-items:center;
     justify-content:center;
-    background:rgba(0,0,0,.65);
-    backdrop-filter:blur(9px);
-    -webkit-backdrop-filter:blur(9px);
-    padding:20px;
-}
-
-.modal-overlay.show{
-    display:flex;
-}
-
-.modal{
-    width:min(450px,100%);
-    border-radius:25px;
-    padding:22px;
-    animation:modalIn .22s ease;
-}
-
-@keyframes modalIn{
-    from{
-        opacity:0;
-        transform:translateY(12px) scale(.97);
-    }
-    to{
-        opacity:1;
-        transform:none;
-    }
-}
-
-.modal h2{
-    font-size:19px;
-    margin-bottom:8px;
-}
-
-.modal p{
-    color:#888;
-    font-size:12px;
-    line-height:1.6;
-    margin-bottom:18px;
-}
-
-.setting-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:15px;
-    padding:15px;
-    border-radius:17px;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.07);
-}
-
-.switch{
-    position:relative;
-    width:48px;
-    height:27px;
-    flex:none;
-}
-
-.switch input{
-    opacity:0;
-    width:0;
-    height:0;
-}
-
-.slider{
-    position:absolute;
-    inset:0;
-    background:#333;
-    border-radius:30px;
-    cursor:pointer;
-    transition:.25s;
-}
-
-.slider::before{
-    content:"";
-    position:absolute;
-    width:21px;
-    height:21px;
-    right:3px;
-    top:3px;
-    background:#aaa;
-    border-radius:50%;
-    transition:.25s;
-}
-
-.switch input:checked + .slider{
-    background:rgba(66,232,139,.3);
-}
-
-.switch input:checked + .slider::before{
-    transform:translateX(-21px);
-    background:var(--green);
-}
-
-.modal-actions{
-    display:flex;
-    gap:8px;
-    margin-top:18px;
-}
-
-.modal-btn{
-    flex:1;
-    min-height:43px;
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.05);
-    color:#ddd;
-    cursor:pointer;
-}
-
-.modal-btn.primary{
-    background:rgba(98,168,255,.14);
-    border-color:rgba(98,168,255,.25);
-}
-
-/* =========================
-   SEARCH NAV
-========================= */
-
-.search-navigation{
-    display:none;
-    align-items:center;
-    gap:6px;
-}
-
-.search-navigation.show{
-    display:flex;
-}
-
-.search-navigation button{
-    width:30px;
-    height:30px;
-    border-radius:9px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.05);
-    color:#aaa;
-    cursor:pointer;
-}
-
-.search-match-counter{
+    text-align:center;
     color:#777;
-    font-size:10px;
+}
+
+.auth-required strong{
+    color:#bbb;
 }
 
 /* =========================
-   TOAST
+   Responsive
 ========================= */
-
-.toast{
-    position:fixed;
-    z-index:3000;
-    left:50%;
-    bottom:25px;
-    transform:translate(-50%,20px);
-    opacity:0;
-    pointer-events:none;
-    padding:12px 18px;
-    border-radius:15px;
-    background:rgba(25,25,25,.88);
-    border:1px solid rgba(255,255,255,.1);
-    color:#eee;
-    backdrop-filter:blur(20px);
-    -webkit-backdrop-filter:blur(20px);
-    transition:.25s;
-    font-size:12px;
-    box-shadow:0 15px 40px rgba(0,0,0,.4);
-}
-
-.toast.show{
-    opacity:1;
-    transform:translate(-50%,0);
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-@media(max-width:800px){
-
-    .messages-layout{
-        grid-template-columns:1fr;
-    }
-
-    .chat-panel{
-        display:none;
-        min-height:620px;
-    }
-
-    .messages-layout.chat-open .conversations-panel{
-        display:none;
-    }
-
-    .messages-layout.chat-open .chat-panel{
-        display:flex;
-    }
-
-    .back-mobile{
-        display:block;
-    }
-
-    .conversation-list{
-        max-height:none;
-    }
-
-}
 
 @media(max-width:700px){
 
-    .header-row{
-        flex-wrap:wrap;
+    .messages-page{
+        padding:10px;
     }
 
-    .header-nav{
-        width:100%;
-        order:3;
-    }
-
-    .header-nav-btn{
-        flex:1;
-    }
-
-}
-
-@media(max-width:600px){
-
-    .page{
-        width:96%;
-        padding-top:15px;
-    }
-
-    .messages-header{
-        padding:18px;
-        border-radius:23px;
+    .messages-shell{
+        min-height:calc(100vh - 20px);
     }
 
     .header-title h1{
-        font-size:21px;
+        font-size:20px;
     }
 
-    .header-icon{
-        width:45px;
-        height:45px;
-        font-size:21px;
-    }
-
-    .activity-text{
+    .header-title p{
         display:none;
     }
 
-    .activity-box{
-        width:39px;
-        height:39px;
-        padding:0;
-        justify-content:center;
+    .activity-button{
+        padding:0 10px;
     }
 
-    .search-area{
-        grid-template-columns:1fr;
-    }
-
-    .search-buttons{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-    }
-
-    .search-mode{
-        height:43px;
+    .chat-view{
+        height:calc(100vh - 20px);
+        border-radius:20px;
     }
 
     .message-bubble{
-        max-width:84%;
+        max-width:85%;
     }
 
-    .chat-messages{
-        min-height:500px;
-        max-height:500px;
+    .search-mode{
+        flex:1;
     }
-
 }
 </style>
 </head>
 
 <body>
 
-<div class="page">
+<div class="messages-page">
 
-    <!-- HEADER -->
-    <header class="messages-header glass">
+<div class="messages-shell">
 
-        <div class="header-row">
+    <!-- =========================
+         القائمة الرئيسية
+    ========================== -->
+
+    <section id="messagesListView" class="messages-list-view">
+
+        <header class="main-header">
 
             <div class="header-title">
-
-                <div class="header-icon">
-                    💬
-                </div>
+                <div class="header-icon">💬</div>
 
                 <div>
                     <h1>الرسائل</h1>
-                    <p>محادثاتك الخاصة</p>
+                    <p>محادثاتك وإشعاراتك</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+
+                <button
+                    id="activityButton"
+                    class="activity-button"
+                    type="button">
+                    <span id="activityDot" class="activity-dot"></span>
+                    <span id="activityText">غير نشط</span>
+                </button>
+
+                <button
+                    id="notificationsButton"
+                    class="icon-button"
+                    type="button">
+                    🔔
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <div class="search-panel glass">
+
+            <div class="search-row">
+
+                <div class="search-box">
+
+                    <span class="search-icon">⌕</span>
+
+                    <input
+                        id="messageSearch"
+                        type="search"
+                        autocomplete="off"
+                        placeholder="ابحث في الرسائل...">
+
                 </div>
 
             </div>
 
-            <div class="header-nav">
+            <div class="search-modes">
 
                 <button
-                    type="button"
-                    id="messagesHeaderButton"
-                    class="header-nav-btn active">
-                    💬 الرسائل
+                    id="searchMessagesMode"
+                    class="search-mode active"
+                    type="button">
+                    الرسائل
                 </button>
 
                 <button
-                    type="button"
-                    id="notificationsHeaderButton"
-                    class="header-nav-btn notification-indicator">
-                    🔔 الإشعارات
+                    id="searchUsersMode"
+                    class="search-mode"
+                    type="button">
+                    المستخدمين
                 </button>
 
             </div>
 
-            <button
-                type="button"
-                class="activity-box"
-                id="activityButton"
-                title="إعدادات النشاط">
-
-                <span
-                    class="activity-dot"
-                    id="activityDot">
-                </span>
-
-                <span
-                    class="activity-text"
-                    id="activityText">
-                    غير متصل
-                </span>
-
-            </button>
-
         </div>
 
-    </header>
 
+        <div id="mainContent">
 
-    <!-- SEARCH -->
+            <div
+                id="messagesList"
+                class="messages-list">
+            </div>
 
-    <section class="search-area">
+            <div
+                id="searchResults"
+                class="search-results hidden">
+            </div>
 
-        <div class="search-input-wrap">
+            <div
+                id="emptyState"
+                class="empty-state hidden">
 
-            <span class="search-icon">
-                🔎
-            </span>
+                <div class="empty-icon">💬</div>
+                <strong>لا توجد محادثات</strong>
+                <span>ابدأ محادثة جديدة من البحث عن مستخدم.</span>
 
-            <input
-                id="messageSearch"
-                class="search-input"
-                type="search"
-                autocomplete="off"
-                placeholder="ابحث في الرسائل...">
+            </div>
 
-        </div>
+            <div
+                id="authRequired"
+                class="auth-required hidden">
 
-        <div class="search-buttons">
+                <div>
+                    <strong>يجب تسجيل الدخول</strong>
+                    <p>سجل الدخول حتى تتمكن من استخدام الرسائل.</p>
+                </div>
 
-            <button
-                type="button"
-                id="messageSearchMode"
-                class="search-mode active">
-                الرسائل
-            </button>
-
-            <button
-                type="button"
-                id="userSearchMode"
-                class="search-mode">
-                المستخدمون
-            </button>
+            </div>
 
         </div>
 
     </section>
 
 
-    <!-- SEARCH RESULTS -->
+    <!-- =========================
+         شاشة المحادثة
+    ========================== -->
 
     <section
-        id="searchResults"
-        class="search-results glass">
+        id="chatView"
+        class="chat-view glass">
 
-        <div class="results-head">
+        <header class="chat-header">
 
-            <strong id="searchResultsTitle">
-                نتائج البحث
-            </strong>
+            <button
+                id="backToMessages"
+                class="back-button"
+                type="button">
+                ←
+            </button>
 
-            <div
-                style="display:flex;align-items:center;gap:10px">
+            <div class="chat-user">
 
-                <div
-                    id="searchNavigation"
-                    class="search-navigation">
+                <div class="avatar-wrap">
+
+                    <img
+                        id="chatAvatar"
+                        class="avatar avatar-small"
+                        src=""
+                        alt="">
 
                     <span
-                        id="searchMatchCounter"
-                        class="search-match-counter">
-                        0 / 0
+                        id="chatOnlineDot"
+                        class="online-small">
                     </span>
-
-                    <button
-                        type="button"
-                        id="searchPrev"
-                        title="السابق">
-                        ↑
-                    </button>
-
-                    <button
-                        type="button"
-                        id="searchNext"
-                        title="التالي">
-                        ↓
-                    </button>
 
                 </div>
 
+                <div class="chat-user-info">
+
+                    <div
+                        id="chatUserName"
+                        class="chat-user-name">
+                        المستخدم
+                    </div>
+
+                    <div
+                        id="chatUserStatus"
+                        class="chat-user-status">
+                        غير نشط
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <div
+            id="chatBody"
+            class="chat-body">
+
+            <div
+                id="messagesContainer"
+                class="messages-container">
+            </div>
+
+        </div>
+
+
+        <div
+            id="typingArea"
+            class="typing-area">
+        </div>
+
+
+        <div class="chat-input-area">
+
+            <form
+                id="chatForm"
+                class="chat-form">
+
+                <textarea
+                    id="chatInput"
+                    class="chat-input"
+                    rows="1"
+                    maxlength="5000"
+                    placeholder="اكتب رسالتك..."></textarea>
+
                 <button
-                    type="button"
-                    id="closeSearch"
-                    class="close-search">
+                    id="sendButton"
+                    class="send-button"
+                    type="submit">
+                    ➤
+                </button>
+
+            </form>
+
+        </div>
+
+    </section>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     الإشعارات
+========================== -->
+
+<div
+    id="notificationsPanel"
+    class="notifications-panel">
+
+    <div class="notifications-box glass">
+
+        <div class="notifications-head">
+
+            <h2>الإشعارات</h2>
+
+            <div class="notifications-actions">
+
+                <button
+                    id="markAllNotifications"
+                    class="small-action"
+                    type="button">
+                    قراءة الكل
+                </button>
+
+                <button
+                    id="deleteAllNotifications"
+                    class="small-action"
+                    type="button">
+                    حذف الكل
+                </button>
+
+                <button
+                    id="closeNotifications"
+                    class="icon-button"
+                    type="button">
                     ×
                 </button>
 
@@ -1469,248 +1202,43 @@ button{
 
         </div>
 
-        <div id="searchResultsList"></div>
+        <div id="notificationsList"></div>
 
-    </section>
-
-
-    <!-- MAIN -->
-
-    <main
-        id="messagesLayout"
-        class="messages-layout">
-
-        <!-- CONVERSATIONS -->
-
-        <section
-            class="conversations-panel glass">
-
-            <div class="panel-head">
-
-                <div>
-
-                    <div class="panel-title">
-                        المحادثات
-                    </div>
-
-                    <div class="panel-subtitle">
-                        رسائلك الأخيرة
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div
-                id="conversationList"
-                class="conversation-list">
-
-                <div class="empty-state">
-
-                    <div class="big">
-                        💬
-                    </div>
-
-                    <div>
-                        جاري تحميل المحادثات...
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- CHAT -->
-
-        <section class="chat-panel glass">
-
-            <div class="chat-head">
-
-                <button
-                    type="button"
-                    id="backMobile"
-                    class="back-mobile">
-                    ‹
-                </button>
-
-                <div
-                    id="chatUser"
-                    class="chat-user">
-
-                    <img
-                        id="chatAvatar"
-                        class="chat-avatar"
-                        src=""
-                        alt="">
-
-                    <div class="chat-user-info">
-
-                        <div
-                            id="chatName"
-                            class="chat-user-name">
-                            اختر محادثة
-                        </div>
-
-                        <div
-                            id="chatStatus"
-                            class="chat-status">
-                            ابدأ محادثة
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="chat-actions">
-
-                    <button
-                        type="button"
-                        id="chatMenuButton"
-                        class="icon-btn"
-                        title="خيارات المحادثة">
-                        ⋮
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="chatMessages"
-                class="chat-messages">
-
-                <div class="chat-empty">
-
-                    <div>
-
-                        <div class="chat-empty-icon">
-                            💬
-                        </div>
-
-                        <div>
-                            اختر محادثة لعرض الرسائل
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="typingIndicator"
-                class="typing">
-
-                <span id="typingName">
-                    المستخدم
-                </span>
-
-                <span>
-                    يكتب
-                </span>
-
-                <span class="typing-dots">
-
-                    <i></i>
-                    <i></i>
-                    <i></i>
-
-                </span>
-
-            </div>
-
-
-            <form
-                id="messageForm"
-                class="composer">
-
-                <textarea
-                    id="messageInput"
-                    class="message-input"
-                    rows="1"
-                    maxlength="5000"
-                    placeholder="اكتب رسالة..."
-                    disabled></textarea>
-
-                <button
-                    id="sendButton"
-                    class="send-btn"
-                    type="submit"
-                    disabled>
-                    ➤
-                </button>
-
-            </form>
-
-        </section>
-
-    </main>
+    </div>
 
 </div>
 
 
-<!-- ACTIVITY MODAL -->
+<!-- =========================
+     النشاط
+========================== -->
 
 <div
     id="activityModal"
-    class="modal-overlay">
+    class="modal">
 
-    <div class="modal glass">
+    <div class="modal-box glass">
 
-        <h2>
-            حالة النشاط
-        </h2>
+        <h2>حالة النشاط</h2>
 
         <p>
-            عند تفعيل هذا الخيار يمكن للمستخدمين الذين تتواصل معهم
-            معرفة أنك نشط. عند إيقافه لن تظهر لهم حالة نشاطك.
+            إذا عطلت حالة النشاط، لن يظهر للآخرين أنك نشط.
         </p>
 
-        <div class="setting-row">
-
-            <div>
-
-                <strong>
-                    إظهار حالة النشاط
-                </strong>
-
-                <div
-                    style="color:#777;font-size:11px;margin-top:4px">
-                    متصل / غير متصل
-                </div>
-
-            </div>
-
-            <label class="switch">
-
-                <input
-                    type="checkbox"
-                    id="activityToggle">
-
-                <span class="slider"></span>
-
-            </label>
-
-        </div>
-
-        <div class="modal-actions">
+        <div class="activity-options">
 
             <button
-                type="button"
-                id="closeActivityModal"
-                class="modal-btn">
-                إغلاق
+                id="activityOn"
+                class="activity-option"
+                type="button">
+                🟢 إظهار النشاط
             </button>
 
             <button
-                type="button"
-                id="saveActivity"
-                class="modal-btn primary">
-                حفظ
+                id="activityOff"
+                class="activity-option"
+                type="button">
+                ⚪ إخفاء النشاط
             </button>
 
         </div>
@@ -1720,49 +1248,40 @@ button{
 </div>
 
 
-<!-- CONTEXT MENU -->
+<!-- =========================
+     قائمة المحادثة
+========================== -->
 
 <div
-    id="conversationMenu"
+    id="contextMenu"
     class="context-menu glass">
 
     <button
-        type="button"
         id="muteConversation"
-        class="menu-item">
+        class="context-item"
+        type="button">
         🔕 كتم الإشعارات
     </button>
 
     <button
-        type="button"
         id="hideConversation"
-        class="menu-item danger">
-        🗑 إخفاء المحادثة
+        class="context-item danger"
+        type="button">
+        🗑️ إخفاء المحادثة
     </button>
 
 </div>
 
-
-<!-- TOAST -->
-
-<div
-    id="toast"
-    class="toast">
-</div>
-
-
-<!-- SUPABASE -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="./settings-features/settings-auth-config.js"></script>
 <script src="./settings-features/settings-auth.js"></script>
-
+<script src="./settings-features/settings-auth-ui.js"></script>
 
 <script>
 /* =========================================================
-   WFESC MESSAGES SYSTEM
-   VERSION: FINAL MESSAGE SYSTEM
+   WFESC MESSAGES
 ========================================================= */
 
 (function(){
@@ -1771,533 +1290,353 @@ button{
 
 
 /* =========================================================
-   CONFIG
+   العناصر
 ========================================================= */
 
-const SUPPORT_AVATAR =
-    "./sborts-wfesc-help.jpg";
+const messagesListView =
+    document.getElementById("messagesListView");
 
-const SUPPORT_SEARCH_WORDS = [
-    "الدعم",
-    "اتصال بالدعم",
-    "الاتصال بالدعم",
-    "دعم wfesc",
-    "support",
-    "wfesc support"
-];
+const chatView =
+    document.getElementById("chatView");
+
+const messagesList =
+    document.getElementById("messagesList");
+
+const searchResults =
+    document.getElementById("searchResults");
+
+const emptyState =
+    document.getElementById("emptyState");
+
+const authRequired =
+    document.getElementById("authRequired");
+
+const messageSearch =
+    document.getElementById("messageSearch");
+
+const searchMessagesMode =
+    document.getElementById("searchMessagesMode");
+
+const searchUsersMode =
+    document.getElementById("searchUsersMode");
+
+const backToMessages =
+    document.getElementById("backToMessages");
+
+const chatAvatar =
+    document.getElementById("chatAvatar");
+
+const chatUserName =
+    document.getElementById("chatUserName");
+
+const chatUserStatus =
+    document.getElementById("chatUserStatus");
+
+const chatOnlineDot =
+    document.getElementById("chatOnlineDot");
+
+const messagesContainer =
+    document.getElementById("messagesContainer");
+
+const chatBody =
+    document.getElementById("chatBody");
+
+const chatForm =
+    document.getElementById("chatForm");
+
+const chatInput =
+    document.getElementById("chatInput");
+
+const sendButton =
+    document.getElementById("sendButton");
+
+const typingArea =
+    document.getElementById("typingArea");
+
+const activityButton =
+    document.getElementById("activityButton");
+
+const activityDot =
+    document.getElementById("activityDot");
+
+const activityText =
+    document.getElementById("activityText");
+
+const activityModal =
+    document.getElementById("activityModal");
+
+const activityOn =
+    document.getElementById("activityOn");
+
+const activityOff =
+    document.getElementById("activityOff");
+
+const notificationsButton =
+    document.getElementById("notificationsButton");
+
+const notificationsPanel =
+    document.getElementById("notificationsPanel");
+
+const closeNotifications =
+    document.getElementById("closeNotifications");
+
+const notificationsList =
+    document.getElementById("notificationsList");
+
+const markAllNotifications =
+    document.getElementById("markAllNotifications");
+
+const deleteAllNotifications =
+    document.getElementById("deleteAllNotifications");
+
+const contextMenu =
+    document.getElementById("contextMenu");
+
+const muteConversation =
+    document.getElementById("muteConversation");
+
+const hideConversation =
+    document.getElementById("hideConversation");
 
 
-/*
-   الأدمن لا يظهر في بحث المستخدمين كحساب عادي.
-   الحسابات نفسها تبقى طبيعية داخل النظام.
-*/
-const SUPPORT_ADMIN_IDS = new Set([
-    "3ef0346c-f619-4bcd-86de-85667da0810f",
-    "b78656e9-0b1c-49ba-b013-4c13512b3f6d"
-]);
-
+/* =========================================================
+   الثوابت
+========================================================= */
 
 const DEFAULT_AVATAR =
     "data:image/svg+xml;charset=UTF-8," +
     encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg"
-             width="120"
-             height="120"
-             viewBox="0 0 120 120">
-            <rect width="120"
-                  height="120"
-                  rx="30"
-                  fill="#151515"/>
-            <text x="60"
-                  y="72"
+             width="200"
+             height="200"
+             viewBox="0 0 200 200">
+            <rect width="200" height="200" fill="#111"/>
+            <text x="100"
+                  y="118"
                   text-anchor="middle"
-                  font-size="48"
-                  fill="#777">W</text>
+                  fill="#fff"
+                  font-size="70"
+                  font-family="Arial">
+                𝑾
+            </text>
         </svg>
     `);
 
-
-/* =========================================================
-   STATE
-========================================================= */
+const SUPPORT_AVATAR =
+    "./sborts-wfesc-help.jpg";
 
 let client = null;
 let currentUser = null;
 
-let conversations = [];
-let contactsCache = new Map();
-
 let currentConversationId = null;
-let currentConversationType = null;
 let currentContact = null;
 
-let currentMessages = [];
-let currentMessageMap = new Map();
-
-let subscriptions = [];
-
-let typingTimer = null;
-let typingCurrently = false;
+let conversations = [];
 
 let searchMode = "messages";
-let searchTimer = null;
 
-let messageSearchResults = [];
-let searchMatches = [];
-let currentSearchIndex = 0;
+let typingTimer = null;
+let typingState = false;
 
-let activityEnabled = true;
-let activityDraft = true;
+let realtimeChannel = null;
+let typingChannel = null;
+let presenceChannel = null;
+let notificationChannel = null;
+
+let currentContextConversation = null;
 
 let initialized = false;
-let authListenerAttached = false;
-
-let sendingMessage = false;
 
 
 /* =========================================================
-   ELEMENTS
+   الحصول على Supabase
 ========================================================= */
-
-const $ = id =>
-    document.getElementById(id);
-
-const layout =
-    $("messagesLayout");
-
-const conversationList =
-    $("conversationList");
-
-const chatAvatar =
-    $("chatAvatar");
-
-const chatName =
-    $("chatName");
-
-const chatStatus =
-    $("chatStatus");
-
-const chatUser =
-    $("chatUser");
-
-const chatMessages =
-    $("chatMessages");
-
-const messageInput =
-    $("messageInput");
-
-const messageForm =
-    $("messageForm");
-
-const sendButton =
-    $("sendButton");
-
-const typingIndicator =
-    $("typingIndicator");
-
-const typingName =
-    $("typingName");
-
-const messageSearch =
-    $("messageSearch");
-
-const searchResults =
-    $("searchResults");
-
-const searchResultsList =
-    $("searchResultsList");
-
-const searchResultsTitle =
-    $("searchResultsTitle");
-
-const searchNavigation =
-    $("searchNavigation");
-
-const searchMatchCounter =
-    $("searchMatchCounter");
-
-const activityButton =
-    $("activityButton");
-
-const activityDot =
-    $("activityDot");
-
-const activityText =
-    $("activityText");
-
-const conversationMenu =
-    $("conversationMenu");
-
-const toast =
-    $("toast");
-
-const notificationsHeaderButton =
-    $("notificationsHeaderButton");
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function escapeHTML(value){
-
-    return String(value ?? "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-
-}
-
-
-function safeAvatar(url){
-
-    return url || DEFAULT_AVATAR;
-
-}
-
-
-function formatTime(dateString){
-
-    if(!dateString)
-        return "";
-
-    const date =
-        new Date(dateString);
-
-    if(
-        Number.isNaN(
-            date.getTime()
-        )
-    ){
-
-        return "";
-
-    }
-
-    const now =
-        new Date();
-
-    const diff =
-        now - date;
-
-    if(diff < 60000){
-
-        return "الآن";
-
-    }
-
-    if(diff < 3600000){
-
-        return (
-            Math.floor(
-                diff / 60000
-            ) +
-            " د"
-        );
-
-    }
-
-    if(
-        date.toDateString() ===
-        now.toDateString()
-    ){
-
-        return date.toLocaleTimeString(
-            "ar-IQ",
-            {
-                hour:"2-digit",
-                minute:"2-digit"
-            }
-        );
-
-    }
-
-    return date.toLocaleDateString(
-        "ar-IQ",
-        {
-            day:"numeric",
-            month:"short"
-        }
-    );
-
-}
-
-
-function formatMessageTime(dateString){
-
-    if(!dateString)
-        return "";
-
-    const date =
-        new Date(dateString);
-
-    if(
-        Number.isNaN(
-            date.getTime()
-        )
-    ){
-
-        return "";
-
-    }
-
-    return date.toLocaleTimeString(
-        "ar-IQ",
-        {
-            hour:"2-digit",
-            minute:"2-digit"
-        }
-    );
-
-}
-
-
-function showToast(message){
-
-    toast.textContent =
-        message;
-
-    toast.classList.add(
-        "show"
-    );
-
-    clearTimeout(
-        showToast.timer
-    );
-
-    showToast.timer =
-        setTimeout(
-            ()=>{
-                toast.classList.remove(
-                    "show"
-                );
-            },
-            3000
-        );
-
-}
-
-
-function scrollChatToBottom(){
-
-    requestAnimationFrame(
-        ()=>{
-            chatMessages.scrollTop =
-                chatMessages.scrollHeight;
-        }
-    );
-
-}
-
-
-function closeMenus(){
-
-    conversationMenu.classList.remove(
-        "show"
-    );
-
-}
-
 
 function getSupabaseClient(){
 
     if(window.WFESCSupabase){
-
         return window.WFESCSupabase;
-
     }
 
-    if(
-        window.supabase &&
-        window.WFESC_CONFIG
-    ){
+    if(window.supabase && window.WFESC_CONFIG){
 
-        const url =
-            window.WFESC_CONFIG.supabaseUrl ||
-            window.WFESC_CONFIG.url;
-
-        const key =
-            window.WFESC_CONFIG.supabaseAnonKey ||
-            window.WFESC_CONFIG.publishableKey ||
-            window.WFESC_CONFIG.key;
-
-        if(url && key){
-
-            return window.supabase.createClient(
-                url,
-                key
-            );
-
-        }
+        return window.supabase.createClient(
+            window.WFESC_CONFIG.supabaseUrl,
+            window.WFESC_CONFIG.supabaseKey
+        );
 
     }
 
     return null;
-
 }
 
 
 /* =========================================================
-   CENTRAL SETTINGS HOOK
-   Settings can call:
-   window.WFESCApplyMessagesAppearance(...)
+   تشغيل النظام
 ========================================================= */
 
-window.WFESCApplyMessagesAppearance =
-function(settings = {}){
+async function init(){
 
-    const root =
-        document.documentElement;
-
-    if(
-        settings.darkMode === false
-    ){
-
-        root.classList.add(
-            "wfesc-light"
-        );
-
-    }else{
-
-        root.classList.remove(
-            "wfesc-light"
-        );
-
+    if(initialized){
+        return;
     }
 
-    if(
-        settings.animations === false
-    ){
+    initialized = true;
 
-        root.classList.add(
-            "wfesc-no-animation"
+    client = getSupabaseClient();
+
+    if(!client){
+
+        showAuthRequired(
+            "تعذر الاتصال بنظام الحساب."
         );
 
-    }else{
-
-        root.classList.remove(
-            "wfesc-no-animation"
-        );
-
+        return;
     }
 
-    if(
-        settings.liquidGlass === false
-    ){
+    bindEvents();
 
-        root.classList.add(
-            "wfesc-no-glass"
-        );
-
-    }else{
-
-        root.classList.remove(
-            "wfesc-no-glass"
-        );
-
-    }
-
-};
-
-
-/* =========================================================
-   SUPPORT SEARCH
-========================================================= */
-
-function isSupportSearch(query){
-
-    const normalized =
-        String(query || "")
-            .trim()
-            .toLowerCase();
-
-    if(!normalized)
-        return false;
-
-    return SUPPORT_SEARCH_WORDS.some(
-        word =>
-            normalized ===
-            word.toLowerCase()
-    );
-
-}
-
-
-function addSupportSearchResult(){
-
-    const item =
-        document.createElement("div");
-
-    item.className =
-        "result-item support-search";
-
-    item.innerHTML = `
-
-        <img
-            class="result-avatar"
-            src="${escapeHTML(
-                SUPPORT_AVATAR
-            )}"
-            alt="">
-
-        <div class="result-info">
-
-            <div class="result-name">
-                الاتصال بالدعم
-            </div>
-
-            <div class="support-search-label">
-                افتح محادثة مباشرة مع دعم WFESC
-            </div>
-
-        </div>
-
-    `;
-
-    item.addEventListener(
-        "click",
-        async ()=>{
-
-            hideSearchResults();
-
-            messageSearch.value = "";
-
-            await openSupport();
-
-        }
-    );
-
-    searchResultsList.prepend(
-        item
-    );
+    await loadSession();
 
 }
 
 
 /* =========================================================
-   AUTH
+   الجلسة
 ========================================================= */
 
 async function loadSession(){
 
-    if(initialized)
-        return;
+    try{
 
-    initialized = true;
+        const {
+            data:{
+                session
+            }
+        } = await client.auth.getSession();
 
-    client =
-        getSupabaseClient();
+        if(session && session.user){
 
-    if(!client){
+            currentUser =
+                session.user;
 
-        showGuestState(
-            "تعذر تحميل اتصال Supabase"
+            await startPrivateSystem();
+
+        }else{
+
+            showGuestState();
+
+        }
+
+        client.auth.onAuthStateChange(
+            async (_event,sessionData)=>{
+
+                if(sessionData && sessionData.user){
+
+                    currentUser =
+                        sessionData.user;
+
+                    await startPrivateSystem();
+
+                }else{
+
+                    currentUser = null;
+
+                    stopRealtime();
+
+                    showGuestState();
+
+                }
+
+            }
         );
 
-        return;
+    }catch(error){
 
+        console.error(
+            "WFESC session error:",
+            error
+        );
+
+        showAuthRequired(
+            "حدث خطأ أثناء تحميل الحساب."
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   بدء النظام الخاص
+========================================================= */
+
+async function startPrivateSystem(){
+
+    hideElement(authRequired);
+
+    await loadActivity();
+
+    await loadConversations();
+
+    await loadNotifications();
+
+    subscribeRealtime();
+
+    setMyPresence(true);
+
+}
+
+
+/* =========================================================
+   حالة الضيف
+========================================================= */
+
+function showGuestState(){
+
+    stopRealtime();
+
+    messagesList.innerHTML = "";
+
+    searchResults.innerHTML = "";
+
+    hideElement(messagesList);
+
+    hideElement(searchResults);
+
+    hideElement(emptyState);
+
+    showElement(authRequired);
+
+    closeChat();
+
+}
+
+
+/* =========================================================
+   حالة الدخول
+========================================================= */
+
+function showAuthRequired(text){
+
+    authRequired.innerHTML =
+        `<div>
+            <strong>${escapeHtml(text)}</strong>
+        </div>`;
+
+    showElement(authRequired);
+
+}
+
+
+/* =========================================================
+   تحميل المحادثات
+========================================================= */
+
+async function loadConversations(){
+
+    if(!currentUser){
+        return;
     }
 
     try{
@@ -2305,278 +1644,417 @@ async function loadSession(){
         const {
             data,
             error
-        } =
-            await client.auth.getSession();
+        } = await client.rpc(
+            "get_my_conversations"
+        );
 
-        if(error)
+        if(error){
             throw error;
-
-        currentUser =
-            data?.session?.user ||
-            null;
-
-        if(!currentUser){
-
-            showGuestState(
-                "سجّل الدخول من الإعدادات لاستخدام الرسائل"
-            );
-
-            attachAuthListener();
-
-            return;
-
         }
 
-        await startPrivateSystem();
+        conversations =
+            Array.isArray(data)
+                ? data
+                : [];
 
-        attachAuthListener();
+        conversations.sort(
+            (a,b)=>
+                new Date(
+                    b.last_message_at ||
+                    b.updated_at ||
+                    0
+                ) -
+                new Date(
+                    a.last_message_at ||
+                    a.updated_at ||
+                    0
+                )
+        );
+
+        await renderConversationsGradually();
+
+    }catch(error){
+
+        console.error(
+            "load conversations:",
+            error
+        );
+
+        messagesList.innerHTML = "";
+
+        showEmpty(
+            "تعذر تحميل المحادثات."
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   عرض المحادثات تدريجياً
+========================================================= */
+
+async function renderConversationsGradually(){
+
+    messagesList.innerHTML = "";
+
+    showElement(messagesList);
+
+    hideElement(searchResults);
+
+    if(!conversations.length){
+
+        showEmpty(
+            "لا توجد محادثات حالياً."
+        );
+
+        return;
+
+    }
+
+    hideElement(emptyState);
+
+    for(
+        let index = 0;
+        index < conversations.length;
+        index++
+    ){
+
+        const conversation =
+            conversations[index];
+
+        await appendConversationCard(
+            conversation,
+            index
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   بطاقة محادثة
+========================================================= */
+
+async function appendConversationCard(
+    conversation,
+    index
+){
+
+    let contact = null;
+
+    try{
+
+        const {
+            data,
+            error
+        } = await client.rpc(
+            "get_conversation_contacts",
+            {
+                target_conversation_id:
+                    conversation.conversation_id
+            }
+        );
+
+        if(!error &&
+           Array.isArray(data) &&
+           data.length){
+
+            contact = data[0];
+
+        }
 
     }catch(error){
 
         console.error(error);
 
-        showGuestState(
-            "تعذر تحميل الحساب"
+    }
+
+
+    if(!contact){
+
+        contact = {
+            user_id:null,
+            display_name:
+                conversation.type === "support"
+                    ? "دعم WFESC"
+                    : "مستخدم",
+            username:"",
+            avatar_url:
+                conversation.type === "support"
+                    ? SUPPORT_AVATAR
+                    : DEFAULT_AVATAR,
+            is_online:false,
+            show_activity:true
+        };
+
+    }
+
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "conversation-card";
+
+    card.style.animationDelay =
+        `${index * 70}ms`;
+
+    card.dataset.conversationId =
+        conversation.conversation_id;
+
+
+    const avatar =
+        conversation.type === "support"
+            ? SUPPORT_AVATAR
+            : (
+                contact.avatar_url ||
+                DEFAULT_AVATAR
+            );
+
+
+    const displayName =
+        conversation.type === "support"
+            ? "دعم WFESC"
+            : (
+                contact.display_name ||
+                "مستخدم"
+            );
+
+
+    const online =
+        contact.show_activity === true &&
+        contact.is_online === true;
+
+
+    const unread =
+        Number(
+            conversation.unread_count || 0
         );
 
-        attachAuthListener();
 
-    }
+    card.innerHTML = `
 
-}
+        <div class="avatar-wrap">
+
+            <img
+                class="avatar"
+                src="${escapeAttribute(avatar)}"
+                alt=""
+                data-profile-id="${escapeAttribute(
+                    contact.user_id || ""
+                )}">
+
+            <span
+                class="online-small ${
+                    online ? "active" : ""
+                }">
+            </span>
+
+        </div>
+
+        <div class="conversation-info">
+
+            <div class="conversation-top">
+
+                <div class="conversation-name">
+                    ${escapeHtml(displayName)}
+                </div>
+
+                <div class="conversation-time">
+                    ${formatTime(
+                        conversation.last_message_at ||
+                        conversation.updated_at
+                    )}
+                </div>
+
+            </div>
+
+            <div class="conversation-preview">
+                ${escapeHtml(
+                    conversation.last_message ||
+                    "ابدأ المحادثة..."
+                )}
+            </div>
+
+        </div>
+
+        ${
+            unread > 0
+            ? `
+                <div class="unread-badge">
+                    ${unread > 99 ? "99+" : unread}
+                </div>
+            `
+            : ""
+        }
+
+    `;
 
 
-function attachAuthListener(){
+    const image =
+        card.querySelector(
+            "[data-profile-id]"
+        );
 
-    if(
-        authListenerAttached ||
-        !client
-    ){
 
-        return;
+    if(image){
 
-    }
+        image.addEventListener(
+            "click",
+            function(event){
 
-    authListenerAttached = true;
+                event.stopPropagation();
 
-    client.auth.onAuthStateChange(
-        async (_event,session)=>{
+                const id =
+                    this.dataset.profileId;
 
-            const nextUser =
-                session?.user ||
-                null;
+                if(id){
 
-            const oldId =
-                currentUser?.id ||
-                null;
+                    openProfile(id);
 
-            const newId =
-                nextUser?.id ||
-                null;
-
-            if(oldId === newId)
-                return;
-
-            currentUser =
-                nextUser;
-
-            if(currentUser){
-
-                await startPrivateSystem();
-
-            }else{
-
-                stopPrivateSystem();
-
-                showGuestState(
-                    "سجّل الدخول لاستخدام الرسائل"
-                );
+                }
 
             }
+        );
+
+    }
+
+
+    card.addEventListener(
+        "click",
+        function(){
+
+            openConversation(
+                conversation.conversation_id,
+                contact,
+                conversation
+            );
 
         }
     );
 
-}
 
+    card.addEventListener(
+        "contextmenu",
+        function(event){
 
-/* =========================================================
-   GUEST
-========================================================= */
+            event.preventDefault();
 
-function showGuestState(message){
-
-    conversationList.innerHTML = `
-
-        <div class="empty-state">
-
-            <div class="big">
-                🔐
-            </div>
-
-            <div>
-                ${escapeHTML(message)}
-            </div>
-
-        </div>
-
-    `;
-
-    chatMessages.innerHTML = `
-
-        <div class="chat-empty">
-
-            <div>
-
-                <div class="chat-empty-icon">
-                    💬
-                </div>
-
-                <div>
-                    ${escapeHTML(message)}
-                </div>
-
-            </div>
-
-        </div>
-
-    `;
-
-    messageInput.disabled =
-        true;
-
-    sendButton.disabled =
-        true;
-
-    chatName.textContent =
-        "الرسائل";
-
-    chatStatus.textContent =
-        "تسجيل الدخول مطلوب";
-
-    chatAvatar.src =
-        DEFAULT_AVATAR;
-
-}
-
-
-/* =========================================================
-   START
-========================================================= */
-
-async function startPrivateSystem(){
-
-    clearSubscriptions();
-
-    closeMenus();
-
-    currentConversationId =
-        null;
-
-    currentConversationType =
-        null;
-
-    currentContact =
-        null;
-
-    currentMessages = [];
-
-    currentMessageMap.clear();
-
-    contactsCache.clear();
-
-    layout.classList.remove(
-        "chat-open"
-    );
-
-    messageInput.disabled =
-        true;
-
-    sendButton.disabled =
-        true;
-
-    await loadActivitySetting();
-
-    /*
-       إنشاء/إضافة المستخدم إلى محادثة الدعم
-       حتى يظهر الدعم في قائمة المحادثات.
-    */
-    await ensureSupportConversation();
-
-    await loadConversations();
-
-    await setPresence(true);
-
-    subscribeRealtime();
-
-}
-
-
-/* =========================================================
-   SUPPORT ENSURE
-========================================================= */
-
-async function ensureSupportConversation(){
-
-    if(
-        !client ||
-        !currentUser
-    ){
-
-        return null;
-
-    }
-
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "get_or_create_support_conversation"
+            openContextMenu(
+                event,
+                conversation.conversation_id
             );
 
-        if(error)
-            throw error;
+        }
+    );
 
-        return data || null;
 
-    }catch(error){
+    messagesList.appendChild(card);
 
-        console.error(
-            "Support setup error:",
-            error
-        );
-
-        return null;
-
-    }
+    await wait(55);
 
 }
 
 
 /* =========================================================
-   STOP
+   فتح محادثة
 ========================================================= */
 
-function stopPrivateSystem(){
+async function openConversation(
+    conversationId,
+    contact,
+    conversation
+){
 
-    clearSubscriptions();
-
-    if(
-        client &&
-        currentUser
-    ){
-
-        setPresence(false)
-            .catch(()=>{});
-
+    if(!conversationId){
+        return;
     }
 
-    conversations = [];
+    currentConversationId =
+        conversationId;
 
-    contactsCache.clear();
+    currentContact =
+        contact || {};
+
+    /* إخفاء القائمة بالكامل */
+
+    messagesListView.style.display =
+        "none";
+
+    chatView.classList.add("open");
+
+    document.body.style.overflow =
+        "hidden";
+
+
+    const isSupport =
+        conversation &&
+        conversation.type === "support";
+
+
+    const avatar =
+        isSupport
+            ? SUPPORT_AVATAR
+            : (
+                contact.avatar_url ||
+                DEFAULT_AVATAR
+            );
+
+
+    const name =
+        isSupport
+            ? "دعم WFESC"
+            : (
+                contact.display_name ||
+                "مستخدم"
+            );
+
+
+    chatAvatar.src = avatar;
+
+    chatAvatar.alt = name;
+
+    chatUserName.textContent =
+        name;
+
+
+    updateContactStatus(
+        contact
+    );
+
+
+    messagesContainer.innerHTML = "";
+
+    typingArea.innerHTML = "";
+
+    await loadConversationMessages(
+        conversationId
+    );
+
+
+    subscribeTyping(
+        conversationId
+    );
+
+
+    await markConversationRead(
+        conversationId
+    );
+
+
+    chatInput.focus();
+
+}
+
+
+/* =========================================================
+   إغلاق المحادثة
+========================================================= */
+
+function closeChat(){
 
     currentConversationId =
         null;
@@ -2584,68 +2062,759 @@ function stopPrivateSystem(){
     currentContact =
         null;
 
-    currentMessages = [];
+    removeTypingSubscription();
 
-    conversationList.innerHTML =
+    chatView.classList.remove("open");
+
+    messagesListView.style.display =
         "";
 
-    currentUser =
-        null;
+    document.body.style.overflow =
+        "";
 
-    activityEnabled =
-        false;
+    messagesContainer.innerHTML =
+        "";
 
-    updateActivityUI();
-
-    messageInput.disabled =
-        true;
-
-    sendButton.disabled =
-        true;
+    typingArea.innerHTML =
+        "";
 
 }
 
 
 /* =========================================================
-   ACTIVITY
+   زر الرجوع
 ========================================================= */
 
-async function loadActivitySetting(){
+backToMessages.addEventListener(
+    "click",
+    function(){
 
-    if(!currentUser)
-        return;
+        closeChat();
+
+        loadConversations();
+
+    }
+);
+
+
+/* =========================================================
+   تحميل رسائل المحادثة
+========================================================= */
+
+async function loadConversationMessages(
+    conversationId
+){
 
     try{
 
         const {
             data,
             error
-        } =
-            await client
-                .from("profiles")
-                .select("show_activity")
-                .eq(
-                    "id",
-                    currentUser.id
-                )
-                .maybeSingle();
+        } = await client.rpc(
+            "get_conversation_messages",
+            {
+                target_conversation_id:
+                    conversationId,
+                message_limit:100
+            }
+        );
 
-        if(error)
+        if(error){
             throw error;
+        }
 
-        activityEnabled =
-            data?.show_activity !== false;
+        messagesContainer.innerHTML = "";
 
-        activityDraft =
-            activityEnabled;
+        const messages =
+            Array.isArray(data)
+                ? data
+                : [];
 
-        updateActivityUI();
+        messages.forEach(
+            (message)=>{
+                appendMessage(
+                    message,
+                    false
+                );
+            }
+        );
+
+        scrollChatToBottom(
+            false
+        );
 
     }catch(error){
 
         console.error(
-            "Activity setting error:",
+            "messages:",
             error
+        );
+
+        messagesContainer.innerHTML =
+            `<div class="empty-state">
+                تعذر تحميل الرسائل.
+            </div>`;
+
+    }
+
+}
+
+
+/* =========================================================
+   إضافة رسالة
+========================================================= */
+
+function appendMessage(
+    message,
+    animate = true
+){
+
+    if(!message){
+        return;
+    }
+
+    const messageId =
+        message.message_id ||
+        message.id;
+
+    if(
+        messageId &&
+        document.querySelector(
+            `[data-message-id="${cssEscape(messageId)}"]`
+        )
+    ){
+
+        return;
+
+    }
+
+
+    const mine =
+        String(message.sender_id) ===
+        String(currentUser?.id);
+
+
+    const row =
+        document.createElement("div");
+
+    row.className =
+        "message-row " +
+        (
+            mine
+                ? "mine"
+                : "theirs"
+        );
+
+
+    if(messageId){
+
+        row.dataset.messageId =
+            messageId;
+
+    }
+
+
+    const bubble =
+        document.createElement("div");
+
+    bubble.className =
+        "message-bubble";
+
+
+    if(message.deleted_at){
+
+        bubble.innerHTML =
+            `<em>تم حذف هذه الرسالة</em>`;
+
+    }else{
+
+        bubble.innerHTML =
+            escapeHtml(
+                message.content || ""
+            )
+            .replace(
+                /\n/g,
+                "<br>"
+            );
+
+    }
+
+
+    const time =
+        document.createElement("span");
+
+    time.className =
+        "message-time";
+
+    time.textContent =
+        formatMessageTime(
+            message.created_at
+        );
+
+
+    bubble.appendChild(time);
+
+    row.appendChild(bubble);
+
+    messagesContainer.appendChild(row);
+
+
+    if(animate){
+
+        row.style.animation =
+            "none";
+
+        requestAnimationFrame(
+            ()=>{
+                row.style.animation =
+                    "";
+            }
+        );
+
+    }
+
+
+    return row;
+
+}
+
+
+/* =========================================================
+   إرسال الرسالة
+========================================================= */
+
+chatForm.addEventListener(
+    "submit",
+    async function(event){
+
+        /*
+         * مهم جداً:
+         * منع reload الصفحة
+         */
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+
+        if(!currentUser){
+            return;
+        }
+
+        if(!currentConversationId){
+            return;
+        }
+
+
+        const content =
+            chatInput.value.trim();
+
+
+        if(!content){
+            return;
+        }
+
+
+        if(content.length > 5000){
+            return;
+        }
+
+
+        sendButton.disabled =
+            true;
+
+
+        /*
+         * نخلي الحقل فارغ فوراً
+         * بدون إعادة تحميل الصفحة
+         */
+
+        chatInput.value = "";
+
+        autoResizeTextarea();
+
+
+        try{
+
+            const {
+                data,
+                error
+            } = await client.rpc(
+                "send_message",
+                {
+                    target_conversation_id:
+                        currentConversationId,
+
+                    message_content:
+                        content
+                }
+            );
+
+
+            if(error){
+                throw error;
+            }
+
+
+            /*
+             * إذا رجعت RPC الرسالة
+             * نضيفها فوراً.
+             */
+
+            if(data){
+
+                const sentMessage =
+                    Array.isArray(data)
+                        ? data[0]
+                        : data;
+
+                if(
+                    sentMessage &&
+                    (
+                        sentMessage.message_id ||
+                        sentMessage.id
+                    )
+                ){
+
+                    appendMessage(
+                        sentMessage,
+                        true
+                    );
+
+                    scrollChatToBottom(
+                        true
+                    );
+
+                }
+
+            }
+
+
+            /*
+             * أحياناً RPC ترجع UUID فقط
+             * لذلك Realtime سيضيف الرسالة
+             * تلقائياً إذا لم تضف أعلاه.
+             */
+
+            stopTyping();
+
+        }catch(error){
+
+            console.error(
+                "send message:",
+                error
+            );
+
+            /*
+             * نرجع النص فقط إذا فشل الإرسال
+             */
+
+            chatInput.value =
+                content;
+
+            autoResizeTextarea();
+
+            alert(
+                "تعذر إرسال الرسالة."
+            );
+
+        }finally{
+
+            sendButton.disabled =
+                false;
+
+            chatInput.focus();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   الكتابة
+========================================================= */
+
+chatInput.addEventListener(
+    "input",
+    function(){
+
+        autoResizeTextarea();
+
+        if(!currentConversationId){
+            return;
+        }
+
+        startTyping();
+
+    }
+);
+
+
+chatInput.addEventListener(
+    "keydown",
+    function(event){
+
+        if(
+            event.key === "Enter" &&
+            !event.shiftKey
+        ){
+
+            event.preventDefault();
+
+            chatForm.requestSubmit();
+
+        }
+
+    }
+);
+
+
+function startTyping(){
+
+    if(!currentConversationId){
+        return;
+    }
+
+    if(!typingState){
+
+        typingState = true;
+
+        client.rpc(
+            "set_typing_status",
+            {
+                target_conversation_id:
+                    currentConversationId,
+
+                typing:true
+            }
+        ).catch(console.error);
+
+    }
+
+
+    clearTimeout(
+        typingTimer
+    );
+
+
+    typingTimer =
+        setTimeout(
+            stopTyping,
+            1000
+        );
+
+}
+
+
+function stopTyping(){
+
+    clearTimeout(
+        typingTimer
+    );
+
+    if(!typingState){
+        return;
+    }
+
+    typingState = false;
+
+    if(currentConversationId){
+
+        client.rpc(
+            "set_typing_status",
+            {
+                target_conversation_id:
+                    currentConversationId,
+
+                typing:false
+            }
+        ).catch(console.error);
+
+    }
+
+}
+
+
+/* =========================================================
+   Realtime typing
+========================================================= */
+
+function subscribeTyping(
+    conversationId
+){
+
+    removeTypingSubscription();
+
+    typingChannel =
+        client
+        .channel(
+            "typing-" +
+            conversationId +
+            "-" +
+            Date.now()
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"*",
+                schema:"public",
+                table:"typing_status",
+                filter:
+                    "conversation_id=eq." +
+                    conversationId
+            },
+            payload=>{
+
+                const row =
+                    payload.new ||
+                    {};
+
+                if(
+                    String(row.user_id) ===
+                    String(currentUser?.id)
+                ){
+
+                    return;
+
+                }
+
+                if(
+                    row.is_typing === true
+                ){
+
+                    showTyping();
+
+                }else{
+
+                    hideTyping();
+
+                }
+
+            }
+        )
+        .subscribe();
+
+}
+
+
+function removeTypingSubscription(){
+
+    if(
+        typingChannel &&
+        client
+    ){
+
+        client.removeChannel(
+            typingChannel
+        );
+
+    }
+
+    typingChannel =
+        null;
+
+    hideTyping();
+
+}
+
+
+function showTyping(){
+
+    typingArea.innerHTML = `
+        <div class="typing-indicator">
+            <span>يكتب</span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        </div>
+    `;
+
+}
+
+
+function hideTyping(){
+
+    typingArea.innerHTML =
+        "";
+
+}
+
+
+/* =========================================================
+   Realtime الرسائل
+========================================================= */
+
+function subscribeRealtime(){
+
+    if(!client || !currentUser){
+        return;
+    }
+
+
+    if(realtimeChannel){
+
+        client.removeChannel(
+            realtimeChannel
+        );
+
+    }
+
+
+    realtimeChannel =
+        client
+        .channel(
+            "wfesc-messages-" +
+            currentUser.id
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"INSERT",
+                schema:"public",
+                table:"messages"
+            },
+            payload=>{
+
+                handleRealtimeMessage(
+                    payload.new
+                );
+
+            }
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"UPDATE",
+                schema:"public",
+                table:"messages"
+            },
+            payload=>{
+
+                handleRealtimeMessageUpdate(
+                    payload.new
+                );
+
+            }
+        )
+        .subscribe();
+
+
+    if(notificationChannel){
+
+        client.removeChannel(
+            notificationChannel
+        );
+
+    }
+
+
+    notificationChannel =
+        client
+        .channel(
+            "wfesc-notifications-" +
+            currentUser.id
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"INSERT",
+                schema:"public",
+                table:"notifications",
+                filter:
+                    "user_id=eq." +
+                    currentUser.id
+            },
+            payload=>{
+
+                loadNotifications();
+
+                /*
+                 * إذا كنا بقائمة الرسائل
+                 * نعيد ترتيبها بدون reload.
+                 */
+
+                if(!currentConversationId){
+
+                    loadConversations();
+
+                }
+
+            }
+        )
+        .subscribe();
+
+}
+
+
+function handleRealtimeMessage(
+    message
+){
+
+    if(!message){
+        return;
+    }
+
+
+    /*
+     * إذا الرسالة تخص المحادثة المفتوحة
+     */
+
+    if(
+        currentConversationId &&
+        String(message.conversation_id) ===
+        String(currentConversationId)
+    ){
+
+        appendMessage(
+            message,
+            true
+        );
+
+        scrollChatToBottom(
+            true
+        );
+
+
+        if(
+            String(message.sender_id) !==
+            String(currentUser?.id)
+        ){
+
+            markConversationRead(
+                currentConversationId
+            );
+
+        }
+
+    }
+
+
+    /*
+     * تحديث القائمة في الخلفية
+     * بدون فتحها أو إعادة تحميل الصفحة.
+     */
+
+    updateConversationOrdering(
+        message.conversation_id,
+        message
+    );
+
+}
+
+
+function handleRealtimeMessageUpdate(
+    message
+){
+
+    if(
+        currentConversationId &&
+        String(message.conversation_id) ===
+        String(currentConversationId)
+    ){
+
+        loadConversationMessages(
+            currentConversationId
         );
 
     }
@@ -2653,40 +2822,233 @@ async function loadActivitySetting(){
 }
 
 
-function updateActivityUI(){
+/* =========================================================
+   تحديث ترتيب المحادثات
+========================================================= */
 
-    if(activityEnabled){
+function updateConversationOrdering(
+    conversationId,
+    message
+){
+
+    const index =
+        conversations.findIndex(
+            c =>
+                String(c.conversation_id) ===
+                String(conversationId)
+        );
+
+
+    if(index !== -1){
+
+        conversations[index].last_message =
+            message.content;
+
+        conversations[index].last_message_at =
+            message.created_at;
+
+        conversations[index].updated_at =
+            message.created_at;
+
+
+        const conversation =
+            conversations.splice(
+                index,
+                1
+            )[0];
+
+
+        conversations.unshift(
+            conversation
+        );
+
+
+        if(!currentConversationId){
+
+            loadConversations();
+
+        }
+
+    }else{
+
+        if(!currentConversationId){
+
+            loadConversations();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   حضور المستخدم
+========================================================= */
+
+async function loadActivity(){
+
+    if(!currentUser){
+        return;
+    }
+
+    try{
+
+        const {
+            data,
+            error
+        } = await client
+            .from("profiles")
+            .select(
+                "show_activity"
+            )
+            .eq(
+                "id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+        if(error){
+            throw error;
+        }
+
+
+        const enabled =
+            data?.show_activity !== false;
+
+
+        setActivityUI(
+            enabled
+        );
+
+
+    }catch(error){
+
+        console.error(
+            "activity:",
+            error
+        );
+
+        setActivityUI(
+            true
+        );
+
+    }
+
+}
+
+
+function setActivityUI(
+    enabled
+){
+
+    if(enabled){
 
         activityDot.classList.add(
-            "active"
+            "online"
         );
 
         activityText.textContent =
             "نشط";
 
-    }else{
-
-        activityDot.classList.remove(
+        activityOn.classList.add(
             "active"
         );
 
+        activityOff.classList.remove(
+            "active"
+        );
+
+    }else{
+
+        activityDot.classList.remove(
+            "online"
+        );
+
         activityText.textContent =
-            "مخفي";
+            "غير نشط";
+
+        activityOn.classList.remove(
+            "active"
+        );
+
+        activityOff.classList.add(
+            "active"
+        );
 
     }
 
 }
 
 
-async function setPresence(online){
+async function setActivity(
+    enabled
+){
 
-    if(
-        !client ||
-        !currentUser
-    ){
-
+    if(!currentUser){
         return;
+    }
 
+    try{
+
+        const {
+            error
+        } = await client
+            .from("profiles")
+            .update({
+                show_activity:
+                    enabled
+            })
+            .eq(
+                "id",
+                currentUser.id
+            );
+
+
+        if(error){
+            throw error;
+        }
+
+
+        await client.rpc(
+            "set_my_presence",
+            {
+                online:
+                    enabled
+            }
+        );
+
+
+        setActivityUI(
+            enabled
+        );
+
+        closeActivityModal();
+
+
+    }catch(error){
+
+        console.error(
+            "set activity:",
+            error
+        );
+
+        alert(
+            "تعذر تحديث حالة النشاط."
+        );
+
+    }
+
+}
+
+
+async function setMyPresence(
+    online
+){
+
+    if(!currentUser){
+        return;
     }
 
     try{
@@ -2694,330 +3056,16 @@ async function setPresence(online){
         await client.rpc(
             "set_my_presence",
             {
-                online:!!online
+                online:
+                    online
             }
         );
 
     }catch(error){
 
         console.error(
-            "Presence error:",
+            "presence:",
             error
-        );
-
-    }
-
-}
-
-
-async function saveActivitySetting(){
-
-    if(
-        !client ||
-        !currentUser
-    ){
-
-        return;
-
-    }
-
-    try{
-
-        const {
-            error
-        } =
-            await client
-                .from("profiles")
-                .update({
-                    show_activity:
-                        activityDraft
-                })
-                .eq(
-                    "id",
-                    currentUser.id
-                );
-
-        if(error)
-            throw error;
-
-        activityEnabled =
-            activityDraft;
-
-        await setPresence(true);
-
-        updateActivityUI();
-
-        closeActivityModal();
-
-        showToast(
-            activityEnabled
-                ? "تم إظهار حالة النشاط"
-                : "تم إخفاء حالة النشاط"
-        );
-
-        await loadConversations();
-
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر حفظ إعداد النشاط"
-        );
-
-    }
-
-}
-
-
-function openActivityModal(){
-
-    activityDraft =
-        activityEnabled;
-
-    $("activityToggle").checked =
-        activityDraft;
-
-    $("activityModal")
-        .classList.add("show");
-
-}
-
-
-function closeActivityModal(){
-
-    $("activityModal")
-        .classList.remove("show");
-
-}
-
-
-/* =========================================================
-   CONVERSATIONS
-========================================================= */
-
-async function loadConversations(){
-
-    if(!currentUser)
-        return;
-
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "get_my_conversations"
-            );
-
-        if(error)
-            throw error;
-
-        conversations =
-            data || [];
-
-        if(!conversations.length){
-
-            conversationList.innerHTML = `
-
-                <div class="empty-state">
-
-                    <div class="big">
-                        💬
-                    </div>
-
-                    <div>
-                        لا توجد محادثات بعد
-                    </div>
-
-                </div>
-
-            `;
-
-            return;
-
-        }
-
-        await renderConversations();
-
-    }catch(error){
-
-        console.error(error);
-
-        conversationList.innerHTML = `
-
-            <div class="empty-state">
-
-                <div class="big">
-                    ⚠️
-                </div>
-
-                <div>
-                    تعذر تحميل المحادثات
-                </div>
-
-            </div>
-
-        `;
-
-    }
-
-}
-
-
-async function renderConversations(){
-
-    conversationList.innerHTML =
-        "";
-
-    for(
-        const conversation
-        of conversations
-    ){
-
-        const contact =
-            await getConversationContact(
-                conversation.conversation_id
-            );
-
-        if(!contact)
-            continue;
-
-        const item =
-            document.createElement("div");
-
-        item.className =
-            "conversation" +
-            (
-                conversation.conversation_id ===
-                currentConversationId
-                    ? " active"
-                    : ""
-            );
-
-        item.dataset.id =
-            conversation.conversation_id;
-
-        const isSupport =
-            conversation.type ===
-            "support";
-
-        const displayName =
-            isSupport
-                ? "دعم WFESC"
-                : (
-                    contact.display_name ||
-                    "مستخدم"
-                );
-
-        item.innerHTML = `
-
-            <div
-                class="conversation-avatar-wrap">
-
-                <img
-                    class="conversation-avatar"
-                    src="${escapeHTML(
-                        isSupport
-                            ? SUPPORT_AVATAR
-                            : safeAvatar(
-                                contact.avatar_url
-                            )
-                    )}"
-                    alt="">
-
-                <span
-                    class="online-small ${
-                        contact.is_online &&
-                        contact.show_activity !== false
-                            ? "active"
-                            : ""
-                    }">
-                </span>
-
-            </div>
-
-            <div
-                class="conversation-content">
-
-                <div class="conversation-top">
-
-                    <span class="conversation-name">
-                        ${escapeHTML(
-                            displayName
-                        )}
-                    </span>
-
-                    <span class="conversation-time">
-                        ${escapeHTML(
-                            formatTime(
-                                conversation.last_message_at
-                            )
-                        )}
-                    </span>
-
-                </div>
-
-                <div class="conversation-preview">
-                    ${escapeHTML(
-                        conversation.last_message ||
-                        "لا توجد رسائل بعد"
-                    )}
-                </div>
-
-            </div>
-
-            ${
-                Number(
-                    conversation.unread_count || 0
-                ) > 0
-                    ? `
-                        <span
-                            class="unread-dot">
-                        </span>
-                    `
-                    : ""
-            }
-
-        `;
-
-        item.addEventListener(
-            "click",
-            ()=>{
-                openConversation(
-                    conversation.conversation_id
-                );
-            }
-        );
-
-        const avatar =
-            item.querySelector(
-                ".conversation-avatar"
-            );
-
-        avatar.addEventListener(
-            "click",
-            event=>{
-
-                event.stopPropagation();
-
-                if(
-                    !isSupport &&
-                    contact.user_id
-                ){
-
-                    openProfile(
-                        contact.user_id
-                    );
-
-                }
-
-            }
-        );
-
-        conversationList.appendChild(
-            item
         );
 
     }
@@ -3026,644 +3074,43 @@ async function renderConversations(){
 
 
 /* =========================================================
-   CONTACT
+   حالة جهة الاتصال
 ========================================================= */
 
-async function getConversationContact(
-    conversationId
+function updateContactStatus(
+    contact
 ){
 
-    if(
-        contactsCache.has(
-            conversationId
-        )
-    ){
+    const online =
+        contact &&
+        contact.show_activity !== false &&
+        contact.is_online === true;
 
-        return contactsCache.get(
-            conversationId
+
+    if(online){
+
+        chatOnlineDot.classList.add(
+            "active"
         );
 
-    }
+        chatUserStatus.textContent =
+            "نشط";
 
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "get_conversation_contacts",
-                {
-                    target_conversation_id:
-                        conversationId
-                }
-            );
-
-        if(error)
-            throw error;
-
-        const contact =
-            data?.[0] ||
-            null;
-
-        if(contact){
-
-            contactsCache.set(
-                conversationId,
-                contact
-            );
-
-        }
-
-        return contact;
-
-    }catch(error){
-
-        console.error(
-            "Contact error:",
-            error
+        chatUserStatus.classList.add(
+            "online"
         );
-
-        return null;
-
-    }
-
-}
-
-
-/* =========================================================
-   SUPPORT
-========================================================= */
-
-async function openSupport(){
-
-    if(!currentUser){
-
-        showToast(
-            "سجّل الدخول أولاً"
-        );
-
-        return;
-
-    }
-
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "get_or_create_support_conversation"
-            );
-
-        if(error)
-            throw error;
-
-        if(data){
-
-            await loadConversations();
-
-            await openConversation(
-                data
-            );
-
-        }
-
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر فتح محادثة الدعم"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   OPEN CONVERSATION
-========================================================= */
-
-async function openConversation(
-    conversationId,
-    focusMessageId = null
-){
-
-    if(
-        !conversationId ||
-        !currentUser
-    ){
-
-        return;
-
-    }
-
-    closeMenus();
-
-    currentConversationId =
-        conversationId;
-
-    const conversation =
-        conversations.find(
-            c =>
-                c.conversation_id ===
-                conversationId
-        );
-
-    currentConversationType =
-        conversation?.type ||
-        "direct";
-
-    currentContact =
-        await getConversationContact(
-            conversationId
-        );
-
-    if(
-        currentConversationType ===
-        "support"
-    ){
-
-        chatName.textContent =
-            "دعم WFESC";
-
-        chatAvatar.src =
-            SUPPORT_AVATAR;
-
-        chatStatus.textContent =
-            "محادثة الدعم";
 
     }else{
 
-        chatName.textContent =
-            currentContact?.display_name ||
-            "مستخدم";
+        chatOnlineDot.classList.remove(
+            "active"
+        );
 
-        chatAvatar.src =
-            safeAvatar(
-                currentContact?.avatar_url
-            );
-
-        updateChatStatus();
-
-    }
-
-    messageInput.disabled =
-        false;
-
-    sendButton.disabled =
-        false;
-
-    layout.classList.add(
-        "chat-open"
-    );
-
-    await loadMessages(
-        conversationId,
-        focusMessageId
-    );
-
-    await markConversationRead(
-        conversationId
-    );
-
-    await subscribeTypingForConversation(
-        conversationId
-    );
-
-    await renderConversations();
-
-}
-
-
-/* =========================================================
-   CHAT STATUS
-========================================================= */
-
-function updateChatStatus(){
-
-    if(
-        currentConversationType ===
-        "support"
-    ){
-
-        chatStatus.textContent =
-            "محادثة الدعم";
-
-        return;
-
-    }
-
-    if(
-        currentContact?.show_activity !==
-            false &&
-        currentContact?.is_online
-    ){
-
-        chatStatus.textContent =
-            "نشط الآن";
-
-    }else{
-
-        chatStatus.textContent =
+        chatUserStatus.textContent =
             "غير نشط";
 
-    }
-
-}
-
-
-/* =========================================================
-   MESSAGES
-========================================================= */
-
-async function loadMessages(
-    conversationId,
-    focusMessageId = null
-){
-
-    chatMessages.innerHTML = `
-
-        <div class="chat-empty">
-
-            <div>
-                جاري تحميل الرسائل...
-            </div>
-
-        </div>
-
-    `;
-
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "get_conversation_messages",
-                {
-                    target_conversation_id:
-                        conversationId,
-                    message_limit:100
-                }
-            );
-
-        if(error)
-            throw error;
-
-        currentMessages =
-            data || [];
-
-        currentMessageMap.clear();
-
-        currentMessages.forEach(
-            message=>{
-
-                currentMessageMap.set(
-                    message.message_id,
-                    message
-                );
-
-            }
-        );
-
-        renderMessages();
-
-        if(focusMessageId){
-
-            setTimeout(
-                ()=>{
-                    focusMessage(
-                        focusMessageId
-                    );
-                },
-                80
-            );
-
-        }else{
-
-            scrollChatToBottom();
-
-        }
-
-    }catch(error){
-
-        console.error(error);
-
-        chatMessages.innerHTML = `
-
-            <div class="chat-empty">
-
-                <div>
-
-                    <div class="chat-empty-icon">
-                        ⚠️
-                    </div>
-
-                    <div>
-                        تعذر تحميل الرسائل
-                    </div>
-
-                </div>
-
-            </div>
-
-        `;
-
-    }
-
-}
-
-
-function renderMessages(
-    animatedMessageId = null
-){
-
-    if(!currentMessages.length){
-
-        chatMessages.innerHTML = `
-
-            <div class="chat-empty">
-
-                <div>
-
-                    <div class="chat-empty-icon">
-                        👋
-                    </div>
-
-                    <div>
-                        ابدأ المحادثة
-                    </div>
-
-                </div>
-
-            </div>
-
-        `;
-
-        return;
-
-    }
-
-    chatMessages.innerHTML =
-        "";
-
-    currentMessages.forEach(
-        message=>{
-
-            const mine =
-                message.sender_id ===
-                currentUser?.id;
-
-            const row =
-                document.createElement("div");
-
-            row.className =
-                "message-row " +
-                (
-                    mine
-                        ? "mine"
-                        : "other"
-                );
-
-            row.dataset.messageId =
-                message.message_id;
-
-            if(
-                animatedMessageId ===
-                message.message_id
-            ){
-
-                row.classList.add(
-                    "message-send-animation"
-                );
-
-            }
-
-            const bubble =
-                document.createElement(
-                    "div"
-                );
-
-            bubble.className =
-                "message-bubble";
-
-            const time =
-                formatMessageTime(
-                    message.created_at
-                );
-
-            bubble.innerHTML = `
-
-                <div class="message-content">
-                    ${escapeHTML(
-                        message.deleted_at
-                            ? "تم حذف هذه الرسالة"
-                            : message.content
-                    )}
-                </div>
-
-                <div class="message-meta">
-
-                    <span>
-                        ${escapeHTML(
-                            time
-                        )}
-                    </span>
-
-                    ${
-                        message.edited_at
-                            ? `
-                                <span>
-                                    معدلة
-                                </span>
-                            `
-                            : ""
-                    }
-
-                </div>
-
-            `;
-
-            row.appendChild(
-                bubble
-            );
-
-            chatMessages.appendChild(
-                row
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   SEND MESSAGE
-========================================================= */
-
-async function sendMessage(){
-
-    if(
-        sendingMessage ||
-        !currentUser ||
-        !currentConversationId
-    ){
-
-        return;
-
-    }
-
-    const content =
-        messageInput.value.trim();
-
-    if(!content)
-        return;
-
-    sendingMessage =
-        true;
-
-    sendButton.disabled =
-        true;
-
-    sendButton.classList.add(
-        "sending"
-    );
-
-    const targetConversationId =
-        currentConversationId;
-
-    const previousValue =
-        messageInput.value;
-
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "send_message",
-                {
-                    target_conversation_id:
-                        targetConversationId,
-                    message_content:
-                        content
-                }
-            );
-
-        if(error)
-            throw error;
-
-        /*
-           نمسح مربع الكتابة فقط بعد نجاح الإرسال.
-           لا يوجد reload.
-        */
-        messageInput.value =
-            "";
-
-        autoResizeTextarea();
-
-        typingCurrently =
-            false;
-
-        clearTimeout(
-            typingTimer
-        );
-
-        await setTyping(false);
-
-        /*
-           إذا Realtime وصل الرسالة،
-           لن نعيد بناء الصفحة.
-           وإذا لم يصل فوراً، نحمّل المحادثة
-           مرة واحدة فقط.
-        */
-        if(
-            currentConversationId ===
-            targetConversationId
-        ){
-
-            let insertedMessageId =
-                null;
-
-            if(
-                data &&
-                typeof data === "object"
-            ){
-
-                insertedMessageId =
-                    data.message_id ||
-                    data.id ||
-                    null;
-
-            }
-
-            if(insertedMessageId){
-
-                await loadMessages(
-                    targetConversationId,
-                    insertedMessageId
-                );
-
-            }else{
-
-                await loadMessages(
-                    targetConversationId
-                );
-
-            }
-
-        }
-
-        await loadConversations();
-
-    }catch(error){
-
-        console.error(
-            error
-        );
-
-        /*
-           إذا فشل الإرسال نرجع النص
-           حتى لا يضيع من المستخدم.
-        */
-        if(
-            !messageInput.value
-        ){
-
-            messageInput.value =
-                previousValue;
-
-            autoResizeTextarea();
-
-        }
-
-        showToast(
-            error?.message ||
-            "تعذر إرسال الرسالة"
-        );
-
-    }finally{
-
-        sendingMessage =
-            false;
-
-        sendButton.disabled =
-            !currentConversationId;
-
-        setTimeout(
-            ()=>{
-                sendButton.classList.remove(
-                    "sending"
-                );
-            },
-            350
+        chatUserStatus.classList.remove(
+            "online"
         );
 
     }
@@ -3672,193 +3119,16 @@ async function sendMessage(){
 
 
 /* =========================================================
-   TYPING
-========================================================= */
-
-async function setTyping(
-    typing
-){
-
-    if(
-        !currentConversationId ||
-        !currentUser
-    ){
-
-        return;
-
-    }
-
-    try{
-
-        await client.rpc(
-            "set_typing_status",
-            {
-                target_conversation_id:
-                    currentConversationId,
-                typing:!!typing
-            }
-        );
-
-    }catch(error){
-
-        console.error(
-            "Typing error:",
-            error
-        );
-
-    }
-
-}
-
-
-function handleTyping(){
-
-    if(!currentConversationId)
-        return;
-
-    if(!typingCurrently){
-
-        typingCurrently =
-            true;
-
-        setTyping(true);
-
-    }
-
-    clearTimeout(
-        typingTimer
-    );
-
-    typingTimer =
-        setTimeout(
-            ()=>{
-                typingCurrently =
-                    false;
-
-                setTyping(false);
-            },
-            700
-        );
-
-}
-
-
-async function subscribeTypingForConversation(
-    conversationId
-){
-
-    if(!client)
-        return;
-
-    await removeTypingSubscription();
-
-    const channel =
-        client
-            .channel(
-                "typing-" +
-                conversationId
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"*",
-                    schema:"public",
-                    table:"typing_status",
-                    filter:
-                        "conversation_id=eq." +
-                        conversationId
-                },
-                payload=>{
-
-                    const row =
-                        payload.new ||
-                        payload.old;
-
-                    if(
-                        !row ||
-                        row.user_id ===
-                        currentUser?.id
-                    ){
-
-                        return;
-
-                    }
-
-                    if(
-                        row.is_typing
-                    ){
-
-                        typingName.textContent =
-                            currentContact?.display_name ||
-                            "المستخدم";
-
-                        typingIndicator.classList.add(
-                            "show"
-                        );
-
-                    }else{
-
-                        typingIndicator.classList.remove(
-                            "show"
-                        );
-
-                    }
-
-                }
-            )
-            .subscribe();
-
-    subscriptions.push(
-        channel
-    );
-
-}
-
-
-async function removeTypingSubscription(){
-
-    const typingSubs =
-        subscriptions.filter(
-            channel =>
-                String(
-                    channel.topic ||
-                    ""
-                ).includes(
-                    "typing-"
-                )
-        );
-
-    for(
-        const channel
-        of typingSubs
-    ){
-
-        try{
-
-            await client.removeChannel(
-                channel
-            );
-
-        }catch(_){}
-
-        subscriptions =
-            subscriptions.filter(
-                x =>
-                    x !== channel
-            );
-
-    }
-
-}
-
-
-/* =========================================================
-   READ
+   قراءة المحادثة
 ========================================================= */
 
 async function markConversationRead(
     conversationId
 ){
+
+    if(!conversationId){
+        return;
+    }
 
     try{
 
@@ -3873,7 +3143,7 @@ async function markConversationRead(
     }catch(error){
 
         console.error(
-            "Read error:",
+            "mark read:",
             error
         );
 
@@ -3883,780 +3153,802 @@ async function markConversationRead(
 
 
 /* =========================================================
-   REALTIME
+   البحث
 ========================================================= */
 
-function subscribeRealtime(){
-
-    if(
-        !client ||
-        !currentUser
-    ){
-
-        return;
-
-    }
+let searchTimer = null;
 
 
-    /*
-       MESSAGE REALTIME
-    */
+messageSearch.addEventListener(
+    "input",
+    function(){
 
-    const messageChannel =
-        client
-            .channel(
-                "messages-global-" +
-                currentUser.id
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"INSERT",
-                    schema:"public",
-                    table:"messages"
-                },
-                async payload=>{
-
-                    const message =
-                        payload.new;
-
-                    if(
-                        !message ||
-                        !message.conversation_id
-                    ){
-
-                        return;
-
-                    }
-
-                    /*
-                       لا نعيد الصفحة.
-                       فقط نحدث المحادثة المفتوحة
-                       إذا كانت الرسالة تخصها.
-                    */
-                    if(
-                        message.conversation_id ===
-                        currentConversationId
-                    ){
-
-                        const exists =
-                            currentMessages.some(
-                                m =>
-                                    m.message_id ===
-                                    message.id
-                            );
-
-                        if(!exists){
-
-                            currentMessages.push({
-                                message_id:
-                                    message.id,
-                                sender_id:
-                                    message.sender_id,
-                                content:
-                                    message.content,
-                                created_at:
-                                    message.created_at,
-                                edited_at:
-                                    message.edited_at,
-                                deleted_at:
-                                    message.deleted_at
-                            });
-
-                            currentMessageMap.set(
-                                message.id,
-                                message
-                            );
-
-                            renderMessages(
-                                message.sender_id ===
-                                currentUser.id
-                                    ? message.id
-                                    : null
-                            );
-
-                            scrollChatToBottom();
-
-                        }
-
-                        if(
-                            message.sender_id !==
-                            currentUser.id
-                        ){
-
-                            await markConversationRead(
-                                currentConversationId
-                            );
-
-                        }
-
-                    }
-
-                    /*
-                       تحديث القائمة فقط.
-                       لا reload للصفحة.
-                    */
-                    await loadConversations();
-
-                }
-            )
-            .subscribe();
-
-    subscriptions.push(
-        messageChannel
-    );
-
-
-    /*
-       PRESENCE REALTIME
-    */
-
-    const presenceChannel =
-        client
-            .channel(
-                "presence-global-" +
-                currentUser.id
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"*",
-                    schema:"public",
-                    table:"user_presence"
-                },
-                async payload=>{
-
-                    const row =
-                        payload.new;
-
-                    if(
-                        currentContact &&
-                        row?.user_id ===
-                        currentContact.user_id
-                    ){
-
-                        currentContact.is_online =
-                            row.is_online;
-
-                        updateChatStatus();
-
-                        await renderConversations();
-
-                    }
-
-                }
-            )
-            .subscribe();
-
-    subscriptions.push(
-        presenceChannel
-    );
-
-}
-
-
-/* =========================================================
-   CLEAR REALTIME
-========================================================= */
-
-function clearSubscriptions(){
-
-    if(client){
-
-        subscriptions.forEach(
-            channel=>{
-
-                try{
-
-                    client.removeChannel(
-                        channel
-                    );
-
-                }catch(_){}
-
-            }
+        clearTimeout(
+            searchTimer
         );
 
+        const value =
+            this.value.trim();
+
+
+        if(!value){
+
+            searchResults.innerHTML =
+                "";
+
+            hideElement(searchResults);
+
+            showElement(messagesList);
+
+            hideElement(emptyState);
+
+            return;
+
+        }
+
+
+        searchTimer =
+            setTimeout(
+                ()=>{
+                    performSearch(
+                        value
+                    );
+                },
+                250
+            );
+
     }
-
-    subscriptions = [];
-
-    clearTimeout(
-        typingTimer
-    );
-
-    typingCurrently =
-        false;
-
-}
+);
 
 
-/* =========================================================
-   MESSAGE SEARCH
-========================================================= */
-
-async function searchMessages(
-    query
+async function performSearch(
+    text
 ){
 
-    if(
-        !client ||
-        !currentUser ||
-        !query.trim()
-    ){
+    hideElement(messagesList);
 
-        hideSearchResults();
+    hideElement(emptyState);
 
-        return;
+    showElement(searchResults);
 
-    }
+    searchResults.innerHTML =
+        `<div class="empty-state">
+            جاري البحث...
+        </div>`;
+
 
     try{
 
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "search_messages",
-                {
-                    search_text:
-                        query.trim()
-                }
+        if(
+            searchMode ===
+            "messages"
+        ){
+
+            await searchMessages(
+                text
             );
 
-        if(error)
-            throw error;
+        }else{
 
-        messageSearchResults =
-            data || [];
+            await searchUsers(
+                text
+            );
 
-        searchMatches =
-            [...messageSearchResults];
-
-        currentSearchIndex =
-            0;
-
-        renderMessageSearchResults();
+        }
 
     }catch(error){
 
         console.error(
-            "Message search error:",
+            "search:",
             error
         );
 
-        showToast(
-            "تعذر البحث في الرسائل"
-        );
+        searchResults.innerHTML =
+            `<div class="empty-state">
+                حدث خطأ أثناء البحث.
+            </div>`;
 
     }
 
 }
 
 
-async function renderMessageSearchResults(){
+/* =========================================================
+   البحث داخل الرسائل
+========================================================= */
 
-    searchResults.classList.add(
-        "show"
+async function searchMessages(
+    text
+){
+
+    const {
+        data,
+        error
+    } = await client.rpc(
+        "search_messages",
+        {
+            search_text:
+                text
+        }
     );
 
-    searchResultsTitle.textContent =
-        messageSearchResults.length
-            ? "نتائج الرسائل"
-            : "لا توجد نتائج";
 
-    searchResultsList.innerHTML =
+    if(error){
+        throw error;
+    }
+
+
+    const results =
+        Array.isArray(data)
+            ? data
+            : [];
+
+
+    searchResults.innerHTML =
         "";
 
-    searchNavigation.classList.toggle(
-        "show",
-        messageSearchResults.length >
-            0
-    );
 
-    updateSearchCounter();
+    if(!results.length){
 
-    if(
-        !messageSearchResults.length
-    ){
-
-        searchResultsList.innerHTML = `
-
-            <div class="empty-state">
-                لم يتم العثور على الرسالة
-            </div>
-
-        `;
+        searchResults.innerHTML =
+            `<div class="empty-state">
+                <div class="empty-icon">⌕</div>
+                <strong>لا توجد نتائج</strong>
+                <span>لم يتم العثور على الكلمة داخل رسائلك.</span>
+            </div>`;
 
         return;
 
     }
 
+
     for(
-        const result
-        of messageSearchResults
+        let index = 0;
+        index < results.length;
+        index++
     ){
 
+        const result =
+            results[index];
+
+
         const contact =
-            await getConversationContact(
+            await getContactForConversation(
                 result.conversation_id
             );
 
-        const conversation =
-            conversations.find(
-                c =>
-                    c.conversation_id ===
-                    result.conversation_id
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "search-result";
+
+        card.style.animationDelay =
+            `${index * 60}ms`;
+
+
+        const avatar =
+            contact?.avatar_url ||
+            DEFAULT_AVATAR;
+
+
+        const name =
+            contact?.display_name ||
+            "مستخدم";
+
+
+        const snippet =
+            highlightSearchText(
+                result.content,
+                text
             );
 
-        const isSupport =
-            conversation?.type ===
-            "support";
 
-        const item =
-            document.createElement(
-                "div"
-            );
+        card.innerHTML = `
 
-        item.className =
-            "result-item";
+            <div
+                class="avatar-wrap"
+                data-profile-id="${
+                    escapeAttribute(
+                        contact?.user_id || ""
+                    )
+                }">
 
-        item.innerHTML = `
+                <img
+                    class="avatar"
+                    src="${escapeAttribute(
+                        avatar
+                    )}"
+                    alt="">
 
-            <img
-                class="result-avatar"
-                src="${escapeHTML(
-                    isSupport
-                        ? SUPPORT_AVATAR
-                        : safeAvatar(
-                            contact?.avatar_url
-                        )
-                )}"
-                alt="">
+            </div>
 
-            <div class="result-info">
+            <div class="search-result-content">
 
-                <div class="result-name">
-                    ${escapeHTML(
-                        isSupport
-                            ? "دعم WFESC"
-                            : (
-                                contact?.display_name ||
-                                "مستخدم"
-                            )
-                    )}
+                <div class="search-result-name">
+                    ${escapeHtml(name)}
                 </div>
 
-                <div class="result-snippet">
-                    ${highlightSearchText(
-                        result.content,
-                        messageSearch.value
-                    )}
+                <div class="search-result-snippet">
+                    ${snippet}
                 </div>
 
             </div>
 
-            <span class="result-count">
+            <div class="search-result-count">
                 ${Number(
-                    result.match_count ||
-                    0
-                )} تطابق
-            </span>
+                    result.match_count || 1
+                )} نتيجة
+            </div>
 
         `;
 
-        item.addEventListener(
+
+        const profile =
+            card.querySelector(
+                "[data-profile-id]"
+            );
+
+
+        if(profile){
+
+            profile.addEventListener(
+                "click",
+                function(event){
+
+                    event.stopPropagation();
+
+                    const id =
+                        this.dataset.profileId;
+
+                    if(id){
+
+                        openProfile(id);
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        card.addEventListener(
             "click",
-            async ()=>{
+            async function(){
+
+                const contactData =
+                    contact || {
+                        user_id:
+                            result.sender_id
+                    };
+
 
                 await openConversation(
                     result.conversation_id,
+                    contactData,
+                    {
+                        conversation_id:
+                            result.conversation_id
+                    }
+                );
+
+
+                focusMessage(
                     result.message_id
                 );
 
             }
         );
 
-        const avatar =
-            item.querySelector(
-                ".result-avatar"
-            );
 
-        avatar.addEventListener(
-            "click",
-            event=>{
-
-                event.stopPropagation();
-
-                if(
-                    !isSupport &&
-                    contact?.user_id
-                ){
-
-                    openProfile(
-                        contact.user_id
-                    );
-
-                }
-
-            }
+        searchResults.appendChild(
+            card
         );
 
-        searchResultsList.appendChild(
-            item
-        );
+        await wait(45);
 
     }
-
-}
-
-
-function highlightSearchText(
-    text,
-    query
-){
-
-    const safe =
-        escapeHTML(text);
-
-    const safeQuery =
-        String(
-            query || ""
-        );
-
-    if(!safeQuery)
-        return safe;
-
-    try{
-
-        const regex =
-            new RegExp(
-                "(" +
-                safeQuery.replace(
-                    /[.*+?^${}()|[\]\\]/g,
-                    "\\$&"
-                ) +
-                ")",
-                "ig"
-            );
-
-        return safe.replace(
-            regex,
-            `
-                <mark
-                    style="
-                        background:rgba(98,168,255,.25);
-                        color:#fff;
-                        border-radius:4px;
-                        padding:1px 3px">
-                    $1
-                </mark>
-            `
-        );
-
-    }catch(_){
-
-        return safe;
-
-    }
-
-}
-
-
-function updateSearchCounter(){
-
-    if(
-        !searchMatches.length
-    ){
-
-        searchMatchCounter.textContent =
-            "0 / 0";
-
-        return;
-
-    }
-
-    searchMatchCounter.textContent =
-        (
-            currentSearchIndex +
-            1
-        ) +
-        " / " +
-        searchMatches.length;
-
-}
-
-
-async function navigateSearch(
-    direction
-){
-
-    if(
-        !searchMatches.length
-    ){
-
-        return;
-
-    }
-
-    currentSearchIndex +=
-        direction;
-
-    if(
-        currentSearchIndex < 0
-    ){
-
-        currentSearchIndex =
-            searchMatches.length -
-            1;
-
-    }
-
-    if(
-        currentSearchIndex >=
-        searchMatches.length
-    ){
-
-        currentSearchIndex =
-            0;
-
-    }
-
-    updateSearchCounter();
-
-    const result =
-        searchMatches[
-            currentSearchIndex
-        ];
-
-    await openConversation(
-        result.conversation_id,
-        result.message_id
-    );
-
-}
-
-
-function focusMessage(
-    messageId
-){
-
-    const element =
-        chatMessages.querySelector(
-            `[data-message-id="${messageId}"]`
-        );
-
-    if(!element)
-        return;
-
-    element.scrollIntoView({
-        behavior:"smooth",
-        block:"center"
-    });
-
-    element.classList.remove(
-        "message-highlight"
-    );
-
-    void element.offsetWidth;
-
-    element.classList.add(
-        "message-highlight"
-    );
 
 }
 
 
 /* =========================================================
-   USER SEARCH
+   البحث عن المستخدمين
 ========================================================= */
 
 async function searchUsers(
-    query
+    text
 ){
 
-    if(
-        !client ||
-        !currentUser ||
-        !query.trim()
-    ){
-
-        hideSearchResults();
-
-        return;
-
-    }
-
-    try{
-
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "search_users",
-                {
-                    search_text:
-                        query.trim()
-                }
-            );
-
-        if(error)
-            throw error;
-
-        renderUserSearchResults(
-            data || [],
-            query
-        );
-
-    }catch(error){
-
-        console.error(
-            "User search error:",
-            error
-        );
-
-        showToast(
-            "تعذر البحث عن المستخدمين"
-        );
-
-    }
-
-}
-
-
-function renderUserSearchResults(
-    users,
-    query
-){
-
-    searchResults.classList.add(
-        "show"
+    const {
+        data,
+        error
+    } = await client.rpc(
+        "search_users",
+        {
+            search_text:
+                text
+        }
     );
 
-    searchResultsTitle.textContent =
-        "بحث عن مستخدم";
 
-    searchNavigation.classList.remove(
-        "show"
-    );
+    if(error){
+        throw error;
+    }
 
-    searchResultsList.innerHTML =
+
+    const results =
+        Array.isArray(data)
+            ? data
+            : [];
+
+
+    searchResults.innerHTML =
         "";
 
-    /*
-       الاتصال بالدعم يظهر فقط
-       عند كتابة كلمات الدعم.
-    */
-    if(
-        isSupportSearch(query)
-    ){
 
-        addSupportSearchResult();
+    if(!results.length){
 
-    }
-
-    const filteredUsers =
-        users.filter(
-            user =>
-                !SUPPORT_ADMIN_IDS.has(
-                    user.user_id
-                )
-        );
-
-    if(
-        !filteredUsers.length &&
-        !isSupportSearch(query)
-    ){
-
-        searchResultsList.innerHTML = `
-
-            <div class="empty-state">
-
-                <div class="big">
-                    👤
-                </div>
-
-                <div>
-                    لم يتم العثور على مستخدم
-                </div>
-
-            </div>
-
-        `;
+        searchResults.innerHTML =
+            `<div class="empty-state">
+                <div class="empty-icon">👤</div>
+                <strong>لم يتم العثور على مستخدم</strong>
+            </div>`;
 
         return;
 
     }
 
-    filteredUsers.forEach(
-        user=>{
 
-            const item =
-                document.createElement(
-                    "div"
-                );
+    results.forEach(
+        (user,index)=>{
 
-            item.className =
-                "result-item";
+            const card =
+                document.createElement("div");
 
-            item.innerHTML = `
+            card.className =
+                "search-result";
 
-                <img
-                    class="result-avatar"
-                    src="${escapeHTML(
-                        safeAvatar(
-                            user.avatar_url
+            card.style.animationDelay =
+                `${index * 60}ms`;
+
+
+            const avatar =
+                user.avatar_url ||
+                DEFAULT_AVATAR;
+
+
+            const name =
+                user.display_name ||
+                "مستخدم";
+
+
+            const username =
+                user.username
+                    ? "@" + user.username
+                    : "";
+
+
+            card.innerHTML = `
+
+                <div
+                    class="avatar-wrap"
+                    data-profile-id="${
+                        escapeAttribute(
+                            user.user_id
                         )
-                    )}"
-                    alt="">
+                    }">
 
-                <div class="result-info">
+                    <img
+                        class="avatar"
+                        src="${escapeAttribute(
+                            avatar
+                        )}"
+                        alt="">
 
-                    <div class="result-name">
-                        ${escapeHTML(
-                            user.display_name ||
-                            "مستخدم"
-                        )}
+                </div>
+
+                <div class="search-result-content">
+
+                    <div class="search-result-name">
+                        ${escapeHtml(name)}
                     </div>
 
-                    <div class="result-snippet">
-                        @${escapeHTML(
-                            user.username ||
-                            ""
-                        )}
+                    <div class="search-result-username">
+                        ${escapeHtml(username)}
                     </div>
 
                 </div>
 
             `;
 
-            item.addEventListener(
-                "click",
-                ()=>{
-                    openUserFromSearch(
-                        user
-                    );
-                }
-            );
 
-            item.querySelector(
-                ".result-avatar"
-            ).addEventListener(
+            const image =
+                card.querySelector(
+                    "[data-profile-id]"
+                );
+
+
+            image.addEventListener(
                 "click",
-                event=>{
+                function(event){
 
                     event.stopPropagation();
 
                     openProfile(
-                        user.user_id
+                        this.dataset.profileId
                     );
 
                 }
             );
 
-            searchResultsList.appendChild(
+
+            card.addEventListener(
+                "click",
+                async function(){
+
+                    try{
+
+                        const {
+                            data,
+                            error
+                        } = await client.rpc(
+                            "get_or_create_direct_conversation",
+                            {
+                                target_user_id:
+                                    user.user_id
+                            }
+                        );
+
+
+                        if(error){
+                            throw error;
+                        }
+
+
+                        const conversationId =
+                            Array.isArray(data)
+                                ? data[0]
+                                : data;
+
+
+                        await openConversation(
+                            conversationId,
+                            user,
+                            {
+                                conversation_id:
+                                    conversationId
+                            }
+                        );
+
+
+                    }catch(error){
+
+                        console.error(
+                            error
+                        );
+
+                        alert(
+                            "تعذر فتح المحادثة."
+                        );
+
+                    }
+
+                }
+            );
+
+
+            searchResults.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   جلب جهة اتصال
+========================================================= */
+
+async function getContactForConversation(
+    conversationId
+){
+
+    try{
+
+        const {
+            data,
+            error
+        } = await client.rpc(
+            "get_conversation_contacts",
+            {
+                target_conversation_id:
+                    conversationId
+            }
+        );
+
+
+        if(
+            error ||
+            !Array.isArray(data) ||
+            !data.length
+        ){
+
+            return null;
+
+        }
+
+
+        return data[0];
+
+    }catch(error){
+
+        console.error(
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+/* =========================================================
+   البحث في المحادثة
+========================================================= */
+
+function focusMessage(
+    messageId
+){
+
+    if(!messageId){
+        return;
+    }
+
+
+    setTimeout(
+        ()=>{
+            const element =
+                document.querySelector(
+                    `[data-message-id="${cssEscape(messageId)}"]`
+                );
+
+
+            if(!element){
+                return;
+            }
+
+
+            element.scrollIntoView({
+                behavior:"smooth",
+                block:"center"
+            });
+
+
+            element.classList.add(
+                "message-highlight"
+            );
+
+
+            setTimeout(
+                ()=>{
+                    element.classList.remove(
+                        "message-highlight"
+                    );
+                },
+                1600
+            );
+
+        },
+        250
+    );
+
+}
+
+
+/* =========================================================
+   الإشعارات
+========================================================= */
+
+async function loadNotifications(){
+
+    if(!currentUser){
+        return;
+    }
+
+
+    try{
+
+        const {
+            data,
+            error
+        } = await client
+            .from("notifications")
+            .select(
+                "id,actor_id,type,message,is_read,created_at,conversation_id"
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .order(
+                "created_at",
+                {
+                    ascending:false
+                }
+            )
+            .limit(50);
+
+
+        if(error){
+            throw error;
+        }
+
+
+        renderNotifications(
+            data || []
+        );
+
+
+    }catch(error){
+
+        console.error(
+            "notifications:",
+            error
+        );
+
+    }
+
+}
+
+
+function renderNotifications(
+    notifications
+){
+
+    notificationsList.innerHTML =
+        "";
+
+
+    if(!notifications.length){
+
+        notificationsList.innerHTML =
+            `<div class="empty-state">
+                لا توجد إشعارات.
+            </div>`;
+
+        return;
+
+    }
+
+
+    notifications.forEach(
+        notification=>{
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "notification-item " +
+                (
+                    !notification.is_read
+                        ? "unread"
+                        : ""
+                );
+
+
+            item.innerHTML = `
+
+                <div class="notification-text">
+
+                    ${escapeHtml(
+                        notification.message
+                    )}
+
+                    <div style="
+                        margin-top:5px;
+                        color:#666;
+                        font-size:10px;
+                    ">
+                        ${formatTime(
+                            notification.created_at
+                        )}
+                    </div>
+
+                </div>
+
+                <button
+                    class="notification-delete"
+                    type="button">
+                    ×
+                </button>
+
+            `;
+
+
+            item.querySelector(
+                ".notification-delete"
+            ).addEventListener(
+                "click",
+                async function(){
+
+                    try{
+
+                        await client.rpc(
+                            "delete_my_notification",
+                            {
+                                notification_id:
+                                    notification.id
+                            }
+                        );
+
+                        item.remove();
+
+                    }catch(error){
+
+                        console.error(
+                            error
+                        );
+
+                    }
+
+                }
+            );
+
+
+            item.addEventListener(
+                "click",
+                async function(){
+
+                    if(
+                        !notification.is_read
+                    ){
+
+                        await client.rpc(
+                            "mark_notification_read",
+                            {
+                                notification_id:
+                                    notification.id
+                            }
+                        );
+
+                    }
+
+
+                    if(
+                        notification.conversation_id
+                    ){
+
+                        const contact =
+                            await getContactForConversation(
+                                notification.conversation_id
+                            );
+
+
+                        closeNotifications();
+
+
+                        await openConversation(
+                            notification.conversation_id,
+                            contact || {},
+                            {
+                                conversation_id:
+                                    notification.conversation_id
+                            }
+                        );
+
+                    }
+
+                }
+            );
+
+
+            notificationsList.appendChild(
                 item
             );
 
@@ -4666,65 +3958,515 @@ function renderUserSearchResults(
 }
 
 
-async function openUserFromSearch(
-    user
-){
+/* =========================================================
+   فتح/غلق الإشعارات
+========================================================= */
 
-    try{
+notificationsButton.addEventListener(
+    "click",
+    function(){
 
-        const {
-            data,
-            error
-        } =
-            await client.rpc(
-                "get_or_create_direct_conversation",
-                {
-                    target_user_id:
-                        user.user_id
-                }
-            );
+        notificationsPanel.classList.add(
+            "open"
+        );
 
-        if(error)
-            throw error;
+        loadNotifications();
 
-        hideSearchResults();
+    }
+);
 
-        messageSearch.value =
-            "";
 
-        await loadConversations();
+closeNotifications.addEventListener(
+    "click",
+    closeNotificationsPanel
+);
 
-        if(data){
 
-            await openConversation(
-                data
-            );
+notificationsPanel.addEventListener(
+    "click",
+    function(event){
+
+        if(
+            event.target ===
+            notificationsPanel
+        ){
+
+            closeNotificationsPanel();
 
         }
 
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر فتح المحادثة"
-        );
-
     }
+);
+
+
+function closeNotificationsPanel(){
+
+    notificationsPanel.classList.remove(
+        "open"
+    );
 
 }
 
 
 /* =========================================================
-   PROFILE
+   حذف/قراءة الإشعارات
+========================================================= */
+
+markAllNotifications.addEventListener(
+    "click",
+    async function(){
+
+        try{
+
+            await client.rpc(
+                "mark_all_notifications_read"
+            );
+
+            await loadNotifications();
+
+        }catch(error){
+
+            console.error(
+                error
+            );
+
+        }
+
+    }
+);
+
+
+deleteAllNotifications.addEventListener(
+    "click",
+    async function(){
+
+        const ok =
+            confirm(
+                "هل تريد حذف جميع الإشعارات؟"
+            );
+
+        if(!ok){
+            return;
+        }
+
+
+        try{
+
+            await client.rpc(
+                "delete_my_notifications"
+            );
+
+            await loadNotifications();
+
+        }catch(error){
+
+            console.error(
+                error
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   النشاط
+========================================================= */
+
+activityButton.addEventListener(
+    "click",
+    function(){
+
+        activityModal.classList.add(
+            "open"
+        );
+
+    }
+);
+
+
+activityModal.addEventListener(
+    "click",
+    function(event){
+
+        if(
+            event.target ===
+            activityModal
+        ){
+
+            closeActivityModal();
+
+        }
+
+    }
+);
+
+
+activityOn.addEventListener(
+    "click",
+    function(){
+
+        setActivity(true);
+
+    }
+);
+
+
+activityOff.addEventListener(
+    "click",
+    function(){
+
+        setActivity(false);
+
+    }
+);
+
+
+function closeActivityModal(){
+
+    activityModal.classList.remove(
+        "open"
+    );
+
+}
+
+
+/* =========================================================
+   قائمة المحادثة
+========================================================= */
+
+function openContextMenu(
+    event,
+    conversationId
+){
+
+    currentContextConversation =
+        conversationId;
+
+
+    contextMenu.classList.add(
+        "open"
+    );
+
+
+    let x =
+        event.clientX;
+
+    let y =
+        event.clientY;
+
+
+    const width =
+        200;
+
+
+    const height =
+        100;
+
+
+    if(
+        x + width >
+        window.innerWidth
+    ){
+
+        x =
+            window.innerWidth -
+            width -
+            10;
+
+    }
+
+
+    if(
+        y + height >
+        window.innerHeight
+    ){
+
+        y =
+            window.innerHeight -
+            height -
+            10;
+
+    }
+
+
+    contextMenu.style.left =
+        x + "px";
+
+    contextMenu.style.top =
+        y + "px";
+
+}
+
+
+document.addEventListener(
+    "click",
+    function(event){
+
+        if(
+            !contextMenu.contains(
+                event.target
+            )
+        ){
+
+            closeContextMenu();
+
+        }
+
+    }
+);
+
+
+function closeContextMenu(){
+
+    contextMenu.classList.remove(
+        "open"
+    );
+
+    currentContextConversation =
+        null;
+
+}
+
+
+/* =========================================================
+   كتم المحادثة
+========================================================= */
+
+muteConversation.addEventListener(
+    "click",
+    async function(){
+
+        const conversationId =
+            currentContextConversation;
+
+
+        closeContextMenu();
+
+
+        if(!conversationId){
+            return;
+        }
+
+
+        try{
+
+            const {
+                data
+            } = await client
+                .from("notification_settings")
+                .select("muted")
+                .eq(
+                    "user_id",
+                    currentUser.id
+                )
+                .eq(
+                    "conversation_id",
+                    conversationId
+                )
+                .maybeSingle();
+
+
+            const newValue =
+                !(data?.muted === true);
+
+
+            await client
+                .from("notification_settings")
+                .upsert({
+                    user_id:
+                        currentUser.id,
+
+                    conversation_id:
+                        conversationId,
+
+                    muted:
+                        newValue
+                });
+
+
+        }catch(error){
+
+            console.error(
+                error
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   إخفاء المحادثة
+========================================================= */
+
+hideConversation.addEventListener(
+    "click",
+    async function(){
+
+        const conversationId =
+            currentContextConversation;
+
+
+        closeContextMenu();
+
+
+        if(!conversationId){
+            return;
+        }
+
+
+        const firstConfirm =
+            confirm(
+                "هل تريد إخفاء هذه المحادثة؟"
+            );
+
+
+        if(!firstConfirm){
+            return;
+        }
+
+
+        const secondConfirm =
+            confirm(
+                "تحذير: سيتم إخفاء المحادثة من قائمتك. هل تريد المتابعة؟"
+            );
+
+
+        if(!secondConfirm){
+            return;
+        }
+
+
+        try{
+
+            const {
+                error
+            } = await client.rpc(
+                "hide_my_conversation",
+                {
+                    target_conversation_id:
+                        conversationId
+                }
+            );
+
+
+            if(error){
+                throw error;
+            }
+
+
+            if(
+                currentConversationId ===
+                conversationId
+            ){
+
+                closeChat();
+
+            }
+
+
+            await loadConversations();
+
+
+        }catch(error){
+
+            console.error(
+                error
+            );
+
+            alert(
+                "تعذر إخفاء المحادثة."
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   البحث modes
+========================================================= */
+
+searchMessagesMode.addEventListener(
+    "click",
+    function(){
+
+        searchMode =
+            "messages";
+
+        searchMessagesMode.classList.add(
+            "active"
+        );
+
+        searchUsersMode.classList.remove(
+            "active"
+        );
+
+
+        const text =
+            messageSearch.value.trim();
+
+
+        if(text){
+
+            performSearch(
+                text
+            );
+
+        }
+
+    }
+);
+
+
+searchUsersMode.addEventListener(
+    "click",
+    function(){
+
+        searchMode =
+            "users";
+
+        searchUsersMode.classList.add(
+            "active"
+        );
+
+        searchMessagesMode.classList.remove(
+            "active"
+        );
+
+
+        const text =
+            messageSearch.value.trim();
+
+
+        if(text){
+
+            performSearch(
+                text
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   الملف الشخصي
 ========================================================= */
 
 function openProfile(
     userId
 ){
 
-    if(!userId)
+    if(!userId){
         return;
+    }
+
 
     window.location.href =
         "./profile.html?id=" +
@@ -4736,727 +4478,343 @@ function openProfile(
 
 
 /* =========================================================
-   HIDE CONVERSATION
+   الأدوات
 ========================================================= */
 
-async function hideCurrentConversation(){
+function scrollChatToBottom(
+    smooth = true
+){
 
-    if(
-        !currentConversationId
-    ){
+    requestAnimationFrame(
+        ()=>{
 
-        return;
+            chatBody.scrollTo({
+                top:
+                    chatBody.scrollHeight,
+                behavior:
+                    smooth
+                        ? "smooth"
+                        : "auto"
+            });
 
-    }
-
-    const firstConfirm =
-        confirm(
-            "هل تريد إخفاء هذه المحادثة من قائمة محادثاتك؟"
-        );
-
-    if(!firstConfirm)
-        return;
-
-    const secondConfirm =
-        confirm(
-            "تنبيه: سيتم إخفاء المحادثة من حسابك فقط، ولن تُحذف رسائل الطرف الآخر. هل تريد المتابعة؟"
-        );
-
-    if(!secondConfirm)
-        return;
-
-    try{
-
-        const {
-            error
-        } =
-            await client.rpc(
-                "hide_my_conversation",
-                {
-                    target_conversation_id:
-                        currentConversationId
-                }
-            );
-
-        if(error)
-            throw error;
-
-        showToast(
-            "تم إخفاء المحادثة"
-        );
-
-        currentConversationId =
-            null;
-
-        currentContact =
-            null;
-
-        currentMessages = [];
-
-        layout.classList.remove(
-            "chat-open"
-        );
-
-        messageInput.disabled =
-            true;
-
-        sendButton.disabled =
-            true;
-
-        await loadConversations();
-
-        chatMessages.innerHTML = `
-
-            <div class="chat-empty">
-
-                <div>
-
-                    <div class="chat-empty-icon">
-                        💬
-                    </div>
-
-                    <div>
-                        اختر محادثة لعرض الرسائل
-                    </div>
-
-                </div>
-
-            </div>
-
-        `;
-
-        chatName.textContent =
-            "اختر محادثة";
-
-        chatStatus.textContent =
-            "ابدأ محادثة";
-
-        chatAvatar.src =
-            DEFAULT_AVATAR;
-
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر إخفاء المحادثة"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   MUTE
-========================================================= */
-
-async function muteCurrentConversation(){
-
-    if(
-        !currentConversationId ||
-        !currentUser
-    ){
-
-        return;
-
-    }
-
-    try{
-
-        const {
-            data:existing,
-            error:readError
-        } =
-            await client
-                .from("notification_settings")
-                .select("muted")
-                .eq(
-                    "user_id",
-                    currentUser.id
-                )
-                .eq(
-                    "conversation_id",
-                    currentConversationId
-                )
-                .maybeSingle();
-
-        if(readError)
-            throw readError;
-
-        const nextMuted =
-            !(
-                existing?.muted ===
-                true
-            );
-
-        const {
-            error
-        } =
-            await client
-                .from(
-                    "notification_settings"
-                )
-                .upsert(
-                    {
-                        user_id:
-                            currentUser.id,
-                        conversation_id:
-                            currentConversationId,
-                        muted:
-                            nextMuted,
-                        updated_at:
-                            new Date()
-                                .toISOString()
-                    },
-                    {
-                        onConflict:
-                            "user_id,conversation_id"
-                    }
-                );
-
-        if(error)
-            throw error;
-
-        showToast(
-            nextMuted
-                ? "تم كتم إشعارات المحادثة"
-                : "تم تشغيل إشعارات المحادثة"
-        );
-
-        closeMenus();
-
-    }catch(error){
-
-        console.error(error);
-
-        showToast(
-            "تعذر تغيير إعداد الإشعارات"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   SEARCH UI
-========================================================= */
-
-function hideSearchResults(){
-
-    searchResults.classList.remove(
-        "show"
+        }
     );
 
-    searchNavigation.classList.remove(
-        "show"
-    );
-
-    searchResultsList.innerHTML =
-        "";
-
-    messageSearchResults =
-        [];
-
-    searchMatches =
-        [];
-
-    currentSearchIndex =
-        0;
-
 }
 
-
-function performSearch(){
-
-    const query =
-        messageSearch.value.trim();
-
-    if(!query){
-
-        hideSearchResults();
-
-        return;
-
-    }
-
-    clearTimeout(
-        searchTimer
-    );
-
-    searchTimer =
-        setTimeout(
-            ()=>{
-
-                if(
-                    searchMode ===
-                    "messages"
-                ){
-
-                    searchMessages(
-                        query
-                    );
-
-                }else{
-
-                    searchUsers(
-                        query
-                    );
-
-                }
-
-            },
-            300
-        );
-
-}
-
-
-/* =========================================================
-   TEXTAREA
-========================================================= */
 
 function autoResizeTextarea(){
 
-    messageInput.style.height =
+    chatInput.style.height =
         "auto";
 
-    messageInput.style.height =
+    chatInput.style.height =
         Math.min(
-            messageInput.scrollHeight,
-            120
-        ) +
-        "px";
+            chatInput.scrollHeight,
+            130
+        ) + "px";
 
 }
 
 
-/* =========================================================
-   MENU
-========================================================= */
+function showEmpty(
+    text
+){
 
-function openConversationMenu(){
+    emptyState.innerHTML = `
+        <div class="empty-icon">💬</div>
+        <strong>${escapeHtml(text)}</strong>
+    `;
 
-    if(
-        !currentConversationId
-    ){
-
-        return;
-
-    }
-
-    const button =
-        $("chatMenuButton");
-
-    const rect =
-        button.getBoundingClientRect();
-
-    conversationMenu.style.top =
-        (
-            rect.bottom +
-            7
-        ) +
-        "px";
-
-    conversationMenu.style.left =
-        Math.max(
-            10,
-            rect.left -
-            165
-        ) +
-        "px";
-
-    conversationMenu.classList.add(
-        "show"
+    showElement(
+        emptyState
     );
 
 }
 
 
-/* =========================================================
-   MOBILE
-========================================================= */
+function showElement(
+    element
+){
 
-function closeMobileChat(){
-
-    layout.classList.remove(
-        "chat-open"
-    );
-
-    closeMenus();
-
-}
-
-
-/* =========================================================
-   NOTIFICATIONS HANDOFF
-   لا يوجد محتوى إشعارات هنا.
-   الملف المستقل سيتولى النظام لاحقاً.
-========================================================= */
-
-function openNotificationsSystem(){
-
-    /*
-       إذا تم تركيب نظام الإشعارات المستقل،
-       نستعمل واجهته مباشرة.
-    */
-    if(
-        window.WFESCNotifications &&
-        typeof
-            window.WFESCNotifications.open ===
-            "function"
-    ){
-
-        window.WFESCNotifications.open();
-
-        return;
-
-    }
-
-    /*
-       حالياً الإشعارات ليست مدمجة
-       داخل messages.html.
-    */
-    showToast(
-        "نظام الإشعارات المستقل سيتم ربطه هنا"
+    element.classList.remove(
+        "hidden"
     );
 
 }
 
 
-/* =========================================================
-   EVENTS
-========================================================= */
+function hideElement(
+    element
+){
 
-messageForm.addEventListener(
-    "submit",
-    event=>{
-
-        event.preventDefault();
-
-        sendMessage();
-
-    }
-);
-
-
-messageInput.addEventListener(
-    "input",
-    ()=>{
-
-        autoResizeTextarea();
-
-        handleTyping();
-
-    }
-);
-
-
-messageInput.addEventListener(
-    "keydown",
-    event=>{
-
-        if(
-            event.key === "Enter" &&
-            !event.shiftKey
-        ){
-
-            event.preventDefault();
-
-            sendMessage();
-
-        }
-
-    }
-);
-
-
-messageSearch.addEventListener(
-    "input",
-    performSearch
-);
-
-
-$("messageSearchMode").addEventListener(
-    "click",
-    ()=>{
-
-        searchMode =
-            "messages";
-
-        $("messageSearchMode")
-            .classList.add(
-                "active"
-            );
-
-        $("userSearchMode")
-            .classList.remove(
-                "active"
-            );
-
-        messageSearch.placeholder =
-            "ابحث في الرسائل...";
-
-        performSearch();
-
-    }
-);
-
-
-$("userSearchMode").addEventListener(
-    "click",
-    ()=>{
-
-        searchMode =
-            "users";
-
-        $("userSearchMode")
-            .classList.add(
-                "active"
-            );
-
-        $("messageSearchMode")
-            .classList.remove(
-                "active"
-            );
-
-        messageSearch.placeholder =
-            "ابحث بالاسم أو username...";
-
-        performSearch();
-
-    }
-);
-
-
-$("closeSearch").addEventListener(
-    "click",
-    ()=>{
-
-        messageSearch.value =
-            "";
-
-        hideSearchResults();
-
-    }
-);
-
-
-$("searchPrev").addEventListener(
-    "click",
-    ()=>{
-        navigateSearch(-1);
-    }
-);
-
-
-$("searchNext").addEventListener(
-    "click",
-    ()=>{
-        navigateSearch(1);
-    }
-);
-
-
-activityButton.addEventListener(
-    "click",
-    openActivityModal
-);
-
-
-$("closeActivityModal").addEventListener(
-    "click",
-    closeActivityModal
-);
-
-
-$("saveActivity").addEventListener(
-    "click",
-    saveActivitySetting
-);
-
-
-$("activityToggle").addEventListener(
-    "change",
-    event=>{
-
-        activityDraft =
-            event.target.checked;
-
-    }
-);
-
-
-/*
-   الرسائل
-*/
-$("messagesHeaderButton")
-    .addEventListener(
-        "click",
-        ()=>{
-            layout.scrollIntoView({
-                behavior:"smooth",
-                block:"start"
-            });
-        }
+    element.classList.add(
+        "hidden"
     );
 
-
-/*
-   الإشعارات:
-   لا يتم فتح لوحة داخل الرسائل.
-   يتم تسليم التحكم للنظام المستقل.
-*/
-notificationsHeaderButton
-    .addEventListener(
-        "click",
-        openNotificationsSystem
-    );
+}
 
 
-$("backMobile").addEventListener(
-    "click",
-    closeMobileChat
-);
+function wait(
+    milliseconds
+){
 
-
-$("chatMenuButton").addEventListener(
-    "click",
-    event=>{
-
-        event.stopPropagation();
-
-        if(
-            conversationMenu.classList.contains(
-                "show"
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
             )
-        ){
+    );
 
-            closeMenus();
+}
 
-        }else{
 
-            openConversationMenu();
+function formatTime(
+    date
+){
 
-        }
+    if(!date){
+        return "";
+    }
+
+
+    const value =
+        new Date(date);
+
+
+    if(
+        Number.isNaN(
+            value.getTime()
+        )
+    ){
+
+        return "";
 
     }
-);
 
 
-$("muteConversation").addEventListener(
-    "click",
-    muteCurrentConversation
-);
+    return value.toLocaleTimeString(
+        "ar-IQ",
+        {
+            hour:"2-digit",
+            minute:"2-digit"
+        }
+    );
+
+}
 
 
-$("hideConversation").addEventListener(
-    "click",
-    hideCurrentConversation
-);
+function formatMessageTime(
+    date
+){
+
+    return formatTime(
+        date
+    );
+
+}
 
 
-chatUser.addEventListener(
-    "click",
-    ()=>{
+function escapeHtml(
+    value
+){
 
-        if(
-            currentConversationType !==
-                "support" &&
-            currentContact?.user_id
-        ){
+    return String(
+        value ?? ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
-            openProfile(
-                currentContact.user_id
+}
+
+
+function escapeAttribute(
+    value
+){
+
+    return escapeHtml(
+        value
+    );
+
+}
+
+
+function cssEscape(
+    value
+){
+
+    if(
+        window.CSS &&
+        CSS.escape
+    ){
+
+        return CSS.escape(
+            value
+        );
+
+    }
+
+    return String(
+        value
+    ).replace(
+        /"/g,
+        '\\"'
+    );
+
+}
+
+
+function highlightSearchText(
+    content,
+    search
+){
+
+    const safeContent =
+        escapeHtml(
+            content
+        );
+
+    const safeSearch =
+        escapeHtml(
+            search
+        );
+
+
+    if(!safeSearch){
+        return safeContent;
+    }
+
+
+    try{
+
+        const regex =
+            new RegExp(
+                "(" +
+                escapeRegExp(
+                    safeSearch
+                ) +
+                ")",
+                "gi"
             );
 
-        }
+
+        return safeContent.replace(
+            regex,
+            "<mark style=\"" +
+            "background:rgba(255,255,255,.22);" +
+            "color:#fff;" +
+            "border-radius:4px;" +
+            "padding:1px 3px;" +
+            "\">$1</mark>"
+        );
+
+    }catch(error){
+
+        return safeContent;
 
     }
-);
+
+}
 
 
-chatAvatar.addEventListener(
-    "click",
-    event=>{
+function escapeRegExp(
+    value
+){
 
-        event.stopPropagation();
+    return String(
+        value
+    ).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+    );
 
-        if(
-            currentConversationType !==
-                "support" &&
-            currentContact?.user_id
-        ){
-
-            openProfile(
-                currentContact.user_id
-            );
-
-        }
-
-    }
-);
-
-
-document.addEventListener(
-    "click",
-    event=>{
-
-        if(
-            !conversationMenu.contains(
-                event.target
-            ) &&
-            event.target !==
-                $("chatMenuButton")
-        ){
-
-            closeMenus();
-
-        }
-
-    }
-);
-
-
-$("activityModal").addEventListener(
-    "click",
-    event=>{
-
-        if(
-            event.target ===
-            $("activityModal")
-        ){
-
-            closeActivityModal();
-
-        }
-
-    }
-);
+}
 
 
 /* =========================================================
-   PAGE VISIBILITY
+   إيقاف Realtime
+========================================================= */
+
+function stopRealtime(){
+
+    if(
+        !client
+    ){
+        return;
+    }
+
+
+    if(realtimeChannel){
+
+        client.removeChannel(
+            realtimeChannel
+        );
+
+        realtimeChannel =
+            null;
+
+    }
+
+
+    if(notificationChannel){
+
+        client.removeChannel(
+            notificationChannel
+        );
+
+        notificationChannel =
+            null;
+
+    }
+
+
+    removeTypingSubscription();
+
+}
+
+
+/* =========================================================
+   عند إغلاق/إخفاء الصفحة
 ========================================================= */
 
 document.addEventListener(
     "visibilitychange",
-    ()=>{
+    function(){
 
-        if(!currentUser)
+        if(!currentUser){
             return;
+        }
+
 
         if(
             document.visibilityState ===
             "visible"
         ){
 
-            setPresence(true);
+            setMyPresence(true);
 
         }else{
 
-            setPresence(false);
+            setMyPresence(false);
 
         }
 
@@ -5465,12 +4823,19 @@ document.addEventListener(
 
 
 window.addEventListener(
-    "pagehide",
-    ()=>{
+    "beforeunload",
+    function(){
 
         if(currentUser){
 
-            setPresence(false);
+            client.rpc(
+                "set_my_presence",
+                {
+                    online:false
+                }
+            ).catch(
+                ()=>{}
+            );
 
         }
 
@@ -5479,115 +4844,8 @@ window.addEventListener(
 
 
 /* =========================================================
-   KEYBOARD SEARCH NAVIGATION
+   تشغيل
 ========================================================= */
-
-document.addEventListener(
-    "keydown",
-    event=>{
-
-        if(
-            !searchResults.classList.contains(
-                "show"
-            )
-        ){
-
-            return;
-
-        }
-
-        /*
-           لا نسرق الأسهم من textarea/input.
-        */
-        const tag =
-            document.activeElement?.tagName;
-
-        if(
-            tag === "INPUT" ||
-            tag === "TEXTAREA"
-        ){
-
-            return;
-
-        }
-
-        if(
-            event.key === "ArrowDown"
-        ){
-
-            event.preventDefault();
-
-            navigateSearch(1);
-
-        }
-
-        if(
-            event.key === "ArrowUp"
-        ){
-
-            event.preventDefault();
-
-            navigateSearch(-1);
-
-        }
-
-        if(
-            event.key === "Escape"
-        ){
-
-            hideSearchResults();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   ONLINE RECOVERY
-========================================================= */
-
-window.addEventListener(
-    "online",
-    ()=>{
-
-        if(currentUser){
-
-            setPresence(true);
-
-            loadConversations();
-
-        }
-
-    }
-);
-
-
-window.addEventListener(
-    "offline",
-    ()=>{
-
-        if(activityText){
-
-            activityText.textContent =
-                "غير متصل";
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   INIT
-========================================================= */
-
-function init(){
-
-    loadSession();
-
-}
-
 
 if(
     document.readyState ===
@@ -5608,12 +4866,18 @@ if(
 
 }
 
-
 })();
 </script>
 
 
-<!-- NAVIGATION -->
+<!--
+    مهم:
+    لا تضف navigation-loader.js هنا إذا كانت
+    صفحة الرسائل عندك لا تحتاجه.
+    
+    إذا كان نظام التنقل الحالي عندك يعتمد عليه،
+    أضفه بهذا المسار:
+-->
 
 <script src="./navigation/navigation-loader.js"></script>
 
