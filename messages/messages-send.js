@@ -4,69 +4,53 @@
     /*
     ============================================================
     WFESC MESSAGES SEND
+    النسخة المستقرة
 
     مسؤول عن:
     - كتابة الرسالة
-    - تعديل ارتفاع مربع الكتابة
+    - تغيير ارتفاع حقل الكتابة
     - الإرسال
     - منع الإرسال المكرر
-    - حالة الإرسال
     - Enter للإرسال
     - Shift + Enter لسطر جديد
-    - الإضافة الفورية بدون Refresh
+    - ظهور الرسالة فوراً
+    - عدم إعادة رسم المحادثة بعد الإرسال
     - الحفاظ على المحادثة مفتوحة
+    - الحفاظ على التركيز داخل حقل الكتابة
     ============================================================
     */
-
 
     const core =
         window.WFESC_MESSAGES_CORE;
 
-
     if (!core) {
-
         console.error(
             "WFESC Messages Send: messages-core.js غير موجود."
         );
-
         return;
     }
-
 
     /* =========================================================
        DOM
     ========================================================= */
 
     const messageForm =
-        document.getElementById(
-            "messageForm"
-        );
-
+        document.getElementById("messageForm");
 
     const messageInput =
-        document.getElementById(
-            "messageInput"
-        );
-
+        document.getElementById("messageInput");
 
     const sendButton =
-        document.getElementById(
-            "sendButton"
-        );
-
+        document.getElementById("sendButton");
 
     const chatMessages =
-        document.getElementById(
-            "chatMessages"
-        );
-
+        document.getElementById("chatMessages");
 
     /* =========================================================
        STATE
     ========================================================= */
 
     let isSending = false;
-
 
     /* =========================================================
        HELPERS
@@ -75,36 +59,26 @@
     function scrollToBottom(
         behavior = "smooth"
     ) {
-
         if (!chatMessages) {
             return;
         }
 
-
-        chatMessages.scrollTo({
-
-            top:
-                chatMessages.scrollHeight,
-
-            behavior
+        requestAnimationFrame(() => {
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior
+            });
         });
     }
 
-
     function resizeTextarea() {
-
         if (!messageInput) {
             return;
         }
 
+        messageInput.style.height = "auto";
 
-        messageInput.style.height =
-            "auto";
-
-
-        const maxHeight =
-            100;
-
+        const maxHeight = 100;
 
         const nextHeight =
             Math.min(
@@ -112,47 +86,30 @@
                 maxHeight
             );
 
-
         messageInput.style.height =
             `${nextHeight}px`;
     }
 
-
-    function setSendingState(
-        state
-    ) {
-
-        isSending =
-            Boolean(state);
-
+    function setSendingState(state) {
+        isSending = Boolean(state);
 
         if (sendButton) {
-
-            sendButton.disabled =
-                isSending;
-
+            sendButton.disabled = isSending;
 
             sendButton.classList.toggle(
                 "sending",
                 isSending
             );
 
-
             sendButton.textContent =
-                isSending
-                    ? "…"
-                    : "↑";
+                isSending ? "…" : "↑";
         }
 
-
         /*
-           لا نعطل حقل الكتابة أثناء الإرسال.
-
-           هذا يسمح للمستخدم بكتابة الرسالة التالية
-           مباشرة، لكن زر الإرسال يبقى محميًا من التكرار.
+           لا نعطل حقل الكتابة.
+           هذا مهم للكيبورد.
         */
         if (messageInput) {
-
             messageInput.classList.toggle(
                 "sending",
                 isSending
@@ -160,14 +117,11 @@
         }
     }
 
-
     function createOptimisticMessage(
         content,
         userId
     ) {
-
         return {
-
             id:
                 `temp-${Date.now()}-${Math.random()
                     .toString(36)
@@ -181,277 +135,224 @@
             created_at:
                 new Date().toISOString(),
 
-            optimistic:
-                true
+            optimistic: true
         };
     }
-
 
     function renderTemporaryMessage(
         message
     ) {
-
         if (!chatMessages) {
             return null;
         }
 
-
+        /*
+           حذف حالة "لا توجد رسائل"
+           فقط إذا كانت موجودة.
+        */
         const emptyState =
             chatMessages.querySelector(
                 ".empty-state"
             );
 
-
         if (emptyState) {
             emptyState.remove();
         }
 
-
-        /*
-           نستخدم Core لإنشاء نفس شكل الرسائل الحقيقي.
-           هذا يضمن أن إعدادات الفقاعات تنطبق أيضًا
-           على الرسالة المؤقتة.
-        */
         let row = null;
-
 
         if (
             typeof core.createMessageElement ===
             "function"
         ) {
-
             row =
                 core.createMessageElement(
                     message
                 );
-
-        } else {
-
-            /*
-               Fallback احتياطي إذا Core قديم.
-            */
-
-            row =
-                document.createElement(
-                    "div"
-                );
-
-
-            row.className =
-                "message-row mine message-new optimistic";
-
-
-            row.dataset.messageId =
-                String(message.id);
-
-
-            const bubble =
-                document.createElement(
-                    "div"
-                );
-
-
-            bubble.className =
-                "message-bubble";
-
-
-            const content =
-                document.createElement(
-                    "div"
-                );
-
-
-            content.className =
-                "message-content";
-
-
-            content.textContent =
-                message.content;
-
-
-            const time =
-                document.createElement(
-                    "div"
-                );
-
-
-            time.className =
-                "message-time";
-
-
-            time.textContent =
-                new Date(
-                    message.created_at
-                ).toLocaleTimeString(
-                    "ar-IQ",
-                    {
-                        hour:
-                            "2-digit",
-
-                        minute:
-                            "2-digit"
-                    }
-                );
-
-
-            bubble.appendChild(
-                content
-            );
-
-
-            bubble.appendChild(
-                time
-            );
-
-
-            row.appendChild(
-                bubble
-            );
         }
 
+        if (!row) {
+            console.error(
+                "WFESC: تعذر إنشاء عنصر الرسالة."
+            );
+
+            return null;
+        }
 
         row.classList.add(
             "message-new",
             "optimistic"
         );
 
+        row.dataset.optimisticId =
+            String(message.id);
 
-        chatMessages.appendChild(
-            row
-        );
-
+        chatMessages.appendChild(row);
 
         /*
-           تطبيق إعدادات الفقاعات فورًا.
+           لا نعيد رسم المحادثة.
+           فقط نطلب تطبيق الإعدادات إن كانت متاحة.
         */
-        if (
-            typeof core.applyMessageSettings ===
-            "function"
-        ) {
+        try {
+            const settings =
+                window.WFESC_MESSAGE_SETTINGS;
 
-            core.applyMessageSettings();
+            if (
+                settings &&
+                typeof settings.apply ===
+                    "function"
+            ) {
+                settings.apply(
+                    typeof settings.get ===
+                        "function"
+                        ? settings.get()
+                        : undefined
+                );
+            }
+        } catch (error) {
+            console.warn(
+                "WFESC message settings:",
+                error
+            );
         }
 
-
-        scrollToBottom(
-            "smooth"
-        );
-
+        scrollToBottom("smooth");
 
         return row;
     }
 
-
-    function extractSentMessage(
-        data
-    ) {
-
+    /*
+       استخراج صف الرسالة الحقيقي من أي شكل محتمل
+       يرجعه RPC.
+    */
+    function extractSentMessage(data) {
         if (!data) {
             return null;
         }
 
-
         if (Array.isArray(data)) {
-
-            return (
-                data[0] ||
-                null
-            );
+            return data[0] || null;
         }
-
 
         if (
             data.message &&
-            typeof data.message ===
-                "object"
+            typeof data.message === "object"
         ) {
-
             return data.message;
         }
 
+        if (
+            data.data &&
+            Array.isArray(data.data)
+        ) {
+            return data.data[0] || null;
+        }
 
         if (
             data.data &&
-            typeof data.data ===
-                "object"
+            typeof data.data === "object"
         ) {
-
-            if (
-                Array.isArray(
-                    data.data
-                )
-            ) {
-
-                return (
-                    data.data[0] ||
-                    null
-                );
-            }
-
-
             return data.data;
         }
 
+        /*
+           إذا كان RPC يرجع UUID أو قيمة بسيطة،
+           لا نحاول اعتبارها رسالة كاملة.
+        */
+        if (
+            typeof data !== "object"
+        ) {
+            return null;
+        }
 
-        return data;
+        /*
+           نتأكد أن الكائن يشبه رسالة فعلية.
+        */
+        if (
+            data.content !== undefined ||
+            data.message !== undefined ||
+            data.sender_id !== undefined ||
+            data.user_id !== undefined ||
+            data.created_at !== undefined ||
+            data.id !== undefined
+        ) {
+            return data;
+        }
+
+        return null;
     }
 
-
-    function removeTemporaryMessage(
-        temporaryRow
+    /*
+       تحديث الرسالة المؤقتة بالبيانات الحقيقية
+       بدون حذف العنصر من DOM.
+    */
+    function confirmTemporaryMessage(
+        temporaryRow,
+        sentMessage
     ) {
-
         if (!temporaryRow) {
             return;
         }
 
+        temporaryRow.classList.remove(
+            "optimistic"
+        );
 
-        if (
-            typeof temporaryRow.animate ===
-            "function"
-        ) {
+        temporaryRow.classList.remove(
+            "message-new"
+        );
 
-            try {
+        temporaryRow.dataset.confirmed =
+            "true";
 
-                temporaryRow.animate(
-                    [
-                        {
-                            opacity: 1,
-                            transform:
-                                "translateY(0)"
-                        },
-                        {
-                            opacity: 0,
-                            transform:
-                                "translateY(5px)"
-                        }
-                    ],
-                    {
-                        duration: 160,
-                        easing: "ease"
-                    }
+        if (sentMessage) {
+            const realId =
+                sentMessage.id ??
+                sentMessage.message_id;
+
+            if (realId != null) {
+                temporaryRow.dataset.messageId =
+                    String(realId);
+            }
+
+            /*
+               تحديث وقت الرسالة إذا أعاده الخادم.
+            */
+            const timeElement =
+                temporaryRow.querySelector(
+                    ".message-time"
                 );
 
-            } catch (error) {
+            if (
+                timeElement &&
+                (
+                    sentMessage.created_at ||
+                    sentMessage.sent_at
+                )
+            ) {
+                const date =
+                    new Date(
+                        sentMessage.created_at ||
+                        sentMessage.sent_at
+                    );
 
-                console.warn(
-                    "WFESC temporary animation:",
-                    error
-                );
+                if (
+                    !Number.isNaN(
+                        date.getTime()
+                    )
+                ) {
+                    timeElement.textContent =
+                        date.toLocaleTimeString(
+                            "ar-IQ",
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            }
+                        );
+                }
             }
         }
-
-
-        setTimeout(
-            () => {
-
-                temporaryRow.remove();
-
-            },
-            170
-        );
     }
-
 
     /* =========================================================
        SEND
@@ -459,87 +360,66 @@
 
     async function sendCurrentMessage() {
 
-        /*
-           منع الإرسال المكرر.
-        */
         if (isSending) {
             return;
         }
-
-
-        const user =
-            core.getCurrentUser();
-
-
-        const conversationId =
-            core.getCurrentConversation();
-
-
-        if (!user) {
-
-            console.warn(
-                "WFESC: لا يوجد مستخدم."
-            );
-
-            return;
-        }
-
-
-        if (!conversationId) {
-
-            console.warn(
-                "WFESC: لم يتم فتح محادثة."
-            );
-
-            return;
-        }
-
 
         if (!messageInput) {
             return;
         }
 
+        const user =
+            core.getCurrentUser();
+
+        const conversationId =
+            core.getCurrentConversation();
+
+        if (!user) {
+            console.warn(
+                "WFESC: لا يوجد مستخدم."
+            );
+            return;
+        }
+
+        if (!conversationId) {
+            console.warn(
+                "WFESC: لم يتم فتح محادثة."
+            );
+            return;
+        }
 
         const content =
             messageInput.value
                 .replace(/\r\n/g, "\n")
                 .trim();
 
-
         if (!content) {
             return;
         }
 
-
         /*
-        --------------------------------------------------------
-        نحفظ النص قبل المسح.
-        --------------------------------------------------------
+           نحفظ المحادثة والنص.
         */
+        const sendingConversationId =
+            conversationId;
 
         const originalContent =
             content;
 
-
         /*
-        --------------------------------------------------------
-        نثبت رقم المحادثة.
-        إذا تغيرت المحادثة أثناء الإرسال،
-        لن نضيف النتيجة للمحادثة الخطأ.
-        --------------------------------------------------------
+           هل كان الحقل مركزاً قبل الإرسال؟
+           مهم جداً للكيبورد.
         */
-
-        const sendingConversationId =
-            conversationId;
-
+        const hadFocus =
+            document.activeElement ===
+            messageInput;
 
         setSendingState(true);
 
-
         /*
-        --------------------------------------------------------
-        رسالة مؤقتة تظهر فورًا.
-        --------------------------------------------------------
+        ========================================================
+        1. إظهار الرسالة فوراً
+        ========================================================
         */
 
         const optimistic =
@@ -548,35 +428,28 @@
                 user.id
             );
 
-
         const temporaryRow =
             renderTemporaryMessage(
                 optimistic
             );
 
-
         /*
-        --------------------------------------------------------
-        نفرغ مربع الكتابة مباشرة.
-        --------------------------------------------------------
+        ========================================================
+        2. تفريغ الحقل فقط
+        ========================================================
         */
 
-        messageInput.value =
-            "";
-
+        messageInput.value = "";
 
         resizeTextarea();
 
+        /*
+        ========================================================
+        3. الإرسال إلى Supabase
+        ========================================================
+        */
 
         try {
-
-            /*
-            ====================================================
-            SEND RPC
-
-            نفس RPC الأصلي بدون تغيير.
-            ====================================================
-            */
 
             const {
                 data,
@@ -592,16 +465,13 @@
                 }
             );
 
-
             if (error) {
-
                 throw error;
             }
 
-
             /*
             ====================================================
-            تحقق من أن المستخدم ما زال داخل نفس المحادثة.
+            تأكد أن المستخدم ما زال بنفس المحادثة.
             ====================================================
             */
 
@@ -612,140 +482,72 @@
                     sendingConversationId
                 );
 
-
-            /*
-            ====================================================
-            الرسالة المؤقتة انتهى دورها.
-            ====================================================
-            */
-
-            if (temporaryRow) {
-
-                temporaryRow.classList.remove(
-                    "optimistic"
-                );
-
-
-                temporaryRow.dataset.confirmed =
-                    "true";
+            if (
+                !stillSameConversation
+            ) {
+                /*
+                   لا نلمس المحادثة الحالية إذا المستخدم
+                   انتقل إلى محادثة أخرى أثناء الإرسال.
+                */
+                return;
             }
 
-
             /*
             ====================================================
-            الرسالة الحقيقية من Supabase.
-            
-            لا نعيد تحميل كامل المحادثة.
+            استخراج الرسالة الحقيقية إذا كانت موجودة.
             ====================================================
             */
 
             const sentMessage =
-                extractSentMessage(
-                    data
-                );
+                extractSentMessage(data);
 
+            /*
+            ====================================================
+            مهم:
+            لا نحذف الرسالة المؤقتة.
+            نحولها إلى رسالة مؤكدة.
+            ====================================================
+            */
+
+            confirmTemporaryMessage(
+                temporaryRow,
+                sentMessage
+            );
+
+            /*
+            ====================================================
+            إذا رجع RPC رسالة كاملة،
+            نحدّث currentMessages بدون renderMessages().
+            ====================================================
+            */
 
             if (
                 sentMessage &&
-                stillSameConversation &&
-                typeof core.addMessageToCurrentConversation ===
+                typeof core.getMessages ===
                     "function"
             ) {
 
                 /*
-                   نحذف المؤقت أولاً.
+                   لا نستخدم addMessageToCurrentConversation
+                   هنا حتى لا نضيف الرسالة مرة ثانية
+                   إذا كانت موجودة بالفعل في الحالة.
+
+                   الرسالة الظاهرة هي نفسها الرسالة
+                   التي أنشأناها فورياً.
                 */
-                if (temporaryRow) {
-
-                    temporaryRow.remove();
-                }
-
-
-                core.addMessageToCurrentConversation(
-                    sentMessage,
-                    {
-                        conversationId:
-                            sendingConversationId,
-
-                        appendOnly:
-                            true,
-
-                        scroll:
-                            true
-                    }
-                );
-
-            } else {
-
-                /*
-                   إذا الـRPC لم يرجع الرسالة نفسها،
-                   نبقي الرسالة المؤقتة ظاهرة بدل
-                   إعادة تحميل المحادثة كاملة.
-                */
-
-                if (temporaryRow) {
-
-                    temporaryRow.classList.remove(
-                        "message-new"
-                    );
-
-                    temporaryRow.classList.remove(
-                        "optimistic"
-                    );
-                }
-            }
-
-
-            /*
-            ====================================================
-            تطبيق إعدادات الفقاعات مرة أخيرة.
-            ====================================================
-            */
-
-            if (
-                typeof core.applyMessageSettings ===
-                "function"
-            ) {
-
-                core.applyMessageSettings();
-            }
-
-
-            /*
-            ====================================================
-            الحفاظ على آخر الرسائل.
-            ====================================================
-            */
-
-            requestAnimationFrame(
-                () => {
-
-                    if (
-                        stillSameConversation
-                    ) {
-
-                        scrollToBottom(
-                            "smooth"
-                        );
-                    }
-                }
-            );
-
-
-            /*
-            ====================================================
-            Log فقط.
-            ====================================================
-            */
-
-            if (sentMessage) {
-
                 console.log(
-                    "WFESC message sent:",
+                    "WFESC message confirmed:",
                     sentMessage
                 );
             }
 
+            /*
+            ====================================================
+            إبقاء الشاشة عند آخر رسالة.
+            ====================================================
+            */
+
+            scrollToBottom("smooth");
 
         } catch (error) {
 
@@ -754,77 +556,35 @@
                 error
             );
 
-
             /*
-            ----------------------------------------------------
-            إزالة الرسالة المؤقتة.
-            ----------------------------------------------------
+            ====================================================
+            فشل الإرسال:
+            إزالة الرسالة المؤقتة فقط.
+            ====================================================
             */
 
             if (temporaryRow) {
-
-                try {
-
-                    temporaryRow.animate(
-                        [
-                            {
-                                opacity: 1,
-                                transform:
-                                    "translateX(0)"
-                            },
-                            {
-                                opacity: 0,
-                                transform:
-                                    "translateX(20px)"
-                            }
-                        ],
-                        {
-                            duration: 220,
-                            easing: "ease"
-                        }
-                    );
-
-                } catch (animationError) {
-
-                    console.warn(
-                        "WFESC send animation:",
-                        animationError
-                    );
-                }
-
-
-                setTimeout(
-                    () => {
-
-                        temporaryRow.remove();
-
-                    },
-                    220
-                );
+                temporaryRow.remove();
             }
 
-
             /*
-            ----------------------------------------------------
+            ====================================================
             إعادة النص للمستخدم.
-            ----------------------------------------------------
+            ====================================================
             */
 
             messageInput.value =
                 originalContent;
 
-
             resizeTextarea();
 
-
             /*
-            ----------------------------------------------------
-            تنبيه بصري بسيط.
-            ----------------------------------------------------
+            ====================================================
+            تنبيه بصري بسيط بدون تغيير الصفحة.
+            ====================================================
             */
 
             try {
-
                 messageInput.animate(
                     [
                         {
@@ -848,46 +608,47 @@
                         duration: 240
                     }
                 );
-
-            } catch (animationError) {
-
-                console.warn(
-                    "WFESC input animation:",
-                    animationError
-                );
-            }
-
+            } catch (_) {}
 
         } finally {
 
             setSendingState(false);
 
-
             /*
-               إبقاء المؤشر داخل مربع الكتابة
-               بدون إغلاق المحادثة.
+            ====================================================
+            لا نعمل focus إجباري إذا المستخدم فقد التركيز.
+            هذا مهم جداً للكيبورد.
+
+            إذا كان الحقل هو الذي كان عليه التركيز أصلاً،
+            نعيده بعد انتهاء العملية.
+            ====================================================
             */
+
             if (
+                hadFocus &&
                 messageInput &&
                 document.activeElement !==
                     messageInput
             ) {
-
                 try {
-
-                    messageInput.focus();
-
-                } catch (error) {
-
-                    console.warn(
-                        "WFESC focus:",
-                        error
-                    );
+                    messageInput.focus({
+                        preventScroll: true
+                    });
+                } catch (_) {
+                    try {
+                        messageInput.focus();
+                    } catch (_) {}
                 }
             }
+
+            resizeTextarea();
+
+            /*
+               لا نعمل scroll إضافي هنا.
+               حتى لا نسبب حركة ثانية للـ viewport.
+            */
         }
     }
-
 
     /* =========================================================
        FORM
@@ -906,7 +667,6 @@
         );
     }
 
-
     /* =========================================================
        INPUT
     ========================================================= */
@@ -918,17 +678,9 @@
             resizeTextarea
         );
 
-
         messageInput.addEventListener(
             "keydown",
             event => {
-
-                /*
-                ================================================
-                Enter = إرسال
-                Shift + Enter = سطر جديد
-                ================================================
-                */
 
                 if (
                     event.key === "Enter" &&
@@ -942,23 +694,24 @@
             }
         );
 
-
+        /*
+           عند فتح الكيبورد:
+           لا نعيد رسم الرسائل.
+        */
         messageInput.addEventListener(
             "focus",
             () => {
 
-                requestAnimationFrame(
-                    () => {
+                requestAnimationFrame(() => {
 
-                        scrollToBottom(
-                            "smooth"
-                        );
-                    }
-                );
+                    scrollToBottom(
+                        "smooth"
+                    );
+
+                });
             }
         );
     }
-
 
     /* =========================================================
        PUBLIC API
@@ -968,16 +721,12 @@
 
         sendCurrentMessage,
 
-
         isSending() {
-
             return isSending;
         },
 
-
         resizeTextarea
     };
-
 
     /* =========================================================
        INIT
