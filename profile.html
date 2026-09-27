@@ -12,7 +12,6 @@
 
 <title>الملف الشخصي - WFESC</title>
 
-
 <!-- =================================================
      HIDE PAGE UNTIL PROFILE IS READY
 ================================================== -->
@@ -25,7 +24,6 @@ html.wfesc-profile-loading body{
 
 </style>
 
-
 <script>
 
 document.documentElement.classList.add(
@@ -34,65 +32,51 @@ document.documentElement.classList.add(
 
 (function(){
 
-    "use strict";
+"use strict";
 
-    try{
+try{
 
-        const theme =
-            localStorage.getItem(
-                "wfesc-theme"
-            );
+    const theme =
+        localStorage.getItem(
+            "wfesc-theme"
+        );
 
-        if(theme === "light"){
+    if(theme === "light"){
 
-            document.documentElement.classList.add(
-                "wfesc-light-mode"
-            );
+        document.documentElement.classList.add(
+            "wfesc-light-mode"
+        );
 
-        }else{
-
-            document.documentElement.classList.add(
-                "wfesc-dark-mode"
-            );
-
-        }
-
-
-        const animation =
-            localStorage.getItem(
-                "wfesc-animation"
-            );
-
-        if(animation === "off"){
-
-            document.documentElement.classList.add(
-                "wfesc-animation-off"
-            );
-
-        }
-
-
-        const glass =
-            localStorage.getItem(
-                "wfesc-liquid-glass"
-            );
-
-        if(
-            glass === null ||
-            glass === "on"
-        ){
-
-            document.documentElement.classList.add(
-                "wfesc-liquid-glass"
-            );
-
-        }
-
-    }catch(error){
+    }else{
 
         document.documentElement.classList.add(
             "wfesc-dark-mode"
         );
+
+    }
+
+    const animation =
+        localStorage.getItem(
+            "wfesc-animation"
+        );
+
+    if(animation === "off"){
+
+        document.documentElement.classList.add(
+            "wfesc-animation-off"
+        );
+
+    }
+
+    const glass =
+        localStorage.getItem(
+            "wfesc-liquid-glass"
+        );
+
+    if(
+        glass === null ||
+        glass === "on"
+    ){
 
         document.documentElement.classList.add(
             "wfesc-liquid-glass"
@@ -100,15 +84,26 @@ document.documentElement.classList.add(
 
     }
 
+}catch(error){
+
+    document.documentElement.classList.add(
+        "wfesc-dark-mode"
+    );
+
+    document.documentElement.classList.add(
+        "wfesc-liquid-glass"
+    );
+
+}
+
 })();
 
 </script>
 
-
 <style>
 
 /* =================================================
-   RESET
+RESET
 ================================================== */
 
 *{
@@ -139,6 +134,7 @@ body{
     transition:
         background .3s ease,
         color .3s ease;
+
 }
 
 button,
@@ -151,9 +147,8 @@ button{
     -webkit-tap-highlight-color:transparent;
 }
 
-
 /* =================================================
-   PAGE
+PAGE
 ================================================== */
 
 .profile-page{
@@ -169,11 +164,11 @@ button{
         20px
         14px
         40px;
+
 }
 
-
 /* =================================================
-   COVER
+COVER
 ================================================== */
 
 .profile-card{
@@ -201,6 +196,7 @@ button{
         border-color .3s ease,
         box-shadow .3s ease,
         backdrop-filter .3s ease;
+
 }
 
 .profile-cover{
@@ -219,6 +215,7 @@ button{
         );
 
     overflow:hidden;
+
 }
 
 .profile-cover-image{
@@ -237,6 +234,7 @@ button{
     user-select:none;
 
     pointer-events:none;
+
 }
 
 .profile-cover-default{
@@ -258,6 +256,7 @@ button{
     letter-spacing:5px;
 
     user-select:none;
+
 }
 
 .cover-edit{
@@ -294,6 +293,7 @@ button{
     transition:.25s ease;
 
     z-index:5;
+
 }
 
 .cover-edit:hover{
@@ -302,11 +302,11 @@ button{
 
     background:
         rgba(255,255,255,.12);
+
 }
 
-
 /* =================================================
-   PROFILE CONTENT
+PROFILE CONTENT
 ================================================== */
 
 .profile-content{
@@ -317,6 +317,7 @@ button{
         0
         20px
         25px;
+
 }
 
 .avatar-wrap{
@@ -347,6 +348,7 @@ button{
         8px
         30px
         rgba(0,0,0,.4);
+
 }
 
 .profile-avatar{
@@ -363,6 +365,7 @@ button{
     user-select:none;
 
     pointer-events:none;
+
 }
 
 .avatar-fallback{
@@ -389,6 +392,7 @@ button{
     font-size:38px;
 
     font-weight:bold;
+
 }
 
 .avatar-edit{
@@ -421,11 +425,11 @@ button{
     font-size:15px;
 
     z-index:5;
+
 }
 
-
 /* =================================================
-   NAME
+NAME
 ================================================== */
 
 .profile-name-row{
@@ -439,6 +443,7 @@ button{
     gap:7px;
 
     margin-bottom:5px;
+
 }
 
 .profile-name{
@@ -448,6 +453,7 @@ button{
     font-weight:900;
 
     word-break:break-word;
+
 }
 
 .profile-verified{
@@ -475,6 +481,7 @@ button{
         0
         13px
         rgba(34,197,94,.35);
+
 }
 
 .profile-verified[hidden]{
@@ -488,11 +495,11 @@ button{
     font-size:14px;
 
     margin-bottom:14px;
+
 }
 
-
 /* =================================================
-   BIO
+BIO
 ================================================== */
 
 .bio-row{
@@ -506,6 +513,7 @@ button{
     max-width:650px;
 
     margin-bottom:18px;
+
 }
 
 .profile-bio{
@@ -523,6 +531,7 @@ button{
     flex:1;
 
     min-width:0;
+
 }
 
 .profile-bio.empty{
@@ -530,6 +539,7 @@ button{
     color:#777;
 
     font-style:italic;
+
 }
 
 .bio-edit-button{
@@ -559,6 +569,7 @@ button{
     justify-content:center;
 
     transition:.2s ease;
+
 }
 
 .bio-edit-button:hover{
@@ -568,11 +579,11 @@ button{
     background:#222;
 
     border-color:#444;
+
 }
 
-
 /* =================================================
-   BIO INLINE EDITOR
+BIO INLINE EDITOR
 ================================================== */
 
 .bio-editor{
@@ -591,6 +602,7 @@ button{
 
     background:
         rgba(255,255,255,.025);
+
 }
 
 .bio-editor.show{
@@ -604,6 +616,7 @@ button{
     gap:8px;
 
     margin-top:8px;
+
 }
 
 .bio-editor-actions button{
@@ -625,6 +638,7 @@ button{
     background:#171717;
 
     color:#eee;
+
 }
 
 .bio-editor-actions .bio-save{
@@ -634,11 +648,11 @@ button{
     color:#050505;
 
     border-color:#eee;
+
 }
 
-
 /* =================================================
-   ACTIONS
+ACTIONS
 ================================================== */
 
 .profile-actions{
@@ -650,6 +664,7 @@ button{
     flex-wrap:wrap;
 
     margin-bottom:20px;
+
 }
 
 .profile-action{
@@ -677,6 +692,7 @@ button{
     font-weight:bold;
 
     transition:.25s ease;
+
 }
 
 .profile-action:hover{
@@ -684,6 +700,7 @@ button{
     background:#222;
 
     border-color:#444;
+
 }
 
 .profile-action.primary{
@@ -693,15 +710,15 @@ button{
     color:#050505;
 
     border-color:#eee;
+
 }
 
 .profile-action.primary:hover{
     background:#fff;
 }
 
-
 /* =================================================
-   STATS
+STATS
 ================================================== */
 
 .profile-stats{
@@ -723,6 +740,7 @@ button{
     overflow:hidden;
 
     margin-bottom:20px;
+
 }
 
 .profile-stat{
@@ -736,6 +754,7 @@ button{
     border-left:
         1px solid
         #242424;
+
 }
 
 .profile-stat:last-child{
@@ -751,6 +770,7 @@ button{
     font-weight:900;
 
     margin-bottom:4px;
+
 }
 
 .profile-stat-label{
@@ -758,11 +778,11 @@ button{
     color:#777;
 
     font-size:12px;
+
 }
 
-
 /* =================================================
-   ACCOUNT INFO
+ACCOUNT INFO
 ================================================== */
 
 .account-info{
@@ -772,6 +792,7 @@ button{
         #222;
 
     padding-top:18px;
+
 }
 
 .account-info-title{
@@ -781,6 +802,7 @@ button{
     font-size:13px;
 
     margin-bottom:12px;
+
 }
 
 .account-info-row{
@@ -796,6 +818,7 @@ button{
         0;
 
     font-size:13px;
+
 }
 
 .account-info-label{
@@ -811,11 +834,11 @@ button{
     direction:ltr;
 
     overflow-wrap:anywhere;
+
 }
 
-
 /* =================================================
-   MODAL
+MODAL
 ================================================== */
 
 .modal{
@@ -850,6 +873,7 @@ button{
     pointer-events:none;
 
     transition:.25s ease;
+
 }
 
 .modal.show{
@@ -859,6 +883,7 @@ button{
     visibility:visible;
 
     pointer-events:auto;
+
 }
 
 .modal-box{
@@ -896,6 +921,7 @@ button{
         scale(.97);
 
     transition:.25s ease;
+
 }
 
 .modal.show .modal-box{
@@ -903,6 +929,7 @@ button{
     transform:
         translateY(0)
         scale(1);
+
 }
 
 .modal-header{
@@ -916,6 +943,7 @@ button{
     gap:10px;
 
     margin-bottom:18px;
+
 }
 
 .modal-header h2{
@@ -938,11 +966,11 @@ button{
     cursor:pointer;
 
     font-size:18px;
+
 }
 
-
 /* =================================================
-   EDIT SECTION
+EDIT SECTION
 ================================================== */
 
 .edit-section{
@@ -963,6 +991,7 @@ button{
     transition:
         opacity .25s ease,
         transform .25s ease;
+
 }
 
 .edit-section.saved{
@@ -976,6 +1005,7 @@ button{
     font-weight:bold;
 
     margin-bottom:6px;
+
 }
 
 .edit-section-description{
@@ -987,6 +1017,7 @@ button{
     line-height:1.5;
 
     margin-bottom:10px;
+
 }
 
 .form-input,
@@ -1012,6 +1043,7 @@ button{
         border-color .2s ease,
         background .2s ease,
         box-shadow .2s ease;
+
 }
 
 .form-input{
@@ -1021,6 +1053,7 @@ button{
     padding:
         0
         13px;
+
 }
 
 .form-textarea{
@@ -1034,12 +1067,14 @@ button{
         13px;
 
     line-height:1.6;
+
 }
 
 .form-input:focus,
 .form-textarea:focus{
 
     border-color:#555;
+
 }
 
 .form-input.error,
@@ -1053,6 +1088,7 @@ button{
         0
         3px
         rgba(239,68,68,.10);
+
 }
 
 .form-input.success,
@@ -1071,6 +1107,7 @@ button{
         0
         18px
         rgba(34,197,94,.04);
+
 }
 
 .field-message{
@@ -1082,6 +1119,7 @@ button{
     color:#ef4444;
 
     font-size:12px;
+
 }
 
 .field-message.success{
@@ -1111,6 +1149,7 @@ button{
     font-weight:bold;
 
     transition:.2s ease;
+
 }
 
 .save-button:hover{
@@ -1122,6 +1161,7 @@ button{
     opacity:.5;
 
     cursor:not-allowed;
+
 }
 
 .timer{
@@ -1133,15 +1173,15 @@ button{
     margin-top:7px;
 
     text-align:center;
+
 }
 
 .timer.ready{
     color:#22c55e;
 }
 
-
 /* =================================================
-   IMAGE STUDIO
+IMAGE STUDIO
 ================================================== */
 
 .image-studio{
@@ -1149,6 +1189,7 @@ button{
     width:100%;
 
     text-align:center;
+
 }
 
 .studio-title{
@@ -1158,6 +1199,7 @@ button{
     font-size:12px;
 
     margin-bottom:10px;
+
 }
 
 .studio-stage{
@@ -1187,6 +1229,7 @@ button{
         22px 22px;
 
     touch-action:none;
+
 }
 
 .studio-stage.avatar-stage{
@@ -1196,9 +1239,11 @@ button{
     height:230px;
 
     margin-left:auto;
+
     margin-right:auto;
 
     border-radius:50%;
+
 }
 
 .studio-image{
@@ -1220,6 +1265,7 @@ button{
         center center;
 
     touch-action:none;
+
 }
 
 .studio-empty{
@@ -1231,6 +1277,7 @@ button{
     display:flex;
 
     align-items:center;
+
     justify-content:center;
 
     color:#555;
@@ -1238,6 +1285,7 @@ button{
     font-size:13px;
 
     pointer-events:none;
+
 }
 
 .studio-controls{
@@ -1253,6 +1301,7 @@ button{
     gap:7px;
 
     margin-bottom:12px;
+
 }
 
 .studio-control{
@@ -1272,6 +1321,7 @@ button{
     cursor:pointer;
 
     font-size:17px;
+
 }
 
 .studio-control:hover{
@@ -1287,6 +1337,7 @@ button{
     gap:10px;
 
     margin-bottom:12px;
+
 }
 
 .zoom-row span{
@@ -1296,6 +1347,7 @@ button{
     font-size:12px;
 
     white-space:nowrap;
+
 }
 
 .zoom-range{
@@ -1303,6 +1355,7 @@ button{
     width:100%;
 
     accent-color:#eee;
+
 }
 
 .studio-file{
@@ -1314,6 +1367,7 @@ button{
     font-size:12px;
 
     margin-bottom:8px;
+
 }
 
 .studio-hint{
@@ -1325,6 +1379,7 @@ button{
     line-height:1.6;
 
     margin-bottom:8px;
+
 }
 
 .delete-image{
@@ -1346,11 +1401,11 @@ button{
     cursor:pointer;
 
     margin-top:8px;
+
 }
 
-
 /* =================================================
-   STATUS
+STATUS
 ================================================== */
 
 .profile-status{
@@ -1393,6 +1448,7 @@ button{
         );
 
     transition:.3s ease;
+
 }
 
 .profile-status.show{
@@ -1404,6 +1460,7 @@ button{
             -50%,
             0
         );
+
 }
 
 .profile-status.error{
@@ -1411,6 +1468,7 @@ button{
     background:#ef4444;
 
     color:#fff;
+
 }
 
 .profile-status.success{
@@ -1418,11 +1476,11 @@ button{
     background:#22c55e;
 
     color:#fff;
+
 }
 
-
 /* =================================================
-   IMAGE CONFIRMATION
+IMAGE CONFIRMATION
 ================================================== */
 
 .image-confirm-box{
@@ -1435,6 +1493,7 @@ button{
     text-align:center;
 
     padding:24px;
+
 }
 
 .image-confirm-icon{
@@ -1462,6 +1521,7 @@ button{
     border:
         1px solid
         rgba(255,255,255,.14);
+
 }
 
 .image-confirm-title{
@@ -1471,6 +1531,7 @@ button{
     font-weight:900;
 
     margin-bottom:8px;
+
 }
 
 .image-confirm-text{
@@ -1482,6 +1543,7 @@ button{
     line-height:1.7;
 
     margin-bottom:18px;
+
 }
 
 .image-confirm-actions{
@@ -1493,6 +1555,7 @@ button{
         1fr;
 
     gap:9px;
+
 }
 
 .image-confirm-actions button{
@@ -1510,6 +1573,7 @@ button{
         rgba(255,255,255,.13);
 
     transition:.2s ease;
+
 }
 
 .confirm-no{
@@ -1518,6 +1582,7 @@ button{
         rgba(255,255,255,.05);
 
     color:#eee;
+
 }
 
 .confirm-yes{
@@ -1525,11 +1590,11 @@ button{
     background:#eee;
 
     color:#050505;
+
 }
 
-
 /* =================================================
-   IMAGE SUCCESS
+IMAGE SUCCESS
 ================================================== */
 
 .profile-card.image-save-success{
@@ -1552,6 +1617,7 @@ button{
         1px
         0
         rgba(34,197,94,.35) !important;
+
 }
 
 @keyframes wfescSuccessPulse{
@@ -1570,6 +1636,7 @@ button{
         opacity:1;
         transform:scale(1);
     }
+
 }
 
 .image-save-success{
@@ -1579,9 +1646,8 @@ button{
         ease;
 }
 
-
 /* =================================================
-   LIQUID GLASS
+LIQUID GLASS
 ================================================== */
 
 html.wfesc-liquid-glass .profile-card{
@@ -1614,6 +1680,7 @@ html.wfesc-liquid-glass .profile-card{
     -webkit-backdrop-filter:
         blur(28px)
         saturate(170%);
+
 }
 
 html.wfesc-liquid-glass .profile-cover{
@@ -1624,6 +1691,7 @@ html.wfesc-liquid-glass .profile-cover{
             rgba(255,255,255,.08),
             rgba(255,255,255,.025)
         );
+
 }
 
 html.wfesc-liquid-glass .avatar-wrap{
@@ -1644,6 +1712,7 @@ html.wfesc-liquid-glass .avatar-wrap{
         1px
         0
         rgba(255,255,255,.10);
+
 }
 
 html.wfesc-liquid-glass .profile-action{
@@ -1668,6 +1737,7 @@ html.wfesc-liquid-glass .profile-action{
         1px
         0
         rgba(255,255,255,.06);
+
 }
 
 html.wfesc-liquid-glass .profile-action:hover{
@@ -1677,6 +1747,7 @@ html.wfesc-liquid-glass .profile-action:hover{
 
     border-color:
         rgba(255,255,255,.17);
+
 }
 
 html.wfesc-liquid-glass .profile-action.primary{
@@ -1688,6 +1759,7 @@ html.wfesc-liquid-glass .profile-action.primary{
 
     border-color:
         rgba(255,255,255,.8);
+
 }
 
 html.wfesc-liquid-glass .profile-stats{
@@ -1703,12 +1775,14 @@ html.wfesc-liquid-glass .profile-stats{
 
     -webkit-backdrop-filter:
         blur(20px);
+
 }
 
 html.wfesc-liquid-glass .profile-stat{
 
     border-color:
         rgba(255,255,255,.09);
+
 }
 
 html.wfesc-liquid-glass .bio-editor{
@@ -1724,6 +1798,7 @@ html.wfesc-liquid-glass .bio-editor{
 
     -webkit-backdrop-filter:
         blur(18px);
+
 }
 
 html.wfesc-liquid-glass .bio-edit-button{
@@ -1739,6 +1814,7 @@ html.wfesc-liquid-glass .bio-edit-button{
 
     -webkit-backdrop-filter:
         blur(15px);
+
 }
 
 html.wfesc-liquid-glass .edit-section{
@@ -1756,6 +1832,7 @@ html.wfesc-liquid-glass .edit-section{
     -webkit-backdrop-filter:
         blur(18px)
         saturate(150%);
+
 }
 
 html.wfesc-liquid-glass .modal-box{
@@ -1788,6 +1865,7 @@ html.wfesc-liquid-glass .modal-box{
     -webkit-backdrop-filter:
         blur(32px)
         saturate(165%);
+
 }
 
 html.wfesc-liquid-glass .form-input,
@@ -1811,6 +1889,7 @@ html.wfesc-liquid-glass .form-textarea{
         1px
         0
         rgba(255,255,255,.05);
+
 }
 
 html.wfesc-liquid-glass .cover-edit{
@@ -1820,6 +1899,7 @@ html.wfesc-liquid-glass .cover-edit{
 
     border-color:
         rgba(255,255,255,.15);
+
 }
 
 html.wfesc-liquid-glass .studio-stage{
@@ -1839,8 +1919,8 @@ html.wfesc-liquid-glass .studio-stage{
 
     -webkit-backdrop-filter:
         blur(20px);
-}
 
+}
 
 /* GLASS FOR EVERY CONTROL */
 
@@ -1871,6 +1951,7 @@ html.wfesc-liquid-glass .save-button{
         8px
         25px
         rgba(0,0,0,.15);
+
 }
 
 html.wfesc-liquid-glass .studio-control{
@@ -1893,6 +1974,7 @@ html.wfesc-liquid-glass .studio-control{
         1px
         0
         rgba(255,255,255,.06);
+
 }
 
 html.wfesc-liquid-glass .close-modal{
@@ -1909,6 +1991,7 @@ html.wfesc-liquid-glass .close-modal{
 
     -webkit-backdrop-filter:
         blur(18px);
+
 }
 
 html.wfesc-liquid-glass .bio-editor-actions button{
@@ -1924,6 +2007,7 @@ html.wfesc-liquid-glass .bio-editor-actions button{
 
     -webkit-backdrop-filter:
         blur(18px);
+
 }
 
 html.wfesc-liquid-glass .bio-editor-actions .bio-save{
@@ -1932,6 +2016,7 @@ html.wfesc-liquid-glass .bio-editor-actions .bio-save{
         rgba(255,255,255,.78);
 
     color:#050505;
+
 }
 
 html.wfesc-liquid-glass .delete-image{
@@ -1947,6 +2032,7 @@ html.wfesc-liquid-glass .delete-image{
 
     -webkit-backdrop-filter:
         blur(18px);
+
 }
 
 html.wfesc-liquid-glass .image-confirm-box{
@@ -1982,6 +2068,7 @@ html.wfesc-liquid-glass .image-confirm-box{
     -webkit-backdrop-filter:
         blur(32px)
         saturate(170%);
+
 }
 
 html.wfesc-liquid-glass .image-confirm-actions button{
@@ -1998,11 +2085,11 @@ html.wfesc-liquid-glass .image-confirm-actions button{
         1px
         0
         rgba(255,255,255,.07);
+
 }
 
-
 /* =================================================
-   LIGHT MODE
+LIGHT MODE
 ================================================== */
 
 html.wfesc-light-mode body{
@@ -2010,6 +2097,7 @@ html.wfesc-light-mode body{
     background:#f3f3f3;
 
     color:#111;
+
 }
 
 html.wfesc-light-mode .profile-card{
@@ -2023,6 +2111,7 @@ html.wfesc-light-mode .profile-card{
         15px
         45px
         rgba(0,0,0,.08);
+
 }
 
 html.wfesc-light-mode .profile-cover{
@@ -2033,6 +2122,7 @@ html.wfesc-light-mode .profile-cover{
             #eee,
             #ddd
         );
+
 }
 
 html.wfesc-light-mode .avatar-wrap{
@@ -2040,6 +2130,7 @@ html.wfesc-light-mode .avatar-wrap{
     background:#fff;
 
     border-color:#fff;
+
 }
 
 html.wfesc-light-mode .avatar-fallback{
@@ -2052,6 +2143,7 @@ html.wfesc-light-mode .avatar-fallback{
         );
 
     color:#111;
+
 }
 
 html.wfesc-light-mode .profile-username{
@@ -2073,6 +2165,7 @@ html.wfesc-light-mode .profile-action{
     color:#111;
 
     border-color:#ddd;
+
 }
 
 html.wfesc-light-mode .profile-action:hover{
@@ -2086,6 +2179,7 @@ html.wfesc-light-mode .profile-action.primary{
     color:#fff;
 
     border-color:#111;
+
 }
 
 html.wfesc-light-mode .profile-stats{
@@ -2113,6 +2207,7 @@ html.wfesc-light-mode .edit-section{
     background:#fafafa;
 
     border-color:#ddd;
+
 }
 
 html.wfesc-light-mode .bio-editor{
@@ -2120,6 +2215,7 @@ html.wfesc-light-mode .bio-editor{
     background:#fafafa;
 
     border-color:#ddd;
+
 }
 
 html.wfesc-light-mode .bio-edit-button{
@@ -2129,6 +2225,7 @@ html.wfesc-light-mode .bio-edit-button{
     color:#222;
 
     border-color:#ddd;
+
 }
 
 html.wfesc-light-mode .modal-box{
@@ -2138,6 +2235,7 @@ html.wfesc-light-mode .modal-box{
     color:#111;
 
     border-color:#ddd;
+
 }
 
 html.wfesc-light-mode .close-modal{
@@ -2145,6 +2243,7 @@ html.wfesc-light-mode .close-modal{
     background:#eee;
 
     color:#111;
+
 }
 
 html.wfesc-light-mode .form-input,
@@ -2155,6 +2254,7 @@ html.wfesc-light-mode .form-textarea{
     color:#111;
 
     border-color:#ddd;
+
 }
 
 html.wfesc-light-mode .cover-edit{
@@ -2166,11 +2266,11 @@ html.wfesc-light-mode .cover-edit{
 
     border-color:
         rgba(0,0,0,.10);
+
 }
 
-
 /* =================================================
-   LIGHT + GLASS
+LIGHT + GLASS
 ================================================== */
 
 html.wfesc-light-mode.wfesc-liquid-glass .profile-card{
@@ -2195,6 +2295,7 @@ html.wfesc-light-mode.wfesc-liquid-glass .profile-card{
         1px
         0
         rgba(255,255,255,.9);
+
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .edit-section,
@@ -2205,6 +2306,7 @@ html.wfesc-light-mode.wfesc-liquid-glass .bio-editor{
 
     border-color:
         rgba(0,0,0,.10);
+
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .form-input,
@@ -2217,6 +2319,7 @@ html.wfesc-light-mode.wfesc-liquid-glass .form-textarea{
 
     border-color:
         rgba(0,0,0,.10);
+
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .modal-box{
@@ -2241,6 +2344,7 @@ html.wfesc-light-mode.wfesc-liquid-glass .modal-box{
         1px
         0
         rgba(255,255,255,.95);
+
 }
 
 html.wfesc-light-mode.wfesc-liquid-glass .image-confirm-box{
@@ -2256,11 +2360,11 @@ html.wfesc-light-mode.wfesc-liquid-glass .image-confirm-box{
         rgba(0,0,0,.10);
 
     color:#111;
+
 }
 
-
 /* =================================================
-   ANIMATION OFF
+ANIMATION OFF
 ================================================== */
 
 html.wfesc-animation-off *,
@@ -2274,11 +2378,11 @@ html.wfesc-animation-off *::after{
     transition-duration:0s !important;
 
     scroll-behavior:auto !important;
+
 }
 
-
 /* =================================================
-   SHAKE
+SHAKE
 ================================================== */
 
 @keyframes wfescShake{
@@ -2303,6 +2407,7 @@ html.wfesc-animation-off *::after{
     80%{
         transform:translateX(-5px);
     }
+
 }
 
 .shake{
@@ -2311,11 +2416,11 @@ html.wfesc-animation-off *::after{
         wfescShake
         .38s
         ease;
+
 }
 
-
 /* =================================================
-   MOBILE
+MOBILE
 ================================================== */
 
 @media(max-width:500px){
@@ -2326,6 +2431,7 @@ html.wfesc-animation-off *::after{
             12px
             10px
             30px;
+
     }
 
     .profile-cover{
@@ -2338,6 +2444,7 @@ html.wfesc-animation-off *::after{
             0
             15px
             22px;
+
     }
 
     .avatar-wrap{
@@ -2346,6 +2453,7 @@ html.wfesc-animation-off *::after{
         height:94px;
 
         margin-top:-47px;
+
     }
 
     .avatar-fallback{
@@ -2363,6 +2471,7 @@ html.wfesc-animation-off *::after{
         grid-template-columns:
             1fr
             1fr;
+
     }
 
     .profile-action{
@@ -2378,6 +2487,7 @@ html.wfesc-animation-off *::after{
         padding:
             12px
             6px;
+
     }
 
     .modal{
@@ -2389,6 +2499,7 @@ html.wfesc-animation-off *::after{
         border-radius:19px;
 
         padding:15px;
+
     }
 
     .studio-stage{
@@ -2399,6 +2510,7 @@ html.wfesc-animation-off *::after{
 
         width:200px;
         height:200px;
+
     }
 
 }
@@ -2407,9 +2519,7 @@ html.wfesc-animation-off *::after{
 
 </head>
 
-
 <body>
-
 
 <main class="profile-page">
 
@@ -2420,270 +2530,258 @@ html.wfesc-animation-off *::after{
 
 <div class="profile-cover">
 
-    <div
-        class="profile-cover-default"
-        id="coverDefault"
-    >
-        WFESC
-    </div>
+<div
+    class="profile-cover-default"
+    id="coverDefault"
+>
+    WFESC
+</div>
 
-    <img
-        id="profileCoverImage"
-        class="profile-cover-image"
-        alt="غلاف الملف الشخصي"
-    >
+<img
+    id="profileCoverImage"
+    class="profile-cover-image"
+    alt="غلاف الملف الشخصي"
+>
 
-    <button
-        type="button"
-        class="cover-edit"
-        id="editCoverButton"
-        title="تعديل الغلاف"
-    >
-        ✎
-    </button>
+<button
+    type="button"
+    class="cover-edit"
+    id="editCoverButton"
+    title="تعديل الغلاف"
+>
+    ✎
+</button>
 
 </div>
 
-
 <div class="profile-content">
 
+<div class="avatar-wrap">
 
-    <div class="avatar-wrap">
+<img
+    id="profileAvatar"
+    class="profile-avatar"
+    alt="الصورة الشخصية"
+>
 
-        <img
-            id="profileAvatar"
-            class="profile-avatar"
-            alt="الصورة الشخصية"
-        >
+<div
+    id="avatarFallback"
+    class="avatar-fallback"
+>
+    W
+</div>
 
-        <div
-            id="avatarFallback"
-            class="avatar-fallback"
-        >
-            W
-        </div>
+<button
+    type="button"
+    class="avatar-edit"
+    id="editAvatarButton"
+    title="تعديل الصورة"
+>
+    ✎
+</button>
 
-        <button
-            type="button"
-            class="avatar-edit"
-            id="editAvatarButton"
-            title="تعديل الصورة"
-        >
-            ✎
-        </button>
+</div>
 
-    </div>
+<div class="profile-name-row">
 
+<h1
+    class="profile-name"
+    id="profileName"
+>
+    WFESC
+</h1>
 
-    <div class="profile-name-row">
+<span
+    id="profileVerified"
+    class="profile-verified"
+    title="حساب موثّق"
+    hidden
+>
+    ✓
+</span>
 
-        <h1
-            class="profile-name"
-            id="profileName"
-        >
-            WFESC
-        </h1>
+</div>
 
-        <span
-            id="profileVerified"
-            class="profile-verified"
-            title="حساب موثّق"
-            hidden
-        >
-            ✓
-        </span>
+<div
+    class="profile-username"
+    id="profileUsername"
+>
+    @wfesc
+</div>
 
-    </div>
+<div
+    class="bio-row"
+    id="bioDisplayRow"
+>
 
+<div
+    class="profile-bio empty"
+    id="profileBio"
+>
+    كيف حالك اليوم؟
+</div>
 
-    <div
-        class="profile-username"
-        id="profileUsername"
-    >
-        @wfesc
-    </div>
+<button
+    type="button"
+    class="bio-edit-button"
+    id="editBioButton"
+    title="تعديل البايو"
+>
+    ✎
+</button>
 
+</div>
 
-    <div
-        class="bio-row"
-        id="bioDisplayRow"
-    >
+<div
+    class="bio-editor"
+    id="bioEditor"
+>
 
-        <div
-            class="profile-bio empty"
-            id="profileBio"
-        >
-            كيف حالك اليوم؟
-        </div>
+<textarea
+    class="form-textarea"
+    id="bioInput"
+    maxlength="500"
+    placeholder="كيف حالك اليوم؟"
+></textarea>
 
-        <button
-            type="button"
-            class="bio-edit-button"
-            id="editBioButton"
-            title="تعديل البايو"
-        >
-            ✎
-        </button>
+<div
+    class="field-message"
+    id="bioMessage"
+></div>
 
-    </div>
+<div class="bio-editor-actions">
 
+<button
+    type="button"
+    id="cancelBioButton"
+>
+    إلغاء
+</button>
 
-    <div
-        class="bio-editor"
-        id="bioEditor"
-    >
+<button
+    type="button"
+    class="bio-save"
+    id="saveBioButton"
+>
+    حفظ البايو
+</button>
 
-        <textarea
-            class="form-textarea"
-            id="bioInput"
-            maxlength="500"
-            placeholder="كيف حالك اليوم؟"
-        ></textarea>
+</div>
 
-        <div
-            class="field-message"
-            id="bioMessage"
-        ></div>
+</div>
 
-        <div class="bio-editor-actions">
+<div class="profile-actions">
 
-            <button
-                type="button"
-                id="cancelBioButton"
-            >
-                إلغاء
-            </button>
+<button
+    type="button"
+    class="profile-action primary"
+    id="editProfileButton"
+>
+    تعديل الملف الشخصي
+</button>
 
-            <button
-                type="button"
-                class="bio-save"
-                id="saveBioButton"
-            >
-                حفظ البايو
-            </button>
+<button
+    type="button"
+    class="profile-action"
+    id="shareProfileButton"
+>
+    مشاركة الملف
+</button>
 
-        </div>
+</div>
 
-    </div>
+<div class="profile-stats">
 
+<div class="profile-stat">
 
-    <div class="profile-actions">
+<span
+    class="profile-stat-number"
+    id="followersCount"
+>
+    0
+</span>
 
-        <button
-            type="button"
-            class="profile-action primary"
-            id="editProfileButton"
-        >
-            تعديل الملف الشخصي
-        </button>
+<span class="profile-stat-label">
+    المتابعون
+</span>
 
-        <button
-            type="button"
-            class="profile-action"
-            id="shareProfileButton"
-        >
-            مشاركة الملف
-        </button>
+</div>
 
-    </div>
+<div class="profile-stat">
 
+<span
+    class="profile-stat-number"
+    id="followingCount"
+>
+    0
+</span>
 
-    <div class="profile-stats">
+<span class="profile-stat-label">
+    يتابع
+</span>
 
-        <div class="profile-stat">
+</div>
 
-            <span
-                class="profile-stat-number"
-                id="followersCount"
-            >
-                0
-            </span>
+<div class="profile-stat">
 
-            <span class="profile-stat-label">
-                المتابعون
-            </span>
+<span
+    class="profile-stat-number"
+    id="postsCount"
+>
+    0
+</span>
 
-        </div>
+<span class="profile-stat-label">
+    المنشورات
+</span>
 
+</div>
 
-        <div class="profile-stat">
+</div>
 
-            <span
-                class="profile-stat-number"
-                id="followingCount"
-            >
-                0
-            </span>
+<div class="account-info">
 
-            <span class="profile-stat-label">
-                يتابع
-            </span>
+<div class="account-info-title">
+    معلومات الحساب
+</div>
 
-        </div>
+<div class="account-info-row">
 
+<span class="account-info-label">
+    البريد الإلكتروني
+</span>
 
-        <div class="profile-stat">
+<span
+    class="account-info-value"
+    id="accountEmail"
+>
+    —
+</span>
 
-            <span
-                class="profile-stat-number"
-                id="postsCount"
-            >
-                0
-            </span>
+</div>
 
-            <span class="profile-stat-label">
-                المنشورات
-            </span>
+<div class="account-info-row">
 
-        </div>
+<span class="account-info-label">
+    تاريخ إنشاء الحساب
+</span>
 
-    </div>
+<span
+    class="account-info-value"
+    id="accountCreated"
+>
+    —
+</span>
 
+</div>
 
-    <div class="account-info">
-
-        <div class="account-info-title">
-            معلومات الحساب
-        </div>
-
-        <div class="account-info-row">
-
-            <span class="account-info-label">
-                البريد الإلكتروني
-            </span>
-
-            <span
-                class="account-info-value"
-                id="accountEmail"
-            >
-                —
-            </span>
-
-        </div>
-
-        <div class="account-info-row">
-
-            <span class="account-info-label">
-                تاريخ إنشاء الحساب
-            </span>
-
-            <span
-                class="account-info-value"
-                id="accountCreated"
-            >
-                —
-            </span>
-
-        </div>
-
-    </div>
+</div>
 
 </div>
 
 </section>
 
 </main>
-
 
 <!-- =================================================
      EDIT PROFILE MODAL
@@ -2698,111 +2796,108 @@ html.wfesc-animation-off *::after{
 
 <div class="modal-header">
 
-    <h2>
-        تعديل الملف الشخصي
-    </h2>
+<h2>
+    تعديل الملف الشخصي
+</h2>
 
-    <button
-        type="button"
-        class="close-modal"
-        id="closeEditProfile"
-    >
-        ×
-    </button>
+<button
+    type="button"
+    class="close-modal"
+    id="closeEditProfile"
+>
+    ×
+</button>
 
 </div>
-
 
 <section
     class="edit-section"
     id="nameEditSection"
 >
 
-    <div class="edit-section-title">
-        تغيير الاسم
-    </div>
+<div class="edit-section-title">
+    تغيير الاسم
+</div>
 
-    <div class="edit-section-description">
-        يمكنك تغيير اسم العرض كل 4 دقائق.
-    </div>
+<div class="edit-section-description">
+    يمكنك تغيير اسم العرض كل 4 دقائق.
+</div>
 
-    <input
-        type="text"
-        class="form-input"
-        id="nameInput"
-        maxlength="15"
-        autocomplete="nickname"
-        placeholder="الاسم"
-    >
+<input
+    type="text"
+    class="form-input"
+    id="nameInput"
+    maxlength="15"
+    autocomplete="nickname"
+    placeholder="الاسم"
+>
 
-    <div
-        class="field-message"
-        id="nameMessage"
-    ></div>
+<div
+    class="field-message"
+    id="nameMessage"
+></div>
 
-    <div
-        class="timer"
-        id="nameTimer"
-    ></div>
+<div
+    class="timer"
+    id="nameTimer"
+></div>
 
-    <button
-        type="button"
-        class="save-button"
-        id="saveNameButton"
-    >
-        تغيير الاسم
-    </button>
+<button
+    type="button"
+    class="save-button"
+    id="saveNameButton"
+>
+    تغيير الاسم
+</button>
 
 </section>
-
 
 <section
     class="edit-section"
     id="usernameEditSection"
 >
 
-    <div class="edit-section-title">
-        تغيير اليوزر
-    </div>
+<div class="edit-section-title">
+    تغيير اليوزر
+</div>
 
-    <div class="edit-section-description">
-        3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل 4 دقائق.
-    </div>
+<div class="edit-section-description">
+    3 إلى 9 أحرف أو أرقام إنجليزية صغيرة فقط، والتغيير كل 4 دقائق.
+</div>
 
-    <input
-        type="text"
-        class="form-input"
-        id="usernameInput"
-        maxlength="9"
-        autocomplete="username"
-        spellcheck="false"
-        placeholder="اسم المستخدم"
-    >
+<input
+    type="text"
+    class="form-input"
+    id="usernameInput"
+    maxlength="9"
+    autocomplete="username"
+    spellcheck="false"
+    placeholder="اسم المستخدم"
+>
 
-    <div
-        class="field-message"
-        id="usernameMessage"
-    ></div>
+<div
+    class="field-message"
+    id="usernameMessage"
+></div>
 
-    <div
-        class="timer"
-        id="usernameTimer"
-    ></div>
+<div
+    class="timer"
+    id="usernameTimer"
+></div>
 
-    <button
-        type="button"
-        class="save-button"
-        id="saveUsernameButton"
-    >
-        تغيير اليوزر
-    </button>
+<button
+    type="button"
+    class="save-button"
+    id="saveUsernameButton"
+>
+    تغيير اليوزر
+</button>
 
 </section>
 
 </div>
 
 </div>
-
 
 <!-- =================================================
      IMAGE CONFIRMATION
@@ -2815,42 +2910,41 @@ html.wfesc-animation-off *::after{
 
 <div class="modal-box image-confirm-box">
 
-    <div class="image-confirm-icon">
-        ✎
-    </div>
+<div class="image-confirm-icon">
+    ✎
+</div>
 
-    <div class="image-confirm-title">
-        تغيير الصورة
-    </div>
+<div class="image-confirm-title">
+    تغيير الصورة
+</div>
 
-    <div class="image-confirm-text">
-        هل تريد تغيير الصورة؟
-    </div>
+<div class="image-confirm-text">
+    هل تريد تغيير الصورة؟
+</div>
 
-    <div class="image-confirm-actions">
+<div class="image-confirm-actions">
 
-        <button
-            type="button"
-            class="confirm-no"
-            id="imageConfirmNo"
-        >
-            لا
-        </button>
+<button
+    type="button"
+    class="confirm-no"
+    id="imageConfirmNo"
+>
+    لا
+</button>
 
-        <button
-            type="button"
-            class="confirm-yes"
-            id="imageConfirmYes"
-        >
-            نعم
-        </button>
-
-    </div>
+<button
+    type="button"
+    class="confirm-yes"
+    id="imageConfirmYes"
+>
+    نعم
+</button>
 
 </div>
 
 </div>
 
+</div>
 
 <!-- =================================================
      IMAGE STUDIO MODAL
@@ -2865,148 +2959,140 @@ html.wfesc-animation-off *::after{
 
 <div class="modal-header">
 
-    <h2 id="imageModalTitle">
-        استوديو الصور
-    </h2>
+<h2 id="imageModalTitle">
+    استوديو الصور
+</h2>
 
-    <button
-        type="button"
-        class="close-modal"
-        id="closeImageModal"
-    >
-        ×
-    </button>
+<button
+    type="button"
+    class="close-modal"
+    id="closeImageModal"
+>
+    ×
+</button>
 
 </div>
-
 
 <div class="image-studio">
 
-    <div
-        class="studio-title"
-        id="studioTitle"
-    >
-        اضبط الصورة بالشكل المناسب
-    </div>
+<div
+    class="studio-title"
+    id="studioTitle"
+>
+    اضبط الصورة بالشكل المناسب
+</div>
 
-    <div
-        class="studio-stage"
-        id="studioStage"
-    >
+<div
+    class="studio-stage"
+    id="studioStage"
+>
 
-        <div
-            class="studio-empty"
-            id="studioEmpty"
-        >
-            اختر صورة لبدء التعديل
-        </div>
+<div
+    class="studio-empty"
+    id="studioEmpty"
+>
+    اختر صورة لبدء التعديل
+</div>
 
-        <img
-            id="studioImage"
-            class="studio-image"
-            alt="استوديو الصورة"
-            draggable="false"
-        >
+<img
+    id="studioImage"
+    class="studio-image"
+    alt="استوديو الصورة"
+    draggable="false"
+>
 
-    </div>
+</div>
 
+<div class="studio-controls">
 
-    <div class="studio-controls">
+<button
+    type="button"
+    class="studio-control"
+    id="moveLeft"
+    title="يسار"
+>
+    ←
+</button>
 
-        <button
-            type="button"
-            class="studio-control"
-            id="moveLeft"
-            title="يسار"
-        >
-            ←
-        </button>
+<button
+    type="button"
+    class="studio-control"
+    id="moveUp"
+    title="أعلى"
+>
+    ↑
+</button>
 
-        <button
-            type="button"
-            class="studio-control"
-            id="moveUp"
-            title="أعلى"
-        >
-            ↑
-        </button>
+<button
+    type="button"
+    class="studio-control"
+    id="moveDown"
+    title="أسفل"
+>
+    ↓
+</button>
 
-        <button
-            type="button"
-            class="studio-control"
-            id="moveDown"
-            title="أسفل"
-        >
-            ↓
-        </button>
+<button
+    type="button"
+    class="studio-control"
+    id="moveRight"
+    title="يمين"
+>
+    →
+</button>
 
-        <button
-            type="button"
-            class="studio-control"
-            id="moveRight"
-            title="يمين"
-        >
-            →
-        </button>
+</div>
 
-    </div>
+<div class="zoom-row">
 
+<span>
+    الزوم
+</span>
 
-    <div class="zoom-row">
+<input
+    type="range"
+    id="zoomRange"
+    class="zoom-range"
+    min="0.5"
+    max="3"
+    step="0.01"
+    value="1"
+>
 
-        <span>
-            الزوم
-        </span>
+</div>
 
-        <input
-            type="range"
-            id="zoomRange"
-            class="zoom-range"
-            min="0.5"
-            max="3"
-            step="0.01"
-            value="1"
-        >
+<input
+    type="file"
+    id="imageFile"
+    class="studio-file"
+    accept="image/*"
+>
 
-    </div>
+<div class="studio-hint">
+    بعد اختيار الصورة اسحبها داخل الإطار، أو استخدم أزرار الاتجاهات والزوم.
+</div>
 
+<button
+    type="button"
+    class="save-button"
+    id="saveImageButton"
+>
+    حفظ الصورة
+</button>
 
-    <input
-        type="file"
-        id="imageFile"
-        class="studio-file"
-        accept="image/*"
-    >
-
-
-    <div class="studio-hint">
-        بعد اختيار الصورة اسحبها داخل الإطار، أو استخدم أزرار الاتجاهات والزوم.
-    </div>
-
-
-    <button
-        type="button"
-        class="save-button"
-        id="saveImageButton"
-    >
-        حفظ الصورة
-    </button>
-
-
-    <button
-        type="button"
-        class="delete-image"
-        id="deleteImageButton"
-    >
-        حذف الصورة
-    </button>
+<button
+    type="button"
+    class="delete-image"
+    id="deleteImageButton"
+>
+    حذف الصورة
+</button>
 
 </div>
 
 </div>
 
 </div>
-
 
 <!-- STATUS -->
 
@@ -3016,15 +3102,17 @@ html.wfesc-animation-off *::after{
     aria-live="polite"
 ></div>
 
-
-<!-- SUPABASE -->
+<!-- =================================================
+     SUPABASE
+================================================== -->
 
 <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ></script>
 
-
-<!-- WFESC AUTH -->
+<!-- =================================================
+     WFESC AUTH
+================================================== -->
 
 <script
     src="./settings-features/settings-auth-config.js"
@@ -3034,6 +3122,17 @@ html.wfesc-animation-off *::after{
     src="./settings-features/settings-auth.js"
 ></script>
 
+<!-- =================================================
+     PROFILE FEATURES
+================================================== -->
+
+<script
+    src="./profile-features/profile-storage.js"
+></script>
+
+<script
+    src="./profile-features/profile-edit.js"
+></script>
 
 <!-- =================================================
      PROFILE SYSTEM
@@ -3045,13 +3144,11 @@ html.wfesc-animation-off *::after{
 
 "use strict";
 
-
 if(window.WFESCProfileStarted){
     return;
 }
 
 window.WFESCProfileStarted = true;
-
 
 const CONFIG =
     window.WFESCSettingsAuthConfig || {};
@@ -3059,9 +3156,14 @@ const CONFIG =
 const auth =
     window.WFESCSettingsAuth;
 
+const profileEdit =
+    window.WFESCProfileEdit;
+
+const profileStorage =
+    window.WFESCProfileStorage;
 
 /* =================================================
-   CONSTANTS
+CONSTANTS
 ================================================== */
 
 const LOCK_TIME =
@@ -3074,8 +3176,7 @@ const DEFAULT_USERNAME =
     "wfesc";
 
 const DEFAULT_BIO =
-    "كيف حالك اليوم?";
-
+    "كيف حالك اليوم؟";
 
 let currentUser = null;
 
@@ -3091,9 +3192,8 @@ let statusTimer = null;
 
 let imageConfirmType = "avatar";
 
-
 /* =================================================
-   ELEMENTS
+ELEMENTS
 ================================================== */
 
 const profileCard =
@@ -3291,9 +3391,8 @@ const deleteImageButton =
         "deleteImageButton"
     );
 
-
 /* =================================================
-   ERROR HANDLING
+ERROR HANDLING
 ================================================== */
 
 function getErrorText(error){
@@ -3311,8 +3410,8 @@ function getErrorText(error){
         String(error);
 
     return String(message).trim();
-}
 
+}
 
 function isDuplicateError(error){
 
@@ -3324,7 +3423,9 @@ function isDuplicateError(error){
         (
             getErrorText(error) +
             " " +
-            String(error.code || "")
+            String(
+                error.code || ""
+            )
         ).toLowerCase();
 
     return (
@@ -3338,7 +3439,6 @@ function isDuplicateError(error){
 
 }
 
-
 function formatSaveError(
     error,
     type
@@ -3349,8 +3449,7 @@ function formatSaveError(
 
     const code =
         String(
-            error &&
-            error.code
+            error && error.code
                 ? error.code
                 : ""
         );
@@ -3359,52 +3458,43 @@ function formatSaveError(
         type === "username" &&
         isDuplicateError(error)
     ){
-
         return "اسم المستخدم مأخوذ مسبقًا";
     }
 
     if(code === "42501"){
-
         return (
             "ليس لديك صلاحية لتعديل بيانات الحساب. " +
             "تحقق من صلاحيات RLS في Supabase."
         );
-
     }
 
     if(code === "PGRST116"){
-
         return (
             "لم يتم العثور على سجل الملف الشخصي في قاعدة البيانات."
         );
-
     }
 
     if(code === "23505"){
-
         return (
             type === "username"
                 ? "اسم المستخدم مأخوذ مسبقًا"
                 : "القيمة التي أدخلتها مستخدمة مسبقًا."
         );
-
     }
 
     if(
         !text ||
         text === "[object Object]"
     ){
-
         return "تعذر حفظ التغيير.";
-
     }
 
     return "خطأ: " + text;
+
 }
 
-
 /* =================================================
-   STATUS
+STATUS
 ================================================== */
 
 function showStatus(
@@ -3423,11 +3513,9 @@ function showStatus(
         "profile-status show";
 
     if(type){
-
         profileStatus.classList.add(
             type
         );
-
     }
 
     clearTimeout(
@@ -3448,9 +3536,8 @@ function showStatus(
 
 }
 
-
 /* =================================================
-   AUTH
+AUTH
 ================================================== */
 
 async function getCurrentUserSafe(){
@@ -3470,7 +3557,6 @@ async function getCurrentUserSafe(){
                 result &&
                 result.user
             ){
-
                 return result.user;
             }
 
@@ -3479,7 +3565,6 @@ async function getCurrentUserSafe(){
                 result.data &&
                 result.data.user
             ){
-
                 return result.data.user;
             }
 
@@ -3487,7 +3572,6 @@ async function getCurrentUserSafe(){
                 result &&
                 result.id
             ){
-
                 return result;
             }
 
@@ -3501,7 +3585,6 @@ async function getCurrentUserSafe(){
         );
 
     }
-
 
     try{
 
@@ -3519,7 +3602,6 @@ async function getCurrentUserSafe(){
                 result.session &&
                 result.session.user
             ){
-
                 return result.session.user;
             }
 
@@ -3529,7 +3611,6 @@ async function getCurrentUserSafe(){
                 result.data.session &&
                 result.data.session.user
             ){
-
                 return result.data.session.user;
             }
 
@@ -3543,7 +3624,6 @@ async function getCurrentUserSafe(){
         );
 
     }
-
 
     try{
 
@@ -3561,19 +3641,12 @@ async function getCurrentUserSafe(){
                 result.data.session &&
                 result.data.session.user
             ){
-
                 return result.data.session.user;
             }
 
         }
 
     }catch(error){}
-
-
-    /*
-     * استخدام عميل Supabase نفسه
-     * إذا كان متاحًا من مكتبة Supabase.
-     */
 
     try{
 
@@ -3605,7 +3678,6 @@ async function getCurrentUserSafe(){
                 result.data &&
                 result.data.user
             ){
-
                 return result.data.user;
             }
 
@@ -3613,148 +3685,12 @@ async function getCurrentUserSafe(){
 
     }catch(error){}
 
-
     return null;
 
 }
 
-
 /* =================================================
-   PROFILE FETCH
-================================================== */
-
-async function getProfile(user){
-
-    if(!user){
-        return {};
-    }
-
-
-    try{
-
-        if(
-            auth &&
-            typeof auth.fetchProfile ===
-            "function"
-        ){
-
-            const result =
-                await auth.fetchProfile(
-                    user.id
-                );
-
-            if(
-                result &&
-                result.data
-            ){
-
-                return result.data;
-            }
-
-            if(
-                result &&
-                result.profile
-            ){
-
-                return result.profile;
-            }
-
-            if(
-                result &&
-                typeof result ===
-                "object"
-            ){
-
-                return result;
-            }
-
-        }
-
-    }catch(error){
-
-        console.warn(
-            "WFESC profile fetch:",
-            error
-        );
-
-    }
-
-
-    /*
-     * fallback مباشر إلى Supabase
-     */
-
-    try{
-
-        const client =
-            getSupabaseClient();
-
-        if(!client){
-            return {};
-        }
-
-        const result =
-            await client
-                .from(
-                    CONFIG.profilesTable ||
-                    "profiles"
-                )
-                .select("*")
-                .eq(
-                    "id",
-                    user.id
-                )
-                .maybeSingle();
-
-        if(result.error){
-
-            /*
-             * بعض المشاريع تستخدم user_id
-             */
-
-            const second =
-                await client
-                    .from(
-                        CONFIG.profilesTable ||
-                        "profiles"
-                    )
-                    .select("*")
-                    .eq(
-                        "user_id",
-                        user.id
-                    )
-                    .maybeSingle();
-
-            if(
-                !second.error &&
-                second.data
-            ){
-
-                return second.data;
-            }
-
-            return {};
-        }
-
-        return result.data || {};
-
-    }catch(error){
-
-        console.warn(
-            "WFESC direct profile fetch:",
-            error
-        );
-
-    }
-
-
-    return {};
-
-}
-
-
-/* =================================================
-   SUPABASE CLIENT
+SUPABASE CLIENT
 ================================================== */
 
 function getSupabaseClient(){
@@ -3762,7 +3698,6 @@ function getSupabaseClient(){
     if(
         window.WFESCSupabase
     ){
-
         return window.WFESCSupabase;
     }
 
@@ -3784,91 +3719,77 @@ function getSupabaseClient(){
     }
 
     return null;
+
 }
 
-
 /* =================================================
-   SAVE PROFILE
+PROFILE FETCH
 ================================================== */
 
-async function saveProfileFields(
-    fields
-){
+async function getProfile(user){
 
-    if(!currentUser){
-        throw new Error(
-            "لا توجد جلسة دخول للحساب."
-        );
+    if(!user){
+        return {};
     }
-
-
-    if(
-        auth &&
-        typeof auth.updateProfile ===
-        "function"
-    ){
-
-        const result =
-            await auth.updateProfile(
-                fields
-            );
-
-        /*
-         * بعض النسخ من auth.js ترجع:
-         * { error }
-         */
-
-        if(
-            result &&
-            result.error
-        ){
-
-            throw result.error;
-        }
-
-        if(
-            result &&
-            result.success === false
-        ){
-
-            throw new Error(
-                result.message ||
-                "تعذر حفظ بيانات الملف."
-            );
-        }
-
-        return result;
-    }
-
-
-    /*
-     * fallback مباشر إذا لم تكن دالة
-     * updateProfile متاحة.
-     */
-
-    const client =
-        getSupabaseClient();
-
-    if(!client){
-
-        throw new Error(
-            "تعذر الوصول إلى نظام الحساب."
-        );
-    }
-
-
-    const table =
-        CONFIG.profilesTable ||
-        "profiles";
-
-
-    /*
-     * محاولة معرفة سجل المستخدم أولًا.
-     */
-
-    let existing = null;
 
     try{
+
+        if(
+            auth &&
+            typeof auth.fetchProfile ===
+            "function"
+        ){
+
+            const result =
+                await auth.fetchProfile(
+                    user.id
+                );
+
+            if(
+                result &&
+                result.data
+            ){
+                return result.data;
+            }
+
+            if(
+                result &&
+                result.profile
+            ){
+                return result.profile;
+            }
+
+            if(
+                result &&
+                typeof result ===
+                "object"
+            ){
+                return result;
+            }
+
+        }
+
+    }catch(error){
+
+        console.warn(
+            "WFESC profile fetch:",
+            error
+        );
+
+    }
+
+    try{
+
+        const client =
+            getSupabaseClient();
+
+        if(!client){
+            return {};
+        }
+
+        const table =
+            CONFIG.profilesTable ||
+            "profiles";
 
         const result =
             await client
@@ -3876,7 +3797,7 @@ async function saveProfileFields(
                 .select("*")
                 .eq(
                     "id",
-                    currentUser.id
+                    user.id
                 )
                 .maybeSingle();
 
@@ -3884,128 +3805,41 @@ async function saveProfileFields(
             !result.error &&
             result.data
         ){
-
-            existing =
-                result.data;
+            return result.data;
         }
 
-    }catch(error){}
-
-
-    /*
-     * إذا كان الجدول يستخدم user_id
-     * بدل id.
-     */
-
-    if(!existing){
-
-        try{
-
-            const result =
-                await client
-                    .from(table)
-                    .select("*")
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    )
-                    .maybeSingle();
-
-            if(
-                !result.error &&
-                result.data
-            ){
-
-                existing =
-                    result.data;
-            }
-
-        }catch(error){}
-
-    }
-
-
-    const payload =
-        Object.assign(
-            {},
-            fields
-        );
-
-
-    /*
-     * إذا وجدنا السجل نحدثه.
-     */
-
-    if(existing){
-
-        const key =
-            Object.prototype.hasOwnProperty.call(
-                existing,
-                "user_id"
-            )
-                ? "user_id"
-                : "id";
-
-        const result =
+        const second =
             await client
                 .from(table)
-                .update(payload)
+                .select("*")
                 .eq(
-                    key,
-                    currentUser.id
-                );
+                    "user_id",
+                    user.id
+                )
+                .maybeSingle();
 
-        if(result.error){
-
-            throw result.error;
+        if(
+            !second.error &&
+            second.data
+        ){
+            return second.data;
         }
 
-        return result;
+    }catch(error){
+
+        console.warn(
+            "WFESC direct profile fetch:",
+            error
+        );
+
     }
 
-
-    /*
-     * لا يوجد سجل:
-     * ننشئ سجلًا جديدًا.
-     */
-
-    payload.id =
-        currentUser.id;
-
-    if(
-        !Object.prototype.hasOwnProperty.call(
-            payload,
-            "username"
-        )
-    ){
-
-        payload.username =
-            getUsernameFromProfile(
-                currentProfile
-            ) ||
-            DEFAULT_USERNAME;
-    }
-
-
-    const insertResult =
-        await client
-            .from(table)
-            .insert(
-                payload
-            );
-
-    if(insertResult.error){
-
-        throw insertResult.error;
-    }
-
-    return insertResult;
+    return {};
 
 }
 
-
 /* =================================================
-   HELPERS
+HELPERS
 ================================================== */
 
 function sanitizeUsername(value){
@@ -4023,7 +3857,6 @@ function sanitizeUsername(value){
 
 }
 
-
 function getNameFromUser(
     user,
     profile
@@ -4038,21 +3871,18 @@ function getNameFromUser(
     profile =
         profile || {};
 
-
     return String(
         profile.name ||
         profile.display_name ||
         metadata.display_name ||
         metadata.name ||
         DEFAULT_NAME
-    )
-    .slice(
+    ).slice(
         0,
         15
     );
 
 }
-
 
 function getUsernameFromProfile(
     profile
@@ -4071,9 +3901,8 @@ function getUsernameFromProfile(
 
 }
 
-
 /* =================================================
-   VERIFIED
+VERIFIED
 ================================================== */
 
 function applyVerification(
@@ -4090,14 +3919,12 @@ function applyVerification(
             ? user.user_metadata
             : {};
 
-
     const verified =
         profile.is_verified === true ||
         profile.verified === true ||
         profile.verification_status === "verified" ||
         metadata.is_verified === true ||
         metadata.verified === true;
-
 
     profileVerified.hidden =
         !Boolean(
@@ -4106,9 +3933,8 @@ function applyVerification(
 
 }
 
-
 /* =================================================
-   RENDER
+RENDER
 ================================================== */
 
 function renderProfile(){
@@ -4117,11 +3943,8 @@ function renderProfile(){
         return;
     }
 
-
     const metadata =
-        currentUser.user_metadata ||
-        {};
-
+        currentUser.user_metadata || {};
 
     const name =
         getNameFromUser(
@@ -4129,12 +3952,10 @@ function renderProfile(){
             currentProfile
         );
 
-
     const username =
         getUsernameFromProfile(
             currentProfile
         );
-
 
     const bio =
         typeof currentProfile.bio ===
@@ -4142,14 +3963,11 @@ function renderProfile(){
             ? currentProfile.bio.trim()
             : "";
 
-
     profileName.textContent =
         name;
 
-
     profileUsername.textContent =
         "@" + username;
-
 
     if(bio){
 
@@ -4171,16 +3989,13 @@ function renderProfile(){
 
     }
 
-
     accountEmail.textContent =
         currentUser.email ||
         "—";
 
-
     const created =
         currentUser.created_at ||
         metadata.created_at;
-
 
     if(created){
 
@@ -4197,14 +4012,15 @@ function renderProfile(){
 
             accountCreated.textContent =
                 "—";
+
         }
 
     }else{
 
         accountCreated.textContent =
             "—";
-    }
 
+    }
 
     followersCount.textContent =
         Number(
@@ -4224,28 +4040,24 @@ function renderProfile(){
             0
         );
 
-
     applyVerification(
         currentProfile,
         currentUser
     );
 
     applyAvatar();
-
     applyCover();
 
 }
 
-
 /* =================================================
-   AVATAR
+AVATAR
 ================================================== */
 
 function applyAvatar(){
 
     const url =
         currentProfile.avatar_url;
-
 
     if(url){
 
@@ -4270,10 +4082,8 @@ function applyAvatar(){
         avatarFallback.style.display =
             "flex";
 
-
         const name =
             profileName.textContent.trim();
-
 
         avatarFallback.textContent =
             name
@@ -4284,16 +4094,14 @@ function applyAvatar(){
 
 }
 
-
 /* =================================================
-   COVER
+COVER
 ================================================== */
 
 function applyCover(){
 
     const url =
         currentProfile.cover_url;
-
 
     if(url){
 
@@ -4322,9 +4130,8 @@ function applyCover(){
 
 }
 
-
 /* =================================================
-   PROFILE MODAL
+PROFILE MODAL
 ================================================== */
 
 function openEditProfile(){
@@ -4335,25 +4142,20 @@ function openEditProfile(){
             currentProfile
         );
 
-
     usernameInput.value =
         getUsernameFromProfile(
             currentProfile
         );
 
-
     clearMessages();
-
 
     editProfileModal.classList.add(
         "show"
     );
 
-
     updateTimers();
 
 }
-
 
 function closeEditProfile(){
 
@@ -4363,14 +4165,12 @@ function closeEditProfile(){
 
 }
 
-
 function clearMessages(){
 
     [
         nameMessage,
         usernameMessage
-    ]
-    .forEach(
+    ].forEach(
         function(element){
 
             element.textContent =
@@ -4383,12 +4183,10 @@ function clearMessages(){
         }
     );
 
-
     [
         nameInput,
         usernameInput
-    ]
-    .forEach(
+    ].forEach(
         function(element){
 
             element.classList.remove(
@@ -4403,7 +4201,6 @@ function clearMessages(){
     );
 
 }
-
 
 function setFieldMessage(
     element,
@@ -4420,7 +4217,6 @@ function setFieldMessage(
     );
 
 }
-
 
 function markFieldSuccess(
     input,
@@ -4441,10 +4237,6 @@ function markFieldSuccess(
 
     if(messageElement){
 
-        messageElement.textContent =
-            messageElement.textContent ||
-            "";
-
         messageElement.classList.add(
             "success"
         );
@@ -4453,26 +4245,21 @@ function markFieldSuccess(
 
 }
 
-
 function shake(element){
 
     if(!element){
         return;
     }
 
-
     element.classList.remove(
         "shake"
     );
 
-
     void element.offsetWidth;
-
 
     element.classList.add(
         "shake"
     );
-
 
     setTimeout(
         function(){
@@ -4487,9 +4274,8 @@ function shake(element){
 
 }
 
-
 /* =================================================
-   4 MINUTE LOCK
+4 MINUTE LOCK
 ================================================== */
 
 function getLockRemaining(
@@ -4500,17 +4286,14 @@ function getLockRemaining(
         return 0;
     }
 
-
     const time =
         new Date(
             timestamp
         ).getTime();
 
-
     if(!Number.isFinite(time)){
         return 0;
     }
-
 
     return Math.max(
         0,
@@ -4521,7 +4304,6 @@ function getLockRemaining(
 
 }
 
-
 function formatRemaining(
     milliseconds
 ){
@@ -4529,10 +4311,8 @@ function formatRemaining(
     if(
         milliseconds <= 0
     ){
-
         return "متاح الآن";
     }
-
 
     const totalSeconds =
         Math.ceil(
@@ -4540,18 +4320,15 @@ function formatRemaining(
             1000
         );
 
-
     const minutes =
         Math.floor(
             totalSeconds /
             60
         );
 
-
     const seconds =
         totalSeconds %
         60;
-
 
     return (
         "متبقي " +
@@ -4563,7 +4340,6 @@ function formatRemaining(
 
 }
 
-
 function updateOneTimer(
     timestamp,
     timer,
@@ -4574,7 +4350,6 @@ function updateOneTimer(
         getLockRemaining(
             timestamp
         );
-
 
     if(remaining <= 0){
 
@@ -4601,10 +4376,10 @@ function updateOneTimer(
 
         button.disabled =
             true;
+
     }
 
 }
-
 
 function updateTimers(){
 
@@ -4614,7 +4389,6 @@ function updateTimers(){
         saveNameButton
     );
 
-
     updateOneTimer(
         currentProfile.last_username_change_at,
         usernameTimer,
@@ -4622,7 +4396,6 @@ function updateTimers(){
     );
 
 }
-
 
 function startTimers(){
 
@@ -4640,9 +4413,8 @@ function startTimers(){
 
 }
 
-
 /* =================================================
-   SAVE NAME
+SAVE NAME
 ================================================== */
 
 async function saveName(){
@@ -4651,11 +4423,9 @@ async function saveName(){
         return;
     }
 
-
     const value =
         String(
-            nameInput.value ||
-            ""
+            nameInput.value || ""
         )
         .trim()
         .slice(
@@ -4663,10 +4433,8 @@ async function saveName(){
             15
         );
 
-
     nameInput.value =
         value;
-
 
     nameInput.classList.remove(
         "error"
@@ -4675,7 +4443,6 @@ async function saveName(){
     nameInput.classList.remove(
         "success"
     );
-
 
     if(!value){
 
@@ -4695,7 +4462,6 @@ async function saveName(){
         return;
     }
 
-
     if(
         getLockRemaining(
             currentProfile.last_display_name_change_at
@@ -4714,13 +4480,11 @@ async function saveName(){
         return;
     }
 
-
     const oldName =
         getNameFromUser(
             currentUser,
             currentProfile
         );
-
 
     if(value === oldName){
 
@@ -4733,73 +4497,63 @@ async function saveName(){
         return;
     }
 
-
     saveNameButton.disabled =
         true;
 
-
     try{
 
-        const now =
-            new Date()
-                .toISOString();
-
-
-        /*
-         * تحديث Auth metadata.
-         */
-
         if(
-            auth &&
-            typeof auth.updateAccountMetadata ===
+            !profileEdit ||
+            typeof profileEdit.saveDisplayName !==
             "function"
         ){
 
-            const result =
-                await auth.updateAccountMetadata(
-                    {
-                        name:value,
-                        display_name:value
-                    }
-                );
-
-            if(
-                result &&
-                result.error
-            ){
-
-                throw result.error;
-            }
+            throw new Error(
+                "ملف profile-edit.js غير متاح."
+            );
 
         }
 
+        const result =
+            await profileEdit.saveDisplayName(
+                value
+            );
 
-        /*
-         * تحديث profiles.
-         */
+        if(
+            result &&
+            result.error
+        ){
 
-        await saveProfileFields(
-            {
-                name:value,
-                display_name:value,
-                last_display_name_change_at:now
-            }
-        );
+            throw result.error;
 
+        }
 
-        currentProfile.name =
-            value;
+        const refreshed =
+            await getProfile(
+                currentUser
+            );
 
-        currentProfile.display_name =
-            value;
+        if(
+            refreshed &&
+            typeof refreshed ===
+            "object"
+        ){
 
-        currentProfile.last_display_name_change_at =
-            now;
+            currentProfile =
+                refreshed;
 
+        }else{
+
+            currentProfile.name =
+                value;
+
+            currentProfile.display_name =
+                value;
+
+        }
 
         currentUser.user_metadata =
-            currentUser.user_metadata ||
-            {};
+            currentUser.user_metadata || {};
 
         currentUser.user_metadata.name =
             value;
@@ -4807,9 +4561,7 @@ async function saveName(){
         currentUser.user_metadata.display_name =
             value;
 
-
         renderProfile();
-
 
         setFieldMessage(
             nameMessage,
@@ -4817,18 +4569,15 @@ async function saveName(){
             true
         );
 
-
         markFieldSuccess(
             nameInput,
             nameMessage
         );
 
-
         showStatus(
             "تم تغيير الاسم بنجاح",
             "success"
         );
-
 
         updateTimers();
 
@@ -4839,21 +4588,16 @@ async function saveName(){
             error
         );
 
-
-        const message =
-            formatSaveError(
-                error,
-                "name"
-            );
-
-
         nameInput.classList.add(
             "error"
         );
 
         setFieldMessage(
             nameMessage,
-            message
+            formatSaveError(
+                error,
+                "name"
+            )
         );
 
         shake(
@@ -4871,9 +4615,8 @@ async function saveName(){
 
 }
 
-
 /* =================================================
-   USERNAME
+SAVE USERNAME
 ================================================== */
 
 async function saveUsername(){
@@ -4882,16 +4625,13 @@ async function saveUsername(){
         return;
     }
 
-
     const username =
         sanitizeUsername(
             usernameInput.value
         );
 
-
     usernameInput.value =
         username;
-
 
     usernameInput.classList.remove(
         "error"
@@ -4900,7 +4640,6 @@ async function saveUsername(){
     usernameInput.classList.remove(
         "success"
     );
-
 
     if(
         username.length < 3 ||
@@ -4923,7 +4662,6 @@ async function saveUsername(){
         return;
     }
 
-
     if(
         getLockRemaining(
             currentProfile.last_username_change_at
@@ -4942,12 +4680,10 @@ async function saveUsername(){
         return;
     }
 
-
     const oldUsername =
         getUsernameFromProfile(
             currentProfile
         );
-
 
     if(
         username === oldUsername
@@ -4962,119 +4698,59 @@ async function saveUsername(){
         return;
     }
 
-
     saveUsernameButton.disabled =
         true;
 
-
     try{
 
-        /*
-         * فحص مسبق.
-         */
-
         if(
-            auth &&
-            typeof auth.usernameExists ===
+            !profileEdit ||
+            typeof profileEdit.saveUsername !==
             "function"
         ){
 
-            const result =
-                await auth.usernameExists(
-                    username
-                );
-
-
-            const exists =
-                result === true ||
-                (
-                    result &&
-                    result.exists === true
-                ) ||
-                (
-                    result &&
-                    result.data &&
-                    result.data.exists === true
-                ) ||
-                (
-                    result &&
-                    result.taken === true
-                );
-
-
-            if(exists){
-
-                usernameInput.classList.add(
-                    "error"
-                );
-
-                setFieldMessage(
-                    usernameMessage,
-                    "اسم المستخدم مأخوذ مسبقًا"
-                );
-
-                shake(
-                    usernameInput
-                );
-
-                return;
-            }
-
-        }
-
-
-        const now =
-            new Date()
-                .toISOString();
-
-
-        try{
-
-            await saveProfileFields(
-                {
-                    username:username,
-                    last_username_change_at:now
-                }
+            throw new Error(
+                "ملف profile-edit.js غير متاح."
             );
 
-        }catch(error){
+        }
 
-            if(
-                isDuplicateError(
-                    error
-                )
-            ){
+        const result =
+            await profileEdit.saveUsername(
+                username
+            );
 
-                usernameInput.classList.add(
-                    "error"
-                );
+        if(
+            result &&
+            result.error
+        ){
 
-                setFieldMessage(
-                    usernameMessage,
-                    "اسم المستخدم مأخوذ مسبقًا"
-                );
-
-                shake(
-                    usernameInput
-                );
-
-                return;
-            }
-
-            throw error;
+            throw result.error;
 
         }
 
+        const refreshed =
+            await getProfile(
+                currentUser
+            );
 
-        currentProfile.username =
-            username;
+        if(
+            refreshed &&
+            typeof refreshed ===
+            "object"
+        ){
 
-        currentProfile.last_username_change_at =
-            now;
+            currentProfile =
+                refreshed;
 
+        }else{
+
+            currentProfile.username =
+                username;
+
+        }
 
         renderProfile();
-
 
         setFieldMessage(
             usernameMessage,
@@ -5082,18 +4758,15 @@ async function saveUsername(){
             true
         );
 
-
         markFieldSuccess(
             usernameInput,
             usernameMessage
         );
 
-
         showStatus(
             "تم تعيين اسم المستخدم بنجاح",
             "success"
         );
-
 
         updateTimers();
 
@@ -5104,48 +4777,23 @@ async function saveUsername(){
             error
         );
 
+        usernameInput.classList.add(
+            "error"
+        );
 
-        if(
-            isDuplicateError(
-                error
-            )
-        ){
-
-            usernameInput.classList.add(
-                "error"
-            );
-
-            setFieldMessage(
-                usernameMessage,
-                "اسم المستخدم مأخوذ مسبقًا"
-            );
-
-            shake(
-                usernameInput
-            );
-
-        }else{
-
-            const message =
-                formatSaveError(
+        setFieldMessage(
+            usernameMessage,
+            isDuplicateError(error)
+                ? "اسم المستخدم مأخوذ مسبقًا"
+                : formatSaveError(
                     error,
                     "username"
-                );
+                )
+        );
 
-            usernameInput.classList.add(
-                "error"
-            );
-
-            setFieldMessage(
-                usernameMessage,
-                message
-            );
-
-            shake(
-                usernameInput
-            );
-
-        }
+        shake(
+            usernameInput
+        );
 
     }finally{
 
@@ -5158,20 +4806,8 @@ async function saveUsername(){
 
 }
 
-
-function isUsernameTakenError(
-    error
-){
-
-    return isDuplicateError(
-        error
-    );
-
-}
-
-
 /* =================================================
-   BIO
+BIO
 ================================================== */
 
 function openBioEditor(){
@@ -5182,7 +4818,6 @@ function openBioEditor(){
             ? currentProfile.bio
             : "";
 
-
     bioMessage.textContent =
         "";
 
@@ -5190,16 +4825,13 @@ function openBioEditor(){
         "success"
     );
 
-
     bioEditor.classList.add(
         "show"
     );
 
-
     bioInput.focus();
 
 }
-
 
 function closeBioEditor(){
 
@@ -5209,48 +4841,77 @@ function closeBioEditor(){
 
 }
 
-
 async function saveBio(){
 
     if(!currentUser){
         return;
     }
 
-
     const bio =
         String(
-            bioInput.value ||
-            ""
+            bioInput.value || ""
         )
         .trim()
         .slice(
             0,
-            500
+            160
         );
-
 
     saveBioButton.disabled =
         true;
 
-
     try{
 
-        await saveProfileFields(
-            {
-                bio:bio
-            }
-        );
+        if(
+            !profileEdit ||
+            typeof profileEdit.saveBio !==
+            "function"
+        ){
 
+            throw new Error(
+                "ملف profile-edit.js غير متاح."
+            );
 
-        currentProfile.bio =
-            bio;
+        }
 
+        const result =
+            await profileEdit.saveBio(
+                bio
+            );
+
+        if(
+            result &&
+            result.error
+        ){
+
+            throw result.error;
+
+        }
+
+        const refreshed =
+            await getProfile(
+                currentUser
+            );
+
+        if(
+            refreshed &&
+            typeof refreshed ===
+            "object"
+        ){
+
+            currentProfile =
+                refreshed;
+
+        }else{
+
+            currentProfile.bio =
+                bio;
+
+        }
 
         renderProfile();
 
-
         closeBioEditor();
-
 
         showStatus(
             "تم حفظ البايو بنجاح.",
@@ -5263,7 +4924,6 @@ async function saveBio(){
             "WFESC bio:",
             error
         );
-
 
         bioMessage.textContent =
             formatSaveError(
@@ -5284,9 +4944,8 @@ async function saveBio(){
 
 }
 
-
 /* =================================================
-   INPUTS
+INPUTS
 ================================================== */
 
 usernameInput.addEventListener(
@@ -5316,15 +4975,13 @@ usernameInput.addEventListener(
     }
 );
 
-
 nameInput.addEventListener(
     "input",
     function(){
 
         nameInput.value =
             String(
-                nameInput.value ||
-                ""
+                nameInput.value || ""
             )
             .slice(
                 0,
@@ -5342,9 +4999,8 @@ nameInput.addEventListener(
     }
 );
 
-
 /* =================================================
-   IMAGE STUDIO STATE
+IMAGE STUDIO STATE
 ================================================== */
 
 const studioState = {
@@ -5373,7 +5029,6 @@ const studioState = {
 
 };
 
-
 function resetStudioState(){
 
     studioState.image =
@@ -5397,7 +5052,6 @@ function resetStudioState(){
     studioState.dragging =
         false;
 
-
     imagePreview.style.display =
         "none";
 
@@ -5405,16 +5059,16 @@ function resetStudioState(){
         "src"
     );
 
-
     studioEmpty.style.display =
         "flex";
-
 
     zoomRange.value =
         "1";
 
-}
+    imageFile.value =
+        "";
 
+}
 
 function setStudioImage(
     data
@@ -5422,7 +5076,6 @@ function setStudioImage(
 
     const image =
         new Image();
-
 
     image.onload =
         function(){
@@ -5436,17 +5089,14 @@ function setStudioImage(
             studioState.naturalHeight =
                 image.naturalHeight;
 
-
             studioState.scale =
                 calculateInitialScale();
-
 
             studioState.x =
                 0;
 
             studioState.y =
                 0;
-
 
             imagePreview.src =
                 data;
@@ -5457,17 +5107,14 @@ function setStudioImage(
             studioEmpty.style.display =
                 "none";
 
-
             zoomRange.value =
                 String(
                     studioState.scale
                 );
 
-
             applyStudioTransform();
 
         };
-
 
     image.onerror =
         function(){
@@ -5479,12 +5126,10 @@ function setStudioImage(
 
         };
 
-
     image.src =
         data;
 
 }
-
 
 function calculateInitialScale(){
 
@@ -5492,17 +5137,14 @@ function calculateInitialScale(){
         !studioState.naturalWidth ||
         !studioState.naturalHeight
     ){
-
         return 1;
     }
-
 
     const stageWidth =
         studioStage.clientWidth;
 
     const stageHeight =
         studioStage.clientHeight;
-
 
     const ratio =
         Math.max(
@@ -5512,7 +5154,6 @@ function calculateInitialScale(){
             stageHeight /
                 studioState.naturalHeight
         );
-
 
     return Math.max(
         .5,
@@ -5524,25 +5165,21 @@ function calculateInitialScale(){
 
 }
 
-
 function applyStudioTransform(){
 
     if(!studioState.image){
         return;
     }
 
-
     imagePreview.style.width =
         studioState.naturalWidth *
         studioState.scale +
         "px";
 
-
     imagePreview.style.height =
         studioState.naturalHeight *
         studioState.scale +
         "px";
-
 
     imagePreview.style.transform =
         "translate(-50%, -50%) translate(" +
@@ -5553,20 +5190,17 @@ function applyStudioTransform(){
 
 }
 
-
 function clampStudioPosition(){
 
     if(!studioState.image){
         return;
     }
 
-
     const stageWidth =
         studioStage.clientWidth;
 
     const stageHeight =
         studioStage.clientHeight;
-
 
     const imageWidth =
         studioState.naturalWidth *
@@ -5575,7 +5209,6 @@ function clampStudioPosition(){
     const imageHeight =
         studioState.naturalHeight *
         studioState.scale;
-
 
     const maxX =
         Math.max(
@@ -5586,7 +5219,6 @@ function clampStudioPosition(){
             ) / 2
         );
 
-
     const maxY =
         Math.max(
             0,
@@ -5596,7 +5228,6 @@ function clampStudioPosition(){
             ) / 2
         );
 
-
     studioState.x =
         Math.max(
             -maxX,
@@ -5605,7 +5236,6 @@ function clampStudioPosition(){
                 studioState.x
             )
         );
-
 
     studioState.y =
         Math.max(
@@ -5617,7 +5247,6 @@ function clampStudioPosition(){
         );
 
 }
-
 
 function moveStudio(
     x,
@@ -5636,9 +5265,8 @@ function moveStudio(
 
 }
 
-
 /* =================================================
-   IMAGE CONFIRMATION
+IMAGE CONFIRMATION
 ================================================== */
 
 function askImageChange(
@@ -5654,7 +5282,6 @@ function askImageChange(
 
 }
 
-
 function closeImageConfirmation(){
 
     imageConfirmModal.classList.remove(
@@ -5662,7 +5289,6 @@ function closeImageConfirmation(){
     );
 
 }
-
 
 document
     .getElementById(
@@ -5672,7 +5298,6 @@ document
         "click",
         closeImageConfirmation
     );
-
 
 document
     .getElementById(
@@ -5687,17 +5312,12 @@ document
 
             closeImageConfirmation();
 
-            /*
-             * فتح الاستوديو مباشرة بعد نعم.
-             */
-
             openImageModal(
                 type
             );
 
         }
     );
-
 
 imageConfirmModal.addEventListener(
     "click",
@@ -5715,9 +5335,8 @@ imageConfirmModal.addEventListener(
     }
 );
 
-
 /* =================================================
-   OPEN IMAGE MODAL
+OPEN IMAGE MODAL
 ================================================== */
 
 function openImageModal(
@@ -5731,7 +5350,6 @@ function openImageModal(
         null;
 
     resetStudioState();
-
 
     if(type === "avatar"){
 
@@ -5753,12 +5371,10 @@ function openImageModal(
 
     }
 
-
     const existing =
         type === "avatar"
             ? currentProfile.avatar_url
             : currentProfile.cover_url;
-
 
     if(existing){
 
@@ -5768,13 +5384,11 @@ function openImageModal(
 
     }
 
-
     imageModal.classList.add(
         "show"
     );
 
 }
-
 
 function closeImageModal(){
 
@@ -5789,9 +5403,8 @@ function closeImageModal(){
 
 }
 
-
 /* =================================================
-   IMAGE FILE
+IMAGE FILE
 ================================================== */
 
 imageFile.addEventListener(
@@ -5802,11 +5415,9 @@ imageFile.addEventListener(
             imageFile.files &&
             imageFile.files[0];
 
-
         if(!file){
             return;
         }
-
 
         if(
             !file.type.startsWith(
@@ -5823,8 +5434,8 @@ imageFile.addEventListener(
                 "";
 
             return;
-        }
 
+        }
 
         if(
             file.size >
@@ -5842,12 +5453,11 @@ imageFile.addEventListener(
                 "";
 
             return;
-        }
 
+        }
 
         const reader =
             new FileReader();
-
 
         reader.onload =
             function(event){
@@ -5861,7 +5471,6 @@ imageFile.addEventListener(
 
             };
 
-
         reader.onerror =
             function(){
 
@@ -5872,7 +5481,6 @@ imageFile.addEventListener(
 
             };
 
-
         reader.readAsDataURL(
             file
         );
@@ -5880,9 +5488,8 @@ imageFile.addEventListener(
     }
 );
 
-
 /* =================================================
-   DRAG IMAGE
+DRAG IMAGE
 ================================================== */
 
 studioStage.addEventListener(
@@ -5893,10 +5500,8 @@ studioStage.addEventListener(
             return;
         }
 
-
         studioState.dragging =
             true;
-
 
         studioState.startX =
             event.clientX;
@@ -5910,7 +5515,6 @@ studioStage.addEventListener(
         studioState.startImageY =
             studioState.y;
 
-
         try{
 
             studioStage.setPointerCapture(
@@ -5922,7 +5526,6 @@ studioStage.addEventListener(
     }
 );
 
-
 studioStage.addEventListener(
     "pointermove",
     function(event){
@@ -5933,14 +5536,12 @@ studioStage.addEventListener(
             return;
         }
 
-
         studioState.x =
             studioState.startImageX +
             (
                 event.clientX -
                 studioState.startX
             );
-
 
         studioState.y =
             studioState.startImageY +
@@ -5949,7 +5550,6 @@ studioStage.addEventListener(
                 studioState.startY
             );
 
-
         clampStudioPosition();
 
         applyStudioTransform();
@@ -5957,14 +5557,12 @@ studioStage.addEventListener(
     }
 );
 
-
 function stopStudioDrag(){
 
     studioState.dragging =
         false;
 
 }
-
 
 studioStage.addEventListener(
     "pointerup",
@@ -5976,9 +5574,8 @@ studioStage.addEventListener(
     stopStudioDrag
 );
 
-
 /* =================================================
-   ZOOM
+ZOOM
 ================================================== */
 
 zoomRange.addEventListener(
@@ -5989,28 +5586,23 @@ zoomRange.addEventListener(
             return;
         }
 
-
         const oldScale =
             studioState.scale;
-
 
         studioState.scale =
             Number(
                 zoomRange.value
             );
 
-
         const ratio =
             studioState.scale /
             oldScale;
-
 
         studioState.x *=
             ratio;
 
         studioState.y *=
             ratio;
-
 
         clampStudioPosition();
 
@@ -6019,9 +5611,8 @@ zoomRange.addEventListener(
     }
 );
 
-
 /* =================================================
-   MOVEMENT
+MOVEMENT
 ================================================== */
 
 document
@@ -6040,7 +5631,6 @@ document
         }
     );
 
-
 document
     .getElementById(
         "moveRight"
@@ -6056,7 +5646,6 @@ document
 
         }
     );
-
 
 document
     .getElementById(
@@ -6074,7 +5663,6 @@ document
         }
     );
 
-
 document
     .getElementById(
         "moveDown"
@@ -6091,9 +5679,8 @@ document
         }
     );
 
-
 /* =================================================
-   EXPORT CROPPED IMAGE
+EXPORT CROPPED IMAGE
 ================================================== */
 
 function createCroppedImage(){
@@ -6102,17 +5689,14 @@ function createCroppedImage(){
         return null;
     }
 
-
     const canvas =
         document.createElement(
             "canvas"
         );
 
-
     let outputWidth;
 
     let outputHeight;
-
 
     if(
         imageType ===
@@ -6135,31 +5719,26 @@ function createCroppedImage(){
 
     }
 
-
     canvas.width =
         outputWidth;
 
     canvas.height =
         outputHeight;
 
-
     const context =
         canvas.getContext(
             "2d"
         );
 
-
     if(!context){
         return null;
     }
-
 
     const stageWidth =
         studioStage.clientWidth;
 
     const stageHeight =
         studioStage.clientHeight;
-
 
     const imageWidth =
         studioState.naturalWidth *
@@ -6169,7 +5748,6 @@ function createCroppedImage(){
         studioState.naturalHeight *
         studioState.scale;
 
-
     const factorX =
         outputWidth /
         stageWidth;
@@ -6177,7 +5755,6 @@ function createCroppedImage(){
     const factorY =
         outputHeight /
         stageHeight;
-
 
     const drawWidth =
         imageWidth *
@@ -6187,30 +5764,23 @@ function createCroppedImage(){
         imageHeight *
         factorY;
 
-
     const centerX =
-        outputWidth /
-        2 +
+        outputWidth / 2 +
         studioState.x *
         factorX;
 
     const centerY =
-        outputHeight /
-        2 +
+        outputHeight / 2 +
         studioState.y *
         factorY;
 
-
     const drawX =
         centerX -
-        drawWidth /
-        2;
+        drawWidth / 2;
 
     const drawY =
         centerY -
-        drawHeight /
-        2;
-
+        drawHeight / 2;
 
     context.clearRect(
         0,
@@ -6218,7 +5788,6 @@ function createCroppedImage(){
         outputWidth,
         outputHeight
     );
-
 
     if(
         imageType ===
@@ -6241,7 +5810,6 @@ function createCroppedImage(){
 
     }
 
-
     context.drawImage(
         studioState.image,
         drawX,
@@ -6249,7 +5817,6 @@ function createCroppedImage(){
         drawWidth,
         drawHeight
     );
-
 
     if(
         imageType ===
@@ -6260,7 +5827,6 @@ function createCroppedImage(){
 
     }
 
-
     return canvas.toDataURL(
         "image/jpeg",
         0.88
@@ -6268,9 +5834,8 @@ function createCroppedImage(){
 
 }
 
-
 /* =================================================
-   IMAGE SUCCESS EFFECT
+IMAGE SUCCESS
 ================================================== */
 
 function imageSaveSuccess(){
@@ -6283,12 +5848,10 @@ function imageSaveSuccess(){
         profileCard
     );
 
-
     showStatus(
         "تم الحفظ بنجاح",
         "success"
     );
-
 
     setTimeout(
         function(){
@@ -6305,9 +5868,8 @@ function imageSaveSuccess(){
 
 }
 
-
 /* =================================================
-   SAVE IMAGE
+SAVE IMAGE
 ================================================== */
 
 async function saveImage(){
@@ -6322,72 +5884,125 @@ async function saveImage(){
         return;
     }
 
+    if(
+        !profileStorage ||
+        typeof profileStorage.uploadImage !==
+        "function"
+    ){
+
+        showStatus(
+            "ملف profile-storage.js غير متاح.",
+            "error"
+        );
+
+        return;
+    }
 
     saveImageButton.disabled =
         true;
 
+    let uploadedPath =
+        null;
 
     try{
 
         const cropped =
             createCroppedImage();
 
-
         if(!cropped){
 
             throw new Error(
                 "IMAGE_EXPORT_FAILED"
             );
-        }
-
-
-        const data = {};
-
-
-        if(
-            imageType ===
-            "avatar"
-        ){
-
-            data.avatar_url =
-                cropped;
-
-        }else{
-
-            data.cover_url =
-                cropped;
 
         }
-
-
-        await saveProfileFields(
-            data
-        );
-
-
-        if(
-            imageType ===
-            "avatar"
-        ){
-
-            currentProfile.avatar_url =
-                cropped;
-
-        }else{
-
-            currentProfile.cover_url =
-                cropped;
-
-        }
-
-
-        renderProfile();
-
 
         /*
-         * نجاح حقيقي:
-         * لا نغلق الاستوديو فورًا.
+         * الصورة الجديدة تذهب إلى Storage
+         * بدل تخزين Data URL داخل profiles.
          */
+
+        const uploadResult =
+            await profileStorage.uploadImage({
+                type:imageType,
+                dataUrl:cropped,
+                userId:currentUser.id
+            });
+
+        if(
+            !uploadResult ||
+            uploadResult.success === false
+        ){
+
+            throw (
+                uploadResult &&
+                uploadResult.error
+                    ? uploadResult.error
+                    : new Error(
+                        "IMAGE_UPLOAD_FAILED"
+                    )
+            );
+
+        }
+
+        uploadedPath =
+            uploadResult.path || null;
+
+        const publicUrl =
+            uploadResult.cleanUrl ||
+            uploadResult.publicUrl;
+
+        if(!publicUrl){
+
+            throw new Error(
+                "IMAGE_PUBLIC_URL_FAILED"
+            );
+
+        }
+
+        const field =
+            imageType === "avatar"
+                ? "avatar_url"
+                : "cover_url";
+
+        /*
+         * التحديث هنا يمر عبر profile-edit.js
+         * حتى لا نرسل username = null.
+         */
+
+        if(
+            !profileEdit ||
+            typeof profileEdit.updateProfileSafely !==
+            "function"
+        ){
+
+            throw new Error(
+                "ملف profile-edit.js غير متاح."
+            );
+
+        }
+
+        const updateResult =
+            await profileEdit.updateProfileSafely(
+                currentUser.id,
+                {
+                    [field]:publicUrl
+                }
+            );
+
+        if(
+            updateResult &&
+            updateResult.error
+        ){
+
+            throw updateResult.error;
+
+        }
+
+        currentProfile[field] =
+            publicUrl;
+
+        renderProfile();
 
         imageSaveSuccess();
 
@@ -6398,6 +6013,35 @@ async function saveImage(){
             error
         );
 
+        /*
+         * إذا تم رفع الصورة لكن فشل تحديث
+         * profile، نحاول تنظيف الملف الجديد.
+         */
+
+        if(
+            uploadedPath &&
+            profileStorage &&
+            typeof profileStorage.deleteImage ===
+            "function"
+        ){
+
+            try{
+
+                await profileStorage.deleteImage({
+                    type:imageType,
+                    userId:currentUser.id
+                });
+
+            }catch(cleanupError){
+
+                console.warn(
+                    "WFESC image cleanup:",
+                    cleanupError
+                );
+
+            }
+
+        }
 
         showStatus(
             formatSaveError(
@@ -6416,9 +6060,8 @@ async function saveImage(){
 
 }
 
-
 /* =================================================
-   DELETE IMAGE
+DELETE IMAGE
 ================================================== */
 
 async function deleteImage(){
@@ -6427,10 +6070,22 @@ async function deleteImage(){
         return;
     }
 
+    if(
+        !profileEdit ||
+        typeof profileEdit.updateProfileSafely !==
+        "function"
+    ){
+
+        showStatus(
+            "ملف profile-edit.js غير متاح.",
+            "error"
+        );
+
+        return;
+    }
 
     deleteImageButton.disabled =
         true;
-
 
     try{
 
@@ -6439,23 +6094,51 @@ async function deleteImage(){
                 ? "avatar_url"
                 : "cover_url";
 
+        /*
+         * أولًا نفرغ رابط الصورة من profile
+         * بطريقة آمنة تحافظ على username.
+         */
 
-        await saveProfileFields(
-            {
-                [field]:""
-            }
-        );
+        const result =
+            await profileEdit.updateProfileSafely(
+                currentUser.id,
+                {
+                    [field]:""
+                }
+            );
 
+        if(
+            result &&
+            result.error
+        ){
+
+            throw result.error;
+
+        }
+
+        /*
+         * بعدها نحذف الملف من Storage.
+         */
+
+        if(
+            profileStorage &&
+            typeof profileStorage.deleteImage ===
+            "function"
+        ){
+
+            await profileStorage.deleteImage({
+                type:imageType,
+                userId:currentUser.id
+            });
+
+        }
 
         currentProfile[field] =
             "";
 
-
         renderProfile();
 
-
         closeImageModal();
-
 
         showStatus(
             imageType === "avatar"
@@ -6470,7 +6153,6 @@ async function deleteImage(){
             "WFESC delete image:",
             error
         );
-
 
         showStatus(
             formatSaveError(
@@ -6489,9 +6171,8 @@ async function deleteImage(){
 
 }
 
-
 /* =================================================
-   SHARING
+SHARING
 ================================================== */
 
 async function shareProfile(){
@@ -6501,13 +6182,11 @@ async function shareProfile(){
             currentProfile
         );
 
-
     const url =
         new URL(
             "profile.html",
             window.location.href
         ).href;
-
 
     try{
 
@@ -6515,22 +6194,20 @@ async function shareProfile(){
             navigator.share
         ){
 
-            await navigator.share(
-                {
-                    title:
-                        getNameFromUser(
-                            currentUser,
-                            currentProfile
-                        ),
+            await navigator.share({
+                title:
+                    getNameFromUser(
+                        currentUser,
+                        currentProfile
+                    ),
 
-                    text:
-                        "ملف @" +
-                        username +
-                        " على WFESC",
+                text:
+                    "ملف @" +
+                    username +
+                    " على WFESC",
 
-                    url:url
-                }
-            );
+                url:url
+            });
 
         }else if(
             navigator.clipboard
@@ -6539,7 +6216,6 @@ async function shareProfile(){
             await navigator.clipboard.writeText(
                 url
             );
-
 
             showStatus(
                 "تم نسخ رابط الملف.",
@@ -6558,16 +6234,14 @@ async function shareProfile(){
 
 }
 
-
 /* =================================================
-   SETTINGS CONNECTION
+SETTINGS CONNECTION
 ================================================== */
 
 function applyThemeFromSettings(){
 
     let theme =
         "dark";
-
 
     try{
 
@@ -6579,16 +6253,13 @@ function applyThemeFromSettings(){
 
     }catch(error){}
 
-
     const html =
         document.documentElement;
-
 
     html.classList.toggle(
         "wfesc-light-mode",
         theme === "light"
     );
-
 
     html.classList.toggle(
         "wfesc-dark-mode",
@@ -6597,12 +6268,10 @@ function applyThemeFromSettings(){
 
 }
 
-
 function applyAnimationFromSettings(){
 
     let state =
         "on";
-
 
     try{
 
@@ -6614,7 +6283,6 @@ function applyAnimationFromSettings(){
 
     }catch(error){}
 
-
     document.documentElement.classList.toggle(
         "wfesc-animation-off",
         state === "off"
@@ -6622,12 +6290,10 @@ function applyAnimationFromSettings(){
 
 }
 
-
 function applyGlassFromSettings(){
 
     let state =
         "on";
-
 
     try{
 
@@ -6639,14 +6305,12 @@ function applyGlassFromSettings(){
 
     }catch(error){}
 
-
     document.documentElement.classList.toggle(
         "wfesc-liquid-glass",
         state !== "off"
     );
 
 }
-
 
 function applyAllSettings(){
 
@@ -6658,7 +6322,6 @@ function applyAllSettings(){
 
 }
 
-
 window.addEventListener(
     "WFESCLiquidGlassChanged",
     function(event){
@@ -6667,7 +6330,6 @@ window.addEventListener(
             event &&
             event.detail &&
             event.detail.enabled;
-
 
         document.documentElement.classList.toggle(
             "wfesc-liquid-glass",
@@ -6678,7 +6340,6 @@ window.addEventListener(
 
     }
 );
-
 
 window.addEventListener(
     "WFESCAnimationChanged",
@@ -6691,7 +6352,6 @@ window.addEventListener(
                 event.detail.enabled === false
             );
 
-
         document.documentElement.classList.toggle(
             "wfesc-animation-off",
             !enabled
@@ -6699,7 +6359,6 @@ window.addEventListener(
 
     }
 );
-
 
 window.addEventListener(
     "storage",
@@ -6718,7 +6377,6 @@ window.addEventListener(
     }
 );
 
-
 document.addEventListener(
     "visibilitychange",
     function(){
@@ -6735,9 +6393,8 @@ document.addEventListener(
     }
 );
 
-
 /* =================================================
-   EVENTS
+EVENTS
 ================================================== */
 
 document
@@ -6749,7 +6406,6 @@ document
         openEditProfile
     );
 
-
 document
     .getElementById(
         "closeEditProfile"
@@ -6758,7 +6414,6 @@ document
         "click",
         closeEditProfile
     );
-
 
 editProfileModal.addEventListener(
     "click",
@@ -6776,18 +6431,15 @@ editProfileModal.addEventListener(
     }
 );
 
-
 saveNameButton.addEventListener(
     "click",
     saveName
 );
 
-
 saveUsernameButton.addEventListener(
     "click",
     saveUsername
 );
-
 
 document
     .getElementById(
@@ -6798,18 +6450,15 @@ document
         openBioEditor
     );
 
-
 cancelBioButton.addEventListener(
     "click",
     closeBioEditor
 );
 
-
 saveBioButton.addEventListener(
     "click",
     saveBio
 );
-
 
 document
     .getElementById(
@@ -6818,14 +6467,11 @@ document
     .addEventListener(
         "click",
         shareProfile
-    );
+);
 
-
-/*
- * مهم:
- * الضغط على القلم لا يفتح الاستوديو مباشرة.
- * أولًا تظهر رسالة التأكيد.
- */
+/* =================================================
+IMAGE CONFIRMATION EVENTS
+================================================== */
 
 document
     .getElementById(
@@ -6842,7 +6488,6 @@ document
         }
     );
 
-
 document
     .getElementById(
         "editCoverButton"
@@ -6858,7 +6503,6 @@ document
         }
     );
 
-
 document
     .getElementById(
         "closeImageModal"
@@ -6867,7 +6511,6 @@ document
         "click",
         closeImageModal
     );
-
 
 imageModal.addEventListener(
     "click",
@@ -6885,36 +6528,30 @@ imageModal.addEventListener(
     }
 );
 
-
 saveImageButton.addEventListener(
     "click",
     saveImage
 );
-
 
 deleteImageButton.addEventListener(
     "click",
     deleteImage
 );
 
-
 /* =================================================
-   LOAD PROFILE
+LOAD PROFILE
 ================================================== */
 
 async function loadProfile(){
 
     applyAllSettings();
 
-
     let user =
         null;
-
 
     document.documentElement.classList.add(
         "wfesc-profile-loading"
     );
-
 
     for(
         let attempt = 0;
@@ -6925,11 +6562,9 @@ async function loadProfile(){
         user =
             await getCurrentUserSafe();
 
-
         if(user){
             break;
         }
-
 
         await new Promise(
             function(resolve){
@@ -6944,7 +6579,6 @@ async function loadProfile(){
 
     }
 
-
     if(!user){
 
         window.location.replace(
@@ -6952,18 +6586,16 @@ async function loadProfile(){
         );
 
         return;
-    }
 
+    }
 
     currentUser =
         user;
-
 
     const profile =
         await getProfile(
             currentUser
         );
-
 
     currentProfile =
         profile &&
@@ -6972,11 +6604,9 @@ async function loadProfile(){
             ? profile
             : {};
 
-
     renderProfile();
 
     startTimers();
-
 
     document.documentElement.classList.remove(
         "wfesc-profile-loading"
@@ -6984,9 +6614,8 @@ async function loadProfile(){
 
 }
 
-
 /* =================================================
-   AUTH STATE
+AUTH STATE
 ================================================== */
 
 try{
@@ -7013,14 +6642,13 @@ try{
                     );
 
                     return;
-                }
 
+                }
 
                 if(user){
 
                     currentUser =
                         user;
-
 
                     try{
 
@@ -7058,27 +6686,24 @@ try{
 
 }
 
-
 /* =================================================
-   START
+START
 ================================================== */
 
 loadProfile();
-
 
 })();
 
 </script>
 
-
 <!-- =================================================
-     NAVIGATION
+NAVIGATION
 ================================================== -->
 
 <script
     src="./navigation/navigation-loader.js"
 ></script>
 
-
 </body>
+
 </html>
