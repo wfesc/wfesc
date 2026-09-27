@@ -4,15 +4,21 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
+       الإصدار المحسن
+
        مسؤول عن:
        - Supabase
        - المستخدم الحالي
        - المحادثات
        - فتح المحادثة
        - تحميل الرسائل
+       - فتح المحادثة من آخر رسالة
+       - Realtime للرسائل
+       - جاري الكتابة
        - بيانات جهة الاتصال
        - رسم الرسائل
-       - ربط إعدادات الفقاعات بالرسائل
+       - منع تكرار الرسائل
+       - ربط إعدادات الفقاعات
     ============================================================
     */
 
@@ -35,11 +41,9 @@
         );
 
     if (!client) {
-
         console.error(
             "WFESC: Supabase client لم يتم تحميله."
         );
-
         return;
     }
 
@@ -110,12 +114,19 @@
 
     let initialized = false;
 
-    /*
-       رقم متزايد لكل عملية تحميل.
-       يمنع نتيجة محادثة قديمة من الكتابة فوق المحادثة الحالية
-       إذا المستخدم انتقل بسرعة بين المحادثات.
-    */
     let conversationLoadToken = 0;
+
+    let typingTimer = null;
+
+    let isTyping = false;
+
+    let typingUsers = new Set();
+
+    let realtimeStarted = false;
+
+    let realtimeConversationId = null;
+
+    let lastRenderedMessageId = null;
 
 
     /* =========================================================
@@ -170,6 +181,11 @@
     const chatOnlineDot =
         document.getElementById(
             "chatOnlineDot"
+        );
+
+    const messageInput =
+        document.getElementById(
+            "messageInput"
         );
 
 
@@ -238,9 +254,71 @@
     }
 
 
-    /*
-       تمرير آمن إلى أسفل المحادثة.
-    */
+    function getMessageId(message) {
+
+        if (!message) {
+            return null;
+        }
+
+        return (
+            message.id ??
+            message.message_id ??
+            null
+        );
+    }
+
+
+    function getMessageTime(message) {
+
+        return (
+            message?.created_at ||
+            message?.sent_at ||
+            message?.inserted_at ||
+            null
+        );
+    }
+
+
+    function getMessageSenderId(message) {
+
+        return (
+            message?.sender_id ??
+            message?.user_id ??
+            message?.from_user_id ??
+            null
+        );
+    }
+
+
+    function getMessageContent(message) {
+
+        return (
+            message?.content ??
+            message?.message ??
+            message?.message_content ??
+            ""
+        );
+    }
+
+
+    function isMessageMine(message) {
+
+        const senderId =
+            getMessageSenderId(message);
+
+        return (
+            senderId != null &&
+            currentUser?.id != null &&
+            String(senderId) ===
+            String(currentUser.id)
+        );
+    }
+
+
+    /* =========================================================
+       SCROLL SYSTEM
+    ========================================================= */
+
     function scrollChatToBottom(
         behavior = "smooth"
     ) {
@@ -249,19 +327,104 @@
             return;
         }
 
-        chatMessages.scrollTo({
-            top: chatMessages.scrollHeight,
-            behavior
-        });
+        const target =
+            Math.max(
+                0,
+                chatMessages.scrollHeight -
+                chatMessages.clientHeight
+            );
+
+        if (
+            typeof chatMessages.scrollTo ===
+            "function"
+        ) {
+
+            chatMessages.scrollTo({
+                top: target,
+                behavior
+            });
+
+        } else {
+
+            chatMessages.scrollTop =
+                target;
+        }
+    }
+
+
+    function forceScrollToBottom() {
+
+        if (!chatMessages) {
+            return;
+        }
+
+        chatMessages.scrollTop =
+            chatMessages.scrollHeight;
+    }
+
+
+    function isNearBottom() {
+
+        if (!chatMessages) {
+            return true;
+        }
+
+        return (
+            chatMessages.scrollHeight -
+            chatMessages.scrollTop -
+            chatMessages.clientHeight
+        ) < 150;
     }
 
 
     /*
-       إعادة تطبيق إعدادات الفقاعات بعد إنشاء عناصر الرسائل.
+       عند فتح المحادثة لا نترك المستخدم يشاهد
+       الرسائل من البداية ثم ننزل للأسفل.
 
-       لا نفترض أن settings module موجود لحظة تشغيل Core،
-       لذلك يتم التحقق منه فقط إذا كان محملًا.
+       نرسم الرسائل،
+       نضع الموضع مباشرة في النهاية،
+       وبعدها نسمح بالتمرير الطبيعي.
     */
+    function revealChatAtBottom() {
+
+        if (!chatMessages) {
+            return;
+        }
+
+        chatMessages.style.visibility =
+            "hidden";
+
+        forceScrollToBottom();
+
+        requestAnimationFrame(() => {
+
+            forceScrollToBottom();
+
+            chatMessages.style.visibility =
+                "visible";
+
+            /*
+               تحديث إضافي بعد اكتمال الصور/الخطوط.
+            */
+            setTimeout(() => {
+
+                forceScrollToBottom();
+
+            }, 50);
+
+            setTimeout(() => {
+
+                forceScrollToBottom();
+
+            }, 180);
+        });
+    }
+
+
+    /* =========================================================
+       MESSAGE SETTINGS
+    ========================================================= */
+
     function applyMessageSettings() {
 
         try {
@@ -269,13 +432,49 @@
             const settings =
                 window.WFESC_MESSAGE_SETTINGS;
 
+            if (!settings) {
+                return;
+            }
+
+
+            /*
+               النسخة الجديدة من settings
+               تستخدم apply / get.
+            */
             if (
-                settings &&
-                typeof settings.applySettings === "function"
+                typeof settings.apply ===
+                "function"
             ) {
 
                 if (
-                    typeof settings.getSettings === "function"
+                    typeof settings.get ===
+                    "function"
+                ) {
+
+                    settings.apply(
+                        settings.get()
+                    );
+
+                } else {
+
+                    settings.apply();
+                }
+
+                return;
+            }
+
+
+            /*
+               دعم النسخة القديمة أيضًا.
+            */
+            if (
+                typeof settings.applySettings ===
+                "function"
+            ) {
+
+                if (
+                    typeof settings.getSettings ===
+                    "function"
                 ) {
 
                     settings.applySettings(
@@ -291,26 +490,23 @@
         } catch (error) {
 
             console.warn(
-                "WFESC message settings apply:",
+                "WFESC message settings:",
                 error
             );
         }
     }
 
 
-    /*
-       إعادة تطبيق إعدادات الفقاعات بعد أن تنتهي
-       المتصفحات من إدخال العناصر في DOM.
-    */
     function scheduleMessageSettingsApply() {
 
-        if (typeof requestAnimationFrame === "function") {
+        if (
+            typeof requestAnimationFrame ===
+            "function"
+        ) {
 
-            requestAnimationFrame(() => {
-
-                applyMessageSettings();
-
-            });
+            requestAnimationFrame(
+                applyMessageSettings
+            );
 
         } else {
 
@@ -323,7 +519,7 @@
 
 
     /* =========================================================
-       SUPPORT CONTACT
+       SUPPORT
     ========================================================= */
 
     function getSupportContact() {
@@ -360,7 +556,6 @@
     ) {
 
         if (type === "support") {
-
             return getSupportContact();
         }
 
@@ -390,7 +585,6 @@
         }
 
         if (Array.isArray(data)) {
-
             return data[0] || null;
         }
 
@@ -427,7 +621,10 @@
                 return null;
             }
 
-            if (typeof data === "string") {
+            if (
+                typeof data ===
+                "string"
+            ) {
 
                 return data;
             }
@@ -484,6 +681,7 @@
                 ? [...data]
                 : [];
 
+
         conversations.sort(
             (a, b) => {
 
@@ -504,6 +702,7 @@
                 return second - first;
             }
         );
+
 
         renderConversations();
 
@@ -697,141 +896,12 @@
                     conversation,
                     conversation.type
                 );
+
             }
         );
 
 
         return card;
-    }
-
-
-    /* =========================================================
-       OPEN CONVERSATION
-    ========================================================= */
-
-    async function openConversation(
-        conversationId,
-        contact = null,
-        type = null
-    ) {
-
-        if (!conversationId) {
-            return;
-        }
-
-
-        /*
-           نرفع رقم العملية قبل أي await.
-           أي عملية تحميل قديمة ستصبح غير صالحة.
-        */
-        const loadToken =
-            ++conversationLoadToken;
-
-
-        currentConversationId =
-            conversationId;
-
-
-        currentConversationContact =
-            contact;
-
-
-        if (type === "support") {
-
-            currentConversationContact =
-                getSupportContact();
-        }
-
-
-        if (
-            !currentConversationContact
-        ) {
-
-            currentConversationContact =
-                await getConversationContact(
-                    conversationId,
-                    type
-                );
-
-
-            /*
-               المستخدم ربما فتح محادثة أخرى
-               أثناء انتظار RPC.
-            */
-            if (
-                loadToken !==
-                conversationLoadToken
-            ) {
-                return;
-            }
-        }
-
-
-        if (!currentConversationContact) {
-
-            currentConversationContact = {
-
-                display_name:
-                    "مستخدم",
-
-                username:
-                    "user",
-
-                avatar_url:
-                    DEFAULT_AVATAR,
-
-                is_online:
-                    false
-            };
-        }
-
-
-        page?.classList.add(
-            "chat-active"
-        );
-
-
-        chatView?.classList.add(
-            "open"
-        );
-
-
-        if (searchSection) {
-
-            searchSection.classList.add(
-                "hidden"
-            );
-        }
-
-
-        updateChatHeader();
-
-
-        await loadConversationMessages(
-            loadToken
-        );
-
-
-        /*
-           إذا تغيرت المحادثة أثناء التحميل،
-           لا ننفذ بقية العملية على المحادثة القديمة.
-        */
-        if (
-            loadToken !==
-            conversationLoadToken
-        ) {
-            return;
-        }
-
-
-        markConversationRead(
-            conversationId
-        );
-
-
-        scrollChatToBottom(
-            "auto"
-        );
     }
 
 
@@ -893,11 +963,1046 @@
 
 
     /* =========================================================
+       TYPING UI
+    ========================================================= */
+
+    function ensureTypingElement() {
+
+        if (!chatMessages) {
+            return null;
+        }
+
+
+        let typing =
+            document.getElementById(
+                "wfescTypingIndicator"
+            );
+
+
+        if (typing) {
+            return typing;
+        }
+
+
+        typing =
+            document.createElement(
+                "div"
+            );
+
+
+        typing.id =
+            "wfescTypingIndicator";
+
+
+        typing.className =
+            "wfesc-typing-indicator";
+
+
+        typing.innerHTML = `
+            <div class="wfesc-typing-bubble">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <span class="wfesc-typing-text">
+                جاري الكتابة...
+            </span>
+        `;
+
+
+        typing.style.cssText = `
+            display:none;
+            align-items:center;
+            gap:8px;
+            padding:5px 12px 9px;
+            color:#999;
+            font-size:12px;
+            direction:rtl;
+            animation:wfescTypingFade .18s ease;
+        `;
+
+
+        const styleId =
+            "wfescTypingStyle";
+
+
+        if (
+            !document.getElementById(
+                styleId
+            )
+        ) {
+
+            const style =
+                document.createElement(
+                    "style"
+                );
+
+            style.id =
+                styleId;
+
+
+            style.textContent = `
+                @keyframes wfescTypingFade {
+                    from {
+                        opacity:0;
+                        transform:translateY(5px);
+                    }
+
+                    to {
+                        opacity:1;
+                        transform:translateY(0);
+                    }
+                }
+
+                @keyframes wfescTypingDot {
+                    0%,
+                    60%,
+                    100% {
+                        transform:translateY(0);
+                        opacity:.35;
+                    }
+
+                    30% {
+                        transform:translateY(-4px);
+                        opacity:1;
+                    }
+                }
+
+                .wfesc-typing-bubble {
+                    display:flex;
+                    align-items:center;
+                    gap:3px;
+                    padding:7px 9px;
+                    border-radius:14px;
+                    background:rgba(255,255,255,.07);
+                    border:1px solid rgba(255,255,255,.08);
+                }
+
+                .wfesc-typing-bubble span {
+                    width:5px;
+                    height:5px;
+                    border-radius:50%;
+                    background:#aaa;
+                    animation:wfescTypingDot 1.1s infinite;
+                }
+
+                .wfesc-typing-bubble span:nth-child(2) {
+                    animation-delay:.15s;
+                }
+
+                .wfesc-typing-bubble span:nth-child(3) {
+                    animation-delay:.3s;
+                }
+            `;
+
+            document.head.appendChild(
+                style
+            );
+        }
+
+
+        chatMessages.appendChild(
+            typing
+        );
+
+
+        return typing;
+    }
+
+
+    function showTypingIndicator() {
+
+        if (!chatMessages) {
+            return;
+        }
+
+
+        const element =
+            ensureTypingElement();
+
+
+        if (!element) {
+            return;
+        }
+
+
+        element.style.display =
+            "flex";
+
+
+        if (isNearBottom()) {
+
+            requestAnimationFrame(() => {
+
+                scrollChatToBottom(
+                    "smooth"
+                );
+
+            });
+        }
+    }
+
+
+    function hideTypingIndicator() {
+
+        const element =
+            document.getElementById(
+                "wfescTypingIndicator"
+            );
+
+
+        if (!element) {
+            return;
+        }
+
+
+        element.style.display =
+            "none";
+    }
+
+
+    function updateTypingIndicator() {
+
+        /*
+           نستثني المستخدم الحالي.
+        */
+
+        if (
+            typingUsers.size > 0
+        ) {
+
+            showTypingIndicator();
+
+        } else {
+
+            hideTypingIndicator();
+        }
+    }
+
+
+    /* =========================================================
+       TYPING REALTIME
+    ========================================================= */
+
+    async function stopTyping() {
+
+        if (!typingChannel) {
+            return;
+        }
+
+
+        if (!isTyping) {
+            return;
+        }
+
+
+        isTyping = false;
+
+
+        try {
+
+            await typingChannel.send({
+                type: "broadcast",
+                event: "typing",
+                payload: {
+                    user_id:
+                        currentUser?.id || null,
+
+                    typing: false
+                }
+            });
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC typing stop:",
+                error
+            );
+        }
+    }
+
+
+    async function sendTypingState() {
+
+        if (
+            !typingChannel ||
+            !currentUser ||
+            !currentConversationId
+        ) {
+            return;
+        }
+
+
+        if (!isTyping) {
+
+            isTyping = true;
+
+            try {
+
+                await typingChannel.send({
+                    type: "broadcast",
+                    event: "typing",
+                    payload: {
+                        user_id:
+                            currentUser.id,
+
+                        typing: true
+                    }
+                });
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC typing start:",
+                    error
+                );
+            }
+        }
+
+
+        if (typingTimer) {
+
+            clearTimeout(
+                typingTimer
+            );
+        }
+
+
+        typingTimer =
+            setTimeout(
+                () => {
+
+                    stopTyping();
+
+                },
+                1800
+            );
+    }
+
+
+    async function setupTypingChannel(
+        conversationId
+    ) {
+
+        await removeTypingChannel();
+
+
+        if (
+            !conversationId ||
+            !currentUser
+        ) {
+            return;
+        }
+
+
+        const channelName =
+            "wfesc-typing-" +
+            String(
+                conversationId
+            );
+
+
+        typingChannel =
+            client.channel(
+                channelName,
+                {
+                    config: {
+                        broadcast: {
+                            self: false
+                        }
+                    }
+                }
+            );
+
+
+        typingChannel.on(
+            "broadcast",
+            {
+                event: "typing"
+            },
+            payload => {
+
+                const data =
+                    payload?.payload ||
+                    payload ||
+                    {};
+
+
+                const userId =
+                    data.user_id;
+
+
+                if (
+                    !userId ||
+                    String(userId) ===
+                    String(currentUser.id)
+                ) {
+                    return;
+                }
+
+
+                if (data.typing) {
+
+                    typingUsers.add(
+                        String(userId)
+                    );
+
+                    updateTypingIndicator();
+
+
+                    /*
+                       إذا توقف الطرف الآخر عن
+                       إرسال heartbeat، نخفي المؤشر
+                       تلقائيًا بعد مدة قصيرة.
+                    */
+                    setTimeout(() => {
+
+                        typingUsers.delete(
+                            String(userId)
+                        );
+
+                        updateTypingIndicator();
+
+                    }, 3000);
+
+                } else {
+
+                    typingUsers.delete(
+                        String(userId)
+                    );
+
+                    updateTypingIndicator();
+                }
+            }
+        );
+
+
+        typingChannel.subscribe(
+            status => {
+
+                if (
+                    status !==
+                    "SUBSCRIBED"
+                ) {
+
+                    console.warn(
+                        "WFESC typing channel:",
+                        status
+                    );
+                }
+            }
+        );
+    }
+
+
+    async function removeTypingChannel() {
+
+        if (typingTimer) {
+
+            clearTimeout(
+                typingTimer
+            );
+
+            typingTimer =
+                null;
+        }
+
+
+        isTyping =
+            false;
+
+
+        typingUsers.clear();
+
+
+        hideTypingIndicator();
+
+
+        if (typingChannel) {
+
+            try {
+
+                await client.removeChannel(
+                    typingChannel
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC remove typing channel:",
+                    error
+                );
+            }
+        }
+
+
+        typingChannel =
+            null;
+    }
+
+
+    /* =========================================================
+       INPUT TYPING EVENTS
+    ========================================================= */
+
+    function setupTypingInput() {
+
+        const input =
+            document.getElementById(
+                "messageInput"
+            );
+
+
+        if (!input) {
+            return;
+        }
+
+
+        input.addEventListener(
+            "input",
+            () => {
+
+                if (
+                    input.value.trim()
+                ) {
+
+                    sendTypingState();
+
+                } else {
+
+                    stopTyping();
+                }
+            }
+        );
+
+
+        input.addEventListener(
+            "blur",
+            () => {
+
+                stopTyping();
+
+            }
+        );
+    }
+
+
+    /* =========================================================
+       REALTIME MESSAGES
+    ========================================================= */
+
+    function normalizeRealtimeMessage(
+        payload
+    ) {
+
+        if (!payload) {
+            return null;
+        }
+
+
+        /*
+           Supabase postgres_changes:
+           payload.new
+        */
+
+        const record =
+            payload.new ||
+            payload.record ||
+            payload;
+
+
+        if (!record) {
+            return null;
+        }
+
+
+        return record;
+    }
+
+
+    function messageBelongsToCurrentConversation(
+        message
+    ) {
+
+        if (!message) {
+            return false;
+        }
+
+
+        const conversationId =
+            message.conversation_id ??
+            message.target_conversation_id;
+
+
+        if (!conversationId) {
+            return false;
+        }
+
+
+        return (
+            String(conversationId) ===
+            String(currentConversationId)
+        );
+    }
+
+
+    function messageAlreadyExists(
+        message
+    ) {
+
+        const messageId =
+            getMessageId(message);
+
+
+        if (
+            messageId == null
+        ) {
+            return false;
+        }
+
+
+        return currentMessages.some(
+            existing =>
+                String(
+                    getMessageId(existing)
+                ) ===
+                String(messageId)
+        );
+    }
+
+
+    function updateConversationPreview(
+        message
+    ) {
+
+        if (!message) {
+            return;
+        }
+
+
+        const conversationId =
+            message.conversation_id ??
+            message.target_conversation_id;
+
+
+        if (!conversationId) {
+            return;
+        }
+
+
+        const index =
+            conversations.findIndex(
+                conversation =>
+                    String(
+                        conversation.id ??
+                        conversation.conversation_id
+                    ) ===
+                    String(conversationId)
+            );
+
+
+        if (index < 0) {
+            return;
+        }
+
+
+        const conversation =
+            conversations[index];
+
+
+        conversation.last_message =
+            getMessageContent(message);
+
+
+        conversation.last_message_text =
+            getMessageContent(message);
+
+
+        conversation.last_message_at =
+            getMessageTime(message);
+
+
+        conversations.splice(
+            index,
+            1
+        );
+
+
+        conversations.unshift(
+            conversation
+        );
+
+
+        renderConversations();
+    }
+
+
+    function handleRealtimeMessage(
+        payload
+    ) {
+
+        const message =
+            normalizeRealtimeMessage(
+                payload
+            );
+
+
+        if (!message) {
+            return;
+        }
+
+
+        /*
+           تحديث قائمة المحادثات حتى لو
+           المستخدم ليس داخل المحادثة.
+        */
+        updateConversationPreview(
+            message
+        );
+
+
+        /*
+           إذا الرسالة تخص محادثة ثانية
+           لا نضيفها داخل الشاشة الحالية.
+        */
+        if (
+            !messageBelongsToCurrentConversation(
+                message
+            )
+        ) {
+            return;
+        }
+
+
+        /*
+           منع التكرار.
+        */
+        if (
+            messageAlreadyExists(
+                message
+            )
+        ) {
+            return;
+        }
+
+
+        const wasAtBottom =
+            isNearBottom();
+
+
+        currentMessages.push(
+            message
+        );
+
+
+        currentMessages.sort(
+            (a, b) => {
+
+                return (
+                    new Date(
+                        getMessageTime(a) || 0
+                    ).getTime()
+                    -
+                    new Date(
+                        getMessageTime(b) || 0
+                    ).getTime()
+                );
+            }
+        );
+
+
+        if (chatMessages) {
+
+            const element =
+                createMessageElement(
+                    message
+                );
+
+
+            chatMessages.appendChild(
+                element
+            );
+
+
+            scheduleMessageSettingsApply();
+
+
+            if (wasAtBottom) {
+
+                requestAnimationFrame(
+                    () => {
+
+                        scrollChatToBottom(
+                            "smooth"
+                        );
+
+                    }
+                );
+            }
+        }
+
+
+        /*
+           الرسالة وصلت، نخفي جاري الكتابة.
+        */
+        typingUsers.clear();
+
+        hideTypingIndicator();
+    }
+
+
+    async function setupMessageRealtime() {
+
+        if (
+            realtimeStarted &&
+            messageChannel
+        ) {
+            return;
+        }
+
+
+        if (messageChannel) {
+
+            try {
+
+                await client.removeChannel(
+                    messageChannel
+                );
+
+            } catch (_) {}
+        }
+
+
+        /*
+           القناة تستمع إلى رسائل جدول messages.
+           إذا كان جدول الرسائل عندك اسمه مختلف،
+           نغيره فقط هنا بدون لمس بقية النظام.
+        */
+        messageChannel =
+            client
+                .channel(
+                    "wfesc-messages-realtime"
+                )
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "INSERT",
+                        schema: "public",
+                        table: "messages"
+                    },
+                    payload => {
+
+                        handleRealtimeMessage(
+                            payload
+                        );
+                    }
+                )
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "UPDATE",
+                        schema: "public",
+                        table: "messages"
+                    },
+                    payload => {
+
+                        const message =
+                            normalizeRealtimeMessage(
+                                payload
+                            );
+
+
+                        if (!message) {
+                            return;
+                        }
+
+
+                        updateConversationPreview(
+                            message
+                        );
+                    }
+                );
+
+
+        messageChannel.subscribe(
+            status => {
+
+                if (
+                    status ===
+                    "SUBSCRIBED"
+                ) {
+
+                    realtimeStarted =
+                        true;
+
+                    console.log(
+                        "WFESC: Messages Realtime connected"
+                    );
+
+                } else {
+
+                    console.warn(
+                        "WFESC Messages Realtime:",
+                        status
+                    );
+                }
+            }
+        );
+    }
+
+
+    /* =========================================================
+       OPEN CONVERSATION
+    ========================================================= */
+
+    async function openConversation(
+        conversationId,
+        contact = null,
+        type = null
+    ) {
+
+        if (!conversationId) {
+            return;
+        }
+
+
+        const loadToken =
+            ++conversationLoadToken;
+
+
+        /*
+           إيقاف حالة الكتابة للمحادثة السابقة.
+        */
+        await removeTypingChannel();
+
+
+        currentConversationId =
+            conversationId;
+
+
+        currentConversationContact =
+            contact;
+
+
+        typingUsers.clear();
+
+
+        hideTypingIndicator();
+
+
+        if (
+            type === "support"
+        ) {
+
+            currentConversationContact =
+                getSupportContact();
+        }
+
+
+        if (
+            !currentConversationContact
+        ) {
+
+            currentConversationContact =
+                await getConversationContact(
+                    conversationId,
+                    type
+                );
+
+
+            if (
+                loadToken !==
+                conversationLoadToken
+            ) {
+                return;
+            }
+        }
+
+
+        if (
+            !currentConversationContact
+        ) {
+
+            currentConversationContact = {
+
+                display_name:
+                    "مستخدم",
+
+                username:
+                    "user",
+
+                avatar_url:
+                    DEFAULT_AVATAR,
+
+                is_online:
+                    false
+            };
+        }
+
+
+        page?.classList.add(
+            "chat-active"
+        );
+
+
+        chatView?.classList.add(
+            "open"
+        );
+
+
+        if (searchSection) {
+
+            searchSection.classList.add(
+                "hidden"
+            );
+        }
+
+
+        updateChatHeader();
+
+
+        /*
+           نجهز قناة الكتابة فور فتح المحادثة.
+        */
+        setupTypingChannel(
+            conversationId
+        );
+
+
+        await loadConversationMessages(
+            loadToken
+        );
+
+
+        if (
+            loadToken !==
+            conversationLoadToken
+        ) {
+            return;
+        }
+
+
+        await markConversationRead(
+            conversationId
+        );
+
+
+        /*
+           تأكيد الوصول للنهاية بعد اكتمال
+           جميع عمليات الرسم.
+        */
+        revealChatAtBottom();
+    }
+
+
+    /* =========================================================
        LOAD MESSAGES
     ========================================================= */
 
     async function loadConversationMessages(
-        expectedLoadToken = conversationLoadToken
+        expectedLoadToken =
+            conversationLoadToken
     ) {
 
         if (!currentConversationId) {
@@ -911,8 +2016,24 @@
 
         if (chatMessages) {
 
+            /*
+               نخفي المحتوى المؤقت حتى لا يرى
+               المستخدم المحادثة وهي تبدأ من الأعلى.
+            */
+            chatMessages.style.visibility =
+                "hidden";
+
+
             chatMessages.innerHTML = `
-                <div class="empty-state">
+                <div
+                    class="empty-state"
+                    style="
+                        min-height:120px;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                    "
+                >
 
                     <div class="empty-icon">
                         ⏳
@@ -942,9 +2063,6 @@
         );
 
 
-        /*
-           لا تسمح لنتيجة قديمة بتغيير المحادثة الحالية.
-        */
         if (
             expectedLoadToken !==
             conversationLoadToken ||
@@ -965,6 +2083,10 @@
 
 
             if (chatMessages) {
+
+                chatMessages.style.visibility =
+                    "visible";
+
 
                 chatMessages.innerHTML = `
                     <div class="empty-state">
@@ -1000,22 +2122,20 @@
 
                 return (
                     new Date(
-                        a.created_at ||
-                        a.sent_at ||
-                        0
+                        getMessageTime(a) || 0
                     ).getTime()
                     -
                     new Date(
-                        b.created_at ||
-                        b.sent_at ||
-                        0
+                        getMessageTime(b) || 0
                     ).getTime()
                 );
             }
         );
 
 
-        renderMessages();
+        renderMessages({
+            initialLoad: true
+        });
     }
 
 
@@ -1023,34 +2143,39 @@
        RENDER MESSAGES
     ========================================================= */
 
-    function renderMessages() {
+    function renderMessages(
+        options = {}
+    ) {
 
         if (!chatMessages) {
             return;
         }
 
 
-        /*
-           نحتفظ بموضع التمرير قبل إعادة الرسم.
-           إذا كانت المحادثة جديدة أو كانت في الأسفل،
-           سننزل إلى الأسفل بعد الرسم.
-        */
+        const initialLoad =
+            Boolean(
+                options.initialLoad
+            );
+
+
         const oldScrollTop =
             chatMessages.scrollTop;
 
+
         const oldScrollHeight =
             chatMessages.scrollHeight;
+
 
         const oldClientHeight =
             chatMessages.clientHeight;
 
 
-        const wasNearBottom =
+        const wasNear =
             (
                 oldScrollHeight -
                 oldScrollTop -
                 oldClientHeight
-            ) < 120;
+            ) < 150;
 
 
         chatMessages.innerHTML = "";
@@ -1075,6 +2200,11 @@
 
                 </div>
             `;
+
+
+            chatMessages.style.visibility =
+                "visible";
+
 
             scheduleMessageSettingsApply();
 
@@ -1106,44 +2236,75 @@
         );
 
 
-        /*
-           تطبيق إعدادات الفقاعات بعد إنشاء كل العناصر.
-        */
         scheduleMessageSettingsApply();
 
 
-        /*
-           المحادثة الجديدة تنزل للأسفل.
-           أما إذا المستخدم كان يقرأ رسالة قديمة،
-           لا نقفز به إلى النهاية.
-        */
-        requestAnimationFrame(() => {
+        if (initialLoad) {
 
-            if (!chatMessages) {
-                return;
-            }
+            /*
+               أهم جزء:
+               نحدد الأسفل قبل إظهار المحتوى،
+               لذلك المستخدم لن يشاهد القائمة
+               وهي تبدأ من أول رسالة.
+            */
+            forceScrollToBottom();
 
 
-            if (wasNearBottom) {
+            requestAnimationFrame(() => {
 
-                chatMessages.scrollTop =
-                    chatMessages.scrollHeight;
+                forceScrollToBottom();
 
-            } else {
+                chatMessages.style.visibility =
+                    "visible";
 
-                const heightDifference =
-                    chatMessages.scrollHeight -
-                    oldScrollHeight;
 
-                chatMessages.scrollTop =
-                    oldScrollTop +
-                    Math.max(
-                        0,
-                        heightDifference
-                    );
-            }
+                /*
+                   تحديث بعد حساب أبعاد الرسائل.
+                */
+                setTimeout(() => {
 
-        });
+                    forceScrollToBottom();
+
+                }, 40);
+
+
+                setTimeout(() => {
+
+                    forceScrollToBottom();
+
+                }, 160);
+
+            });
+
+
+            return;
+        }
+
+
+        if (wasNear) {
+
+            requestAnimationFrame(() => {
+
+                scrollChatToBottom(
+                    "smooth"
+                );
+
+            });
+
+        } else {
+
+            const heightDifference =
+                chatMessages.scrollHeight -
+                oldScrollHeight;
+
+
+            chatMessages.scrollTop =
+                oldScrollTop +
+                Math.max(
+                    0,
+                    heightDifference
+                );
+        }
     }
 
 
@@ -1155,15 +2316,10 @@
         message
     ) {
 
-        const senderId =
-            message.sender_id ||
-            message.user_id ||
-            message.from_user_id;
-
-
         const isMine =
-            String(senderId) ===
-            String(currentUser?.id);
+            isMessageMine(
+                message
+            );
 
 
         const row =
@@ -1172,11 +2328,6 @@
             );
 
 
-        /*
-           مهم جدًا:
-           هذه الكلاسات هي التي يعتمد عليها
-           نظام إعدادات الفقاعات.
-        */
         row.className =
             "message-row " +
             (
@@ -1186,11 +2337,28 @@
             );
 
 
-        row.dataset.messageId =
+        const messageId =
+            getMessageId(
+                message
+            );
+
+
+        if (messageId != null) {
+
+            row.dataset.messageId =
+                String(messageId);
+        }
+
+
+        /*
+           نضيف نوع الرسالة للـDOM
+           حتى تقدر الملفات الأخرى تتعامل معها.
+        */
+        row.dataset.senderId =
             String(
-                message.id ??
-                message.message_id ??
-                ""
+                getMessageSenderId(
+                    message
+                ) || ""
             );
 
 
@@ -1204,10 +2372,6 @@
             "message-bubble";
 
 
-        /*
-           يمكن للملفات المستقبلية معرفة جهة الرسالة
-           بدون الحاجة لتحليل الأب.
-        */
         bubble.dataset.side =
             isMine
                 ? "mine"
@@ -1225,9 +2389,9 @@
 
 
         content.textContent =
-            message.content ||
-            message.message ||
-            "";
+            getMessageContent(
+                message
+            );
 
 
         const time =
@@ -1242,8 +2406,9 @@
 
         time.textContent =
             formatTime(
-                message.created_at ||
-                message.sent_at
+                getMessageTime(
+                    message
+                )
             );
 
 
@@ -1251,9 +2416,11 @@
             content
         );
 
+
         bubble.appendChild(
             time
         );
+
 
         row.appendChild(
             bubble
@@ -1265,8 +2432,7 @@
 
 
     /* =========================================================
-       ADD MESSAGE LOCALLY
-       يستخدمه messages-send.js لاحقًا.
+       ADD MESSAGE
     ========================================================= */
 
     function addMessageToCurrentConversation(
@@ -1279,9 +2445,6 @@
         }
 
 
-        /*
-           لا نضيف الرسالة إذا كانت لمحادثة أخرى.
-        */
         if (
             options.conversationId &&
             String(
@@ -1295,27 +2458,25 @@
         }
 
 
-        /*
-           منع التكرار إذا كانت الرسالة موجودة أصلًا.
-        */
         const messageId =
-            message.id ??
-            message.message_id;
+            getMessageId(
+                message
+            );
 
 
         if (
             messageId != null &&
-            currentMessages.some(
-                existing =>
-                    String(
-                        existing.id ??
-                        existing.message_id
-                    ) === String(messageId)
+            messageAlreadyExists(
+                message
             )
         ) {
 
             return null;
         }
+
+
+        const wasAtBottom =
+            isNearBottom();
 
 
         currentMessages.push(
@@ -1328,25 +2489,17 @@
 
                 return (
                     new Date(
-                        a.created_at ||
-                        a.sent_at ||
-                        0
+                        getMessageTime(a) || 0
                     ).getTime()
                     -
                     new Date(
-                        b.created_at ||
-                        b.sent_at ||
-                        0
+                        getMessageTime(b) || 0
                     ).getTime()
                 );
             }
         );
 
 
-        /*
-           إذا كان مطلوبًا فقط الإضافة بدون إعادة رسم
-           كامل المحادثة، نضيف العنصر مباشرة.
-        */
         if (
             options.appendOnly &&
             chatMessages
@@ -1357,24 +2510,31 @@
                     message
                 );
 
+
             chatMessages.appendChild(
                 element
             );
 
+
             scheduleMessageSettingsApply();
 
+
             if (
-                options.scroll !== false
+                options.scroll !== false &&
+                wasAtBottom
             ) {
 
-                requestAnimationFrame(() => {
+                requestAnimationFrame(
+                    () => {
 
-                    scrollChatToBottom(
-                        "smooth"
-                    );
+                        scrollChatToBottom(
+                            "smooth"
+                        );
 
-                });
+                    }
+                );
             }
+
 
             return element;
         }
@@ -1387,13 +2547,15 @@
             options.scroll !== false
         ) {
 
-            requestAnimationFrame(() => {
+            requestAnimationFrame(
+                () => {
 
-                scrollChatToBottom(
-                    "smooth"
-                );
+                    scrollChatToBottom(
+                        "smooth"
+                    );
 
-            });
+                }
+            );
         }
 
 
@@ -1446,15 +2608,15 @@
 
 
     /* =========================================================
-       BACK
+       CLOSE
     ========================================================= */
 
-    function closeConversation() {
+    async function closeConversation() {
 
-        /*
-           إلغاء صلاحية أي تحميل سابق.
-        */
         conversationLoadToken++;
+
+
+        await removeTypingChannel();
 
 
         currentConversationId =
@@ -1467,6 +2629,9 @@
 
         currentMessages =
             [];
+
+
+        typingUsers.clear();
 
 
         chatView?.classList.remove(
@@ -1489,13 +2654,17 @@
 
         if (chatMessages) {
 
-            chatMessages.innerHTML = "";
+            chatMessages.innerHTML =
+                "";
+
+            chatMessages.style.visibility =
+                "visible";
         }
     }
 
 
     /* =========================================================
-       EVENTS
+       BACK
     ========================================================= */
 
     if (backChatButton) {
@@ -1560,6 +2729,12 @@
             }
 
 
+            /*
+               تشغيل Realtime مرة واحدة.
+            */
+            await setupMessageRealtime();
+
+
             initialized =
                 true;
 
@@ -1595,15 +2770,19 @@
 
             if (!currentUser) {
 
-                closeConversation();
+                await closeConversation();
+
 
                 conversations =
                     [];
 
+
                 currentMessages =
                     [];
 
+
                 renderConversations();
+
 
                 return;
             }
@@ -1616,16 +2795,67 @@
 
                 await loadConversations();
 
+
                 const supportId =
                     await ensureSupportConversation();
+
 
                 if (supportId) {
 
                     await loadConversations();
                 }
+
+
+                await setupMessageRealtime();
             }
         }
     );
+
+
+    /* =========================================================
+       INITIAL INPUT EVENTS
+    ========================================================= */
+
+    function setupInputEvents() {
+
+        const input =
+            document.getElementById(
+                "messageInput"
+            );
+
+
+        if (!input) {
+            return;
+        }
+
+
+        input.addEventListener(
+            "input",
+            () => {
+
+                if (
+                    input.value.trim()
+                ) {
+
+                    sendTypingState();
+
+                } else {
+
+                    stopTyping();
+                }
+            }
+        );
+
+
+        input.addEventListener(
+            "blur",
+            () => {
+
+                stopTyping();
+
+            }
+        );
+    }
 
 
     /* =========================================================
@@ -1638,25 +2868,21 @@
 
 
         getCurrentUser() {
-
             return currentUser;
         },
 
 
         getCurrentConversation() {
-
             return currentConversationId;
         },
 
 
         getCurrentContact() {
-
             return currentConversationContact;
         },
 
 
         getConversations() {
-
             return [
                 ...conversations
             ];
@@ -1664,7 +2890,6 @@
 
 
         getMessages() {
-
             return [
                 ...currentMessages
             ];
@@ -1692,9 +2917,6 @@
         markConversationRead,
 
 
-        /*
-           API جديدة للملفات الأخرى.
-        */
         renderMessages,
 
 
@@ -1707,7 +2929,28 @@
         applyMessageSettings,
 
 
-        scrollChatToBottom
+        scrollChatToBottom,
+
+
+        forceScrollToBottom,
+
+
+        setupMessageRealtime,
+
+
+        setupTypingChannel,
+
+
+        sendTypingState,
+
+
+        stopTyping,
+
+
+        showTypingIndicator,
+
+
+        hideTypingIndicator
     };
 
 
@@ -1715,22 +2958,31 @@
        START
     ========================================================= */
 
-    if (
-        document.readyState ===
-        "loading"
-    ) {
+    function start() {
 
-        document.addEventListener(
-            "DOMContentLoaded",
-            initializeAuth,
-            {
-                once: true
-            }
-        );
+        setupInputEvents();
 
-    } else {
 
-        initializeAuth();
+        if (
+            document.readyState ===
+            "loading"
+        ) {
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                initializeAuth,
+                {
+                    once: true
+                }
+            );
+
+        } else {
+
+            initializeAuth();
+        }
     }
+
+
+    start();
 
 })();
