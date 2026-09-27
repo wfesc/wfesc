@@ -3537,6 +3537,40 @@ function showStatus(
 }
 
 /* =================================================
+AUTH REQUIRED
+================================================== */
+
+function requireLogin(){
+
+    showStatus(
+        "هذه الميزة تحتاج إلى تسجيل الدخول.",
+        "error"
+    );
+
+    setTimeout(
+        function(){
+
+            const go =
+                window.confirm(
+                    "يجب تسجيل الدخول أو إنشاء حساب حتى تستخدم هذه الميزة.\n\nهل تريد الانتقال إلى صفحة الحساب؟"
+                );
+
+            if(go){
+
+                window.location.href =
+                    "settings.html";
+
+            }
+
+        },
+        100
+    );
+
+    return false;
+
+}
+
+/* =================================================
 AUTH
 ================================================== */
 
@@ -3642,43 +3676,6 @@ async function getCurrentUserSafe(){
                 result.data.session.user
             ){
                 return result.data.session.user;
-            }
-
-        }
-
-    }catch(error){}
-
-    try{
-
-        if(
-            window.supabase &&
-            typeof window.supabase.createClient ===
-            "function" &&
-            CONFIG.supabaseUrl &&
-            CONFIG.supabaseKey
-        ){
-
-            if(
-                !window.WFESCProfileSupabase
-            ){
-
-                window.WFESCProfileSupabase =
-                    window.supabase.createClient(
-                        CONFIG.supabaseUrl,
-                        CONFIG.supabaseKey
-                    );
-
-            }
-
-            const result =
-                await window.WFESCProfileSupabase.auth.getUser();
-
-            if(
-                result &&
-                result.data &&
-                result.data.user
-            ){
-                return result.data.user;
             }
 
         }
@@ -3808,23 +3805,6 @@ async function getProfile(user){
             return result.data;
         }
 
-        const second =
-            await client
-                .from(table)
-                .select("*")
-                .eq(
-                    "user_id",
-                    user.id
-                )
-                .maybeSingle();
-
-        if(
-            !second.error &&
-            second.data
-        ){
-            return second.data;
-        }
-
     }catch(error){
 
         console.warn(
@@ -3934,13 +3914,70 @@ function applyVerification(
 }
 
 /* =================================================
+DEFAULT PROFILE
+================================================== */
+
+function renderGuestProfile(){
+
+    currentUser = null;
+
+    currentProfile = {};
+
+    closeEditProfile();
+    closeBioEditor();
+    closeImageConfirmation();
+    closeImageModal();
+
+    profileName.textContent =
+        DEFAULT_NAME;
+
+    profileUsername.textContent =
+        "@" + DEFAULT_USERNAME;
+
+    profileBio.textContent =
+        DEFAULT_BIO;
+
+    profileBio.classList.add(
+        "empty"
+    );
+
+    profileVerified.hidden =
+        true;
+
+    accountEmail.textContent =
+        "—";
+
+    accountCreated.textContent =
+        "—";
+
+    followersCount.textContent =
+        "0";
+
+    followingCount.textContent =
+        "0";
+
+    postsCount.textContent =
+        "0";
+
+    applyAvatar();
+    applyCover();
+
+    updateTimers();
+
+}
+
+/* =================================================
 RENDER
 ================================================== */
 
 function renderProfile(){
 
     if(!currentUser){
+
+        renderGuestProfile();
+
         return;
+
     }
 
     const metadata =
@@ -4057,6 +4094,7 @@ AVATAR
 function applyAvatar(){
 
     const url =
+        currentProfile &&
         currentProfile.avatar_url;
 
     if(url){
@@ -4101,6 +4139,7 @@ COVER
 function applyCover(){
 
     const url =
+        currentProfile &&
         currentProfile.cover_url;
 
     if(url){
@@ -4135,6 +4174,14 @@ PROFILE MODAL
 ================================================== */
 
 function openEditProfile(){
+
+    if(!currentUser){
+
+        requireLogin();
+
+        return;
+
+    }
 
     nameInput.value =
         getNameFromUser(
@@ -4383,6 +4430,32 @@ function updateOneTimer(
 
 function updateTimers(){
 
+    if(!currentUser){
+
+        nameTimer.textContent =
+            "سجل الدخول لاستخدام هذه الميزة.";
+
+        usernameTimer.textContent =
+            "سجل الدخول لاستخدام هذه الميزة.";
+
+        nameTimer.classList.remove(
+            "ready"
+        );
+
+        usernameTimer.classList.remove(
+            "ready"
+        );
+
+        saveNameButton.disabled =
+            false;
+
+        saveUsernameButton.disabled =
+            false;
+
+        return;
+
+    }
+
     updateOneTimer(
         currentProfile.last_display_name_change_at,
         nameTimer,
@@ -4420,7 +4493,11 @@ SAVE NAME
 async function saveName(){
 
     if(!currentUser){
+
+        requireLogin();
+
         return;
+
     }
 
     const value =
@@ -4623,7 +4700,11 @@ SAVE USERNAME
 async function saveUsername(){
 
     if(!currentUser){
+
+        requireLogin();
+
         return;
+
     }
 
     const username =
@@ -4820,6 +4901,14 @@ BIO
 
 function openBioEditor(){
 
+    if(!currentUser){
+
+        requireLogin();
+
+        return;
+
+    }
+
     bioInput.value =
         typeof currentProfile.bio ===
         "string"
@@ -4860,7 +4949,11 @@ function closeBioEditor(){
 async function saveBio(){
 
     if(!currentUser){
+
+        requireLogin();
+
         return;
+
     }
 
     const bio =
@@ -5313,6 +5406,14 @@ function askImageChange(
     type
 ){
 
+    if(!currentUser){
+
+        requireLogin();
+
+        return;
+
+    }
+
     imageConfirmType =
         type;
 
@@ -5346,6 +5447,16 @@ document
     .addEventListener(
         "click",
         function(){
+
+            if(!currentUser){
+
+                closeImageConfirmation();
+
+                requireLogin();
+
+                return;
+
+            }
 
             const type =
                 imageConfirmType;
@@ -5382,6 +5493,14 @@ OPEN IMAGE MODAL
 function openImageModal(
     type
 ){
+
+    if(!currentUser){
+
+        requireLogin();
+
+        return;
+
+    }
 
     imageType =
         type;
@@ -5454,6 +5573,17 @@ IMAGE FILE
 imageFile.addEventListener(
     "change",
     function(){
+
+        if(!currentUser){
+
+            imageFile.value =
+                "";
+
+            requireLogin();
+
+            return;
+
+        }
 
         const file =
             imageFile.files &&
@@ -5540,7 +5670,10 @@ studioStage.addEventListener(
     "pointerdown",
     function(event){
 
-        if(!studioState.image){
+        if(
+            !currentUser ||
+            !studioState.image
+        ){
             return;
         }
 
@@ -5626,7 +5759,10 @@ zoomRange.addEventListener(
     "input",
     function(){
 
-        if(!studioState.image){
+        if(
+            !currentUser ||
+            !studioState.image
+        ){
             return;
         }
 
@@ -5686,6 +5822,14 @@ document
         "click",
         function(){
 
+            if(!currentUser){
+
+                requireLogin();
+
+                return;
+
+            }
+
             moveStudio(
                 -15,
                 0
@@ -5701,6 +5845,14 @@ document
     .addEventListener(
         "click",
         function(){
+
+            if(!currentUser){
+
+                requireLogin();
+
+                return;
+
+            }
 
             moveStudio(
                 15,
@@ -5718,6 +5870,14 @@ document
         "click",
         function(){
 
+            if(!currentUser){
+
+                requireLogin();
+
+                return;
+
+            }
+
             moveStudio(
                 0,
                 -15
@@ -5733,6 +5893,14 @@ document
     .addEventListener(
         "click",
         function(){
+
+            if(!currentUser){
+
+                requireLogin();
+
+                return;
+
+            }
 
             moveStudio(
                 0,
@@ -5946,10 +6114,7 @@ async function saveImage(){
 
     if(!currentUser){
 
-        showStatus(
-            "يجب تسجيل الدخول أولًا.",
-            "error"
-        );
+        requireLogin();
 
         return;
 
@@ -6009,11 +6174,6 @@ async function saveImage(){
 
         }
 
-        /*
-         * الصورة الجديدة تذهب إلى Storage.
-         * لا يتم تخزين Base64 داخل profiles.
-         */
-
         const uploadResult =
             await profileStorage.uploadImage({
                 type:imageType,
@@ -6054,11 +6214,6 @@ async function saveImage(){
                 ? "avatar_url"
                 : "cover_url";
 
-        /*
-         * التحديث يمر عبر profile-edit.js
-         * حتى يبقى username محفوظًا دائمًا.
-         */
-
         const updateResult =
             await profileEdit.updateProfileSafely(
                 currentUser.id,
@@ -6076,11 +6231,6 @@ async function saveImage(){
 
         }
 
-        /*
-         * نحدث النسخة المحلية فقط بعد نجاح
-         * Storage وقاعدة البيانات معًا.
-         */
-
         currentProfile[field] =
             publicUrl;
 
@@ -6094,16 +6244,6 @@ async function saveImage(){
             "WFESC image:",
             error
         );
-
-        /*
-         * لا نحذف الملف هنا.
-         *
-         * السبب:
-         * profile-storage.js يستخدم مسارًا ثابتًا
-         * للصورة الحالية، والحذف في حالة فشل
-         * تحديث profiles قد يؤدي إلى حذف الصورة
-         * الجديدة/الحالية بدلًا من معالجة الخطأ.
-         */
 
         showStatus(
             formatSaveError(
@@ -6129,7 +6269,11 @@ DELETE IMAGE
 async function deleteImage(){
 
     if(!currentUser){
+
+        requireLogin();
+
         return;
+
     }
 
     if(
@@ -6144,6 +6288,7 @@ async function deleteImage(){
         );
 
         return;
+
     }
 
     deleteImageButton.disabled =
@@ -6155,10 +6300,6 @@ async function deleteImage(){
             imageType === "avatar"
                 ? "avatar_url"
                 : "cover_url";
-
-        /*
-         * أولًا نفرغ الرابط من profiles.
-         */
 
         const result =
             await profileEdit.updateProfileSafely(
@@ -6176,10 +6317,6 @@ async function deleteImage(){
             throw result.error;
 
         }
-
-        /*
-         * بعدها نحذف الملف من Storage.
-         */
 
         if(
             profileStorage &&
@@ -6449,10 +6586,70 @@ document.addEventListener(
 
             applyAllSettings();
 
+            /*
+             * عند الرجوع للصفحة نعيد فحص
+             * الجلسة حتى ينعكس تسجيل الدخول
+             * أو تسجيل الخروج من Settings.
+             */
+
+            refreshSessionState();
+
         }
 
     }
 );
+
+/* =================================================
+CENTRAL SESSION REFRESH
+================================================== */
+
+async function refreshSessionState(){
+
+    const user =
+        await getCurrentUserSafe();
+
+    if(!user){
+
+        if(currentUser){
+
+            renderGuestProfile();
+
+        }else{
+
+            renderGuestProfile();
+
+        }
+
+        return;
+
+    }
+
+    const userChanged =
+        !currentUser ||
+        currentUser.id !== user.id;
+
+    currentUser =
+        user;
+
+    try{
+
+        currentProfile =
+            await getProfile(
+                user
+            );
+
+    }catch(error){
+
+        currentProfile =
+            {};
+
+    }
+
+    renderProfile();
+
+    updateTimers();
+
+}
 
 /* =================================================
 EVENTS
@@ -6607,12 +6804,18 @@ async function loadProfile(){
 
     applyAllSettings();
 
-    let user =
-        null;
-
     document.documentElement.classList.add(
         "wfesc-profile-loading"
     );
+
+    /*
+     * ننتظر الجلسة لفترة قصيرة فقط.
+     * إذا لا توجد جلسة، لا نعيد التوجيه.
+     * نعرض البروفايل الافتراضي مباشرة.
+     */
+
+    let user =
+        null;
 
     for(
         let attempt = 0;
@@ -6642,8 +6845,12 @@ async function loadProfile(){
 
     if(!user){
 
-        window.location.replace(
-            "settings.html"
+        renderGuestProfile();
+
+        startTimers();
+
+        document.documentElement.classList.remove(
+            "wfesc-profile-loading"
         );
 
         return;
@@ -6688,50 +6895,60 @@ try{
     ){
 
         auth.onAuthStateChange(
-            async function(
+            function(
                 event,
                 user
             ){
 
-                if(
-                    event ===
-                    "SIGNED_OUT"
-                ){
+                /*
+                 * لا ننفذ استدعاءات Supabase مباشرة
+                 * داخل callback حتى لا يحدث تعليق.
+                 */
 
-                    window.location.replace(
-                        "settings.html"
-                    );
+                setTimeout(
+                    async function(){
 
-                    return;
+                        if(
+                            event ===
+                            "SIGNED_OUT" ||
+                            !user
+                        ){
 
-                }
+                            renderGuestProfile();
 
-                if(user){
+                            return;
 
-                    currentUser =
-                        user;
+                        }
 
-                    try{
+                        currentUser =
+                            user;
 
-                        currentProfile =
-                            await getProfile(
-                                user
+                        try{
+
+                            currentProfile =
+                                await getProfile(
+                                    user
+                                );
+
+                        }catch(error){
+
+                            console.warn(
+                                "WFESC profile refresh:",
+                                error
                             );
+
+                            currentProfile =
+                                {};
+
+                        }
 
                         renderProfile();
 
                         updateTimers();
 
-                    }catch(error){
-
-                        console.warn(
-                            "WFESC profile refresh:",
-                            error
-                        );
-
-                    }
-
-                }
+                    },
+                    0
+                );
 
             }
         );
@@ -6746,6 +6963,26 @@ try{
     );
 
 }
+
+/* =================================================
+CROSS-PAGE WFESC AUTH EVENT
+================================================== */
+
+window.addEventListener(
+    "WFESCAuthChanged",
+    function(){
+
+        setTimeout(
+            function(){
+
+                refreshSessionState();
+
+            },
+            0
+        );
+
+    }
+);
 
 /* =================================================
 START
