@@ -4536,7 +4536,8 @@ async function saveName(){
         if(
             refreshed &&
             typeof refreshed ===
-            "object"
+            "object" &&
+            Object.keys(refreshed).length
         ){
 
             currentProfile =
@@ -4549,6 +4550,9 @@ async function saveName(){
 
             currentProfile.display_name =
                 value;
+
+            currentProfile.last_display_name_change_at =
+                new Date().toISOString();
 
         }
 
@@ -4605,9 +4609,6 @@ async function saveName(){
         );
 
     }finally{
-
-        saveNameButton.disabled =
-            false;
 
         updateTimers();
 
@@ -4737,7 +4738,8 @@ async function saveUsername(){
         if(
             refreshed &&
             typeof refreshed ===
-            "object"
+            "object" &&
+            Object.keys(refreshed).length
         ){
 
             currentProfile =
@@ -4748,7 +4750,16 @@ async function saveUsername(){
             currentProfile.username =
                 username;
 
+            currentProfile.last_username_change_at =
+                new Date().toISOString();
+
         }
+
+        currentUser.user_metadata =
+            currentUser.user_metadata || {};
+
+        currentUser.user_metadata.username =
+            username;
 
         renderProfile();
 
@@ -4797,9 +4808,6 @@ async function saveUsername(){
 
     }finally{
 
-        saveUsernameButton.disabled =
-            false;
-
         updateTimers();
 
     }
@@ -4822,6 +4830,14 @@ function openBioEditor(){
         "";
 
     bioMessage.classList.remove(
+        "success"
+    );
+
+    bioInput.classList.remove(
+        "error"
+    );
+
+    bioInput.classList.remove(
         "success"
     );
 
@@ -4860,6 +4876,10 @@ async function saveBio(){
     saveBioButton.disabled =
         true;
 
+    bioInput.classList.remove(
+        "error"
+    );
+
     try{
 
         if(
@@ -4896,7 +4916,8 @@ async function saveBio(){
         if(
             refreshed &&
             typeof refreshed ===
-            "object"
+            "object" &&
+            Object.keys(refreshed).length
         ){
 
             currentProfile =
@@ -4925,6 +4946,10 @@ async function saveBio(){
             error
         );
 
+        bioInput.classList.add(
+            "error"
+        );
+
         bioMessage.textContent =
             formatSaveError(
                 error,
@@ -4933,6 +4958,10 @@ async function saveBio(){
 
         bioMessage.classList.remove(
             "success"
+        );
+
+        shake(
+            bioInput
         );
 
     }finally{
@@ -4993,6 +5022,13 @@ nameInput.addEventListener(
         );
 
         nameInput.classList.remove(
+            "success"
+        );
+
+        nameMessage.textContent =
+            "";
+
+        nameMessage.classList.remove(
             "success"
         );
 
@@ -5073,6 +5109,10 @@ function resetStudioState(){
 function setStudioImage(
     data
 ){
+
+    if(!data){
+        return;
+    }
 
     const image =
         new Image();
@@ -5371,6 +5411,10 @@ function openImageModal(
 
     }
 
+    imageModal.classList.add(
+        "show"
+    );
+
     const existing =
         type === "avatar"
             ? currentProfile.avatar_url
@@ -5384,11 +5428,11 @@ function openImageModal(
 
     }
 
-    imageModal.classList.add(
-        "show"
-    );
-
 }
+
+/* =================================================
+CLOSE IMAGE MODAL
+================================================== */
 
 function closeImageModal(){
 
@@ -5594,6 +5638,25 @@ zoomRange.addEventListener(
                 zoomRange.value
             );
 
+        if(
+            !Number.isFinite(
+                studioState.scale
+            ) ||
+            studioState.scale <= 0
+        ){
+
+            studioState.scale =
+                oldScale;
+
+            zoomRange.value =
+                String(
+                    oldScale
+                );
+
+            return;
+
+        }
+
         const ratio =
             studioState.scale /
             oldScale;
@@ -5740,6 +5803,13 @@ function createCroppedImage(){
     const stageHeight =
         studioStage.clientHeight;
 
+    if(
+        !stageWidth ||
+        !stageHeight
+    ){
+        return null;
+    }
+
     const imageWidth =
         studioState.naturalWidth *
         studioState.scale;
@@ -5874,6 +5944,17 @@ SAVE IMAGE
 
 async function saveImage(){
 
+    if(!currentUser){
+
+        showStatus(
+            "يجب تسجيل الدخول أولًا.",
+            "error"
+        );
+
+        return;
+
+    }
+
     if(!studioState.image){
 
         showStatus(
@@ -5898,11 +5979,22 @@ async function saveImage(){
         return;
     }
 
+    if(
+        !profileEdit ||
+        typeof profileEdit.updateProfileSafely !==
+        "function"
+    ){
+
+        showStatus(
+            "ملف profile-edit.js غير متاح.",
+            "error"
+        );
+
+        return;
+    }
+
     saveImageButton.disabled =
         true;
-
-    let uploadedPath =
-        null;
 
     try{
 
@@ -5918,8 +6010,8 @@ async function saveImage(){
         }
 
         /*
-         * الصورة الجديدة تذهب إلى Storage
-         * بدل تخزين Data URL داخل profiles.
+         * الصورة الجديدة تذهب إلى Storage.
+         * لا يتم تخزين Base64 داخل profiles.
          */
 
         const uploadResult =
@@ -5945,9 +6037,6 @@ async function saveImage(){
 
         }
 
-        uploadedPath =
-            uploadResult.path || null;
-
         const publicUrl =
             uploadResult.cleanUrl ||
             uploadResult.publicUrl;
@@ -5966,21 +6055,9 @@ async function saveImage(){
                 : "cover_url";
 
         /*
-         * التحديث هنا يمر عبر profile-edit.js
-         * حتى لا نرسل username = null.
+         * التحديث يمر عبر profile-edit.js
+         * حتى يبقى username محفوظًا دائمًا.
          */
-
-        if(
-            !profileEdit ||
-            typeof profileEdit.updateProfileSafely !==
-            "function"
-        ){
-
-            throw new Error(
-                "ملف profile-edit.js غير متاح."
-            );
-
-        }
 
         const updateResult =
             await profileEdit.updateProfileSafely(
@@ -5999,6 +6076,11 @@ async function saveImage(){
 
         }
 
+        /*
+         * نحدث النسخة المحلية فقط بعد نجاح
+         * Storage وقاعدة البيانات معًا.
+         */
+
         currentProfile[field] =
             publicUrl;
 
@@ -6014,34 +6096,14 @@ async function saveImage(){
         );
 
         /*
-         * إذا تم رفع الصورة لكن فشل تحديث
-         * profile، نحاول تنظيف الملف الجديد.
+         * لا نحذف الملف هنا.
+         *
+         * السبب:
+         * profile-storage.js يستخدم مسارًا ثابتًا
+         * للصورة الحالية، والحذف في حالة فشل
+         * تحديث profiles قد يؤدي إلى حذف الصورة
+         * الجديدة/الحالية بدلًا من معالجة الخطأ.
          */
-
-        if(
-            uploadedPath &&
-            profileStorage &&
-            typeof profileStorage.deleteImage ===
-            "function"
-        ){
-
-            try{
-
-                await profileStorage.deleteImage({
-                    type:imageType,
-                    userId:currentUser.id
-                });
-
-            }catch(cleanupError){
-
-                console.warn(
-                    "WFESC image cleanup:",
-                    cleanupError
-                );
-
-            }
-
-        }
 
         showStatus(
             formatSaveError(
@@ -6095,8 +6157,7 @@ async function deleteImage(){
                 : "cover_url";
 
         /*
-         * أولًا نفرغ رابط الصورة من profile
-         * بطريقة آمنة تحافظ على username.
+         * أولًا نفرغ الرابط من profiles.
          */
 
         const result =
