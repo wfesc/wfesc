@@ -49,25 +49,20 @@
 
     --keyboard-height:0px;
 
+    /*
+     * بدون كيبورد:
+     * composer فوق شريط التنقل.
+     *
+     * مع الكيبورد:
+     * messages-keyboard.js يغيّر القيمة
+     * إلى ارتفاع الكيبورد الفعلي.
+     */
     --composer-bottom:
-        max(
-            var(--navigation-height),
-            var(--keyboard-height)
-        );
+        var(--navigation-height);
 
     --message-text-scale:1;
 
-    /*
-     * حجم الفقاعات العام.
-     */
     --message-bubble-scale:1;
-
-    /*
-     * إعدادات الرسائل.
-     *
-     * هذه المتغيرات ستستخدم لاحقاً من
-     * messages-settings.js.
-     */
 
     --own-bubble-radius:18px;
     --other-bubble-radius:18px;
@@ -1042,9 +1037,6 @@ img{
         10px
         13px;
 
-    /*
-     * الإعداد الحقيقي لرسائل الطرفين.
-     */
     border-radius:
         var(
             --current-bubble-radius,
@@ -1094,10 +1086,6 @@ img{
 }
 
 
-/*
- * رسائلي
- */
-
 .message-row.mine
 .message-bubble{
 
@@ -1131,10 +1119,6 @@ img{
 }
 
 
-/*
- * رسائل الطرف الآخر
- */
-
 .message-row.theirs
 .message-bubble{
 
@@ -1167,14 +1151,6 @@ img{
         );
 }
 
-
-/*
- * أشكال الفقاعات.
- *
- * يتم التحكم بها لاحقاً من
- * messages-settings.js
- * بواسطة custom properties.
- */
 
 .message-row.mine
 .message-bubble[data-bubble-shape="pill"],
@@ -1820,6 +1796,7 @@ img{
 
     color:
         rgba(184,191,255,.88);
+
 }
 
 .settings-range{
@@ -2639,6 +2616,7 @@ img{
 .wfesc-navigation-keyboard-lock{
 
     transform:none !important;
+
 }
 
 .search-section,
@@ -2646,6 +2624,7 @@ img{
 
     position:relative;
     z-index:10;
+
 }
 
 .messages-page{
@@ -2655,6 +2634,7 @@ img{
             var(--navigation-height) +
             24px
         );
+
 }
 
 .modal{
@@ -2681,6 +2661,7 @@ img{
 body.wfesc-keyboard-open{
 
     overflow:hidden;
+
 }
 
 @supports (height:100dvh){
@@ -2697,6 +2678,7 @@ body.wfesc-keyboard-open{
                 var(--navigation-height) -
                 40px
             );
+
     }
 
 }
@@ -3153,10 +3135,6 @@ body.wfesc-keyboard-open{
         </p>
 
 
-        <!-- =================================================
-             TEXT SIZE
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3187,10 +3165,6 @@ body.wfesc-keyboard-open{
         </div>
 
 
-        <!-- =================================================
-             OWN COLOR
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3219,10 +3193,6 @@ body.wfesc-keyboard-open{
 
         </div>
 
-
-        <!-- =================================================
-             OWN INTENSITY
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -3255,10 +3225,6 @@ body.wfesc-keyboard-open{
         </div>
 
 
-        <!-- =================================================
-             OWN TRANSPARENCY
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3289,10 +3255,6 @@ body.wfesc-keyboard-open{
 
         </div>
 
-
-        <!-- =================================================
-             OWN SHAPE
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -3331,10 +3293,6 @@ body.wfesc-keyboard-open{
         </div>
 
 
-        <!-- =================================================
-             OWN RADIUS
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3365,10 +3323,6 @@ body.wfesc-keyboard-open{
 
         </div>
 
-
-        <!-- =================================================
-             OTHER SHAPE
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -3407,10 +3361,6 @@ body.wfesc-keyboard-open{
         </div>
 
 
-        <!-- =================================================
-             OTHER COLOR
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3439,10 +3389,6 @@ body.wfesc-keyboard-open{
 
         </div>
 
-
-        <!-- =================================================
-             OTHER INTENSITY
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -3475,10 +3421,6 @@ body.wfesc-keyboard-open{
         </div>
 
 
-        <!-- =================================================
-             OTHER TRANSPARENCY
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3509,10 +3451,6 @@ body.wfesc-keyboard-open{
 
         </div>
 
-
-        <!-- =================================================
-             OTHER RADIUS
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -3545,10 +3483,6 @@ body.wfesc-keyboard-open{
         </div>
 
 
-        <!-- =================================================
-             PREVIEW
-        ================================================== -->
-
         <div class="settings-preview">
 
             <div class="preview-title">
@@ -3577,10 +3511,6 @@ body.wfesc-keyboard-open{
 
         </div>
 
-
-        <!-- =================================================
-             ACTIONS
-        ================================================== -->
 
         <div class="modal-actions">
 
@@ -3753,6 +3683,8 @@ body.wfesc-keyboard-open{
 
 <script src="./messages/messages-settings.js"></script>
 
+<script src="./messages/messages-keyboard.js"></script>
+
 
 <!-- =========================================================
      FUTURE MODULES
@@ -3771,325 +3703,6 @@ body.wfesc-keyboard-open{
 ========================================================= -->
 
 <script src="./navigation/navigation-loader.js"></script>
-
-
-<!-- =========================================================
-     MOBILE KEYBOARD ENGINE
-========================================================= -->
-
-<script>
-
-(function(){
-
-    "use strict";
-
-    const root =
-        document.documentElement;
-
-    const body =
-        document.body;
-
-    const chatView =
-        document.getElementById(
-            "chatView"
-        );
-
-    const messageInput =
-        document.getElementById(
-            "messageInput"
-        );
-
-    let lastKeyboardHeight = 0;
-
-    let updateFrame = 0;
-
-
-    function updateKeyboard(){
-
-        if(!window.visualViewport){
-
-            lastKeyboardHeight = 0;
-
-            root.style.setProperty(
-                "--keyboard-height",
-                "0px"
-            );
-
-            root.style.setProperty(
-                "--composer-bottom",
-                "var(--navigation-height)"
-            );
-
-            body.classList.remove(
-                "wfesc-keyboard-open"
-            );
-
-            return;
-        }
-
-
-        const viewport =
-            window.visualViewport;
-
-
-        /*
-         * الحافة السفلية الفعلية للـvisual viewport.
-         */
-
-        const viewportBottom =
-            viewport.height +
-            viewport.offsetTop;
-
-
-        /*
-         * ارتفاع الـlayout viewport.
-         */
-
-        const layoutHeight =
-            document.documentElement.clientHeight ||
-            window.innerHeight;
-
-
-        /*
-         * المساحة الواقعة أسفل visual viewport.
-         */
-
-        let height =
-            layoutHeight -
-            viewportBottom;
-
-
-        height =
-            Math.max(
-                0,
-                Math.round(height)
-            );
-
-
-        /*
-         * تجاهل الفروقات الصغيرة الناتجة
-         * عن system UI.
-         */
-
-        if(height < 80){
-
-            height = 0;
-
-        }
-
-
-        lastKeyboardHeight =
-            height;
-
-
-        root.style.setProperty(
-            "--keyboard-height",
-            height + "px"
-        );
-
-
-        /*
-         * بدون كيبورد:
-         * composer فوق navigation.
-         *
-         * مع الكيبورد:
-         * composer فوق الكيبورد مباشرة.
-         */
-
-        root.style.setProperty(
-            "--composer-bottom",
-            height > 0
-                ? height + "px"
-                : "var(--navigation-height)"
-        );
-
-
-        if(height > 0){
-
-            body.classList.add(
-                "wfesc-keyboard-open"
-            );
-
-        }else{
-
-            body.classList.remove(
-                "wfesc-keyboard-open"
-            );
-
-        }
-
-    }
-
-
-    function scheduleKeyboardUpdate(){
-
-        cancelAnimationFrame(
-            updateFrame
-        );
-
-        updateFrame =
-            requestAnimationFrame(
-                updateKeyboard
-            );
-
-    }
-
-
-    if(window.visualViewport){
-
-        window.visualViewport.addEventListener(
-            "resize",
-            scheduleKeyboardUpdate,
-            {
-                passive:true
-            }
-        );
-
-        window.visualViewport.addEventListener(
-            "scroll",
-            scheduleKeyboardUpdate,
-            {
-                passive:true
-            }
-        );
-
-    }
-
-
-    window.addEventListener(
-        "resize",
-        scheduleKeyboardUpdate,
-        {
-            passive:true
-        }
-    );
-
-
-    window.addEventListener(
-        "orientationchange",
-        function(){
-
-            setTimeout(
-                scheduleKeyboardUpdate,
-                100
-            );
-
-            setTimeout(
-                scheduleKeyboardUpdate,
-                300
-            );
-
-        },
-        {
-            passive:true
-        }
-    );
-
-
-    if(messageInput){
-
-        messageInput.addEventListener(
-            "focus",
-            function(){
-
-                setTimeout(
-                    scheduleKeyboardUpdate,
-                    50
-                );
-
-                setTimeout(
-                    scheduleKeyboardUpdate,
-                    150
-                );
-
-                setTimeout(
-                    scheduleKeyboardUpdate,
-                    300
-                );
-
-                setTimeout(
-                    scheduleKeyboardUpdate,
-                    600
-                );
-
-            }
-        );
-
-
-        messageInput.addEventListener(
-            "blur",
-            function(){
-
-                setTimeout(
-                    scheduleKeyboardUpdate,
-                    100
-                );
-
-                setTimeout(
-                    scheduleKeyboardUpdate,
-                    300
-                );
-
-            }
-        );
-
-    }
-
-
-    if(chatView){
-
-        const observer =
-            new MutationObserver(
-                function(){
-
-                    setTimeout(
-                        scheduleKeyboardUpdate,
-                        40
-                    );
-
-                }
-            );
-
-
-        observer.observe(
-            chatView,
-            {
-                attributes:true,
-                attributeFilter:[
-                    "class"
-                ]
-            }
-        );
-
-    }
-
-
-    /*
-     * أول تشغيل.
-     */
-
-    scheduleKeyboardUpdate();
-
-
-    /*
-     * API لبقية ملفات WFESC.
-     */
-
-    window.WFESC_MESSAGE_KEYBOARD = {
-
-        update:updateKeyboard,
-
-        getHeight:function(){
-
-            return lastKeyboardHeight;
-
-        }
-
-    };
-
-})();
-
-</script>
 
 
 </body>
