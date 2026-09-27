@@ -43,6 +43,18 @@
         SUPABASE_KEY
     );
 
+    /*
+       ========================================================
+       الإصلاح:
+       جعل عميل Supabase متاحًا لباقي ملفات WFESC
+       مثل:
+       profile-storage.js
+       profile-edit.js
+       ========================================================
+    */
+
+    window.WFESCSupabase = client;
+
     /* =========================================================
        متغيرات داخلية
        ========================================================= */
@@ -241,10 +253,6 @@
             const result = await query.maybeSingle();
 
             if (result.error) {
-                /*
-                   بعض إصدارات Supabase ترجع PGRST116
-                   إذا ماكو صف، وهذا مو خطأ حقيقي بالنسبة إلنا.
-                */
 
                 if (result.error.code === "PGRST116") {
                     return {
@@ -273,7 +281,10 @@
             };
 
         } catch (error) {
-            if (error && error.code === "USERNAME_CHECK_FAILED") {
+            if (
+                error &&
+                error.code === "USERNAME_CHECK_FAILED"
+            ) {
                 throw error;
             }
 
@@ -396,9 +407,9 @@
                 );
         }
 
-        /*
+        /* -----------------------------------------------------
            إضافات الملف الشخصي الجديدة
-        */
+           ----------------------------------------------------- */
 
         if (
             updates &&
@@ -868,7 +879,6 @@
 
             /*
                البريد مستخدم مسبقًا
-               إذا رجعه Supabase بشكل صريح.
             */
 
             const message =
@@ -932,11 +942,6 @@
                 }
 
             } catch (profileError) {
-
-                /*
-                   إذا كان السبب Username مكرر
-                   نرجعه بشكل واضح للواجهة.
-                */
 
                 if (
                     isUsernameTakenError(
@@ -1005,11 +1010,6 @@
                     String(
                         result.error.message || ""
                     ).toLowerCase();
-
-                /*
-                   الخطأ الطبيعي من Supabase:
-                   Invalid login credentials
-                */
 
                 if (
                     message.includes(
@@ -1230,13 +1230,9 @@
         }
 
         /*
-           ملاحظة:
            حذف مستخدم Supabase Auth بشكل نهائي يحتاج
            Service Role / Edge Function آمنة من الخادم.
            لا نضع Service Role Key داخل الموقع.
-
-           لذلك هذه الدالة ترجع رسالة واضحة بدل تنفيذ
-           حذف خطير أو غير آمن من المتصفح.
         */
 
         throw createError(
