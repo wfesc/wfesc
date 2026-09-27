@@ -24,23 +24,47 @@
 
     --glass:rgba(255,255,255,.055);
     --glass-2:rgba(255,255,255,.075);
+    --glass-strong:rgba(255,255,255,.09);
 
-    --border:rgba(255,255,255,.11);
-    --border-light:rgba(255,255,255,.17);
+    --border:rgba(255,255,255,.10);
+    --border-light:rgba(255,255,255,.16);
 
     --text:#f5f5f5;
     --muted:#929292;
 
     --green:#36e27b;
-    --green-soft:rgba(54,226,123,.14);
+    --green-soft:rgba(54,226,123,.10);
+
+    /* لون واجهة الإعدادات الجديد */
+    --accent:#9aa7ff;
+    --accent-soft:rgba(154,167,255,.12);
+    --accent-border:rgba(154,167,255,.20);
 
     --danger:#ff5252;
 
     --shadow:
         0 20px 70px rgba(0,0,0,.55);
 
-    --keyboard-height:0px;
+    /*
+     * ارتفاع التنقل السفلي.
+     * يبقى ثابتاً ولا يتحرك مع الكيبورد.
+     */
     --navigation-height:82px;
+
+    /*
+     * ارتفاع الكيبورد الذي نحسبه بواسطة
+     * visualViewport.
+     */
+    --keyboard-height:0px;
+
+    /*
+     * مساحة فعلية يستخدمها الـ composer.
+     */
+    --composer-bottom:
+        max(
+            var(--navigation-height),
+            var(--keyboard-height)
+        );
 
     --message-text-scale:1;
     --message-bubble-scale:1;
@@ -81,6 +105,11 @@ body{
         sans-serif;
 
     overflow-x:hidden;
+
+    /*
+     * يمنع تحرك الصفحة نفسها أثناء الكتابة.
+     */
+    overscroll-behavior-y:none;
 }
 
 button,
@@ -117,7 +146,6 @@ img{
     padding-bottom:
         calc(
             var(--navigation-height) +
-            var(--keyboard-height) +
             24px
         );
 }
@@ -148,16 +176,23 @@ img{
         10px;
 
     background:
-        rgba(3,3,3,.78);
+        rgba(3,3,3,.70);
 
     backdrop-filter:
-        blur(22px);
+        blur(28px)
+        saturate(150%);
 
     -webkit-backdrop-filter:
-        blur(22px);
+        blur(28px)
+        saturate(150%);
 
     border-bottom:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.08);
+
+    box-shadow:
+        0 8px 30px
+        rgba(0,0,0,.12);
 }
 
 .header-title{
@@ -192,17 +227,38 @@ img{
 
     border-radius:15px;
 
-    background:var(--glass);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.085),
+            rgba(255,255,255,.035)
+        );
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 
     color:var(--text);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.05),
+        0 7px 22px
+        rgba(0,0,0,.18);
+
+    backdrop-filter:
+        blur(18px)
+        saturate(140%);
+
+    -webkit-backdrop-filter:
+        blur(18px)
+        saturate(140%);
 
     transition:
         transform .2s ease,
         background .2s ease,
-        border-color .2s ease;
+        border-color .2s ease,
+        box-shadow .2s ease;
 }
 
 .icon-button:active{
@@ -210,10 +266,17 @@ img{
 }
 
 .icon-button:hover{
-    background:var(--glass-2);
+    background:
+        rgba(255,255,255,.095);
 
     border-color:
-        var(--border-light);
+        rgba(255,255,255,.17);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.07),
+        0 9px 26px
+        rgba(0,0,0,.24);
 }
 
 
@@ -294,14 +357,23 @@ img{
 
     color:var(--text);
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.045);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.09);
+
+    backdrop-filter:
+        blur(20px);
+
+    -webkit-backdrop-filter:
+        blur(20px);
 
     transition:
         border-color .2s ease,
-        background .2s ease;
+        background .2s ease,
+        box-shadow .2s ease;
 }
 
 .search-input::placeholder{
@@ -310,10 +382,14 @@ img{
 
 .search-input:focus{
     border-color:
-        rgba(54,226,123,.35);
+        rgba(154,167,255,.25);
 
     background:
-        var(--glass-2);
+        rgba(255,255,255,.065);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(154,167,255,.045);
 }
 
 .search-icon{
@@ -353,16 +429,18 @@ img{
 
     transition:
         background .2s ease,
-        color .2s ease;
+        color .2s ease,
+        border-color .2s ease;
 }
 
 .search-mode button.active{
     color:var(--text);
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.055);
 
     border-color:
-        var(--border);
+        rgba(255,255,255,.10);
 }
 
 
@@ -397,12 +475,18 @@ img{
 
     border-radius:18px;
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.045);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.09);
 
     cursor:pointer;
+
+    backdrop-filter:blur(18px);
+
+    -webkit-backdrop-filter:blur(18px);
 
     animation:
         conversationIn
@@ -474,12 +558,32 @@ img{
 
     border-radius:20px;
 
-    background:var(--glass);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.065),
+            rgba(255,255,255,.028)
+        );
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.09);
 
     cursor:pointer;
+
+    backdrop-filter:
+        blur(22px)
+        saturate(135%);
+
+    -webkit-backdrop-filter:
+        blur(22px)
+        saturate(135%);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.045),
+        0 10px 30px
+        rgba(0,0,0,.16);
 
     transition:
         transform .2s ease,
@@ -488,7 +592,8 @@ img{
 }
 
 .conversation-card:hover{
-    background:var(--glass-2);
+    background:
+        rgba(255,255,255,.075);
 }
 
 .conversation-card:active{
@@ -511,7 +616,8 @@ img{
     background:#111;
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 }
 
 .online-dot{
@@ -601,6 +707,14 @@ img{
    CHAT VIEW
 ========================================================= */
 
+/*
+ * مهم:
+ *
+ * الـ chat لا يغطي منطقة التنقل.
+ * نتركه بكامل الشاشة، لكن التنقل الخارجي يبقى
+ * فوقه حسب z-index الخاص به.
+ */
+
 .chat-view{
     position:fixed;
 
@@ -610,11 +724,31 @@ img{
 
     display:none;
 
-    background:#030303;
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(255,255,255,.035),
+            transparent 38%
+        ),
+        rgba(3,3,3,.97);
+
+    overflow:hidden;
+
+    /*
+     * Liquid Glass base
+     */
+    backdrop-filter:
+        blur(24px)
+        saturate(135%);
+
+    -webkit-backdrop-filter:
+        blur(24px)
+        saturate(135%);
 }
 
 .chat-view.open{
     display:flex;
+
     flex-direction:column;
 }
 
@@ -642,16 +776,27 @@ img{
         8px;
 
     background:
-        rgba(3,3,3,.88);
+        linear-gradient(
+            180deg,
+            rgba(12,12,12,.86),
+            rgba(7,7,7,.70)
+        );
 
     backdrop-filter:
-        blur(24px);
+        blur(30px)
+        saturate(160%);
 
     -webkit-backdrop-filter:
-        blur(24px);
+        blur(30px)
+        saturate(160%);
 
     border-bottom:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.085);
+
+    box-shadow:
+        0 8px 30px
+        rgba(0,0,0,.16);
 
     z-index:20;
 }
@@ -666,9 +811,18 @@ img{
     align-items:center;
     justify-content:center;
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.055);
 
     color:var(--text);
+
+    border:
+        1px solid
+        rgba(255,255,255,.09);
+
+    backdrop-filter:blur(18px);
+
+    -webkit-backdrop-filter:blur(18px);
 
     transition:
         transform .2s ease,
@@ -747,16 +901,19 @@ img{
     padding:5px 8px;
 
     background:
-        rgba(15,15,15,.94);
+        rgba(15,15,15,.84);
 
     backdrop-filter:
-        blur(20px);
+        blur(25px)
+        saturate(150%);
 
     -webkit-backdrop-filter:
-        blur(20px);
+        blur(25px)
+        saturate(150%);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 
     border-radius:
         0
@@ -789,7 +946,12 @@ img{
 
     color:var(--text);
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.055);
+
+    border:
+        1px solid
+        rgba(255,255,255,.08);
 }
 
 
@@ -805,17 +967,36 @@ img{
     overflow-y:auto;
     overflow-x:hidden;
 
+    /*
+     * المساحة السفلية ديناميكية:
+     * - navigation عندما لا يوجد كيبورد
+     * - keyboard عندما يوجد كيبورد
+     * + مساحة للـcomposer
+     */
     padding:
         16px
         12px
         calc(
-            90px +
-            var(--keyboard-height)
+            82px +
+            max(
+                var(--navigation-height),
+                var(--keyboard-height)
+            )
         );
 
     scroll-behavior:smooth;
 
     overscroll-behavior:contain;
+
+    /*
+     * Liquid Glass layer
+     */
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(255,255,255,.018),
+            transparent 42%
+        );
 }
 
 .chat-messages::-webkit-scrollbar{
@@ -868,10 +1049,12 @@ img{
             var(--message-bubble-scale)
         );
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.055);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 
     transform:
         scale(
@@ -880,19 +1063,43 @@ img{
 
     transform-origin:center;
 
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.035),
+        0 8px 25px
+        rgba(0,0,0,.10);
+
+    backdrop-filter:
+        blur(18px)
+        saturate(135%);
+
+    -webkit-backdrop-filter:
+        blur(18px)
+        saturate(135%);
+
     transition:
         background .2s ease,
         border-radius .2s ease,
-        transform .2s ease;
+        transform .2s ease,
+        box-shadow .2s ease;
 }
 
 .message-row.mine
 .message-bubble{
     background:
-        rgba(54,226,123,.13);
+        rgba(154,167,255,.10);
 
     border-color:
-        rgba(54,226,123,.2);
+        rgba(154,167,255,.16);
+}
+
+.message-row.theirs
+.message-bubble{
+    background:
+        rgba(255,255,255,.052);
+
+    border-color:
+        rgba(255,255,255,.095);
 }
 
 .message-content{
@@ -947,7 +1154,9 @@ img{
 .message-bubble{
     box-shadow:
         0 0 0 2px
-        rgba(54,226,123,.45);
+        rgba(154,167,255,.35),
+        0 12px 30px
+        rgba(0,0,0,.20);
 }
 
 
@@ -958,10 +1167,13 @@ img{
 .typing-indicator{
     position:absolute;
 
+    /*
+     * فوق الـcomposer دائماً.
+     */
     bottom:
         calc(
-            72px +
-            var(--keyboard-height)
+            var(--composer-bottom) +
+            70px
         );
 
     right:14px;
@@ -978,14 +1190,31 @@ img{
 
     border-radius:15px;
 
-    background:var(--glass-2);
+    background:
+        rgba(255,255,255,.065);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 
     color:var(--muted);
 
+    backdrop-filter:
+        blur(22px)
+        saturate(140%);
+
+    -webkit-backdrop-filter:
+        blur(22px)
+        saturate(140%);
+
+    box-shadow:
+        0 10px 30px
+        rgba(0,0,0,.18);
+
     z-index:12;
+
+    transition:
+        bottom .08s linear;
 }
 
 .typing-indicator.show{
@@ -998,7 +1227,8 @@ img{
 
     border-radius:50%;
 
-    background:var(--green);
+    background:
+        rgba(255,255,255,.65);
 
     animation:
         typingBounce
@@ -1019,6 +1249,18 @@ img{
    COMPOSER
 ========================================================= */
 
+/*
+ * هذا هو الإصلاح الأساسي.
+ *
+ * عندما لا يوجد كيبورد:
+ * bottom = navigation-height
+ *
+ * عندما يظهر الكيبورد:
+ * bottom = keyboard-height
+ *
+ * وبذلك لا يتحرك navigation نفسه.
+ */
+
 .message-composer{
     position:absolute;
 
@@ -1026,7 +1268,7 @@ img{
     left:0;
 
     bottom:
-        var(--keyboard-height);
+        var(--composer-bottom);
 
     z-index:18;
 
@@ -1039,16 +1281,27 @@ img{
         );
 
     background:
-        rgba(3,3,3,.9);
+        linear-gradient(
+            180deg,
+            rgba(8,8,8,.70),
+            rgba(5,5,5,.90)
+        );
 
     backdrop-filter:
-        blur(24px);
+        blur(30px)
+        saturate(160%);
 
     -webkit-backdrop-filter:
-        blur(24px);
+        blur(30px)
+        saturate(160%);
 
     border-top:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.085);
+
+    box-shadow:
+        0 -10px 35px
+        rgba(0,0,0,.18);
 
     transition:
         bottom .08s linear;
@@ -1078,14 +1331,26 @@ img{
 
     color:var(--text);
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.055);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 
     border-radius:16px;
 
     line-height:1.5;
+
+    backdrop-filter:
+        blur(20px);
+
+    -webkit-backdrop-filter:
+        blur(20px);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.035);
 }
 
 .message-input::placeholder{
@@ -1094,7 +1359,14 @@ img{
 
 .message-input:focus{
     border-color:
-        rgba(54,226,123,.35);
+        rgba(154,167,255,.24);
+
+    background:
+        rgba(255,255,255,.068);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(154,167,255,.035);
 }
 
 .send-button{
@@ -1105,16 +1377,44 @@ img{
 
     border-radius:15px;
 
-    background:var(--green);
+    /*
+     * لم يعد أخضر قوياً.
+     * لون زجاجي فاتح وحيوي.
+     */
+    background:
+        linear-gradient(
+            145deg,
+            rgba(154,167,255,.76),
+            rgba(122,138,220,.54)
+        );
 
-    color:#031008;
+    color:#fff;
+
+    border:
+        1px solid
+        rgba(255,255,255,.18);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.16),
+        0 7px 22px
+        rgba(90,105,190,.16);
+
+    backdrop-filter:
+        blur(18px)
+        saturate(145%);
+
+    -webkit-backdrop-filter:
+        blur(18px)
+        saturate(145%);
 
     font-size:18px;
     font-weight:900;
 
     transition:
         transform .2s ease,
-        opacity .2s ease;
+        opacity .2s ease,
+        background .2s ease;
 }
 
 .send-button:active{
@@ -1190,16 +1490,19 @@ img{
     border-radius:17px;
 
     background:
-        rgba(20,20,20,.96);
+        rgba(20,20,20,.82);
 
     backdrop-filter:
-        blur(25px);
+        blur(28px)
+        saturate(150%);
 
     -webkit-backdrop-filter:
-        blur(25px);
+        blur(28px)
+        saturate(150%);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.11);
 
     box-shadow:var(--shadow);
 }
@@ -1251,10 +1554,6 @@ img{
     align-items:center;
     justify-content:center;
 
-    /*
-     * مساحة إضافية من الأسفل حتى لا يغطي
-     * شريط التنقل البطاقة أو أزرارها.
-     */
     padding:
         20px
         20px
@@ -1266,13 +1565,15 @@ img{
     z-index:1200;
 
     background:
-        rgba(0,0,0,.72);
+        rgba(0,0,0,.66);
 
     backdrop-filter:
-        blur(10px);
+        blur(14px)
+        saturate(130%);
 
     -webkit-backdrop-filter:
-        blur(10px);
+        blur(14px)
+        saturate(130%);
 }
 
 .modal.show{
@@ -1300,12 +1601,28 @@ img{
     border-radius:24px;
 
     background:
-        rgba(18,18,18,.94);
+        linear-gradient(
+            145deg,
+            rgba(28,28,28,.90),
+            rgba(12,12,12,.86)
+        );
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.11);
 
-    box-shadow:var(--shadow);
+    box-shadow:
+        var(--shadow),
+        inset 0 1px 0
+        rgba(255,255,255,.045);
+
+    backdrop-filter:
+        blur(32px)
+        saturate(150%);
+
+    -webkit-backdrop-filter:
+        blur(32px)
+        saturate(150%);
 
     animation:
         modalIn
@@ -1345,10 +1662,16 @@ img{
 .modal-cancel{
     color:var(--text);
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.045);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
+
+    backdrop-filter:blur(15px);
+
+    -webkit-backdrop-filter:blur(15px);
 }
 
 .modal-confirm{
@@ -1378,15 +1701,55 @@ img{
 }
 
 .settings-value{
-    color:var(--green);
+    color:
+        rgba(184,191,255,.88);
 }
+
+
+/*
+ * السلايدر صار بلون هادئ بدل الأخضر.
+ */
 
 .settings-range{
     width:100%;
 
-    accent-color:var(--green);
+    accent-color:
+        #a3adff;
 
     cursor:pointer;
+}
+
+
+/* Chrome / Android */
+
+.settings-range::-webkit-slider-runnable-track{
+    height:4px;
+
+    border-radius:10px;
+
+    background:
+        rgba(255,255,255,.10);
+}
+
+.settings-range::-webkit-slider-thumb{
+    appearance:none;
+
+    width:16px;
+    height:16px;
+
+    margin-top:-6px;
+
+    border-radius:50%;
+
+    background:#a3adff;
+
+    border:
+        2px solid
+        rgba(255,255,255,.85);
+
+    box-shadow:
+        0 0 14px
+        rgba(154,167,255,.22);
 }
 
 
@@ -1440,7 +1803,7 @@ img{
 
     box-shadow:
         0 0 0 2px
-        rgba(54,226,123,.45);
+        rgba(154,167,255,.40);
 }
 
 
@@ -1455,10 +1818,24 @@ img{
 
     border-radius:20px;
 
-    background:var(--glass);
+    background:
+        rgba(255,255,255,.045);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.09);
+
+    backdrop-filter:
+        blur(24px)
+        saturate(140%);
+
+    -webkit-backdrop-filter:
+        blur(24px)
+        saturate(140%);
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.035);
 }
 
 .preview-title{
@@ -1466,7 +1843,15 @@ img{
 
     font-size:11px;
 
-    margin-bottom:10px;
+    margin-bottom:12px;
+}
+
+.preview-messages{
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
 }
 
 .preview-message{
@@ -1480,14 +1865,36 @@ img{
 
     border-radius:18px;
 
-    background:
-        rgba(54,226,123,.14);
-
     border:
         1px solid
-        rgba(54,226,123,.2);
+        rgba(255,255,255,.10);
 
+    backdrop-filter:
+        blur(18px);
+
+    -webkit-backdrop-filter:
+        blur(18px);
+
+    font-size:13px;
+
+    line-height:1.5;
+}
+
+.preview-message.own{
     margin-right:auto;
+
+    background:
+        rgba(154,167,255,.12);
+
+    border-color:
+        rgba(154,167,255,.18);
+}
+
+.preview-message.other{
+    margin-left:auto;
+
+    background:
+        rgba(255,255,255,.055);
 }
 
 
@@ -1528,14 +1935,15 @@ img{
 
 .activity-switch.active{
     background:
-        rgba(54,226,123,.25);
+        rgba(154,167,255,.18);
 }
 
 .activity-switch.active::after{
     transform:
         translateX(-22px);
 
-    background:var(--green);
+    background:
+        #a3adff;
 }
 
 
@@ -1569,16 +1977,19 @@ img{
     border-radius:22px;
 
     background:
-        rgba(16,16,16,.96);
+        rgba(16,16,16,.82);
 
     backdrop-filter:
-        blur(25px);
+        blur(30px)
+        saturate(150%);
 
     -webkit-backdrop-filter:
-        blur(25px);
+        blur(30px)
+        saturate(150%);
 
     border:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.10);
 
     box-shadow:var(--shadow);
 }
@@ -1602,7 +2013,8 @@ img{
     padding:14px;
 
     border-bottom:
-        1px solid var(--border);
+        1px solid
+        rgba(255,255,255,.08);
 }
 
 .notifications-title{
@@ -1610,7 +2022,8 @@ img{
 }
 
 .notifications-clear{
-    color:var(--green);
+    color:
+        rgba(184,191,255,.90);
 
     background:transparent;
 
@@ -1646,7 +2059,7 @@ img{
 
 .notification-item.unread{
     background:
-        rgba(54,226,123,.06);
+        rgba(154,167,255,.055);
 }
 
 .notification-icon{
@@ -1711,18 +2124,14 @@ img{
     z-index:1300;
 
     background:
-        rgba(0,0,0,.5);
+        rgba(0,0,0,.48);
 
     backdrop-filter:
-        blur(8px);
+        blur(12px);
 
     -webkit-backdrop-filter:
-        blur(8px);
+        blur(12px);
 
-    /*
-     * نخلي رسالة النجاح بمنتصف الشاشة
-     * وبعيدة عن شريط التنقل.
-     */
     padding-bottom:
         var(--navigation-height);
 }
@@ -1739,13 +2148,26 @@ img{
     border-radius:20px;
 
     background:
-        rgba(20,20,20,.95);
+        rgba(20,20,20,.82);
 
     border:
         1px solid
-        rgba(54,226,123,.3);
+        rgba(255,255,255,.12);
 
     text-align:center;
+
+    box-shadow:
+        var(--shadow),
+        inset 0 1px 0
+        rgba(255,255,255,.05);
+
+    backdrop-filter:
+        blur(28px)
+        saturate(150%);
+
+    -webkit-backdrop-filter:
+        blur(28px)
+        saturate(150%);
 
     animation:
         modalIn
@@ -1952,27 +2374,21 @@ img{
 
 
 /* =========================================================
-   NAVIGATION KEYBOARD LOCK
+   NAVIGATION
 ========================================================= */
 
 .wfesc-navigation-keyboard-lock{
-    transform:
-        translateY(
-            var(
-                --wfesc-nav-keyboard-shift,
-                0px
-            )
-        );
+    /*
+     * مهم:
+     * لا نحرك شريط التنقل مع الكيبورد.
+     */
+    transform:none !important;
 }
 
 
-/* =========================================================
-   NAVIGATION OVERLAP FIX
-========================================================= */
-
 /*
- * عناصر البحث تبقى فوق محتوى الصفحة
- * ولا تدخل تحت طبقة التنقل.
+ * لا نخلي عناصر صفحة الرسائل تدخل خلف
+ * شريط التنقل.
  */
 
 .search-section,
@@ -1981,55 +2397,60 @@ img{
     z-index:10;
 }
 
-
-/*
- * صفحة الرسائل تترك مساحة فعلية
- * أسفلها للتنقل.
- */
-
 .messages-page{
     padding-bottom:
         calc(
             var(--navigation-height) +
-            var(--keyboard-height) +
             24px
         );
 }
-
-
-/*
- * النوافذ المنبثقة فوق التنقل.
- */
 
 .modal{
     z-index:1200;
 }
 
-
-/*
- * قائمة السياق فوق كل شيء.
- */
-
 .context-menu{
     z-index:1500;
 }
-
-
-/*
- * الإشعارات فوق محتوى الصفحة.
- */
 
 .notifications-panel{
     z-index:1100;
 }
 
-
-/*
- * نجاح الحفظ فوق كل شيء.
- */
-
 .success-overlay{
     z-index:1300;
+}
+
+
+/* =========================================================
+   EXTRA MOBILE KEYBOARD SAFETY
+========================================================= */
+
+@supports (height:100dvh){
+
+    .chat-view{
+        height:100dvh;
+    }
+
+    .modal-card{
+        max-height:
+            calc(
+                100dvh -
+                var(--navigation-height) -
+                40px
+            );
+    }
+
+}
+
+
+/*
+ * عندما الكيبورد يظهر:
+ * لا نريد الصفحة نفسها أن تتمدد أو تتحرك.
+ */
+
+body.wfesc-keyboard-open{
+    overflow:hidden;
 }
 
 </style>
@@ -2520,9 +2941,7 @@ img{
         </p>
 
 
-        <!-- =================================================
-             TEXT SIZE
-        ================================================== -->
+        <!-- TEXT SIZE -->
 
         <div class="settings-group">
 
@@ -2554,9 +2973,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OWN MESSAGE COLORS
-        ================================================== -->
+        <!-- OWN COLORS -->
 
         <div class="settings-group">
 
@@ -2576,9 +2993,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OWN COLOR INTENSITY
-        ================================================== -->
+        <!-- OWN INTENSITY -->
 
         <div class="settings-group">
 
@@ -2611,9 +3026,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OWN TRANSPARENCY
-        ================================================== -->
+        <!-- OWN TRANSPARENCY -->
 
         <div class="settings-group">
 
@@ -2646,9 +3059,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OTHER BUBBLE SHAPE
-        ================================================== -->
+        <!-- OTHER SHAPE -->
 
         <div class="settings-group">
 
@@ -2668,8 +3079,8 @@ img{
                     padding:11px;
                     border-radius:14px;
                     color:#fff;
-                    background:#111;
-                    border:1px solid var(--border);
+                    background:rgba(255,255,255,.045);
+                    border:1px solid rgba(255,255,255,.10);
                     outline:none;
                 "
             >
@@ -2695,9 +3106,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OTHER COLOR
-        ================================================== -->
+        <!-- OTHER COLOR -->
 
         <div class="settings-group">
 
@@ -2718,7 +3127,7 @@ img{
                     width:100%;
                     height:45px;
                     padding:2px;
-                    border:1px solid var(--border);
+                    border:1px solid rgba(255,255,255,.10);
                     border-radius:13px;
                     background:#111;
                 "
@@ -2727,9 +3136,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OTHER INTENSITY
-        ================================================== -->
+        <!-- OTHER INTENSITY -->
 
         <div class="settings-group">
 
@@ -2762,9 +3169,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             OTHER TRANSPARENCY
-        ================================================== -->
+        <!-- OTHER TRANSPARENCY -->
 
         <div class="settings-group">
 
@@ -2797,9 +3202,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             BUBBLE RADIUS
-        ================================================== -->
+        <!-- RADIUS -->
 
         <div class="settings-group">
 
@@ -2832,9 +3235,7 @@ img{
         </div>
 
 
-        <!-- =================================================
-             PREVIEW
-        ================================================== -->
+        <!-- PREVIEW -->
 
         <div class="settings-preview">
 
@@ -2843,16 +3244,29 @@ img{
             </div>
 
 
-            <div class="preview-message">
-                هذه معاينة لشكل الرسالة
+            <div class="preview-messages">
+
+                <div
+                    class="preview-message other"
+                    id="previewOtherMessage"
+                >
+                    رسالة الطرف الآخر
+                </div>
+
+
+                <div
+                    class="preview-message own"
+                    id="previewOwnMessage"
+                >
+                    هذه معاينة لرسالتك
+                </div>
+
             </div>
 
         </div>
 
 
-        <!-- =================================================
-             ACTIONS
-        ================================================== -->
+        <!-- ACTIONS -->
 
         <div class="modal-actions">
 
@@ -3030,7 +3444,6 @@ img{
 
 <!-- =========================================================
      FUTURE MODULES
-     لا تضفها حالياً
 ========================================================= -->
 
 <!--
@@ -3047,6 +3460,332 @@ img{
 ========================================================= -->
 
 <script src="./navigation/navigation-loader.js"></script>
+
+
+
+<!-- =========================================================
+     MOBILE KEYBOARD ENGINE
+========================================================= -->
+
+<script>
+
+(function(){
+
+    "use strict";
+
+    /*
+     * محرك الكيبورد الخاص بصفحة الرسائل.
+     *
+     * لا يغير شريط التنقل.
+     * فقط يحسب المساحة التي يشغلها الكيبورد.
+     */
+
+    const root =
+        document.documentElement;
+
+    const body =
+        document.body;
+
+    const chatView =
+        document.getElementById(
+            "chatView"
+        );
+
+    const messageInput =
+        document.getElementById(
+            "messageInput"
+        );
+
+    const chatMessages =
+        document.getElementById(
+            "chatMessages"
+        );
+
+
+    let lastKeyboardHeight = 0;
+
+
+    function updateKeyboard(){
+
+        if(!window.visualViewport){
+
+            root.style.setProperty(
+                "--keyboard-height",
+                "0px"
+            );
+
+            root.style.setProperty(
+                "--composer-bottom",
+                "var(--navigation-height)"
+            );
+
+            return;
+        }
+
+
+        const viewport =
+            window.visualViewport;
+
+
+        /*
+         * المسافة بين حجم الشاشة الطبيعي
+         * وحجم الـvisual viewport الحالي.
+         */
+
+        const rawHeight =
+            Math.max(
+                0,
+                window.innerHeight -
+                viewport.height -
+                viewport.offsetTop
+            );
+
+
+        /*
+         * نتجاهل الفروقات الصغيرة الناتجة
+         * عن شريط المتصفح أو safe-area.
+         */
+
+        const keyboardHeight =
+            rawHeight > 90
+                ? rawHeight
+                : 0;
+
+
+        lastKeyboardHeight =
+            keyboardHeight;
+
+
+        root.style.setProperty(
+            "--keyboard-height",
+            keyboardHeight + "px"
+        );
+
+
+        /*
+         * إذا الكيبورد موجود:
+         * composer فوقه.
+         *
+         * إذا غير موجود:
+         * composer فوق navigation.
+         */
+
+        root.style.setProperty(
+            "--composer-bottom",
+            keyboardHeight > 0
+                ? keyboardHeight + "px"
+                : "var(--navigation-height)"
+        );
+
+
+        if(keyboardHeight > 0){
+
+            body.classList.add(
+                "wfesc-keyboard-open"
+            );
+
+        }else{
+
+            body.classList.remove(
+                "wfesc-keyboard-open"
+            );
+
+        }
+
+
+        /*
+         * لا نحرك navigation.
+         *
+         * فقط نضمن أن الرسائل الأخيرة
+         * لا تختفي تحت composer.
+         */
+
+        if(
+            chatView &&
+            chatView.classList.contains("open")
+        ){
+
+            requestAnimationFrame(function(){
+
+                if(
+                    document.activeElement ===
+                    messageInput
+                ){
+
+                    /*
+                     * لا نذهب لآخر الرسائل بالقوة.
+                     * فقط نضمن أن input ظاهر.
+                     */
+
+                    try{
+
+                        messageInput.scrollIntoView({
+                            block:"nearest",
+                            inline:"nearest"
+                        });
+
+                    }catch(error){}
+
+                }
+
+            });
+
+        }
+
+    }
+
+
+    function refreshAfterResize(){
+
+        requestAnimationFrame(
+            updateKeyboard
+        );
+
+    }
+
+
+    if(window.visualViewport){
+
+        window.visualViewport.addEventListener(
+            "resize",
+            refreshAfterResize,
+            {passive:true}
+        );
+
+        window.visualViewport.addEventListener(
+            "scroll",
+            refreshAfterResize,
+            {passive:true}
+        );
+
+    }
+
+
+    window.addEventListener(
+        "resize",
+        refreshAfterResize,
+        {passive:true}
+    );
+
+
+    window.addEventListener(
+        "orientationchange",
+        function(){
+
+            setTimeout(
+                updateKeyboard,
+                180
+            );
+
+        },
+        {passive:true}
+    );
+
+
+    /*
+     * عند فتح حقل الكتابة:
+     * ننتظر ظهور الكيبورد ثم نعيد الحساب.
+     */
+
+    if(messageInput){
+
+        messageInput.addEventListener(
+            "focus",
+            function(){
+
+                setTimeout(
+                    updateKeyboard,
+                    80
+                );
+
+                setTimeout(
+                    updateKeyboard,
+                    250
+                );
+
+                setTimeout(
+                    updateKeyboard,
+                    500
+                );
+
+            }
+        );
+
+
+        messageInput.addEventListener(
+            "blur",
+            function(){
+
+                setTimeout(
+                    updateKeyboard,
+                    120
+                );
+
+            }
+        );
+
+    }
+
+
+    /*
+     * مراقبة فتح/إغلاق المحادثة.
+     */
+
+    if(chatView){
+
+        const observer =
+            new MutationObserver(
+                function(){
+
+                    setTimeout(
+                        updateKeyboard,
+                        50
+                    );
+
+                }
+            );
+
+
+        observer.observe(
+            chatView,
+            {
+                attributes:true,
+                attributeFilter:[
+                    "class"
+                ]
+            }
+        );
+
+    }
+
+
+    /*
+     * أول تشغيل.
+     */
+
+    updateKeyboard();
+
+
+    /*
+     * متاح لبقية ملفات WFESC
+     * إذا احتاجت تحديث الوضع.
+     */
+
+    window.WFESC_MESSAGE_KEYBOARD = {
+
+        update:updateKeyboard,
+
+        getHeight:function(){
+
+            return lastKeyboardHeight;
+
+        }
+
+    };
+
+})();
+
+</script>
 
 
 </body>
