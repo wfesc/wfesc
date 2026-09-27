@@ -4,7 +4,7 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       الإصدار المحسن + منع تكرار الرسائل Optimistic/Realtime
+       الإصدار المحسن النهائي
 
        مسؤول عن:
        - Supabase
@@ -18,6 +18,7 @@
        - بيانات جهة الاتصال
        - رسم الرسائل
        - منع تكرار الرسائل
+       - دمج Optimistic + Realtime
        - ربط إعدادات الفقاعات
     ============================================================
     */
@@ -92,6 +93,14 @@
         `);
 
 
+    /*
+       مدة صلاحية حالة جاري الكتابة عند الطرف الآخر.
+       يتم تمديدها مع كل نبضة كتابة.
+    */
+    const TYPING_REMOTE_TIMEOUT =
+        2600;
+
+
     /* =========================================================
        STATE
     ========================================================= */
@@ -123,6 +132,8 @@
     let isTyping = false;
 
     let typingUsers = new Set();
+
+    let typingUserTimers = new Map();
 
     let realtimeStarted = false;
 
@@ -306,7 +317,9 @@
     function isMessageMine(message) {
 
         const senderId =
-            getMessageSenderId(message);
+            getMessageSenderId(
+                message
+            );
 
         return (
             senderId != null &&
@@ -947,12 +960,14 @@
 
 
     /* =========================================================
-       TYPING UI
+       TYPING INDICATOR ELEMENT
+       خارج chatMessages
+       فوق حقل الكتابة مباشرة
     ========================================================= */
 
     function ensureTypingElement() {
 
-        if (!chatMessages) {
+        if (!chatView) {
             return null;
         }
 
@@ -984,9 +999,11 @@
 
         typing.innerHTML = `
             <div class="wfesc-typing-bubble">
+
                 <span></span>
                 <span></span>
                 <span></span>
+
             </div>
 
             <span class="wfesc-typing-text">
@@ -995,15 +1012,41 @@
         `;
 
 
+        /*
+           نخليه فوق composer مباشرة.
+           لا يدخل ضمن scroll الخاص بالرسائل.
+        */
         typing.style.cssText = `
+            position:absolute;
+            right:12px;
+            left:12px;
+            bottom:calc(
+                var(--composer-bottom, 82px) + 62px
+            );
+            z-index:25;
+
             display:none;
+
             align-items:center;
+            justify-content:flex-start;
             gap:8px;
-            padding:5px 12px 9px;
+
+            min-height:34px;
+            padding:4px 4px;
+
             color:#999;
             font-size:12px;
+
             direction:rtl;
+
+            pointer-events:none;
+
             animation:wfescTypingFade .18s ease;
+
+            transition:
+                bottom .08s linear,
+                opacity .18s ease,
+                transform .18s ease;
         `;
 
 
@@ -1028,6 +1071,7 @@
 
             style.textContent = `
                 @keyframes wfescTypingFade {
+
                     from {
                         opacity:0;
                         transform:translateY(5px);
@@ -1037,46 +1081,105 @@
                         opacity:1;
                         transform:translateY(0);
                     }
+
                 }
 
+
                 @keyframes wfescTypingDot {
+
                     0%,
                     60%,
                     100% {
+
                         transform:translateY(0);
                         opacity:.35;
+
                     }
 
                     30% {
+
                         transform:translateY(-4px);
                         opacity:1;
+
                     }
+
                 }
+
+
+                .wfesc-typing-indicator {
+
+                    box-sizing:border-box;
+
+                }
+
 
                 .wfesc-typing-bubble {
+
                     display:flex;
+
                     align-items:center;
+
+                    justify-content:center;
+
                     gap:3px;
-                    padding:7px 9px;
+
+                    min-width:34px;
+
+                    height:28px;
+
+                    padding:0 8px;
+
                     border-radius:14px;
+
                     background:rgba(255,255,255,.07);
+
                     border:1px solid rgba(255,255,255,.08);
+
+                    backdrop-filter:blur(10px);
+
+                    -webkit-backdrop-filter:blur(10px);
+
                 }
+
 
                 .wfesc-typing-bubble span {
+
                     width:5px;
+
                     height:5px;
+
                     border-radius:50%;
+
                     background:#aaa;
-                    animation:wfescTypingDot 1.1s infinite;
+
+                    animation:
+                        wfescTypingDot
+                        1.1s
+                        infinite;
+
                 }
+
 
                 .wfesc-typing-bubble span:nth-child(2) {
+
                     animation-delay:.15s;
+
                 }
 
+
                 .wfesc-typing-bubble span:nth-child(3) {
+
                     animation-delay:.3s;
+
+                }
+
+
+                .wfesc-typing-text {
+
+                    white-space:nowrap;
+
+                    line-height:28px;
+
                 }
             `;
 
@@ -1086,21 +1189,79 @@
         }
 
 
-        chatMessages.appendChild(
+        /*
+           مهم:
+           نضيفه إلى chatView وليس chatMessages.
+        */
+        chatView.appendChild(
             typing
         );
+
+
+        updateTypingIndicatorPosition();
 
 
         return typing;
     }
 
 
-    function showTypingIndicator() {
+    /* =========================================================
+       TYPING POSITION
+    ========================================================= */
 
-        if (!chatMessages) {
+    function updateTypingIndicatorPosition() {
+
+        const element =
+            document.getElementById(
+                "wfescTypingIndicator"
+            );
+
+
+        if (!element) {
             return;
         }
 
+
+        const composer =
+            document.querySelector(
+                ".message-composer"
+            );
+
+
+        /*
+           إذا وجد composer نقيس ارتفاعه
+           حتى يبقى المؤشر فوقه مباشرة.
+        */
+        if (composer) {
+
+            const composerHeight =
+                composer.getBoundingClientRect()
+                    .height;
+
+
+            const safeHeight =
+                Math.max(
+                    42,
+                    Math.ceil(
+                        composerHeight
+                    )
+                );
+
+
+            element.style.bottom =
+                `calc(
+                    var(--composer-bottom, 82px) +
+                    ${safeHeight + 4}px
+                )`;
+        }
+    }
+
+
+    /* =========================================================
+       SHOW TYPING
+    ========================================================= */
+
+    function showTypingIndicator() {
 
         const element =
             ensureTypingElement();
@@ -1111,22 +1272,25 @@
         }
 
 
+        updateTypingIndicatorPosition();
+
+
         element.style.display =
             "flex";
 
 
-        if (isNearBottom()) {
+        element.style.opacity =
+            "1";
 
-            requestAnimationFrame(() => {
 
-                scrollChatToBottom(
-                    "smooth"
-                );
-
-            });
-        }
+        element.style.transform =
+            "translateY(0)";
     }
 
+
+    /* =========================================================
+       HIDE TYPING
+    ========================================================= */
 
     function hideTypingIndicator() {
 
@@ -1141,10 +1305,35 @@
         }
 
 
-        element.style.display =
-            "none";
+        element.style.opacity =
+            "0";
+
+
+        element.style.transform =
+            "translateY(5px)";
+
+
+        setTimeout(() => {
+
+            /*
+               لا نخفيه إذا رجع typing
+               أثناء فترة الأنميشن.
+            */
+            if (
+                typingUsers.size === 0
+            ) {
+
+                element.style.display =
+                    "none";
+            }
+
+        }, 180);
     }
 
+
+    /* =========================================================
+       UPDATE TYPING INDICATOR
+    ========================================================= */
 
     function updateTypingIndicator() {
 
@@ -1162,13 +1351,113 @@
 
 
     /* =========================================================
-       TYPING REALTIME
+       CLEAR REMOTE TYPING USER
+    ========================================================= */
+
+    function clearTypingUser(
+        userId
+    ) {
+
+        const key =
+            String(
+                userId
+            );
+
+
+        typingUsers.delete(
+            key
+        );
+
+
+        const timer =
+            typingUserTimers.get(
+                key
+            );
+
+
+        if (timer) {
+
+            clearTimeout(
+                timer
+            );
+
+            typingUserTimers.delete(
+                key
+            );
+        }
+
+
+        updateTypingIndicator();
+    }
+
+
+    /* =========================================================
+       REGISTER REMOTE TYPING
+    ========================================================= */
+
+    function registerTypingUser(
+        userId
+    ) {
+
+        const key =
+            String(
+                userId
+            );
+
+
+        typingUsers.add(
+            key
+        );
+
+
+        const oldTimer =
+            typingUserTimers.get(
+                key
+            );
+
+
+        if (oldTimer) {
+
+            clearTimeout(
+                oldTimer
+            );
+        }
+
+
+        const timer =
+            setTimeout(() => {
+
+                clearTypingUser(
+                    key
+                );
+
+            }, TYPING_REMOTE_TIMEOUT);
+
+
+        typingUserTimers.set(
+            key,
+            timer
+        );
+
+
+        updateTypingIndicator();
+    }
+
+
+    /* =========================================================
+       STOP LOCAL TYPING
     ========================================================= */
 
     async function stopTyping() {
 
-        if (!typingChannel) {
-            return;
+        if (typingTimer) {
+
+            clearTimeout(
+                typingTimer
+            );
+
+            typingTimer =
+                null;
         }
 
 
@@ -1177,21 +1466,34 @@
         }
 
 
-        isTyping = false;
+        isTyping =
+            false;
 
 
         try {
 
-            await typingChannel.send({
-                type: "broadcast",
-                event: "typing",
-                payload: {
-                    user_id:
-                        currentUser?.id || null,
+            if (typingChannel) {
 
-                    typing: false
-                }
-            });
+                await typingChannel.send({
+
+                    type:
+                        "broadcast",
+
+                    event:
+                        "typing",
+
+                    payload: {
+
+                        user_id:
+                            currentUser?.id ||
+                            null,
+
+                        typing:
+                            false
+                    }
+
+                });
+            }
 
         } catch (error) {
 
@@ -1202,6 +1504,10 @@
         }
     }
 
+
+    /* =========================================================
+       SEND LOCAL TYPING STATE
+    ========================================================= */
 
     async function sendTypingState() {
 
@@ -1214,21 +1520,45 @@
         }
 
 
+        /*
+           كل ضغطة تمدد المؤقت المحلي.
+        */
+        if (typingTimer) {
+
+            clearTimeout(
+                typingTimer
+            );
+        }
+
+
+        /*
+           أول مرة فقط نرسل true.
+        */
         if (!isTyping) {
 
-            isTyping = true;
+            isTyping =
+                true;
+
 
             try {
 
                 await typingChannel.send({
-                    type: "broadcast",
-                    event: "typing",
+
+                    type:
+                        "broadcast",
+
+                    event:
+                        "typing",
+
                     payload: {
+
                         user_id:
                             currentUser.id,
 
-                        typing: true
+                        typing:
+                            true
                     }
+
                 });
 
             } catch (error) {
@@ -1241,25 +1571,69 @@
         }
 
 
-        if (typingTimer) {
-
-            clearTimeout(
-                typingTimer
-            );
-        }
-
-
+        /*
+           نجدد الإرسال بشكل دوري أثناء الكتابة.
+           هذا يمنع الطرف الثاني من اعتبار المستخدم
+           متوقفاً عن الكتابة أثناء كتابة رسالة طويلة.
+        */
         typingTimer =
             setTimeout(
-                () => {
+                async () => {
 
-                    stopTyping();
+                    if (
+                        !isTyping ||
+                        !messageInput ||
+                        !messageInput.matches(
+                            ":focus"
+                        ) ||
+                        !messageInput.value.trim()
+                    ) {
+
+                        return;
+                    }
+
+
+                    try {
+
+                        await typingChannel.send({
+
+                            type:
+                                "broadcast",
+
+                            event:
+                                "typing",
+
+                            payload: {
+
+                                user_id:
+                                    currentUser.id,
+
+                                typing:
+                                    true
+                            }
+
+                        });
+
+                    } catch (error) {
+
+                        console.warn(
+                            "WFESC typing heartbeat:",
+                            error
+                        );
+                    }
+
+
+                    sendTypingState();
 
                 },
-                1800
+                1200
             );
     }
 
+
+    /* =========================================================
+       SETUP TYPING CHANNEL
+    ========================================================= */
 
     async function setupTypingChannel(
         conversationId
@@ -1288,8 +1662,11 @@
                 channelName,
                 {
                     config: {
+
                         broadcast: {
-                            self: false
+
+                            self:
+                                false
                         }
                     }
                 }
@@ -1297,10 +1674,14 @@
 
 
         typingChannel.on(
+
             "broadcast",
+
             {
-                event: "typing"
+                event:
+                    "typing"
             },
+
             payload => {
 
                 const data =
@@ -1318,36 +1699,25 @@
                     String(userId) ===
                     String(currentUser.id)
                 ) {
+
                     return;
                 }
 
 
-                if (data.typing) {
+                if (
+                    data.typing ===
+                    true
+                ) {
 
-                    typingUsers.add(
-                        String(userId)
+                    registerTypingUser(
+                        userId
                     );
-
-                    updateTypingIndicator();
-
-
-                    setTimeout(() => {
-
-                        typingUsers.delete(
-                            String(userId)
-                        );
-
-                        updateTypingIndicator();
-
-                    }, 3000);
 
                 } else {
 
-                    typingUsers.delete(
-                        String(userId)
+                    clearTypingUser(
+                        userId
                     );
-
-                    updateTypingIndicator();
                 }
             }
         );
@@ -1371,6 +1741,10 @@
     }
 
 
+    /* =========================================================
+       REMOVE TYPING CHANNEL
+    ========================================================= */
+
     async function removeTypingChannel() {
 
         if (typingTimer) {
@@ -1389,6 +1763,19 @@
 
 
         typingUsers.clear();
+
+
+        typingUserTimers.forEach(
+            timer => {
+
+                clearTimeout(
+                    timer
+                );
+            }
+        );
+
+
+        typingUserTimers.clear();
 
 
         hideTypingIndicator();
@@ -1434,6 +1821,9 @@
         }
 
 
+        /*
+           بداية / استمرار الكتابة.
+        */
         input.addEventListener(
             "input",
             () => {
@@ -1452,6 +1842,10 @@
         );
 
 
+        /*
+           رفع اليد / خروج التركيز:
+           يختفي جاري الكتابة فوراً.
+        */
         input.addEventListener(
             "blur",
             () => {
@@ -1460,11 +1854,30 @@
 
             }
         );
+
+
+        /*
+           رجوع التركيز للحقل:
+           إذا توجد كتابة غير مرسلة،
+           نرسل حالة الكتابة من جديد.
+        */
+        input.addEventListener(
+            "focus",
+            () => {
+
+                if (
+                    input.value.trim()
+                ) {
+
+                    sendTypingState();
+                }
+            }
+        );
     }
 
 
     /* =========================================================
-       REALTIME MESSAGES
+       REALTIME NORMALIZE
     ========================================================= */
 
     function normalizeRealtimeMessage(
@@ -1490,6 +1903,10 @@
         return record;
     }
 
+
+    /* =========================================================
+       MESSAGE BELONGS TO CURRENT CONVERSATION
+    ========================================================= */
 
     function messageBelongsToCurrentConversation(
         message
@@ -1518,89 +1935,90 @@
 
 
     /* =========================================================
-       MESSAGE DUPLICATE CHECK
+       FIND MESSAGE IN STATE BY ID
     ========================================================= */
 
-    function messageAlreadyExists(
-        message
+    function findMessageInStateById(
+        messageId
     ) {
 
-        const messageId =
-            getMessageId(
-                message
-            );
-
-
-        /*
-           أولاً:
-           البحث بالـ ID الحقيقي.
-        */
         if (
-            messageId != null
+            messageId == null
         ) {
-
-            const existsInState =
-                currentMessages.some(
-                    existing => {
-
-                        const existingId =
-                            getMessageId(
-                                existing
-                            );
-
-                        return (
-                            existingId != null &&
-                            String(existingId) ===
-                            String(messageId)
-                        );
-                    }
-                );
-
-
-            if (existsInState) {
-                return true;
-            }
-
-
-            /*
-               البحث داخل DOM أيضاً.
-            */
-            if (chatMessages) {
-
-                const elements =
-                    chatMessages.querySelectorAll(
-                        "[data-message-id]"
-                    );
-
-
-                for (
-                    const element
-                    of elements
-                ) {
-
-                    if (
-                        String(
-                            element.dataset.messageId
-                        ) ===
-                        String(messageId)
-                    ) {
-
-                        return true;
-                    }
-                }
-            }
+            return null;
         }
 
 
-        return false;
+        return (
+            currentMessages.find(
+                existing => {
+
+                    const existingId =
+                        getMessageId(
+                            existing
+                        );
+
+                    return (
+                        existingId != null &&
+                        String(existingId) ===
+                        String(messageId)
+                    );
+                }
+            ) ||
+            null
+        );
     }
 
 
     /* =========================================================
-       FIND OPTIMISTIC MESSAGE
+       FIND DOM MESSAGE BY ID
     ========================================================= */
 
-    function findOptimisticMessageElement(
+    function findDomMessageById(
+        messageId
+    ) {
+
+        if (
+            !chatMessages ||
+            messageId == null
+        ) {
+
+            return null;
+        }
+
+
+        const elements =
+            chatMessages.querySelectorAll(
+                "[data-message-id]"
+            );
+
+
+        for (
+            const element
+            of elements
+        ) {
+
+            if (
+                String(
+                    element.dataset.messageId
+                ) ===
+                String(messageId)
+            ) {
+
+                return element;
+            }
+        }
+
+
+        return null;
+    }
+
+
+    /* =========================================================
+       FIND DOM MESSAGE BY CONTENT
+    ========================================================= */
+
+    function findExistingMessageElement(
         message
     ) {
 
@@ -1635,25 +2053,38 @@
         }
 
 
-        const optimisticElements =
+        const rows =
             chatMessages.querySelectorAll(
-                ".message-row.optimistic"
+                ".message-row"
             );
 
 
+        /*
+           نبحث من الأخير إلى الأول.
+           لأن الرسالة الجديدة غالباً هي آخر نسخة
+           تحمل نفس النص.
+        */
         for (
-            const element
-            of optimisticElements
+            let index =
+                rows.length - 1;
+
+            index >= 0;
+
+            index--
         ) {
 
-            const elementSenderId =
-                element.dataset.senderId ||
+            const row =
+                rows[index];
+
+
+            const rowSenderId =
+                row.dataset.senderId ||
                 "";
 
 
             if (
                 String(
-                    elementSenderId
+                    rowSenderId
                 ) !==
                 String(
                     senderId
@@ -1665,7 +2096,7 @@
 
 
             const contentElement =
-                element.querySelector(
+                row.querySelector(
                     ".message-content"
                 );
 
@@ -1675,7 +2106,7 @@
             }
 
 
-            const elementContent =
+            const rowContent =
                 String(
                     contentElement.textContent ||
                     ""
@@ -1683,16 +2114,221 @@
 
 
             if (
-                elementContent ===
+                rowContent ===
                 content
             ) {
 
-                return element;
+                return row;
             }
         }
 
 
         return null;
+    }
+
+
+    /* =========================================================
+       MESSAGE DUPLICATE CHECK
+    ========================================================= */
+
+    function messageAlreadyExists(
+        message
+    ) {
+
+        const messageId =
+            getMessageId(
+                message
+            );
+
+
+        /*
+           الحالة الداخلية أولاً.
+        */
+        if (
+            messageId != null &&
+            findMessageInStateById(
+                messageId
+            )
+        ) {
+
+            return true;
+        }
+
+
+        /*
+           DOM ثانياً.
+        */
+        if (
+            messageId != null &&
+            findDomMessageById(
+                messageId
+            )
+        ) {
+
+            return true;
+        }
+
+
+        return false;
+    }
+
+
+    /* =========================================================
+       RECONCILE EXISTING MESSAGE
+    ========================================================= */
+
+    function reconcileExistingMessage(
+        element,
+        message
+    ) {
+
+        if (
+            !element ||
+            !message
+        ) {
+            return;
+        }
+
+
+        const messageId =
+            getMessageId(
+                message
+            );
+
+
+        const senderId =
+            getMessageSenderId(
+                message
+            );
+
+
+        /*
+           إزالة حالة المؤقت.
+        */
+        element.classList.remove(
+            "optimistic"
+        );
+
+
+        element.classList.remove(
+            "message-new"
+        );
+
+
+        element.dataset.confirmed =
+            "true";
+
+
+        if (
+            messageId != null
+        ) {
+
+            element.dataset.messageId =
+                String(
+                    messageId
+                );
+        }
+
+
+        if (
+            senderId != null
+        ) {
+
+            element.dataset.senderId =
+                String(
+                    senderId
+                );
+        }
+
+
+        const contentElement =
+            element.querySelector(
+                ".message-content"
+            );
+
+
+        if (contentElement) {
+
+            contentElement.textContent =
+                getMessageContent(
+                    message
+                );
+        }
+
+
+        const timeElement =
+            element.querySelector(
+                ".message-time"
+            );
+
+
+        if (timeElement) {
+
+            timeElement.textContent =
+                formatTime(
+                    getMessageTime(
+                        message
+                    )
+                );
+        }
+
+
+        scheduleMessageSettingsApply();
+    }
+
+
+    /* =========================================================
+       ADD REAL MESSAGE TO STATE ONLY
+    ========================================================= */
+
+    function addRealMessageToState(
+        message
+    ) {
+
+        if (!message) {
+            return false;
+        }
+
+
+        const messageId =
+            getMessageId(
+                message
+            );
+
+
+        if (
+            messageId != null &&
+            findMessageInStateById(
+                messageId
+            )
+        ) {
+
+            return false;
+        }
+
+
+        currentMessages.push(
+            message
+        );
+
+
+        currentMessages.sort(
+            (a, b) => {
+
+                return (
+                    new Date(
+                        getMessageTime(a) || 0
+                    ).getTime()
+                    -
+                    new Date(
+                        getMessageTime(b) || 0
+                    ).getTime()
+                );
+            }
+        );
+
+
+        return true;
     }
 
 
@@ -1791,18 +2427,11 @@
         }
 
 
-        /*
-           تحديث القائمة حتى لو المستخدم
-           ليس داخل هذه المحادثة.
-        */
         updateConversationPreview(
             message
         );
 
 
-        /*
-           ليست المحادثة الحالية.
-        */
         if (
             !messageBelongsToCurrentConversation(
                 message
@@ -1813,18 +2442,66 @@
         }
 
 
+        const messageId =
+            getMessageId(
+                message
+            );
+
+
         /*
         ========================================================
-           أولاً:
-           هل الرسالة الحقيقية موجودة أصلاً؟
+           الحالة 1:
+           الرسالة موجودة بالحالة الداخلية.
+           لا نرسمها مرة ثانية.
         ========================================================
         */
 
-        if (
-            messageAlreadyExists(
-                message
-            )
-        ) {
+        const stateMessage =
+            messageId != null
+                ? findMessageInStateById(
+                    messageId
+                )
+                : null;
+
+
+        if (stateMessage) {
+
+            /*
+               قد يكون السجل في الحالة موجوداً
+               كنسخة Optimistic/مؤقتة.
+               نحدّث بياناته بالسجل الحقيقي.
+            */
+            const stateIndex =
+                currentMessages.indexOf(
+                    stateMessage
+                );
+
+
+            if (
+                stateIndex >= 0
+            ) {
+
+                currentMessages[
+                    stateIndex
+                ] =
+                    message;
+            }
+
+
+            const domById =
+                findDomMessageById(
+                    messageId
+                );
+
+
+            if (domById) {
+
+                reconcileExistingMessage(
+                    domById,
+                    message
+                );
+            }
+
 
             typingUsers.clear();
 
@@ -1836,135 +2513,61 @@
 
         /*
         ========================================================
-           ثانياً:
-           هل توجد نسخة Optimistic منها؟
+           الحالة 2:
+           Realtime وصل بعد أن send.js أكد النسخة المؤقتة.
+           هنا قد يكون العنصر موجوداً بالـDOM لكن الحالة
+           الداخلية لا تحتويه بعد.
         ========================================================
         */
 
-        const optimisticElement =
-            findOptimisticMessageElement(
+        let existingElement =
+            messageId != null
+                ? findDomMessageById(
+                    messageId
+                )
+                : null;
+
+
+        /*
+        ========================================================
+           الحالة 3:
+           لم نجد ID.
+           نبحث بنفس المستخدم + النص.
+           هذه أهم حالة لمنع:
+           هلو
+           هلو
+        ========================================================
+        */
+
+        if (!existingElement) {
+
+            existingElement =
+                findExistingMessageElement(
+                    message
+                );
+        }
+
+
+        if (existingElement) {
+
+            reconcileExistingMessage(
+                existingElement,
                 message
             );
 
 
-        if (optimisticElement) {
-
-            const messageId =
-                getMessageId(
-                    message
-                );
-
-
             /*
-               تحويل نفس العنصر من مؤقت
-               إلى حقيقي.
+               نضيف الرسالة إلى الحالة فقط.
+               لا ننشئ عنصر DOM جديد.
             */
-            optimisticElement.classList.remove(
-                "optimistic"
-            );
-
-
-            optimisticElement.classList.remove(
-                "message-new"
-            );
-
-
-            optimisticElement.dataset.confirmed =
-                "true";
-
-
-            if (
-                messageId != null
-            ) {
-
-                optimisticElement.dataset.messageId =
-                    String(
-                        messageId
-                    );
-            }
-
-
-            const senderId =
-                getMessageSenderId(
-                    message
-                );
-
-
-            if (
-                senderId != null
-            ) {
-
-                optimisticElement.dataset.senderId =
-                    String(
-                        senderId
-                    );
-            }
-
-
-            const contentElement =
-                optimisticElement.querySelector(
-                    ".message-content"
-                );
-
-
-            if (contentElement) {
-
-                contentElement.textContent =
-                    getMessageContent(
-                        message
-                    );
-            }
-
-
-            const timeElement =
-                optimisticElement.querySelector(
-                    ".message-time"
-                );
-
-
-            if (timeElement) {
-
-                timeElement.textContent =
-                    formatTime(
-                        getMessageTime(
-                            message
-                        )
-                    );
-            }
-
-
-            /*
-               إضافة السجل الحقيقي إلى الحالة
-               بدون إنشاء عنصر DOM جديد.
-            */
-            currentMessages.push(
+            addRealMessageToState(
                 message
             );
-
-
-            currentMessages.sort(
-                (a, b) => {
-
-                    return (
-                        new Date(
-                            getMessageTime(a) || 0
-                        ).getTime()
-                        -
-                        new Date(
-                            getMessageTime(b) || 0
-                        ).getTime()
-                    );
-                }
-            );
-
-
-            scheduleMessageSettingsApply();
 
 
             typingUsers.clear();
 
             hideTypingIndicator();
-
 
             return;
         }
@@ -1972,8 +2575,9 @@
 
         /*
         ========================================================
-           ثالثاً:
-           رسالة جديدة حقيقية من الطرف الآخر
+           الحالة 4:
+           رسالة جديدة فعلاً.
+           فقط هنا ننشئ عنصر جديد.
         ========================================================
         */
 
@@ -1981,24 +2585,8 @@
             isNearBottom();
 
 
-        currentMessages.push(
+        addRealMessageToState(
             message
-        );
-
-
-        currentMessages.sort(
-            (a, b) => {
-
-                return (
-                    new Date(
-                        getMessageTime(a) || 0
-                    ).getTime()
-                    -
-                    new Date(
-                        getMessageTime(b) || 0
-                    ).getTime()
-                );
-            }
         );
 
 
@@ -2073,9 +2661,14 @@
                 .on(
                     "postgres_changes",
                     {
-                        event: "INSERT",
-                        schema: "public",
-                        table: "messages"
+                        event:
+                            "INSERT",
+
+                        schema:
+                            "public",
+
+                        table:
+                            "messages"
                     },
                     payload => {
 
@@ -2087,9 +2680,14 @@
                 .on(
                     "postgres_changes",
                     {
-                        event: "UPDATE",
-                        schema: "public",
-                        table: "messages"
+                        event:
+                            "UPDATE",
+
+                        schema:
+                            "public",
+
+                        table:
+                            "messages"
                     },
                     payload => {
 
@@ -2270,6 +2868,15 @@
 
 
         revealChatAtBottom();
+
+
+        /*
+           تحديث مكان مؤشر الكتابة
+           بعد فتح المحادثة.
+        */
+        requestAnimationFrame(
+            updateTypingIndicatorPosition
+        );
     }
 
 
@@ -2407,7 +3014,8 @@
 
 
         renderMessages({
-            initialLoad: true
+            initialLoad:
+                true
         });
     }
 
@@ -2611,7 +3219,9 @@
         if (messageId != null) {
 
             row.dataset.messageId =
-                String(messageId);
+                String(
+                    messageId
+                );
         }
 
 
@@ -2728,8 +3338,8 @@
 
         if (
             messageId != null &&
-            messageAlreadyExists(
-                message
+            findMessageInStateById(
+                messageId
             )
         ) {
 
@@ -2939,6 +3549,30 @@
 
 
     /* =========================================================
+       WINDOW RESIZE
+    ========================================================= */
+
+    window.addEventListener(
+        "resize",
+        () => {
+
+            updateTypingIndicatorPosition();
+
+        }
+    );
+
+
+    window.visualViewport?.addEventListener(
+        "resize",
+        () => {
+
+            updateTypingIndicatorPosition();
+
+        }
+    );
+
+
+    /* =========================================================
        AUTH
     ========================================================= */
 
@@ -3047,8 +3681,10 @@
 
 
             if (
-                event === "SIGNED_IN" ||
-                event === "INITIAL_SESSION"
+                event ===
+                "SIGNED_IN" ||
+                event ===
+                "INITIAL_SESSION"
             ) {
 
                 await loadConversations();
@@ -3087,6 +3723,9 @@
         }
 
 
+        /*
+           input الأساسي للكتابة.
+        */
         input.addEventListener(
             "input",
             () => {
@@ -3105,12 +3744,34 @@
         );
 
 
+        /*
+           إذا خرج المستخدم من الحقل:
+           يختفي جاري الكتابة.
+        */
         input.addEventListener(
             "blur",
             () => {
 
                 stopTyping();
 
+            }
+        );
+
+
+        /*
+           إذا رجع للحقل وكانت هناك رسالة
+           غير مرسلة، يرجع جاري الكتابة.
+        */
+        input.addEventListener(
+            "focus",
+            () => {
+
+                if (
+                    input.value.trim()
+                ) {
+
+                    sendTypingState();
+                }
             }
         );
     }
@@ -3190,7 +3851,9 @@
 
         showTypingIndicator,
 
-        hideTypingIndicator
+        hideTypingIndicator,
+
+        updateTypingIndicatorPosition
     };
 
 
@@ -3212,7 +3875,8 @@
                 "DOMContentLoaded",
                 initializeAuth,
                 {
-                    once: true
+                    once:
+                        true
                 }
             );
 
