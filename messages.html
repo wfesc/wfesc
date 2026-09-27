@@ -3,25 +3,41 @@
 
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<meta name="color-scheme" content="dark">
 
 <title>الرسائل | WFESC</title>
 
 <style>
 
+/* =========================================================
+   ROOT
+========================================================= */
+
 :root{
     --bg:#030303;
+
     --glass:rgba(255,255,255,.055);
     --glass-2:rgba(255,255,255,.075);
+
     --border:rgba(255,255,255,.11);
     --border-light:rgba(255,255,255,.17);
+
     --text:#f5f5f5;
     --muted:#929292;
+
     --green:#36e27b;
     --green-soft:rgba(54,226,123,.14);
+
     --danger:#ff5252;
-    --shadow:0 20px 70px rgba(0,0,0,.55);
+
+    --shadow:
+        0 20px 70px rgba(0,0,0,.55);
 
     --keyboard-height:0px;
     --navigation-height:82px;
@@ -29,6 +45,11 @@
     --message-text-scale:1;
     --message-bubble-scale:1;
 }
+
+
+/* =========================================================
+   RESET
+========================================================= */
 
 *{
     box-sizing:border-box;
@@ -43,6 +64,7 @@ html{
 
 body{
     min-height:100vh;
+
     background:
         radial-gradient(
             circle at top,
@@ -50,17 +72,21 @@ body{
             transparent 35%
         ),
         #030303;
+
     color:var(--text);
+
     font-family:
         Arial,
         Tahoma,
         sans-serif;
+
     overflow-x:hidden;
 }
 
 button,
 input,
-textarea{
+textarea,
+select{
     font:inherit;
 }
 
@@ -78,13 +104,16 @@ img{
     display:none !important;
 }
 
+
 /* =========================================================
-PAGE
+   PAGE
 ========================================================= */
 
 .messages-page{
     min-height:100vh;
+
     position:relative;
+
     padding-bottom:
         calc(
             var(--navigation-height) +
@@ -92,13 +121,15 @@ PAGE
         );
 }
 
+
 /* =========================================================
-TOP HEADER
+   TOP HEADER
 ========================================================= */
 
 .top-header{
     position:sticky;
     top:0;
+
     z-index:100;
 
     min-height:70px;
@@ -108,15 +139,24 @@ TOP HEADER
     justify-content:space-between;
 
     padding:
-        max(10px, env(safe-area-inset-top))
+        max(
+            10px,
+            env(safe-area-inset-top)
+        )
         14px
         10px;
 
-    background:rgba(3,3,3,.78);
-    backdrop-filter:blur(22px);
-    -webkit-backdrop-filter:blur(22px);
+    background:
+        rgba(3,3,3,.78);
 
-    border-bottom:1px solid var(--border);
+    backdrop-filter:
+        blur(22px);
+
+    -webkit-backdrop-filter:
+        blur(22px);
+
+    border-bottom:
+        1px solid var(--border);
 }
 
 .header-title{
@@ -136,6 +176,11 @@ TOP HEADER
     gap:8px;
 }
 
+
+/* =========================================================
+   ICON BUTTON
+========================================================= */
+
 .icon-button{
     width:42px;
     height:42px;
@@ -147,7 +192,9 @@ TOP HEADER
     border-radius:15px;
 
     background:var(--glass);
-    border:1px solid var(--border);
+
+    border:
+        1px solid var(--border);
 
     color:var(--text);
 
@@ -163,11 +210,14 @@ TOP HEADER
 
 .icon-button:hover{
     background:var(--glass-2);
-    border-color:var(--border-light);
+
+    border-color:
+        var(--border-light);
 }
 
+
 /* =========================================================
-NOTIFICATION BADGE
+   NOTIFICATION BADGE
 ========================================================= */
 
 .notification-button{
@@ -176,6 +226,7 @@ NOTIFICATION BADGE
 
 .notification-badge{
     position:absolute;
+
     top:3px;
     left:3px;
 
@@ -185,30 +236,37 @@ NOTIFICATION BADGE
     padding:0 4px;
 
     display:none;
+
     align-items:center;
     justify-content:center;
 
     border-radius:20px;
 
     background:#ff3030;
+
     color:#fff;
 
     font-size:10px;
     font-weight:800;
 
-    border:2px solid #030303;
+    border:
+        2px solid #030303;
 }
 
 .notification-badge.show{
     display:flex;
 }
 
+
 /* =========================================================
-SEARCH
+   SEARCH
 ========================================================= */
 
 .search-section{
-    padding:12px 14px 8px;
+    padding:
+        12px
+        14px
+        8px;
 }
 
 .search-box{
@@ -220,36 +278,51 @@ SEARCH
     height:48px;
 
     padding:
-        0 48px
-        0 14px;
+        0
+        48px
+        0
+        14px;
 
     border-radius:17px;
 
     outline:none;
 
     color:var(--text);
+
     background:var(--glass);
 
-    border:1px solid var(--border);
+    border:
+        1px solid var(--border);
 
     transition:
         border-color .2s ease,
         background .2s ease;
 }
 
+.search-input::placeholder{
+    color:var(--muted);
+}
+
 .search-input:focus{
-    border-color:rgba(54,226,123,.35);
-    background:var(--glass-2);
+    border-color:
+        rgba(54,226,123,.35);
+
+    background:
+        var(--glass-2);
 }
 
 .search-icon{
     position:absolute;
+
     right:16px;
     top:50%;
 
-    transform:translateY(-50%);
+    transform:
+        translateY(-50%);
 
     color:var(--muted);
+
+    pointer-events:none;
 }
 
 .search-mode{
@@ -260,29 +333,45 @@ SEARCH
 }
 
 .search-mode button{
-    padding:8px 13px;
+    padding:
+        8px
+        13px;
 
     border-radius:12px;
 
     color:var(--muted);
+
     background:transparent;
 
-    border:1px solid transparent;
+    border:
+        1px solid transparent;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
 }
 
 .search-mode button.active{
     color:var(--text);
+
     background:var(--glass);
-    border-color:var(--border);
+
+    border-color:
+        var(--border);
 }
 
+
 /* =========================================================
-SEARCH RESULTS
+   SEARCH RESULTS
 ========================================================= */
 
 .search-results{
     display:none;
-    padding:4px 14px 10px;
+
+    padding:
+        4px
+        14px
+        10px;
 }
 
 .search-results.visible{
@@ -301,12 +390,17 @@ SEARCH RESULTS
     border-radius:18px;
 
     background:var(--glass);
-    border:1px solid var(--border);
+
+    border:
+        1px solid var(--border);
 
     cursor:pointer;
 
     animation:
-        conversationIn .28s ease both;
+        conversationIn
+        .28s
+        ease
+        both;
 }
 
 .result-info{
@@ -321,6 +415,7 @@ SEARCH RESULTS
 
 .result-preview{
     color:var(--muted);
+
     font-size:13px;
 
     white-space:nowrap;
@@ -340,12 +435,16 @@ SEARCH RESULTS
     font-size:11px;
 }
 
+
 /* =========================================================
-CONVERSATION LIST
+   CONVERSATION LIST
 ========================================================= */
 
 .conversation-list{
-    padding:5px 14px 20px;
+    padding:
+        5px
+        14px
+        20px;
 }
 
 .conversation-card{
@@ -353,6 +452,7 @@ CONVERSATION LIST
 
     display:flex;
     align-items:center;
+
     gap:12px;
 
     min-height:76px;
@@ -364,7 +464,9 @@ CONVERSATION LIST
     border-radius:20px;
 
     background:var(--glass);
-    border:1px solid var(--border);
+
+    border:
+        1px solid var(--border);
 
     cursor:pointer;
 
@@ -397,7 +499,8 @@ CONVERSATION LIST
 
     background:#111;
 
-    border:1px solid var(--border);
+    border:
+        1px solid var(--border);
 }
 
 .online-dot{
@@ -413,11 +516,17 @@ CONVERSATION LIST
 
     background:#555;
 
-    border:2px solid #030303;
+    border:
+        2px solid #030303;
+
+    transition:
+        background .2s ease,
+        box-shadow .2s ease;
 }
 
 .online-dot.active{
     background:var(--green);
+
     box-shadow:
         0 0 12px
         rgba(54,226,123,.45);
@@ -445,7 +554,9 @@ CONVERSATION LIST
     margin-top:5px;
 
     white-space:nowrap;
+
     overflow:hidden;
+
     text-overflow:ellipsis;
 }
 
@@ -465,6 +576,7 @@ CONVERSATION LIST
     border-radius:10px;
 
     color:var(--muted);
+
     background:transparent;
 }
 
@@ -473,8 +585,9 @@ CONVERSATION LIST
     color:var(--text);
 }
 
+
 /* =========================================================
-CHAT VIEW
+   CHAT VIEW
 ========================================================= */
 
 .chat-view{
@@ -494,8 +607,9 @@ CHAT VIEW
     flex-direction:column;
 }
 
+
 /* =========================================================
-CHAT HEADER
+   CHAT HEADER
 ========================================================= */
 
 .chat-header{
@@ -509,16 +623,24 @@ CHAT HEADER
     align-items:center;
 
     padding:
-        max(8px, env(safe-area-inset-top))
+        max(
+            8px,
+            env(safe-area-inset-top)
+        )
         10px
         8px;
 
-    background:rgba(3,3,3,.88);
+    background:
+        rgba(3,3,3,.88);
 
-    backdrop-filter:blur(24px);
-    -webkit-backdrop-filter:blur(24px);
+    backdrop-filter:
+        blur(24px);
 
-    border-bottom:1px solid var(--border);
+    -webkit-backdrop-filter:
+        blur(24px);
+
+    border-bottom:
+        1px solid var(--border);
 
     z-index:20;
 }
@@ -534,7 +656,16 @@ CHAT HEADER
     justify-content:center;
 
     background:var(--glass);
+
     color:var(--text);
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.back-button:active{
+    transform:scale(.92);
 }
 
 .chat-person{
@@ -550,6 +681,10 @@ CHAT HEADER
     padding:0 8px;
 
     text-align:right;
+
+    background:transparent;
+
+    color:var(--text);
 }
 
 .chat-person-info{
@@ -567,6 +702,7 @@ CHAT HEADER
 
 .chat-person-status{
     color:var(--muted);
+
     font-size:11px;
 
     margin-top:3px;
@@ -577,8 +713,9 @@ CHAT HEADER
     gap:5px;
 }
 
+
 /* =========================================================
-SEARCH MATCH NAVIGATOR
+   SEARCH MATCH NAVIGATOR
 ========================================================= */
 
 .search-match-navigator{
@@ -590,6 +727,7 @@ SEARCH MATCH NAVIGATOR
     left:10px;
 
     display:none;
+
     align-items:center;
     justify-content:space-between;
 
@@ -597,13 +735,23 @@ SEARCH MATCH NAVIGATOR
 
     padding:5px 8px;
 
-    background:rgba(15,15,15,.94);
+    background:
+        rgba(15,15,15,.94);
 
-    backdrop-filter:blur(20px);
-    -webkit-backdrop-filter:blur(20px);
+    backdrop-filter:
+        blur(20px);
 
-    border:1px solid var(--border);
-    border-radius:0 0 15px 15px;
+    -webkit-backdrop-filter:
+        blur(20px);
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        0
+        0
+        15px
+        15px;
 
     z-index:19;
 }
@@ -629,11 +777,13 @@ SEARCH MATCH NAVIGATOR
     border-radius:10px;
 
     color:var(--text);
+
     background:var(--glass);
 }
 
+
 /* =========================================================
-MESSAGES
+   MESSAGES
 ========================================================= */
 
 .chat-messages{
@@ -662,7 +812,9 @@ MESSAGES
 }
 
 .chat-messages::-webkit-scrollbar-thumb{
-    background:rgba(255,255,255,.12);
+    background:
+        rgba(255,255,255,.12);
+
     border-radius:20px;
 }
 
@@ -674,31 +826,50 @@ MESSAGES
     margin-bottom:12px;
 
     animation:
-        messageIn .25s ease both;
+        messageIn
+        .25s
+        ease
+        both;
 }
 
+/*
+   المرسل = يمين
+   الطرف الآخر = يسار
+*/
 .message-row.mine{
-    justify-content:flex-start;
-}
-
-.message-row.theirs{
     justify-content:flex-end;
 }
 
-.message-bubble{
-    max-width:min(78vw,560px);
+.message-row.theirs{
+    justify-content:flex-start;
+}
 
-    padding:10px 13px;
+.message-bubble{
+    max-width:
+        min(
+            78vw,
+            560px
+        );
+
+    padding:
+        10px
+        13px;
 
     border-radius:
-        calc(18px * var(--message-bubble-scale));
+        calc(
+            18px *
+            var(--message-bubble-scale)
+        );
 
     background:var(--glass);
 
-    border:1px solid var(--border);
+    border:
+        1px solid var(--border);
 
     transform:
-        scale(var(--message-bubble-scale));
+        scale(
+            var(--message-bubble-scale)
+        );
 
     transform-origin:center;
 
@@ -708,7 +879,8 @@ MESSAGES
         transform .2s ease;
 }
 
-.message-row.mine .message-bubble{
+.message-row.mine
+.message-bubble{
     background:
         rgba(54,226,123,.13);
 
@@ -726,15 +898,20 @@ MESSAGES
     line-height:1.65;
 
     white-space:pre-wrap;
+
     word-break:break-word;
 }
 
 .message-time{
     color:var(--muted);
+
     font-size:10px;
 
     margin-top:5px;
-    padding:0 4px;
+
+    padding:
+        0
+        4px;
 }
 
 .message-row.mine
@@ -749,7 +926,10 @@ MESSAGES
 
 .message-new{
     animation:
-        messageNew .3s ease both;
+        messageNew
+        .3s
+        ease
+        both;
 }
 
 .message-row.optimistic{
@@ -763,8 +943,9 @@ MESSAGES
         rgba(54,226,123,.45);
 }
 
+
 /* =========================================================
-TYPING
+   TYPING
 ========================================================= */
 
 .typing-indicator{
@@ -779,15 +960,21 @@ TYPING
     right:14px;
 
     display:none;
+
     align-items:center;
+
     gap:5px;
 
-    padding:8px 12px;
+    padding:
+        8px
+        12px;
 
     border-radius:15px;
 
     background:var(--glass-2);
-    border:1px solid var(--border);
+
+    border:
+        1px solid var(--border);
 
     color:var(--muted);
 
@@ -807,7 +994,9 @@ TYPING
     background:var(--green);
 
     animation:
-        typingBounce 1s infinite;
+        typingBounce
+        1s
+        infinite;
 }
 
 .typing-dot:nth-child(2){
@@ -818,8 +1007,9 @@ TYPING
     animation-delay:.3s;
 }
 
+
 /* =========================================================
-COMPOSER
+   COMPOSER
 ========================================================= */
 
 .message-composer{
@@ -841,17 +1031,27 @@ COMPOSER
             env(safe-area-inset-bottom)
         );
 
-    background:rgba(3,3,3,.9);
+    background:
+        rgba(3,3,3,.9);
 
-    backdrop-filter:blur(24px);
-    -webkit-backdrop-filter:blur(24px);
+    backdrop-filter:
+        blur(24px);
 
-    border-top:1px solid var(--border);
+    -webkit-backdrop-filter:
+        blur(24px);
+
+    border-top:
+        1px solid var(--border);
+
+    transition:
+        bottom .08s linear;
 }
 
 .message-form{
     display:flex;
+
     align-items:flex-end;
+
     gap:8px;
 }
 
@@ -873,10 +1073,16 @@ COMPOSER
 
     background:var(--glass);
 
-    border:1px solid var(--border);
+    border:
+        1px solid var(--border);
+
     border-radius:16px;
 
     line-height:1.5;
+}
+
+.message-input::placeholder{
+    color:var(--muted);
 }
 
 .message-input:focus{
@@ -893,6 +1099,7 @@ COMPOSER
     border-radius:15px;
 
     background:var(--green);
+
     color:#031008;
 
     font-size:18px;
@@ -913,11 +1120,14 @@ COMPOSER
 
 .send-button.sending{
     animation:
-        sendPulse .8s infinite;
+        sendPulse
+        .8s
+        infinite;
 }
 
+
 /* =========================================================
-EMPTY / LOADING
+   EMPTY / LOADING
 ========================================================= */
 
 .empty-state{
@@ -925,12 +1135,15 @@ EMPTY / LOADING
 
     display:flex;
     flex-direction:column;
+
     align-items:center;
     justify-content:center;
 
     text-align:center;
 
-    padding:30px 20px;
+    padding:
+        30px
+        20px;
 
     color:var(--muted);
 }
@@ -943,6 +1156,7 @@ EMPTY / LOADING
 
 .empty-state p{
     margin-top:7px;
+
     font-size:13px;
 }
 
@@ -950,8 +1164,9 @@ EMPTY / LOADING
     font-size:34px;
 }
 
+
 /* =========================================================
-CONTEXT MENU
+   CONTEXT MENU
 ========================================================= */
 
 .context-menu{
@@ -970,10 +1185,14 @@ CONTEXT MENU
     background:
         rgba(20,20,20,.96);
 
-    backdrop-filter:blur(25px);
-    -webkit-backdrop-filter:blur(25px);
+    backdrop-filter:
+        blur(25px);
 
-    border:1px solid var(--border);
+    -webkit-backdrop-filter:
+        blur(25px);
+
+    border:
+        1px solid var(--border);
 
     box-shadow:var(--shadow);
 }
@@ -982,7 +1201,10 @@ CONTEXT MENU
     display:block;
 
     animation:
-        menuIn .18s ease both;
+        menuIn
+        .18s
+        ease
+        both;
 }
 
 .context-menu button{
@@ -1007,8 +1229,9 @@ CONTEXT MENU
     color:var(--danger);
 }
 
+
 /* =========================================================
-MODALS
+   MODALS
 ========================================================= */
 
 .modal{
@@ -1017,6 +1240,7 @@ MODALS
     inset:0;
 
     display:none;
+
     align-items:center;
     justify-content:center;
 
@@ -1027,8 +1251,11 @@ MODALS
     background:
         rgba(0,0,0,.72);
 
-    backdrop-filter:blur(10px);
-    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:
+        blur(10px);
+
+    -webkit-backdrop-filter:
+        blur(10px);
 }
 
 .modal.show{
@@ -1036,7 +1263,11 @@ MODALS
 }
 
 .modal-card{
-    width:min(100%,430px);
+    width:
+        min(
+            100%,
+            430px
+        );
 
     max-height:
         calc(
@@ -1053,12 +1284,16 @@ MODALS
     background:
         rgba(18,18,18,.94);
 
-    border:1px solid var(--border);
+    border:
+        1px solid var(--border);
 
     box-shadow:var(--shadow);
 
     animation:
-        modalIn .22s ease both;
+        modalIn
+        .22s
+        ease
+        both;
 }
 
 .modal-title{
@@ -1091,17 +1326,22 @@ MODALS
 
 .modal-cancel{
     color:var(--text);
+
     background:var(--glass);
-    border:1px solid var(--border);
+
+    border:
+        1px solid var(--border);
 }
 
 .modal-confirm{
     color:#fff;
+
     background:var(--danger);
 }
 
+
 /* =========================================================
-MESSAGE VIEW SETTINGS
+   MESSAGE VIEW SETTINGS
 ========================================================= */
 
 .settings-group{
@@ -1110,6 +1350,7 @@ MESSAGE VIEW SETTINGS
 
 .settings-label{
     display:flex;
+
     justify-content:space-between;
     align-items:center;
 
@@ -1124,7 +1365,70 @@ MESSAGE VIEW SETTINGS
 
 .settings-range{
     width:100%;
+
+    accent-color:var(--green);
+
+    cursor:pointer;
 }
+
+
+/* =========================================================
+   COLOR GRID
+========================================================= */
+
+#ownMessageColors{
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            10,
+            minmax(0,1fr)
+        );
+
+    gap:7px;
+
+    margin-top:10px;
+}
+
+.message-color-option{
+    width:100%;
+    aspect-ratio:1;
+
+    border-radius:9px;
+
+    border:
+        2px solid transparent;
+
+    outline:none;
+
+    box-shadow:
+        inset
+        0 0 0
+        1px
+        rgba(255,255,255,.15);
+
+    transition:
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
+}
+
+.message-color-option:hover{
+    transform:scale(1.08);
+}
+
+.message-color-option.active{
+    border-color:#fff;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(54,226,123,.45);
+}
+
+
+/* =========================================================
+   SETTINGS PREVIEW
+========================================================= */
 
 .settings-preview{
     margin-top:16px;
@@ -1135,11 +1439,13 @@ MESSAGE VIEW SETTINGS
 
     background:var(--glass);
 
-    border:1px solid var(--border);
+    border:
+        1px solid var(--border);
 }
 
 .preview-title{
     color:var(--muted);
+
     font-size:11px;
 
     margin-bottom:10px;
@@ -1147,23 +1453,28 @@ MESSAGE VIEW SETTINGS
 
 .preview-message{
     width:max-content;
+
     max-width:90%;
 
-    padding:10px 13px;
+    padding:
+        10px
+        13px;
 
     border-radius:18px;
 
     background:
         rgba(54,226,123,.14);
 
-    border:1px solid
+    border:
+        1px solid
         rgba(54,226,123,.2);
 
     margin-right:auto;
 }
 
+
 /* =========================================================
-ACTIVITY
+   ACTIVITY
 ========================================================= */
 
 .activity-switch{
@@ -1176,7 +1487,8 @@ ACTIVITY
 
     background:#222;
 
-    transition:background .2s ease;
+    transition:
+        background .2s ease;
 }
 
 .activity-switch::after{
@@ -1208,8 +1520,9 @@ ACTIVITY
     background:var(--green);
 }
 
+
 /* =========================================================
-NOTIFICATIONS
+   NOTIFICATIONS
 ========================================================= */
 
 .notifications-panel{
@@ -1218,10 +1531,11 @@ NOTIFICATIONS
     top:75px;
     right:10px;
 
-    width:min(
-        calc(100vw - 20px),
-        400px
-    );
+    width:
+        min(
+            calc(100vw - 20px),
+            400px
+        );
 
     max-height:
         calc(
@@ -1239,10 +1553,14 @@ NOTIFICATIONS
     background:
         rgba(16,16,16,.96);
 
-    backdrop-filter:blur(25px);
-    -webkit-backdrop-filter:blur(25px);
+    backdrop-filter:
+        blur(25px);
 
-    border:1px solid var(--border);
+    -webkit-backdrop-filter:
+        blur(25px);
+
+    border:
+        1px solid var(--border);
 
     box-shadow:var(--shadow);
 }
@@ -1251,17 +1569,22 @@ NOTIFICATIONS
     display:block;
 
     animation:
-        modalIn .2s ease both;
+        modalIn
+        .2s
+        ease
+        both;
 }
 
 .notifications-header{
     display:flex;
+
     align-items:center;
     justify-content:space-between;
 
     padding:14px;
 
-    border-bottom:1px solid var(--border);
+    border-bottom:
+        1px solid var(--border);
 }
 
 .notifications-title{
@@ -1270,7 +1593,9 @@ NOTIFICATIONS
 
 .notifications-clear{
     color:var(--green);
+
     background:transparent;
+
     font-size:12px;
 }
 
@@ -1282,7 +1607,9 @@ NOTIFICATIONS
     position:relative;
 
     display:flex;
+
     align-items:flex-start;
+
     gap:10px;
 
     padding:12px;
@@ -1309,6 +1636,7 @@ NOTIFICATIONS
     height:36px;
 
     display:flex;
+
     align-items:center;
     justify-content:center;
 
@@ -1335,18 +1663,21 @@ NOTIFICATIONS
     margin-top:4px;
 
     color:var(--muted);
+
     font-size:10px;
 }
 
 .notification-delete{
     color:var(--muted);
+
     background:transparent;
 
     font-size:18px;
 }
 
+
 /* =========================================================
-SUCCESS
+   SUCCESS
 ========================================================= */
 
 .success-overlay{
@@ -1355,6 +1686,7 @@ SUCCESS
     inset:0;
 
     display:none;
+
     align-items:center;
     justify-content:center;
 
@@ -1363,7 +1695,11 @@ SUCCESS
     background:
         rgba(0,0,0,.5);
 
-    backdrop-filter:blur(8px);
+    backdrop-filter:
+        blur(8px);
+
+    -webkit-backdrop-filter:
+        blur(8px);
 }
 
 .success-overlay.show{
@@ -1371,36 +1707,45 @@ SUCCESS
 }
 
 .success-card{
-    padding:20px 28px;
+    padding:
+        20px
+        28px;
 
     border-radius:20px;
 
     background:
         rgba(20,20,20,.95);
 
-    border:1px solid
+    border:
+        1px solid
         rgba(54,226,123,.3);
 
     text-align:center;
 
     animation:
-        modalIn .25s ease both;
+        modalIn
+        .25s
+        ease
+        both;
 }
 
+
 /* =========================================================
-ANIMATIONS
+   ANIMATIONS
 ========================================================= */
 
 @keyframes conversationIn{
 
     from{
         opacity:0;
+
         transform:
             translateY(8px);
     }
 
     to{
         opacity:1;
+
         transform:
             translateY(0);
     }
@@ -1411,6 +1756,7 @@ ANIMATIONS
 
     from{
         opacity:0;
+
         transform:
             translateY(8px)
             scale(.98);
@@ -1418,6 +1764,7 @@ ANIMATIONS
 
     to{
         opacity:1;
+
         transform:
             translateY(0)
             scale(1);
@@ -1429,6 +1776,7 @@ ANIMATIONS
 
     from{
         opacity:0;
+
         transform:
             translateY(14px)
             scale(.96);
@@ -1436,6 +1784,7 @@ ANIMATIONS
 
     to{
         opacity:1;
+
         transform:
             translateY(0)
             scale(1);
@@ -1447,6 +1796,7 @@ ANIMATIONS
 
     from{
         opacity:0;
+
         transform:
             scale(.94)
             translateY(-5px);
@@ -1454,6 +1804,7 @@ ANIMATIONS
 
     to{
         opacity:1;
+
         transform:
             scale(1)
             translateY(0);
@@ -1465,6 +1816,7 @@ ANIMATIONS
 
     from{
         opacity:0;
+
         transform:
             scale(.95)
             translateY(10px);
@@ -1472,6 +1824,7 @@ ANIMATIONS
 
     to{
         opacity:1;
+
         transform:
             scale(1)
             translateY(0);
@@ -1484,11 +1837,13 @@ ANIMATIONS
     0%,
     60%,
     100%{
-        transform:translateY(0);
+        transform:
+            translateY(0);
     }
 
     30%{
-        transform:translateY(-4px);
+        transform:
+            translateY(-4px);
     }
 
 }
@@ -1506,8 +1861,9 @@ ANIMATIONS
 
 }
 
+
 /* =========================================================
-MOBILE
+   MOBILE
 ========================================================= */
 
 @media(max-width:600px){
@@ -1532,38 +1888,62 @@ MOBILE
         top:68px;
     }
 
+    #ownMessageColors{
+        grid-template-columns:
+            repeat(
+                5,
+                minmax(0,1fr)
+            );
+    }
+
 }
 
+
 /* =========================================================
-NAVIGATION KEYBOARD LOCK
+   NAVIGATION KEYBOARD LOCK
 ========================================================= */
 
 .wfesc-navigation-keyboard-lock{
     transform:
         translateY(
-            var(--wfesc-nav-keyboard-shift,0px)
+            var(
+                --wfesc-nav-keyboard-shift,
+                0px
+            )
         );
 }
 
 </style>
 </head>
 
+
 <body>
+
+
+<!-- =========================================================
+     MAIN MESSAGES PAGE
+========================================================= -->
 
 <div
     class="messages-page"
     id="messagesPage"
 >
 
+
     <!-- =====================================================
-    TOP HEADER
+         TOP HEADER
     ====================================================== -->
 
     <header class="top-header">
 
         <div class="header-title">
-            <h1>الرسائل</h1>
+
+            <h1>
+                الرسائل
+            </h1>
+
         </div>
+
 
         <div class="header-actions">
 
@@ -1576,6 +1956,7 @@ NAVIGATION KEYBOARD LOCK
                 🟢
             </button>
 
+
             <button
                 type="button"
                 class="icon-button"
@@ -1585,12 +1966,14 @@ NAVIGATION KEYBOARD LOCK
                 ⚙️
             </button>
 
+
             <button
                 type="button"
                 class="icon-button notification-button"
                 id="notificationsOpenButton"
                 aria-label="الإشعارات"
             >
+
                 🔔
 
                 <span
@@ -1606,7 +1989,7 @@ NAVIGATION KEYBOARD LOCK
 
 
     <!-- =====================================================
-    SEARCH
+         SEARCH
     ====================================================== -->
 
     <section
@@ -1620,6 +2003,7 @@ NAVIGATION KEYBOARD LOCK
                 🔎
             </span>
 
+
             <input
                 type="search"
                 id="messageSearch"
@@ -1630,6 +2014,7 @@ NAVIGATION KEYBOARD LOCK
 
         </div>
 
+
         <div class="search-mode">
 
             <button
@@ -1639,6 +2024,7 @@ NAVIGATION KEYBOARD LOCK
             >
                 الرسائل
             </button>
+
 
             <button
                 type="button"
@@ -1653,7 +2039,7 @@ NAVIGATION KEYBOARD LOCK
 
 
     <!-- =====================================================
-    SEARCH RESULTS
+         SEARCH RESULTS
     ====================================================== -->
 
     <section
@@ -1663,7 +2049,7 @@ NAVIGATION KEYBOARD LOCK
 
 
     <!-- =====================================================
-    CONVERSATIONS
+         CONVERSATIONS
     ====================================================== -->
 
     <main
@@ -1671,7 +2057,7 @@ NAVIGATION KEYBOARD LOCK
         id="conversationList"
     >
 
-        <div class="empty-state glass">
+        <div class="empty-state">
 
             <div class="empty-icon">
                 💬
@@ -1688,8 +2074,9 @@ NAVIGATION KEYBOARD LOCK
 </div>
 
 
+
 <!-- =========================================================
-CHAT VIEW
+     CHAT VIEW
 ========================================================= -->
 
 <section
@@ -1697,9 +2084,13 @@ CHAT VIEW
     id="chatView"
 >
 
-    <!-- CHAT HEADER -->
+
+    <!-- =====================================================
+         CHAT HEADER
+    ====================================================== -->
 
     <header class="chat-header">
+
 
         <button
             type="button"
@@ -1715,6 +2106,7 @@ CHAT VIEW
             type="button"
             class="chat-person"
             id="chatPersonButton"
+            aria-label="فتح الملف الشخصي"
         >
 
             <div class="avatar-wrap">
@@ -1733,6 +2125,7 @@ CHAT VIEW
 
             </div>
 
+
             <div class="chat-person-info">
 
                 <div
@@ -1741,6 +2134,7 @@ CHAT VIEW
                 >
                     —
                 </div>
+
 
                 <div
                     class="chat-person-status"
@@ -1760,10 +2154,11 @@ CHAT VIEW
                 type="button"
                 class="icon-button"
                 id="chatNotificationButton"
-                aria-label="كتم المحادثة"
+                aria-label="إشعارات المحادثة"
             >
                 🔔
             </button>
+
 
             <button
                 type="button"
@@ -1777,7 +2172,9 @@ CHAT VIEW
         </div>
 
 
-        <!-- SEARCH MATCH NAVIGATOR -->
+        <!-- =================================================
+             SEARCH MATCH NAVIGATOR
+        ================================================== -->
 
         <div
             class="search-match-navigator"
@@ -1791,18 +2188,22 @@ CHAT VIEW
                 0 / 0
             </span>
 
+
             <div class="search-match-actions">
 
                 <button
                     type="button"
                     id="searchMatchUp"
+                    aria-label="النتيجة السابقة"
                 >
                     ↑
                 </button>
 
+
                 <button
                     type="button"
                     id="searchMatchDown"
+                    aria-label="النتيجة التالية"
                 >
                     ↓
                 </button>
@@ -1814,7 +2215,9 @@ CHAT VIEW
     </header>
 
 
-    <!-- MESSAGES -->
+    <!-- =====================================================
+         MESSAGES
+    ====================================================== -->
 
     <div
         class="chat-messages"
@@ -1822,14 +2225,18 @@ CHAT VIEW
     ></div>
 
 
-    <!-- TYPING -->
+    <!-- =====================================================
+         TYPING INDICATOR
+    ====================================================== -->
 
     <div
         class="typing-indicator"
         id="typingIndicator"
     >
 
-        <span>يكتب</span>
+        <span>
+            يكتب
+        </span>
 
         <span class="typing-dot"></span>
         <span class="typing-dot"></span>
@@ -1838,7 +2245,9 @@ CHAT VIEW
     </div>
 
 
-    <!-- COMPOSER -->
+    <!-- =====================================================
+         MESSAGE COMPOSER
+    ====================================================== -->
 
     <div
         class="message-composer"
@@ -1848,6 +2257,7 @@ CHAT VIEW
         <form
             id="messageForm"
             class="message-form"
+            autocomplete="off"
         >
 
             <textarea
@@ -1859,10 +2269,12 @@ CHAT VIEW
                 autocomplete="off"
             ></textarea>
 
+
             <button
                 type="submit"
                 class="send-button"
                 id="sendButton"
+                aria-label="إرسال"
             >
                 ↑
             </button>
@@ -1874,8 +2286,9 @@ CHAT VIEW
 </section>
 
 
+
 <!-- =========================================================
-CONTEXT MENU
+     CONTEXT MENU
 ========================================================= -->
 
 <div
@@ -1890,6 +2303,7 @@ CONTEXT MENU
         🔔 كتم الإشعارات
     </button>
 
+
     <button
         type="button"
         id="hideConversationButton"
@@ -1901,8 +2315,9 @@ CONTEXT MENU
 </div>
 
 
+
 <!-- =========================================================
-ACTIVITY MODAL
+     ACTIVITY MODAL
 ========================================================= -->
 
 <div
@@ -1916,9 +2331,11 @@ ACTIVITY MODAL
             حالة النشاط
         </div>
 
+
         <p class="modal-text">
             يمكنك التحكم بظهور حالة نشاطك للمستخدمين.
         </p>
+
 
         <div
             class="settings-group"
@@ -1933,6 +2350,7 @@ ACTIVITY MODAL
                 إظهار حالة النشاط
             </span>
 
+
             <button
                 type="button"
                 class="activity-switch"
@@ -1941,6 +2359,7 @@ ACTIVITY MODAL
             ></button>
 
         </div>
+
 
         <div class="modal-actions">
 
@@ -1959,10 +2378,9 @@ ACTIVITY MODAL
 </div>
 
 
+
 <!-- =========================================================
-MESSAGE VIEW SETTINGS
-واجهة فقط حالياً
-التنفيذ سنضعه في ملف مستقل
+     MESSAGE VIEW SETTINGS
 ========================================================= -->
 
 <div
@@ -1972,16 +2390,20 @@ MESSAGE VIEW SETTINGS
 
     <div class="modal-card">
 
+
         <div class="modal-title">
             إعدادات عرض الرسائل
         </div>
+
 
         <p class="modal-text">
             خصص شكل الرسائل وطريقة ظهورها.
         </p>
 
 
-        <!-- TEXT SIZE -->
+        <!-- =================================================
+             TEXT SIZE
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2000,6 +2422,7 @@ MESSAGE VIEW SETTINGS
 
             </div>
 
+
             <input
                 type="range"
                 class="settings-range"
@@ -2012,7 +2435,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- OWN MESSAGE COLOR -->
+        <!-- =================================================
+             OWN MESSAGE COLORS
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2024,17 +2449,17 @@ MESSAGE VIEW SETTINGS
 
             </div>
 
-            <div id="ownMessageColors">
-                <!--
-                    سيتم إنشاء 20 لوناً هنا
-                    بواسطة ملف الإعدادات
-                -->
-            </div>
+
+            <div
+                id="ownMessageColors"
+            ></div>
 
         </div>
 
 
-        <!-- OWN COLOR INTENSITY -->
+        <!-- =================================================
+             OWN COLOR INTENSITY
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2044,6 +2469,7 @@ MESSAGE VIEW SETTINGS
                     شدة اللون
                 </span>
 
+
                 <span
                     class="settings-value"
                     id="ownColorIntensityValue"
@@ -2052,6 +2478,7 @@ MESSAGE VIEW SETTINGS
                 </span>
 
             </div>
+
 
             <input
                 type="range"
@@ -2065,7 +2492,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- OWN TRANSPARENCY -->
+        <!-- =================================================
+             OWN TRANSPARENCY
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2075,6 +2504,7 @@ MESSAGE VIEW SETTINGS
                     شفافية اللون
                 </span>
 
+
                 <span
                     class="settings-value"
                     id="ownColorTransparencyValue"
@@ -2083,6 +2513,7 @@ MESSAGE VIEW SETTINGS
                 </span>
 
             </div>
+
 
             <input
                 type="range"
@@ -2096,17 +2527,20 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- OTHER MESSAGE SETTINGS -->
+        <!-- =================================================
+             OTHER BUBBLE SHAPE
+        ================================================== -->
 
         <div class="settings-group">
 
             <div class="settings-label">
 
                 <span>
-                    رسائل الطرف الآخر
+                    شكل رسائل الطرف الآخر
                 </span>
 
             </div>
+
 
             <select
                 id="otherBubbleShape"
@@ -2142,7 +2576,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- OTHER COLOR -->
+        <!-- =================================================
+             OTHER COLOR
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2154,6 +2590,7 @@ MESSAGE VIEW SETTINGS
 
             </div>
 
+
             <input
                 type="color"
                 id="otherBubbleColor"
@@ -2161,6 +2598,7 @@ MESSAGE VIEW SETTINGS
                 style="
                     width:100%;
                     height:45px;
+                    padding:2px;
                     border:1px solid var(--border);
                     border-radius:13px;
                     background:#111;
@@ -2170,7 +2608,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- OTHER INTENSITY -->
+        <!-- =================================================
+             OTHER INTENSITY
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2180,6 +2620,7 @@ MESSAGE VIEW SETTINGS
                     شدة اللون
                 </span>
 
+
                 <span
                     class="settings-value"
                     id="otherColorIntensityValue"
@@ -2188,6 +2629,7 @@ MESSAGE VIEW SETTINGS
                 </span>
 
             </div>
+
 
             <input
                 type="range"
@@ -2201,7 +2643,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- OTHER TRANSPARENCY -->
+        <!-- =================================================
+             OTHER TRANSPARENCY
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2211,6 +2655,7 @@ MESSAGE VIEW SETTINGS
                     شفافية اللون
                 </span>
 
+
                 <span
                     class="settings-value"
                     id="otherColorTransparencyValue"
@@ -2219,6 +2664,7 @@ MESSAGE VIEW SETTINGS
                 </span>
 
             </div>
+
 
             <input
                 type="range"
@@ -2232,7 +2678,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- RADIUS -->
+        <!-- =================================================
+             BUBBLE RADIUS
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -2242,6 +2690,7 @@ MESSAGE VIEW SETTINGS
                     استدارة الفقاعة
                 </span>
 
+
                 <span
                     class="settings-value"
                     id="bubbleRadiusValue"
@@ -2250,6 +2699,7 @@ MESSAGE VIEW SETTINGS
                 </span>
 
             </div>
+
 
             <input
                 type="range"
@@ -2263,13 +2713,16 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- PREVIEW -->
+        <!-- =================================================
+             PREVIEW
+        ================================================== -->
 
         <div class="settings-preview">
 
             <div class="preview-title">
                 معاينة مباشرة
             </div>
+
 
             <div class="preview-message">
                 هذه معاينة لشكل الرسالة
@@ -2278,7 +2731,9 @@ MESSAGE VIEW SETTINGS
         </div>
 
 
-        <!-- ACTIONS -->
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
 
         <div class="modal-actions">
 
@@ -2289,6 +2744,7 @@ MESSAGE VIEW SETTINGS
             >
                 إلغاء
             </button>
+
 
             <button
                 type="button"
@@ -2309,8 +2765,9 @@ MESSAGE VIEW SETTINGS
 </div>
 
 
+
 <!-- =========================================================
-CONFIRM MODAL
+     CONFIRM MODAL
 ========================================================= -->
 
 <div
@@ -2327,10 +2784,12 @@ CONFIRM MODAL
             تأكيد
         </div>
 
+
         <p
             class="modal-text"
             id="confirmText"
         ></p>
+
 
         <div class="modal-actions">
 
@@ -2341,6 +2800,7 @@ CONFIRM MODAL
             >
                 إلغاء
             </button>
+
 
             <button
                 type="button"
@@ -2357,8 +2817,9 @@ CONFIRM MODAL
 </div>
 
 
+
 <!-- =========================================================
-NOTIFICATIONS
+     NOTIFICATIONS
 ========================================================= -->
 
 <aside
@@ -2372,6 +2833,7 @@ NOTIFICATIONS
             الإشعارات
         </span>
 
+
         <button
             type="button"
             class="notifications-clear"
@@ -2382,6 +2844,7 @@ NOTIFICATIONS
 
     </div>
 
+
     <div
         class="notifications-list"
         id="notificationsList"
@@ -2390,8 +2853,9 @@ NOTIFICATIONS
 </aside>
 
 
+
 <!-- =========================================================
-SUCCESS
+     SUCCESS
 ========================================================= -->
 
 <div
@@ -2405,6 +2869,7 @@ SUCCESS
             ✓
         </div>
 
+
         <div style="margin-top:8px;">
             تم حفظ الإعدادات
         </div>
@@ -2414,29 +2879,40 @@ SUCCESS
 </div>
 
 
+
 <!-- =========================================================
-SUPABASE
-ملف التنفيذ سيستخدم نفس الاتصال
+     SUPABASE
 ========================================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<!-- =========================================================
+     AUTH
+========================================================= -->
 
 <script src="./settings-features/settings-auth-config.js"></script>
 <script src="./settings-features/settings-auth.js"></script>
 <script src="./settings-features/settings-auth-ui.js"></script>
 
 
+
 <!-- =========================================================
-MESSAGES CORE
-سنضيفه بالخطوة التالية
+     WFESC MESSAGES
 ========================================================= -->
 
 <script src="./messages/messages-core.js"></script>
 
-<!--
-الملفات التالية سنضيفها بالتدريج:
-
 <script src="./messages/messages-send.js"></script>
+
+
+
+<!-- =========================================================
+     FUTURE MODULES
+     لا تضفها حالياً
+========================================================= -->
+
+<!--
 <script src="./messages/messages-realtime.js"></script>
 <script src="./messages/messages-search.js"></script>
 <script src="./messages/messages-notifications.js"></script>
@@ -2445,11 +2921,13 @@ MESSAGES CORE
 -->
 
 
+
 <!-- =========================================================
-NAVIGATION
+     NAVIGATION
 ========================================================= -->
 
 <script src="./navigation/navigation-loader.js"></script>
+
 
 </body>
 </html>
