@@ -3,48 +3,68 @@
 
     /*
     ============================================================
-    WFESC MESSAGES SEND
-    النسخة المستقرة + اتصال نظام الكيبورد
+       WFESC MESSAGES SEND
+       النسخة المتوافقة مع Messages Core الجديد
 
-    مسؤول عن:
-    - كتابة الرسالة
-    - تغيير ارتفاع حقل الكتابة
-    - الإرسال
-    - منع الإرسال المكرر
-    - Enter للإرسال
-    - Shift + Enter لسطر جديد
-    - ظهور الرسالة فوراً
-    - عدم إعادة رسم المحادثة بعد الإرسال
-    - الحفاظ على المحادثة مفتوحة
-    - الاتصال بملف messages-keyboard.js
-    ============================================================
+       مسؤول عن:
+       - إرسال الرسائل
+       - ظهور الرسالة فوراً
+       - منع الإرسال المكرر
+       - منع إعادة تحميل الصفحة
+       - Enter للإرسال
+       - Shift + Enter لسطر جديد
+       - الحفاظ على الكيبورد مفتوحاً
+       - تحديث الرسالة المؤقتة بعد نجاح الإرسال
+       - إيقاف جاري الكتابة عند الإرسال
+       ============================================================
     */
+
+
+    /* =========================================================
+       CORE
+    ========================================================= */
 
     const core =
         window.WFESC_MESSAGES_CORE;
 
+
     if (!core) {
+
         console.error(
             "WFESC Messages Send: messages-core.js غير موجود."
         );
+
         return;
     }
+
 
     /* =========================================================
        DOM
     ========================================================= */
 
     const messageForm =
-        document.getElementById("messageForm");
+        document.getElementById(
+            "messageForm"
+        );
+
 
     const messageInput =
-        document.getElementById("messageInput");
+        document.getElementById(
+            "messageInput"
+        );
+
 
     const sendButton =
-        document.getElementById("sendButton");
+        document.getElementById(
+            "sendButton"
+        );
+
 
     const chatMessages =
-        document.getElementById("chatMessages");
+        document.getElementById(
+            "chatMessages"
+        );
+
 
     /* =========================================================
        STATE
@@ -52,65 +72,125 @@
 
     let isSending = false;
 
+
+    /*
+       يمنع تنفيذ أكثر من عملية إرسال
+       لنفس النص في نفس اللحظة.
+    */
+    let sendLock = false;
+
+
     /* =========================================================
-       KEYBOARD MODULE
+       KEYBOARD
     ========================================================= */
 
     function keepKeyboardOpen() {
 
+        if (!messageInput) {
+            return;
+        }
+
+
+        /*
+           نعيد التركيز فقط إذا كان الحقل
+           ما زال داخل المحادثة الحالية.
+        */
+        try {
+
+            messageInput.focus({
+                preventScroll: true
+            });
+
+        } catch (_) {
+
+            try {
+
+                messageInput.focus();
+
+            } catch (_) {}
+        }
+
+
+        /*
+           نطلب من محرك الكيبورد إعادة الحساب.
+        */
         const keyboard =
             window.WFESC_MESSAGES_KEYBOARD;
 
+
         if (
             keyboard &&
-            typeof keyboard.keepKeyboardOpen ===
-                "function"
+            typeof keyboard.update ===
+            "function"
         ) {
-            keyboard.keepKeyboardOpen();
-            return true;
+
+            setTimeout(
+                () => {
+
+                    keyboard.update();
+
+                },
+                30
+            );
+
+            setTimeout(
+                () => {
+
+                    keyboard.update();
+
+                },
+                150
+            );
         }
-
-        /*
-           احتياط إذا كان ملف الكيبورد لم يجهز بعد.
-        */
-        if (messageInput) {
-
-            try {
-                messageInput.focus({
-                    preventScroll: true
-                });
-            } catch (_) {
-
-                try {
-                    messageInput.focus();
-                } catch (_) {}
-            }
-        }
-
-        return false;
     }
 
+
     /* =========================================================
-       HELPERS
+       SCROLL
     ========================================================= */
 
     function scrollToBottom(
         behavior = "smooth"
     ) {
+
         if (!chatMessages) {
             return;
         }
 
+
         requestAnimationFrame(() => {
 
-            chatMessages.scrollTo({
-                top:
-                    chatMessages.scrollHeight,
-                behavior
-            });
+            const top =
+                Math.max(
+                    0,
+                    chatMessages.scrollHeight -
+                    chatMessages.clientHeight
+                );
+
+
+            if (
+                typeof chatMessages.scrollTo ===
+                "function"
+            ) {
+
+                chatMessages.scrollTo({
+                    top,
+                    behavior
+                });
+
+            } else {
+
+                chatMessages.scrollTop =
+                    top;
+            }
 
         });
     }
+
+
+    /* =========================================================
+       TEXTAREA
+    ========================================================= */
 
     function resizeTextarea() {
 
@@ -118,11 +198,14 @@
             return;
         }
 
+
         messageInput.style.height =
             "auto";
 
+
         const maxHeight =
             100;
+
 
         const nextHeight =
             Math.min(
@@ -130,24 +213,35 @@
                 maxHeight
             );
 
+
         messageInput.style.height =
             `${nextHeight}px`;
     }
 
-    function setSendingState(state) {
+
+    /* =========================================================
+       SENDING STATE
+    ========================================================= */
+
+    function setSendingState(
+        state
+    ) {
 
         isSending =
             Boolean(state);
+
 
         if (sendButton) {
 
             sendButton.disabled =
                 isSending;
 
+
             sendButton.classList.toggle(
                 "sending",
                 isSending
             );
+
 
             sendButton.textContent =
                 isSending
@@ -155,9 +249,7 @@
                     : "↑";
         }
 
-        /*
-           لا نعطل حقل الكتابة.
-        */
+
         if (messageInput) {
 
             messageInput.classList.toggle(
@@ -166,6 +258,11 @@
             );
         }
     }
+
+
+    /* =========================================================
+       OPTIMISTIC MESSAGE
+    ========================================================= */
 
     function createOptimisticMessage(
         content,
@@ -182,7 +279,8 @@
             sender_id:
                 userId,
 
-            content,
+            content:
+                content,
 
             created_at:
                 new Date().toISOString(),
@@ -192,6 +290,11 @@
         };
     }
 
+
+    /* =========================================================
+       RENDER OPTIMISTIC MESSAGE
+    ========================================================= */
+
     function renderTemporaryMessage(
         message
     ) {
@@ -200,16 +303,24 @@
             return null;
         }
 
+
+        /*
+           إزالة رسالة "لا توجد رسائل".
+        */
         const emptyState =
             chatMessages.querySelector(
                 ".empty-state"
             );
 
+
         if (emptyState) {
             emptyState.remove();
         }
 
-        let row = null;
+
+        let row =
+            null;
+
 
         if (
             typeof core.createMessageElement ===
@@ -222,44 +333,78 @@
                 );
         }
 
+
         if (!row) {
 
             console.error(
-                "WFESC: تعذر إنشاء عنصر الرسالة."
+                "WFESC: تعذر إنشاء الرسالة المؤقتة."
             );
 
             return null;
         }
+
 
         row.classList.add(
             "message-new",
             "optimistic"
         );
 
+
         row.dataset.optimisticId =
             String(message.id);
+
+
+        /*
+           Animation بسيطة للرسالة الجديدة.
+        */
+        try {
+
+            row.animate(
+                [
+                    {
+                        opacity: 0,
+                        transform:
+                            "translateY(8px) scale(.98)"
+                    },
+                    {
+                        opacity: 1,
+                        transform:
+                            "translateY(0) scale(1)"
+                    }
+                ],
+                {
+                    duration: 180,
+                    easing:
+                        "ease-out"
+                }
+            );
+
+        } catch (_) {}
+
 
         chatMessages.appendChild(
             row
         );
 
+
         /*
-           تطبيق إعدادات الرسائل إذا كانت موجودة.
+           تطبيق إعدادات الفقاعات.
         */
         try {
 
             const settings =
                 window.WFESC_MESSAGE_SETTINGS;
 
+
             if (
                 settings &&
                 typeof settings.apply ===
-                    "function"
+                "function"
             ) {
 
                 settings.apply(
                     typeof settings.get ===
-                        "function"
+                    "function"
                         ? settings.get()
                         : undefined
                 );
@@ -273,54 +418,78 @@
             );
         }
 
-        scrollToBottom("smooth");
+
+        scrollToBottom(
+            "smooth"
+        );
+
 
         return row;
     }
+
 
     /* =========================================================
        EXTRACT SENT MESSAGE
     ========================================================= */
 
-    function extractSentMessage(data) {
+    function extractSentMessage(
+        data
+    ) {
 
         if (!data) {
             return null;
         }
 
+
         if (Array.isArray(data)) {
-            return data[0] || null;
+
+            return (
+                data[0] ||
+                null
+            );
         }
+
 
         if (
             data.message &&
             typeof data.message ===
-                "object"
+            "object"
         ) {
+
             return data.message;
         }
+
 
         if (
             data.data &&
             Array.isArray(data.data)
         ) {
-            return data.data[0] || null;
+
+            return (
+                data.data[0] ||
+                null
+            );
         }
+
 
         if (
             data.data &&
             typeof data.data ===
-                "object"
+            "object"
         ) {
+
             return data.data;
         }
+
 
         if (
             typeof data !==
             "object"
         ) {
+
             return null;
         }
+
 
         if (
             data.content !== undefined ||
@@ -330,14 +499,17 @@
             data.created_at !== undefined ||
             data.id !== undefined
         ) {
+
             return data;
         }
+
 
         return null;
     }
 
+
     /* =========================================================
-       CONFIRM TEMPORARY MESSAGE
+       CONFIRM OPTIMISTIC MESSAGE
     ========================================================= */
 
     function confirmTemporaryMessage(
@@ -349,69 +521,110 @@
             return;
         }
 
+
         temporaryRow.classList.remove(
             "optimistic"
         );
+
 
         temporaryRow.classList.remove(
             "message-new"
         );
 
+
         temporaryRow.dataset.confirmed =
             "true";
 
-        if (sentMessage) {
 
-            const realId =
-                sentMessage.id ??
-                sentMessage.message_id;
+        if (!sentMessage) {
+            return;
+        }
 
-            if (realId != null) {
 
-                temporaryRow.dataset.messageId =
-                    String(realId);
-            }
+        const realId =
+            sentMessage.id ??
+            sentMessage.message_id;
 
-            const timeElement =
-                temporaryRow.querySelector(
-                    ".message-time"
+
+        if (realId != null) {
+
+            temporaryRow.dataset.messageId =
+                String(realId);
+        }
+
+
+        /*
+           تحديث الوقت.
+        */
+        const timeElement =
+            temporaryRow.querySelector(
+                ".message-time"
+            );
+
+
+        const createdAt =
+            sentMessage.created_at ||
+            sentMessage.sent_at;
+
+
+        if (
+            timeElement &&
+            createdAt
+        ) {
+
+            const date =
+                new Date(
+                    createdAt
                 );
 
+
             if (
-                timeElement &&
-                (
-                    sentMessage.created_at ||
-                    sentMessage.sent_at
+                !Number.isNaN(
+                    date.getTime()
                 )
             ) {
 
-                const date =
-                    new Date(
-                        sentMessage.created_at ||
-                        sentMessage.sent_at
+                timeElement.textContent =
+                    date.toLocaleTimeString(
+                        "ar-IQ",
+                        {
+                            hour:
+                                "2-digit",
+
+                            minute:
+                                "2-digit"
+                        }
                     );
-
-                if (
-                    !Number.isNaN(
-                        date.getTime()
-                    )
-                ) {
-
-                    timeElement.textContent =
-                        date.toLocaleTimeString(
-                            "ar-IQ",
-                            {
-                                hour:
-                                    "2-digit",
-
-                                minute:
-                                    "2-digit"
-                            }
-                        );
-                }
             }
         }
     }
+
+
+    /* =========================================================
+       REMOVE TYPING
+    ========================================================= */
+
+    function stopTyping() {
+
+        try {
+
+            if (
+                typeof core.stopTyping ===
+                "function"
+            ) {
+
+                core.stopTyping();
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC stop typing:",
+                error
+            );
+        }
+    }
+
 
     /* =========================================================
        SEND
@@ -419,28 +632,40 @@
 
     async function sendCurrentMessage() {
 
-        if (isSending) {
+        /*
+           حماية إضافية ضد الإرسال المكرر.
+        */
+        if (
+            isSending ||
+            sendLock
+        ) {
+
             return;
         }
+
 
         if (!messageInput) {
             return;
         }
 
+
         const user =
             core.getCurrentUser();
+
 
         const conversationId =
             core.getCurrentConversation();
 
+
         if (!user) {
 
             console.warn(
-                "WFESC: لا يوجد مستخدم."
+                "WFESC: لا يوجد مستخدم مسجل الدخول."
             );
 
             return;
         }
+
 
         if (!conversationId) {
 
@@ -451,34 +676,56 @@
             return;
         }
 
-        const content =
+
+        const originalContent =
             messageInput.value
                 .replace(/\r\n/g, "\n")
                 .trim();
 
-        if (!content) {
+
+        if (!originalContent) {
             return;
         }
+
 
         const sendingConversationId =
             conversationId;
 
-        const originalContent =
-            content;
 
         /*
-           مهم:
-           نعرف هل المستخدم كان يكتب والكيبورد مفتوح.
+           هل كان المستخدم داخل حقل الكتابة؟
         */
         const hadFocus =
             document.activeElement ===
             messageInput;
 
-        setSendingState(true);
 
-        /* =====================================================
-           1. الرسالة تظهر فوراً
-           ===================================================== */
+        /*
+           قفل الإرسال.
+        */
+        sendLock =
+            true;
+
+
+        setSendingState(
+            true
+        );
+
+
+        /*
+        ========================================================
+           1. إيقاف جاري الكتابة
+        ========================================================
+        */
+
+        stopTyping();
+
+
+        /*
+        ========================================================
+           2. إنشاء الرسالة فوراً
+        ========================================================
+        */
 
         const optimistic =
             createOptimisticMessage(
@@ -486,22 +733,31 @@
                 user.id
             );
 
+
         const temporaryRow =
             renderTemporaryMessage(
                 optimistic
             );
 
-        /* =====================================================
-           2. تفريغ الحقل
-           ===================================================== */
 
-        messageInput.value = "";
+        /*
+        ========================================================
+           3. تفريغ الحقل فوراً
+        ========================================================
+        */
+
+        messageInput.value =
+            "";
+
 
         resizeTextarea();
 
-        /* =====================================================
-           3. الإرسال إلى Supabase
-           ===================================================== */
+
+        /*
+        ========================================================
+           4. إرسال إلى Supabase
+        ========================================================
+        */
 
         try {
 
@@ -519,60 +775,91 @@
                 }
             );
 
+
             if (error) {
                 throw error;
             }
 
-            /* =================================================
-               التأكد من بقاء نفس المحادثة
-               ================================================= */
 
-            const stillSameConversation =
-                String(
-                    core.getCurrentConversation()
-                ) ===
-                String(
-                    sendingConversationId
-                );
+            /*
+            ====================================================
+               التأكد أن المستخدم ما زال في نفس المحادثة
+            ====================================================
+            */
+
+            const currentConversation =
+                core.getCurrentConversation();
+
 
             if (
-                !stillSameConversation
+                String(
+                    currentConversation
+                ) !==
+                String(
+                    sendingConversationId
+                )
             ) {
 
                 return;
             }
 
-            /* =================================================
+
+            /*
+            ====================================================
                استخراج الرسالة الحقيقية
-               ================================================= */
+            ====================================================
+            */
 
             const sentMessage =
-                extractSentMessage(data);
+                extractSentMessage(
+                    data
+                );
 
-            /* =================================================
-               تأكيد الرسالة بدون إعادة الرسم
-               ================================================= */
+
+            /*
+            ====================================================
+               تأكيد الرسالة الموجودة أصلاً
+               لا نعيد رسم المحادثة.
+            ====================================================
+            */
 
             confirmTemporaryMessage(
                 temporaryRow,
                 sentMessage
             );
 
+
+            /*
+            ====================================================
+               تحديث القائمة محلياً إذا كان لدينا
+               آخر وقت/رسالة.
+            ====================================================
+            */
+
             if (
                 sentMessage &&
-                typeof core.getMessages ===
-                    "function"
+                typeof core.getConversations ===
+                "function"
             ) {
 
-                console.log(
-                    "WFESC message confirmed:",
-                    sentMessage
-                );
+                /*
+                   Realtime سيحدث قائمة المحادثات
+                   عند وصول INSERT.
+                   لا نحتاج إعادة تحميل كاملة.
+                */
             }
+
+
+            /*
+            ====================================================
+               التأكد من بقاء الرسالة في الأسفل
+            ====================================================
+            */
 
             scrollToBottom(
                 "smooth"
             );
+
 
         } catch (error) {
 
@@ -581,15 +868,68 @@
                 error
             );
 
+
+            /*
+            ====================================================
+               فشل الإرسال:
+               نحذف النسخة المؤقتة
+            ====================================================
+            */
+
             if (temporaryRow) {
-                temporaryRow.remove();
+
+                try {
+
+                    temporaryRow.animate(
+                        [
+                            {
+                                opacity: 1,
+                                transform:
+                                    "translateX(0)"
+                            },
+                            {
+                                opacity: 0,
+                                transform:
+                                    "translateX(8px)"
+                            }
+                        ],
+                        {
+                            duration: 150,
+                            easing:
+                                "ease-in"
+                        }
+                    ).finished
+                    .then(() => {
+
+                        temporaryRow.remove();
+
+                    })
+                    .catch(() => {
+
+                        temporaryRow.remove();
+
+                    });
+
+                } catch (_) {
+
+                    temporaryRow.remove();
+                }
             }
 
+
+            /*
+               إعادة النص حتى لا يضيع.
+            */
             messageInput.value =
                 originalContent;
 
+
             resizeTextarea();
 
+
+            /*
+               اهتزاز خفيف عند الخطأ.
+            */
             try {
 
                 messageInput.animate(
@@ -608,6 +948,10 @@
                         },
                         {
                             transform:
+                                "translateX(-3px)"
+                        },
+                        {
+                            transform:
                                 "translateX(0)"
                         }
                     ],
@@ -618,43 +962,70 @@
                 );
 
             } catch (_) {}
+        }
 
-        } finally {
+
+        /* =====================================================
+           FINALLY
+        ===================================================== */
+
+        finally {
 
             setSendingState(
                 false
             );
 
+
+            sendLock =
+                false;
+
+
             resizeTextarea();
+
 
             /*
             ====================================================
-            إعادة إبقاء الكيبورد مفتوح
-            ====================================================
-
-            إذا كان المستخدم يكتب قبل الإرسال،
-            نطلب من messages-keyboard.js أن يتولى
-            إبقاء الكيبورد مفتوحاً.
-
-            لا نتحكم بالـ keyboard من هذا الملف مباشرة.
+               الحفاظ على الكيبورد
             ====================================================
             */
 
             if (hadFocus) {
 
+                requestAnimationFrame(
+                    () => {
+
+                        keepKeyboardOpen();
+
+                    }
+                );
+
+
                 /*
-                   ننتظر انتهاء عملية الإرسال بالكامل
-                   ثم نسلم التحكم لملف الكيبورد.
+                   Android أحياناً يحتاج تأخير إضافي
+                   بعد انتهاء RPC.
                 */
-                requestAnimationFrame(() => {
+                setTimeout(
+                    () => {
 
-                    keepKeyboardOpen();
+                        keepKeyboardOpen();
 
-                });
+                    },
+                    80
+                );
 
+
+                setTimeout(
+                    () => {
+
+                        keepKeyboardOpen();
+
+                    },
+                    220
+                );
             }
         }
     }
+
 
     /* =========================================================
        FORM
@@ -666,13 +1037,22 @@
             "submit",
             event => {
 
+                /*
+                   مهم جداً:
+                   preventDefault أول شيء حتى لا يقوم
+                   المتصفح بإعادة تحميل الصفحة.
+                */
                 event.preventDefault();
 
-                sendCurrentMessage();
 
+                event.stopPropagation();
+
+
+                sendCurrentMessage();
             }
         );
     }
+
 
     /* =========================================================
        INPUT
@@ -680,11 +1060,23 @@
 
     if (messageInput) {
 
+        /*
+           تغيير حجم حقل الكتابة.
+        */
         messageInput.addEventListener(
             "input",
-            resizeTextarea
+            () => {
+
+                resizeTextarea();
+
+            }
         );
 
+
+        /*
+           Enter = إرسال
+           Shift + Enter = سطر جديد
+        */
         messageInput.addEventListener(
             "keydown",
             event => {
@@ -696,39 +1088,80 @@
 
                     event.preventDefault();
 
+
+                    event.stopPropagation();
+
+
                     sendCurrentMessage();
 
                 }
             }
         );
 
+
+        /*
+           عند التركيز:
+           تحديث الكيبورد والتمرير.
+        */
         messageInput.addEventListener(
             "focus",
             () => {
 
-                requestAnimationFrame(() => {
+                requestAnimationFrame(
+                    () => {
 
-                    scrollToBottom(
-                        "smooth"
-                    );
+                        scrollToBottom(
+                            "smooth"
+                        );
 
-                    const keyboard =
-                        window.WFESC_MESSAGES_KEYBOARD;
 
-                    if (
-                        keyboard &&
-                        typeof keyboard.updateInputPosition ===
+                        const keyboard =
+                            window.WFESC_MESSAGES_KEYBOARD;
+
+
+                        if (
+                            keyboard &&
+                            typeof keyboard.update ===
                             "function"
-                    ) {
+                        ) {
 
-                        keyboard.updateInputPosition();
+                            keyboard.update();
+                        }
+
                     }
-
-                });
-
+                );
             }
         );
     }
+
+
+    /* =========================================================
+       SEND BUTTON
+    ========================================================= */
+
+    if (sendButton) {
+
+        sendButton.addEventListener(
+            "click",
+            event => {
+
+                /*
+                   حماية إذا الزر استُخدم خارج form.
+                */
+                event.preventDefault();
+
+
+                if (
+                    !isSending &&
+                    !sendLock
+                ) {
+
+                    sendCurrentMessage();
+                }
+            }
+        );
+    }
+
 
     /* =========================================================
        PUBLIC API
@@ -739,6 +1172,7 @@
         sendCurrentMessage,
 
         isSending() {
+
             return isSending;
         },
 
@@ -746,10 +1180,12 @@
 
     };
 
+
     /* =========================================================
        INIT
     ========================================================= */
 
     resizeTextarea();
+
 
 })();
