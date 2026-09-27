@@ -1,218 +1,82 @@
+/* =========================================================
+   WFESC PROFILE STORAGE
+   الملف المسؤول عن صور الملف الشخصي والغلاف
+   Bucket: wfesc-profile-images
+========================================================= */
 
 (function () {
     "use strict";
 
-    /*
-     * WFESC Profile Storage
-     * ---------------------
-     * مسؤول عن:
-     * - رفع صورة الحساب
-     * - رفع صورة الغلاف
-     * - حذف صورة الحساب
-     * - حذف صورة الغلاف
-     * - استخدام نفس Supabase الخاص بالموقع
-     *
-     * Bucket المطلوب:
-     * wfesc-profile-images
-     */
-
-    if (window.WFESCProfileStorage) {
-        return;
-    }
-
-    const STORAGE_BUCKET = "wfesc-profile-images";
+    const BUCKET_NAME = "wfesc-profile-images";
     const STORAGE_ROOT = "profiles";
 
-    let storageClient = null;
-
-
-    /* =========================================================
-       CONFIG
-    ========================================================= */
-
-    function getConfig() {
-        const config = window.WFESCSettingsAuthConfig;
-
-        if (!config) {
-            throw new Error("WFESC_AUTH_CONFIG_NOT_FOUND");
+    function getSupabaseClient() {
+        if (window.WFESCSupabase) {
+            return window.WFESCSupabase;
         }
 
-        if (!config.supabaseUrl || !config.supabaseKey) {
-            throw new Error("WFESC_SUPABASE_CONFIG_INVALID");
-        }
+        if (window.supabase && typeof window.supabase.createClient === "function") {
+            const url =
+                window.WFESC_SUPABASE_URL ||
+                window.SUPABASE_URL;
 
-        return config;
-    }
+            const key =
+                window.WFESC_SUPABASE_KEY ||
+                window.SUPABASE_KEY;
 
-
-    /* =========================================================
-       SUPABASE CLIENT
-    ========================================================= */
-
-    function getClient() {
-
-        /*
-         * إذا كان settings-auth.js قد وفّر العميل
-         * نستخدمه مباشرة.
-         */
-
-        if (
-            window.WFESCSettingsAuthClient &&
-            typeof window.WFESCSettingsAuthClient.storage !== "undefined"
-        ) {
-            return window.WFESCSettingsAuthClient;
-        }
-
-
-        /*
-         * إذا لم يكن متوفرًا، ننشئ عميلًا من نفس
-         * إعدادات Supabase الموجودة بالموقع.
-         */
-
-        if (
-            storageClient &&
-            typeof storageClient.storage !== "undefined"
-        ) {
-            return storageClient;
-        }
-
-        if (
-            !window.supabase ||
-            typeof window.supabase.createClient !== "function"
-        ) {
-            throw new Error("SUPABASE_LIBRARY_NOT_READY");
-        }
-
-        const config = getConfig();
-
-        storageClient = window.supabase.createClient(
-            config.supabaseUrl,
-            config.supabaseKey
-        );
-
-        return storageClient;
-    }
-
-
-    /* =========================================================
-       CURRENT USER
-    ========================================================= */
-
-    async function getCurrentUser() {
-
-        /*
-         * نستخدم نظام تسجيل الدخول الأصلي أولًا.
-         */
-
-        if (
-            window.WFESCSettingsAuth &&
-            typeof window.WFESCSettingsAuth.getCurrentUser === "function"
-        ) {
-            const result =
-                await window.WFESCSettingsAuth.getCurrentUser();
-
-            const user =
-                result?.data?.user ||
-                result?.user ||
-                result;
-
-            if (user && user.id) {
-                return user;
+            if (url && key) {
+                window.WFESCSupabase = window.supabase.createClient(url, key);
+                return window.WFESCSupabase;
             }
         }
 
-
-        if (
-            window.WFESCSettingsAuth &&
-            typeof window.WFESCSettingsAuth.getUser === "function"
-        ) {
-            const result =
-                await window.WFESCSettingsAuth.getUser();
-
-            const user =
-                result?.data?.user ||
-                result?.user ||
-                result;
-
-            if (user && user.id) {
-                return user;
-            }
-        }
-
-
-        /*
-         * احتياطًا نقرأ المستخدم من نفس جلسة Supabase.
-         */
-
-        const client = getClient();
-
-        const { data, error } =
-            await client.auth.getUser();
-
-        if (error) {
-            throw error;
-        }
-
-        if (!data || !data.user) {
-            throw new Error("WFESC_LOGIN_REQUIRED");
-        }
-
-        return data.user;
+        throw new Error("Supabase client غير متوفر");
     }
 
-
-    /* =========================================================
-       VALIDATE IMAGE TYPE
-    ========================================================= */
-
-    function validateImageType(type) {
-
-        if (type !== "avatar" && type !== "cover") {
-            throw new Error("WFESC_INVALID_IMAGE_TYPE");
+    function getExtensionFromDataUrl(dataUrl) {
+        if (!dataUrl || typeof dataUrl !== "string") {
+            return "jpg";
         }
 
-        return true;
+        const match = dataUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,/);
+
+        if (!match) {
+            return "jpg";
+        }
+
+        let ext = match[1].toLowerCase();
+
+        if (ext === "jpeg") {
+            ext = "jpg";
+        }
+
+        if (!["jpg", "png", "webp"].includes(ext)) {
+            ext = "jpg";
+        }
+
+        return ext;
     }
-
-
-    /* =========================================================
-       DATA URL -> BLOB
-    ========================================================= */
 
     function dataUrlToBlob(dataUrl) {
-
-        if (
-            typeof dataUrl !== "string" ||
-            !dataUrl.startsWith("data:")
-        ) {
-            throw new Error("WFESC_INVALID_IMAGE_DATA");
+        if (!dataUrl || typeof dataUrl !== "string") {
+            throw new Error("الصورة غير صالحة");
         }
 
         const parts = dataUrl.split(",");
 
         if (parts.length !== 2) {
-            throw new Error("WFESC_INVALID_DATA_URL");
+            throw new Error("صيغة الصورة غير صالحة");
         }
 
-        const header = parts[0];
-        const base64 = parts[1];
+        const mimeMatch = parts[0].match(/data:([^;]+);base64/);
 
-        const mimeMatch =
-            header.match(/data:([^;]+);base64/);
-
-        const mimeType =
-            mimeMatch && mimeMatch[1]
-                ? mimeMatch[1]
-                : "image/jpeg";
-
-        let binary;
-
-        try {
-            binary = atob(base64);
-        } catch (error) {
-            throw new Error("WFESC_INVALID_BASE64");
+        if (!mimeMatch) {
+            throw new Error("نوع الصورة غير معروف");
         }
 
+        const mimeType = mimeMatch[1];
+
+        const binary = atob(parts[1]);
         const length = binary.length;
         const bytes = new Uint8Array(length);
 
@@ -220,378 +84,186 @@
             bytes[i] = binary.charCodeAt(i);
         }
 
-        return {
-            blob: new Blob([bytes], {
-                type: mimeType
-            }),
-            mimeType
-        };
+        return new Blob([bytes], {
+            type: mimeType
+        });
     }
 
+    async function getCurrentUserId() {
+        const supabase = getSupabaseClient();
 
-    /* =========================================================
-       FILE EXTENSION
-    ========================================================= */
+        const {
+            data,
+            error
+        } = await supabase.auth.getUser();
 
-    function getExtension(mimeType) {
-
-        switch (mimeType) {
-
-            case "image/png":
-                return "png";
-
-            case "image/webp":
-                return "webp";
-
-            case "image/gif":
-                return "gif";
-
-            case "image/jpeg":
-            case "image/jpg":
-            default:
-                return "jpg";
+        if (error) {
+            throw error;
         }
+
+        if (!data || !data.user || !data.user.id) {
+            throw new Error("يجب تسجيل الدخول أولًا");
+        }
+
+        return data.user.id;
     }
 
-
-    /* =========================================================
-       STORAGE PATH
-    ========================================================= */
-
-    function getStoragePath(userId, type, extension) {
-
-        validateImageType(type);
-
-        if (!userId) {
-            throw new Error("WFESC_USER_ID_REQUIRED");
-        }
+    function buildPath(userId, type, extension) {
+        const safeType = type === "cover" ? "cover" : "avatar";
 
         return (
             STORAGE_ROOT +
             "/" +
             userId +
             "/" +
-            type +
+            safeType +
             "." +
             extension
         );
     }
 
-
-    /* =========================================================
-       REMOVE OLD IMAGE FILES
-    ========================================================= */
-
-    async function removeImageFiles(userId, type) {
-
-        validateImageType(type);
-
-        if (!userId) {
-            throw new Error("WFESC_USER_ID_REQUIRED");
-        }
-
-        const client = getClient();
-
-        const folder =
-            STORAGE_ROOT +
-            "/" +
-            userId;
-
-        const { data, error } =
-            await client.storage
-                .from(STORAGE_BUCKET)
-                .list(folder, {
-                    limit: 100,
-                    offset: 0
-                });
-
-        if (error) {
-            throw error;
-        }
-
-        if (!Array.isArray(data) || data.length === 0) {
-            return {
-                removed: false,
-                files: []
-            };
-        }
-
-        const allowedNames = [
-            type + ".jpg",
-            type + ".jpeg",
-            type + ".png",
-            type + ".webp",
-            type + ".gif"
-        ];
-
-        const filesToDelete = data
-            .filter(function (file) {
-                return allowedNames.includes(file.name);
-            })
-            .map(function (file) {
-                return folder + "/" + file.name;
-            });
-
-        if (filesToDelete.length === 0) {
-            return {
-                removed: false,
-                files: []
-            };
-        }
-
-        const { error: removeError } =
-            await client.storage
-                .from(STORAGE_BUCKET)
-                .remove(filesToDelete);
-
-        if (removeError) {
-            throw removeError;
-        }
-
-        return {
-            removed: true,
-            files: filesToDelete
-        };
-    }
-
-
-    /* =========================================================
-       UPLOAD IMAGE
-    ========================================================= */
-
     async function uploadImage(options) {
-
         options = options || {};
 
-        const type = options.type;
-        const dataUrl = options.dataUrl;
-        const userId = options.userId || null;
+        const type = options.type === "cover"
+            ? "cover"
+            : "avatar";
 
-        validateImageType(type);
+        const dataUrl = options.dataUrl;
 
         if (!dataUrl) {
-            throw new Error("WFESC_IMAGE_REQUIRED");
+            throw new Error("لم يتم اختيار صورة");
         }
 
-        const user =
-            userId
-                ? { id: userId }
-                : await getCurrentUser();
+        const userId = options.userId || await getCurrentUserId();
 
-        if (!user || !user.id) {
-            throw new Error("WFESC_LOGIN_REQUIRED");
-        }
+        const extension = getExtensionFromDataUrl(dataUrl);
+        const blob = dataUrlToBlob(dataUrl);
 
-        const converted =
-            dataUrlToBlob(dataUrl);
+        const path = buildPath(
+            userId,
+            type,
+            extension
+        );
 
-        const blob =
-            converted.blob;
+        const supabase = getSupabaseClient();
 
-        const mimeType =
-            converted.mimeType;
-
-        const extension =
-            getExtension(mimeType);
-
-        const path =
-            getStoragePath(
-                user.id,
-                type,
-                extension
+        const {
+            error: uploadError
+        } = await supabase.storage
+            .from(BUCKET_NAME)
+            .upload(
+                path,
+                blob,
+                {
+                    contentType: blob.type || "image/jpeg",
+                    upsert: true,
+                    cacheControl: "3600"
+                }
             );
 
-        const client = getClient();
-
-
-        /*
-         * نحذف النسخ القديمة أولًا حتى لا تبقى
-         * صور قديمة داخل Storage.
-         */
-
-        try {
-            await removeImageFiles(
-                user.id,
-                type
-            );
-        } catch (removeError) {
-
-            /*
-             * إذا كانت الملفات القديمة غير موجودة
-             * نكمل الرفع بشكل طبيعي.
-             *
-             * أما أخطاء الصلاحيات وغيرها فنتركها
-             * حتى لا يتم رفع الصورة بشكل غير صحيح.
-             */
-
-            if (
-                removeError &&
-                removeError.message &&
-                !String(removeError.message)
-                    .toLowerCase()
-                    .includes("not found")
-            ) {
-                console.warn(
-                    "WFESC Storage old image cleanup:",
-                    removeError
-                );
-            }
+        if (uploadError) {
+            throw uploadError;
         }
 
+        const {
+            data: publicData
+        } = supabase.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(path);
 
-        /*
-         * رفع الصورة الجديدة.
-         */
+        const publicUrl =
+            publicData &&
+            publicData.publicUrl
+                ? publicData.publicUrl
+                : "";
 
-        const { data, error } =
-            await client.storage
-                .from(STORAGE_BUCKET)
-                .upload(
-                    path,
-                    blob,
-                    {
-                        cacheControl: "3600",
-                        upsert: true,
-                        contentType: mimeType
-                    }
-                );
+        if (!publicUrl) {
+            throw new Error("تعذر إنشاء رابط الصورة");
+        }
+
+        const cleanUrl =
+            publicUrl +
+            (publicUrl.includes("?") ? "&" : "?") +
+            "v=" +
+            Date.now();
+
+        return {
+            success: true,
+            type: type,
+            userId: userId,
+            path: path,
+            publicUrl: publicUrl,
+            cleanUrl: cleanUrl
+        };
+    }
+
+    async function deleteImage(options) {
+        options = options || {};
+
+        const type = options.type === "cover"
+            ? "cover"
+            : "avatar";
+
+        const userId = options.userId || await getCurrentUserId();
+
+        const supabase = getSupabaseClient();
+
+        const possiblePaths = [
+            buildPath(userId, type, "jpg"),
+            buildPath(userId, type, "png"),
+            buildPath(userId, type, "webp")
+        ];
+
+        const {
+            error
+        } = await supabase.storage
+            .from(BUCKET_NAME)
+            .remove(possiblePaths);
 
         if (error) {
             throw error;
         }
 
-
-        /*
-         * الحصول على الرابط العام.
-         */
-
-        const publicResult =
-            client.storage
-                .from(STORAGE_BUCKET)
-                .getPublicUrl(path);
-
-        const publicUrl =
-            publicResult &&
-            publicResult.data &&
-            publicResult.data.publicUrl
-                ? publicResult.data.publicUrl
-                : "";
-
-
-        if (!publicUrl) {
-            throw new Error(
-                "WFESC_PUBLIC_URL_NOT_FOUND"
-            );
-        }
-
-
-        /*
-         * إضافة رقم نسخة للرابط حتى لا يعرض
-         * المتصفح الصورة القديمة من Cache.
-         */
-
-        const finalUrl =
-            publicUrl +
-            "?v=" +
-            Date.now();
-
-
         return {
             success: true,
             type: type,
-            userId: user.id,
-            path: data?.path || path,
-            publicUrl: finalUrl,
-            cleanUrl: publicUrl
+            userId: userId
         };
     }
-
-
-    /* =========================================================
-       DELETE IMAGE
-    ========================================================= */
-
-    async function deleteImage(options) {
-
-        options = options || {};
-
-        const type = options.type;
-        const userId = options.userId || null;
-
-        validateImageType(type);
-
-        const user =
-            userId
-                ? { id: userId }
-                : await getCurrentUser();
-
-        if (!user || !user.id) {
-            throw new Error("WFESC_LOGIN_REQUIRED");
-        }
-
-        const result =
-            await removeImageFiles(
-                user.id,
-                type
-            );
-
-        return {
-            success: true,
-            type: type,
-            userId: user.id,
-            removed: result.removed
-        };
-    }
-
-
-    /* =========================================================
-       GET PUBLIC URL
-    ========================================================= */
 
     function getPublicUrl(path) {
-
         if (!path) {
             return "";
         }
 
-        const client = getClient();
+        const supabase = getSupabaseClient();
 
-        const result =
-            client.storage
-                .from(STORAGE_BUCKET)
-                .getPublicUrl(path);
+        const {
+            data
+        } = supabase.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(path);
 
-        if (
-            !result ||
-            !result.data ||
-            !result.data.publicUrl
-        ) {
-            return "";
-        }
-
-        return (
-            result.data.publicUrl +
-            "?v=" +
-            Date.now()
-        );
+        return data && data.publicUrl
+            ? data.publicUrl
+            : "";
     }
 
-
-    /* =========================================================
-       CHECK STORAGE
-    ========================================================= */
-
     async function checkStorage() {
+        const supabase = getSupabaseClient();
 
-        const client = getClient();
-
-        const { data, error } =
-            await client.storage
-                .from(STORAGE_BUCKET)
-                .list("", {
-                    limit: 1,
-                    offset: 0
-                });
+        const {
+            data,
+            error
+        } = await supabase.storage
+            .from(BUCKET_NAME)
+            .list(
+                STORAGE_ROOT,
+                {
+                    limit: 1
+                }
+            );
 
         if (error) {
             return {
@@ -606,40 +278,12 @@
         };
     }
 
-
-    /* =========================================================
-       PUBLIC API
-    ========================================================= */
-
     window.WFESCProfileStorage = {
-
-        bucket: STORAGE_BUCKET,
-
-        root: STORAGE_ROOT,
-
-        getClient: getClient,
-
-        getCurrentUser: getCurrentUser,
-
-        uploadImage: uploadImage,
-
-        deleteImage: deleteImage,
-
-        removeImageFiles: removeImageFiles,
-
-        getPublicUrl: getPublicUrl,
-
-        checkStorage: checkStorage
-
+        uploadImage,
+        deleteImage,
+        getPublicUrl,
+        checkStorage,
+        getCurrentUserId
     };
-
-
-    /*
-     * جاهز.
-     */
-
-    console.log(
-        "WFESC Profile Storage loaded."
-    );
 
 })();
