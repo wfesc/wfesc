@@ -117,7 +117,8 @@ img{
     padding-bottom:
         calc(
             var(--navigation-height) +
-            var(--keyboard-height)
+            var(--keyboard-height) +
+            24px
         );
 }
 
@@ -263,6 +264,9 @@ img{
 ========================================================= */
 
 .search-section{
+    position:relative;
+    z-index:10;
+
     padding:
         12px
         14px
@@ -271,6 +275,7 @@ img{
 
 .search-box{
     position:relative;
+    z-index:11;
 }
 
 .search-input{
@@ -366,6 +371,9 @@ img{
 ========================================================= */
 
 .search-results{
+    position:relative;
+    z-index:10;
+
     display:none;
 
     padding:
@@ -441,6 +449,9 @@ img{
 ========================================================= */
 
 .conversation-list{
+    position:relative;
+    z-index:5;
+
     padding:
         5px
         14px
@@ -832,10 +843,6 @@ img{
         both;
 }
 
-/*
-   المرسل = يمين
-   الطرف الآخر = يسار
-*/
 .message-row.mine{
     justify-content:flex-end;
 }
@@ -1178,7 +1185,7 @@ img{
 
     padding:6px;
 
-    z-index:500;
+    z-index:1500;
 
     border-radius:17px;
 
@@ -1244,9 +1251,19 @@ img{
     align-items:center;
     justify-content:center;
 
-    padding:20px;
+    /*
+     * مساحة إضافية من الأسفل حتى لا يغطي
+     * شريط التنقل البطاقة أو أزرارها.
+     */
+    padding:
+        20px
+        20px
+        calc(
+            20px +
+            var(--navigation-height)
+        );
 
-    z-index:600;
+    z-index:1200;
 
     background:
         rgba(0,0,0,.72);
@@ -1272,6 +1289,7 @@ img{
     max-height:
         calc(
             100vh -
+            var(--navigation-height) -
             40px
         );
 
@@ -1546,7 +1564,7 @@ img{
 
     display:none;
 
-    z-index:400;
+    z-index:1100;
 
     border-radius:22px;
 
@@ -1690,7 +1708,7 @@ img{
     align-items:center;
     justify-content:center;
 
-    z-index:900;
+    z-index:1300;
 
     background:
         rgba(0,0,0,.5);
@@ -1700,6 +1718,13 @@ img{
 
     -webkit-backdrop-filter:
         blur(8px);
+
+    /*
+     * نخلي رسالة النجاح بمنتصف الشاشة
+     * وبعيدة عن شريط التنقل.
+     */
+    padding-bottom:
+        var(--navigation-height);
 }
 
 .success-overlay.show{
@@ -1886,6 +1911,14 @@ img{
 
     .notifications-panel{
         top:68px;
+
+        max-height:
+            calc(
+                100vh -
+                68px -
+                var(--navigation-height) -
+                15px
+            );
     }
 
     #ownMessageColors{
@@ -1893,6 +1926,25 @@ img{
             repeat(
                 5,
                 minmax(0,1fr)
+            );
+    }
+
+    .modal{
+        padding:
+            14px
+            14px
+            calc(
+                14px +
+                var(--navigation-height)
+            );
+    }
+
+    .modal-card{
+        max-height:
+            calc(
+                100vh -
+                var(--navigation-height) -
+                28px
             );
     }
 
@@ -1911,6 +1963,73 @@ img{
                 0px
             )
         );
+}
+
+
+/* =========================================================
+   NAVIGATION OVERLAP FIX
+========================================================= */
+
+/*
+ * عناصر البحث تبقى فوق محتوى الصفحة
+ * ولا تدخل تحت طبقة التنقل.
+ */
+
+.search-section,
+.search-results{
+    position:relative;
+    z-index:10;
+}
+
+
+/*
+ * صفحة الرسائل تترك مساحة فعلية
+ * أسفلها للتنقل.
+ */
+
+.messages-page{
+    padding-bottom:
+        calc(
+            var(--navigation-height) +
+            var(--keyboard-height) +
+            24px
+        );
+}
+
+
+/*
+ * النوافذ المنبثقة فوق التنقل.
+ */
+
+.modal{
+    z-index:1200;
+}
+
+
+/*
+ * قائمة السياق فوق كل شيء.
+ */
+
+.context-menu{
+    z-index:1500;
+}
+
+
+/*
+ * الإشعارات فوق محتوى الصفحة.
+ */
+
+.notifications-panel{
+    z-index:1100;
+}
+
+
+/*
+ * نجاح الحفظ فوق كل شيء.
+ */
+
+.success-overlay{
+    z-index:1300;
 }
 
 </style>
