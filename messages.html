@@ -2,21 +2,21 @@
 <html lang="ar" dir="rtl">
 
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#050505">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
 <title>الرسائل | WFESC</title>
 
 <style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
 
-html{
-    scroll-behavior:smooth;
-}
+/* =========================================================
+   WFESC MESSAGES
+   ========================================================= */
 
 :root{
     --bg:#030303;
@@ -24,24 +24,53 @@ html{
     --glass-2:rgba(255,255,255,.075);
     --border:rgba(255,255,255,.11);
     --border-light:rgba(255,255,255,.17);
+
     --text:#f5f5f5;
     --muted:#929292;
+
     --green:#36e27b;
     --green-soft:rgba(54,226,123,.14);
+
     --danger:#ff5252;
+
     --shadow:0 20px 70px rgba(0,0,0,.55);
+
     --keyboard-height:0px;
     --navigation-height:82px;
+
+    --message-text-scale:1;
+    --message-bubble-scale:1;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    min-height:100%;
+    background:#030303;
+    scroll-behavior:smooth;
 }
 
 body{
-    min-height:100vh;
+    min-height:100%;
     background:
-        radial-gradient(circle at 20% 0%,rgba(255,255,255,.055),transparent 28%),
-        radial-gradient(circle at 90% 20%,rgba(90,90,90,.08),transparent 25%),
-        linear-gradient(180deg,#050505 0%,#020202 100%);
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(54,226,123,.06),
+            transparent 38%
+        ),
+        #030303;
+
     color:var(--text);
-    font-family:Arial,Tahoma,sans-serif;
+
+    font-family:
+        Arial,
+        Tahoma,
+        sans-serif;
+
     overflow-x:hidden;
 }
 
@@ -52,76 +81,132 @@ textarea{
 }
 
 button{
-    border:0;
     cursor:pointer;
 }
 
-button:disabled{
-    cursor:not-allowed;
-    opacity:.55;
+img{
+    display:block;
 }
 
-/* =========================
-   MAIN
-========================= */
+.glass{
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.065),
+            rgba(255,255,255,.025)
+        );
+
+    border:1px solid var(--border);
+
+    box-shadow:
+        0 18px 55px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.04);
+
+    backdrop-filter:blur(28px);
+    -webkit-backdrop-filter:blur(28px);
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 .messages-page{
     width:100%;
-    max-width:980px;
-    margin:auto;
+    max-width:1100px;
+    margin:0 auto;
+
     min-height:100vh;
-    padding:20px 14px 125px;
+
+    padding:
+        env(safe-area-inset-top)
+        12px
+        calc(110px + env(safe-area-inset-bottom));
+
     position:relative;
+
+    --message-text-scale:1;
+    --message-bubble-scale:1;
 }
 
-/* =========================
+.messages-page.chat-active{
+    padding-top:0;
+}
+
+/* =========================================================
    TOP HEADER
-========================= */
+========================================================= */
 
 .top-header{
     position:relative;
-    z-index:20;
+
     display:flex;
     align-items:center;
     justify-content:space-between;
+
     gap:12px;
-    margin-bottom:18px;
+
+    padding:14px;
+
+    margin-bottom:12px;
+
+    border-radius:22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.07),
+            rgba(255,255,255,.025)
+        );
+
+    border:1px solid var(--border);
+
+    box-shadow:
+        0 18px 60px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.05);
+
+    backdrop-filter:blur(28px);
+    -webkit-backdrop-filter:blur(28px);
 }
 
 .title-area{
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:10px;
+    min-width:0;
 }
 
 .title-icon{
-    width:48px;
-    height:48px;
-    border-radius:17px;
+    width:45px;
+    height:45px;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
+    flex:none;
+
+    border-radius:15px;
+
     background:
-        linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.035));
-    border:1px solid var(--border);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.1),
-        0 12px 35px rgba(0,0,0,.3);
+        rgba(54,226,123,.1);
+
+    border:1px solid rgba(54,226,123,.2);
+
     font-size:22px;
-    backdrop-filter:blur(24px);
-    -webkit-backdrop-filter:blur(24px);
+}
+
+.title-text{
+    min-width:0;
 }
 
 .title-text h1{
-    font-size:23px;
-    font-weight:800;
-    letter-spacing:-.4px;
+    font-size:18px;
+    margin-bottom:4px;
 }
 
 .title-text p{
     color:var(--muted);
-    font-size:12px;
-    margin-top:4px;
+    font-size:11px;
 }
 
 .header-actions{
@@ -130,320 +215,355 @@ button:disabled{
     gap:7px;
 }
 
+/* =========================================================
+   HEADER BUTTONS
+========================================================= */
+
+.notifications-open-button,
 .activity-button,
-.notifications-open-button{
+.message-view-settings-button{
+    min-width:43px;
+    height:43px;
+
+    border-radius:14px;
+
+    border:1px solid var(--border);
+
+    background:
+        rgba(255,255,255,.045);
+
+    color:#fff;
+
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:7px;
-    min-height:40px;
-    min-width:40px;
-    padding:0 12px;
-    color:#ddd;
-    border-radius:14px;
-    background:rgba(255,255,255,.045);
-    border:1px solid var(--border);
-    backdrop-filter:blur(22px);
-    -webkit-backdrop-filter:blur(22px);
+
+    position:relative;
+
     transition:
-        transform .16s ease,
-        background .2s ease,
-        border-color .2s ease;
+        .2s ease;
 }
 
+.notifications-open-button:hover,
 .activity-button:hover,
-.notifications-open-button:hover{
-    background:rgba(255,255,255,.08);
+.message-view-settings-button:hover{
+    background:rgba(255,255,255,.09);
+    border-color:var(--border-light);
 }
 
-.activity-button:active,
-.notifications-open-button:active{
-    transform:scale(.94);
+.activity-button{
+    padding:0 10px;
+    gap:6px;
+
+    font-size:11px;
 }
 
 .activity-dot{
-    width:9px;
-    height:9px;
+    width:8px;
+    height:8px;
     border-radius:50%;
-    background:#666;
-    box-shadow:none;
-    transition:.2s ease;
+    background:#555;
 }
 
 .activity-dot.active{
     background:var(--green);
-    box-shadow:0 0 12px rgba(54,226,123,.75);
-    animation:activityPulse 1.8s infinite;
-}
-
-@keyframes activityPulse{
-    0%,100%{
-        box-shadow:0 0 7px rgba(54,226,123,.35);
-    }
-    50%{
-        box-shadow:0 0 15px rgba(54,226,123,.85);
-    }
-}
-
-.notifications-open-button{
-    position:relative;
-    font-size:17px;
+    box-shadow:0 0 12px rgba(54,226,123,.7);
 }
 
 .notification-badge{
     position:absolute;
+
     top:-5px;
     right:-5px;
-    min-width:17px;
-    height:17px;
+
+    min-width:18px;
+    height:18px;
+
     padding:0 4px;
+
+    border-radius:20px;
+
     display:none;
     align-items:center;
     justify-content:center;
-    border-radius:10px;
-    background:#fff;
-    color:#000;
+
+    background:var(--danger);
+    color:#fff;
+
     font-size:9px;
-    font-weight:800;
-    border:2px solid #080808;
+    font-weight:bold;
+
+    border:2px solid #030303;
 }
 
 .notification-badge.show{
     display:flex;
-    animation:badgePop .22s ease;
 }
 
-@keyframes badgePop{
-    from{
-        opacity:0;
-        transform:scale(.5);
-    }
-    to{
-        opacity:1;
-        transform:scale(1);
-    }
-}
-
-/* =========================
-   GLASS
-========================= */
-
-.glass{
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.075),
-            rgba(255,255,255,.025)
-        );
-    border:1px solid var(--border);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.07),
-        0 18px 60px rgba(0,0,0,.38);
-    backdrop-filter:blur(28px) saturate(130%);
-    -webkit-backdrop-filter:blur(28px) saturate(130%);
-}
-
-/* =========================
+/* =========================================================
    SEARCH
-========================= */
+========================================================= */
 
 .search-section{
-    position:relative;
-    z-index:15;
-    margin-bottom:15px;
+    margin-bottom:12px;
 }
 
 .search-box{
     display:flex;
+    gap:7px;
     align-items:center;
-    gap:9px;
+
     padding:7px;
+
     border-radius:19px;
 }
 
-.search-icon{
-    width:40px;
-    height:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#aaa;
-    font-size:17px;
-}
-
-.search-input{
+.search-box input{
     flex:1;
     min-width:0;
-    height:42px;
+
+    height:43px;
+
     border:0;
-    outline:0;
+    outline:none;
+
+    border-radius:13px;
+
+    background:rgba(0,0,0,.35);
+
     color:#fff;
-    background:transparent;
-    font-size:14px;
+
+    padding:0 13px;
+
+    font-size:13px;
+
+    direction:rtl;
+    text-align:right;
 }
 
-.search-input::placeholder{
+.search-box input::placeholder{
+    color:#666;
+}
+
+.search-button{
+    height:43px;
+    padding:0 12px;
+
+    border-radius:13px;
+
+    border:1px solid var(--border);
+
+    background:rgba(255,255,255,.045);
+
+    color:#aaa;
+
+    font-size:11px;
+
+    white-space:nowrap;
+}
+
+.search-button.active{
+    color:var(--green);
+
+    border-color:
+        rgba(54,226,123,.35);
+
+    background:
+        rgba(54,226,123,.09);
+}
+
+.search-results{
+    display:none;
+    margin-top:10px;
+}
+
+.search-results.visible{
+    display:block;
+}
+
+.search-result{
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    padding:11px;
+
+    margin-bottom:7px;
+
+    border-radius:17px;
+
+    border:1px solid var(--border);
+
+    background:rgba(255,255,255,.035);
+
+    cursor:pointer;
+
+    animation:
+        conversationIn
+        .28s
+        ease
+        both;
+}
+
+.search-result:hover{
+    background:rgba(255,255,255,.065);
+}
+
+.result-info{
+    flex:1;
+    min-width:0;
+}
+
+.result-name{
+    font-size:13px;
+    font-weight:bold;
+
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+}
+
+.result-preview{
+    margin-top:5px;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+}
+
+.result-username{
     color:#777;
 }
 
-.search-mode{
-    display:flex;
-    gap:5px;
-    padding:4px;
-    border-radius:14px;
-    background:rgba(0,0,0,.24);
-    border:1px solid rgba(255,255,255,.055);
+.match-count{
+    color:var(--green);
+    font-size:10px;
+    white-space:nowrap;
 }
 
-.search-mode button{
-    color:#888;
-    background:transparent;
-    padding:8px 11px;
-    border-radius:10px;
-    font-size:11px;
-    transition:.2s ease;
+/* =========================================================
+   AVATARS
+========================================================= */
+
+.avatar-wrap{
+    position:relative;
+    width:47px;
+    height:47px;
+    flex:none;
 }
 
-.search-mode button.active{
-    color:#fff;
-    background:rgba(255,255,255,.1);
+.avatar{
+    width:47px;
+    height:47px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    background:#111;
+
+    border:1px solid rgba(255,255,255,.1);
 }
 
-/* =========================
-   LIST
-========================= */
+.online-dot{
+    position:absolute;
+
+    width:10px;
+    height:10px;
+
+    right:0;
+    bottom:1px;
+
+    border-radius:50%;
+
+    background:#555;
+
+    border:2px solid #080808;
+}
+
+.online-dot.active{
+    background:var(--green);
+    box-shadow:0 0 10px rgba(54,226,123,.55);
+}
+
+/* =========================================================
+   MAIN LIST
+========================================================= */
 
 .main-list{
-    position:relative;
-    z-index:5;
+    display:block;
 }
 
-.list-title{
+.list-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    margin:12px 4px 10px;
-}
 
-.list-title strong{
-    font-size:14px;
-}
+    margin:8px 4px;
 
-.list-title span{
-    color:#777;
+    color:var(--muted);
+
     font-size:11px;
 }
 
 .conversation-list{
     display:flex;
     flex-direction:column;
-    gap:9px;
+    gap:7px;
 }
 
 .conversation-card{
     position:relative;
+
     display:flex;
     align-items:center;
-    gap:12px;
-    width:100%;
-    padding:13px;
-    min-height:76px;
-    color:#fff;
-    text-align:right;
-    border-radius:20px;
-    overflow:hidden;
+
+    gap:10px;
+
+    min-height:72px;
+
+    padding:10px;
+
+    border-radius:18px;
+
     background:
         linear-gradient(
             145deg,
-            rgba(255,255,255,.075),
-            rgba(255,255,255,.025)
+            rgba(255,255,255,.055),
+            rgba(255,255,255,.02)
         );
+
     border:1px solid var(--border);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.055),
-        0 12px 38px rgba(0,0,0,.28);
-    backdrop-filter:blur(25px);
-    -webkit-backdrop-filter:blur(25px);
-    opacity:0;
-    transform:translateY(13px);
-    animation:conversationIn .42s cubic-bezier(.2,.8,.2,1) forwards;
+
+    cursor:pointer;
+
+    animation:
+        conversationIn
+        .3s
+        ease
+        both;
+
     transition:
-        background .22s ease,
-        border-color .22s ease;
+        transform .18s ease,
+        background .18s ease,
+        border-color .18s ease;
 }
 
 .conversation-card:hover{
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.1),
-            rgba(255,255,255,.035)
-        );
-}
-
-.conversation-card.existing-card{
-    opacity:1;
-    transform:none;
-    animation:none;
-}
-
-@keyframes conversationIn{
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-.avatar-wrap{
-    position:relative;
-    width:50px;
-    height:50px;
-    flex:0 0 50px;
-}
-
-.avatar{
-    width:100%;
-    height:100%;
-    border-radius:16px;
-    object-fit:cover;
-    background:#101010;
-    border:1px solid rgba(255,255,255,.1);
-}
-
-.avatar-fallback{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:100%;
-    height:100%;
-    border-radius:16px;
-    background:
-        linear-gradient(145deg,#1d1d1d,#090909);
-    border:1px solid rgba(255,255,255,.1);
-    color:#fff;
-    font-weight:800;
-}
-
-.online-dot{
-    position:absolute;
-    left:-2px;
-    bottom:-2px;
-    width:12px;
-    height:12px;
-    border-radius:50%;
-    border:2px solid #080808;
-    background:#555;
-    transition:.2s ease;
-}
-
-.online-dot.active{
-    background:var(--green);
-    box-shadow:0 0 10px rgba(54,226,123,.65);
+    transform:translateY(-1px);
+    background:rgba(255,255,255,.07);
+    border-color:var(--border-light);
 }
 
 .conversation-info{
     flex:1;
     min-width:0;
+    padding-left:35px;
 }
 
 .conversation-top{
@@ -454,53 +574,78 @@ button:disabled{
 }
 
 .conversation-name{
-    font-size:14px;
-    font-weight:700;
-    white-space:nowrap;
+    font-size:13px;
+    font-weight:bold;
+
     overflow:hidden;
+    white-space:nowrap;
     text-overflow:ellipsis;
 }
 
 .conversation-time{
-    color:#777;
-    font-size:10px;
+    color:#666;
+    font-size:9px;
     white-space:nowrap;
 }
 
 .conversation-preview{
     display:flex;
     align-items:center;
-    gap:6px;
+    justify-content:space-between;
+
+    gap:8px;
+
     margin-top:7px;
-    color:#8c8c8c;
-    font-size:12px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+
+    color:var(--muted);
+
+    font-size:11px;
 }
 
 .unread-badge{
-    min-width:19px;
-    height:19px;
-    padding:0 5px;
+    min-width:20px;
+    height:20px;
+
+    padding:0 6px;
+
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:10px;
-    background:#fff;
-    color:#000;
-    font-size:10px;
-    font-weight:800;
-    flex:0 0 auto;
+
+    border-radius:20px;
+
+    background:var(--green);
+
+    color:#031108;
+
+    font-size:9px;
+    font-weight:bold;
+
+    flex:none;
 }
 
 .card-menu{
-    width:32px;
-    height:35px;
-    border-radius:11px;
+    position:absolute;
+
+    left:8px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    width:30px;
+    height:30px;
+
+    border:0;
+
+    border-radius:10px;
+
     color:#777;
+
     background:transparent;
-    font-size:19px;
+
+    font-size:20px;
+
+    z-index:4;
 }
 
 .card-menu:hover{
@@ -508,175 +653,134 @@ button:disabled{
     background:rgba(255,255,255,.07);
 }
 
-/* =========================
-   EMPTY / LOGIN
-========================= */
+/* =========================================================
+   EMPTY
+========================================================= */
 
 .empty-state{
-    padding:40px 20px;
-    border-radius:22px;
     text-align:center;
-    color:#888;
+
+    padding:45px 20px;
+
+    color:var(--muted);
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.025);
+
+    border:1px solid var(--border);
 }
 
 .empty-icon{
-    font-size:35px;
+    font-size:30px;
     margin-bottom:12px;
 }
 
 .empty-state strong{
     display:block;
-    color:#ddd;
+
+    color:#eee;
+
+    font-size:14px;
+
     margin-bottom:7px;
 }
 
 .empty-state p{
-    font-size:12px;
-    line-height:1.7;
-}
-
-/* =========================
-   SEARCH RESULTS
-========================= */
-
-.search-results{
-    display:none;
-    flex-direction:column;
-    gap:9px;
-}
-
-.search-results.visible{
-    display:flex;
-}
-
-.search-result{
-    display:flex;
-    align-items:center;
-    gap:11px;
-    padding:13px;
-    min-height:70px;
-    border-radius:19px;
-    color:#fff;
-    background:rgba(255,255,255,.045);
-    border:1px solid var(--border);
-    backdrop-filter:blur(25px);
-    -webkit-backdrop-filter:blur(25px);
-    animation:conversationIn .35s ease both;
-}
-
-.result-info{
-    min-width:0;
-    flex:1;
-}
-
-.result-name{
-    font-size:13px;
-    font-weight:700;
-}
-
-.result-preview{
-    margin-top:6px;
-    color:#8b8b8b;
     font-size:11px;
-    line-height:1.5;
-    overflow:hidden;
+    line-height:1.8;
 }
 
-.result-username{
-    color:#666;
-    direction:ltr;
-    text-align:right;
-}
-
-.match-count{
-    padding:5px 8px;
-    border-radius:10px;
-    color:#bbb;
-    background:rgba(255,255,255,.06);
-    font-size:10px;
-    white-space:nowrap;
-}
-
-/* =========================
-   FULL CHAT
-========================= */
+/* =========================================================
+   CHAT
+========================================================= */
 
 .chat-view{
     position:relative;
+
     z-index:30;
+
     display:none;
-    min-height:calc(100vh - 30px);
+
+    min-height:calc(100vh - env(safe-area-inset-top));
+
     flex-direction:column;
-    padding-bottom:92px;
-    animation:chatOpen .28s ease both;
+
+    padding-top:env(safe-area-inset-top);
+
+    animation:
+        chatOpen
+        .28s
+        ease
+        both;
 }
 
 .chat-view.open{
     display:flex;
 }
 
-@keyframes chatOpen{
-    from{
-        opacity:0;
-        transform:translateY(8px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-.messages-page.chat-active .top-header,
-.messages-page.chat-active .search-section,
-.messages-page.chat-active .main-list,
-.messages-page.chat-active .search-results{
-    display:none;
-}
-
-/* =========================
+/* =========================================================
    CHAT HEADER
-========================= */
+========================================================= */
 
 .chat-header{
     position:relative;
-    z-index:50;
+
+    flex:none;
+
+    height:65px;
+
     display:flex;
     align-items:center;
-    gap:10px;
-    min-height:67px;
-    padding:8px;
-    border-radius:21px;
-    flex:0 0 auto;
+
+    gap:8px;
+
+    padding:7px;
+
+    border-radius:19px;
+
+    z-index:100;
 }
 
 .back-button{
-    width:43px;
-    height:43px;
-    flex:0 0 43px;
-    border-radius:14px;
+    width:42px;
+    height:42px;
+
+    flex:none;
+
+    border:1px solid var(--border);
+
+    border-radius:13px;
+
+    background:rgba(255,255,255,.045);
+
     color:#fff;
-    background:rgba(255,255,255,.065);
-    border:1px solid rgba(255,255,255,.09);
+
     font-size:22px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
 }
 
 .chat-person{
-    display:flex;
-    align-items:center;
-    gap:10px;
     flex:1;
     min-width:0;
+
+    display:flex;
+    align-items:center;
+
+    gap:8px;
+
     cursor:pointer;
 }
 
 .chat-avatar-wrap{
     position:relative;
-    width:43px;
-    height:43px;
-    flex:0 0 43px;
+    width:42px;
+    height:42px;
+    flex:none;
+}
+
+.chat-avatar-wrap .avatar{
+    width:42px;
+    height:42px;
 }
 
 .chat-person-info{
@@ -684,17 +788,24 @@ button:disabled{
 }
 
 .chat-person-name{
-    font-size:14px;
-    font-weight:800;
-    white-space:nowrap;
+    font-size:13px;
+    font-weight:bold;
+
     overflow:hidden;
+    white-space:nowrap;
     text-overflow:ellipsis;
 }
 
 .chat-person-status{
-    margin-top:4px;
+    margin-top:3px;
+
     color:#777;
+
     font-size:10px;
+}
+
+.chat-person-status:has(+ *){
+    transition:.2s;
 }
 
 .chat-actions{
@@ -703,62 +814,54 @@ button:disabled{
 }
 
 .chat-action{
-    width:40px;
-    height:40px;
-    border-radius:13px;
-    color:#aaa;
-    background:rgba(255,255,255,.035);
-    border:1px solid rgba(255,255,255,.065);
-    font-size:16px;
-}
+    width:38px;
+    height:38px;
 
-.chat-action:hover{
+    border-radius:12px;
+
+    border:1px solid var(--border);
+
+    background:rgba(255,255,255,.04);
+
     color:#fff;
-    background:rgba(255,255,255,.08);
 }
 
-/* =========================
-   CHAT BODY
-========================= */
-
-.chat-body{
-    position:relative;
-    flex:1;
-    min-height:0;
-    margin-top:10px;
-    border-radius:23px;
-    overflow:hidden;
-}
+/* =========================================================
+   CHAT MESSAGES
+========================================================= */
 
 .chat-messages{
-    height:100%;
-    min-height:calc(100vh - 235px);
-    max-height:calc(100vh - 235px);
+    flex:1;
+
+    min-height:0;
+
     overflow-y:auto;
-    padding:18px 12px 125px;
+
+    padding:
+        14px
+        5px
+        105px;
+
     display:flex;
     flex-direction:column;
+
     gap:7px;
+
     scroll-behavior:smooth;
-}
 
-.chat-messages::-webkit-scrollbar{
-    width:4px;
+    scrollbar-width:thin;
 }
-
-.chat-messages::-webkit-scrollbar-thumb{
-    background:#333;
-    border-radius:10px;
-}
-
-/* =========================
-   MESSAGE
-========================= */
 
 .message-row{
     display:flex;
+
     width:100%;
-    animation:messageIn .3s cubic-bezier(.2,.8,.2,1) both;
+
+    animation:
+        messageIn
+        .25s
+        ease
+        both;
 }
 
 .message-row.mine{
@@ -773,162 +876,122 @@ button:disabled{
     opacity:.72;
 }
 
-@keyframes messageIn{
-    from{
-        opacity:0;
-        transform:translateY(12px) scale(.97);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0) scale(1);
-    }
+.message-row.highlight-message
+.message-bubble{
+    box-shadow:
+        0 0 0 2px rgba(54,226,123,.7),
+        0 0 25px rgba(54,226,123,.18);
+}
+
+.message-row > div{
+    max-width:100%;
 }
 
 .message-bubble{
-    max-width:min(76%,600px);
-    padding:9px 13px;
-    border-radius:999px;
-    position:relative;
-    box-shadow:0 7px 25px rgba(0,0,0,.2);
-}
+    max-width:
+        min(
+            calc(76% * var(--message-bubble-scale)),
+            600px
+        );
 
-.mine .message-bubble{
+    padding:
+        calc(9px * var(--message-bubble-scale))
+        calc(13px * var(--message-bubble-scale));
+
+    border-radius:17px;
+
     background:
         linear-gradient(
             145deg,
-            rgba(255,255,255,.15),
-            rgba(255,255,255,.07)
+            rgba(255,255,255,.08),
+            rgba(255,255,255,.035)
         );
+
     border:1px solid rgba(255,255,255,.1);
+
+    overflow:hidden;
+
+    transition:
+        font-size .18s ease,
+        padding .18s ease,
+        max-width .18s ease;
 }
 
-.theirs .message-bubble{
+.message-row.mine .message-bubble{
     background:
         linear-gradient(
             145deg,
-            rgba(54,226,123,.13),
-            rgba(255,255,255,.045)
+            rgba(54,226,123,.18),
+            rgba(54,226,123,.07)
         );
-    border:1px solid rgba(54,226,123,.12);
+
+    border-color:
+        rgba(54,226,123,.2);
 }
 
 .message-content{
-    font-size:13px;
-    line-height:1.5;
-    color:#f0f0f0;
     white-space:pre-wrap;
-    word-break:break-word;
+
+    word-break:normal;
+
+    overflow-wrap:break-word;
+
+    writing-mode:horizontal-tb;
+
+    direction:rtl;
+    text-align:right;
+
+    font-size:
+        calc(13px * var(--message-text-scale));
+
+    line-height:1.65;
+
+    color:#f5f5f5;
 }
 
 .message-time{
-    margin-top:2px;
-    color:#676767;
+    margin-top:3px;
+
+    color:#666;
+
     font-size:8px;
-    line-height:1;
-    text-align:center;
-    direction:ltr;
-    user-select:none;
+
+    padding:0 5px;
 }
 
-.message-row.highlight-message .message-bubble{
-    animation:messageHighlight .9s ease;
-}
-
-@keyframes messageHighlight{
-    0%,100%{
-        box-shadow:0 7px 25px rgba(0,0,0,.2);
-    }
-    50%{
-        box-shadow:
-            0 0 0 3px rgba(54,226,123,.16),
-            0 8px 30px rgba(54,226,123,.18);
-    }
-}
-
-/* =========================
-   SEARCH NAVIGATOR
-========================= */
-
-.search-match-navigator{
-    position:absolute;
-    z-index:95;
-    left:12px;
-    top:78px;
-    display:none;
-    align-items:center;
-    gap:5px;
-    padding:5px;
-    border-radius:15px;
-    background:rgba(10,10,10,.88);
-    border:1px solid rgba(255,255,255,.1);
-    backdrop-filter:blur(20px);
-    -webkit-backdrop-filter:blur(20px);
-}
-
-.search-match-navigator.show{
-    display:flex;
-    animation:menuIn .2s ease;
-}
-
-.search-match-navigator button{
-    width:31px;
-    height:31px;
-    border-radius:9px;
-    color:#ddd;
-    background:rgba(255,255,255,.06);
-}
-
-.search-match-navigator button:hover{
-    background:rgba(255,255,255,.11);
-}
-
-.search-match-count{
-    min-width:45px;
-    color:#888;
-    font-size:9px;
-    text-align:center;
-}
-
-/* =========================
+/* =========================================================
    TYPING
-========================= */
+========================================================= */
 
 .typing-indicator{
-    position:absolute;
-    right:13px;
-    bottom:73px;
-    z-index:75;
     display:none;
+
     align-items:center;
+
     gap:5px;
-    width:max-content;
+
+    align-self:flex-end;
+
+    margin:
+        0
+        7px
+        80px;
+
     padding:8px 11px;
+
     border-radius:15px;
-    color:#888;
+
     background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.06);
-    backdrop-filter:blur(18px);
-    -webkit-backdrop-filter:blur(18px);
+
+    border:1px solid var(--border);
+
+    color:#888;
+
+    font-size:10px;
 }
 
 .typing-indicator.show{
     display:flex;
-    animation:typingIn .18s ease;
-}
-
-@keyframes typingIn{
-    from{
-        opacity:0;
-        transform:translateY(5px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-.typing-text{
-    font-size:10px;
 }
 
 .typing-dots{
@@ -936,77 +999,168 @@ button:disabled{
     gap:3px;
 }
 
-.typing-dots i{
+.typing-dots span{
     width:4px;
     height:4px;
+
     border-radius:50%;
-    background:#aaa;
-    animation:typingDot 1s infinite;
+
+    background:var(--green);
+
+    animation:
+        typingDot
+        1s
+        infinite;
 }
 
-.typing-dots i:nth-child(2){
+.typing-dots span:nth-child(2){
     animation-delay:.15s;
 }
 
-.typing-dots i:nth-child(3){
+.typing-dots span:nth-child(3){
     animation-delay:.3s;
 }
 
-@keyframes typingDot{
-    0%,60%,100%{
-        transform:translateY(0);
-        opacity:.35;
-    }
-    30%{
-        transform:translateY(-3px);
-        opacity:1;
-    }
+/* =========================================================
+   SEARCH MATCH NAVIGATOR
+========================================================= */
+
+.search-match-navigator{
+    display:none;
+
+    position:absolute;
+
+    left:12px;
+    top:76px;
+
+    z-index:200;
+
+    align-items:center;
+
+    gap:4px;
+
+    padding:5px;
+
+    border-radius:13px;
+
+    background:rgba(5,5,5,.9);
+
+    border:1px solid var(--border);
+
+    backdrop-filter:blur(20px);
 }
 
-/* =========================
+.search-match-navigator.show{
+    display:flex;
+}
+
+.search-match-navigator button{
+    width:32px;
+    height:32px;
+
+    border:0;
+
+    border-radius:9px;
+
+    background:rgba(255,255,255,.05);
+
+    color:#fff;
+}
+
+#searchMatchCount{
+    min-width:45px;
+
+    text-align:center;
+
+    color:var(--green);
+
+    font-size:9px;
+}
+
+/* =========================================================
    COMPOSER
-========================= */
+========================================================= */
 
 .chat-composer{
-    position:absolute;
-    z-index:80;
+    position:fixed;
+
+    z-index:100000;
+
     right:10px;
     left:10px;
-    bottom:10px;
+
+    bottom:
+        calc(
+            var(--keyboard-height,0px)
+            + 8px
+        );
+
     display:flex;
     align-items:flex-end;
+
     gap:7px;
+
     padding:7px;
+
     border-radius:20px;
+
     background:
         linear-gradient(
             145deg,
             rgba(20,20,20,.94),
             rgba(8,8,8,.91)
         );
+
     border:1px solid rgba(255,255,255,.13);
+
     box-shadow:
         0 15px 45px rgba(0,0,0,.7),
         inset 0 1px 0 rgba(255,255,255,.06);
+
     backdrop-filter:blur(30px);
     -webkit-backdrop-filter:blur(30px);
-    transform:translateY(calc(var(--keyboard-height) * -1));
-    transition:transform .08s linear;
+
+    transform:none;
+
+    transition:
+        bottom .08s linear;
 }
 
 .message-input{
     flex:1;
+
     min-width:0;
+
     max-height:100px;
     min-height:43px;
+
     resize:none;
+
     outline:none;
+
     border:0;
+
     color:#fff;
+
     background:transparent;
+
     padding:11px 10px;
+
     line-height:1.5;
+
     font-size:13px;
+
+    writing-mode:horizontal-tb;
+
+    white-space:pre-wrap;
+
+    word-break:normal;
+
+    overflow-wrap:break-word;
+
+    direction:rtl;
+
+    text-align:right;
 }
 
 .message-input::placeholder{
@@ -1014,349 +1168,747 @@ button:disabled{
 }
 
 .send-button{
-    width:45px;
+    width:43px;
     height:43px;
-    flex:0 0 45px;
+
+    flex:none;
+
     border-radius:14px;
-    color:#000;
-    background:#fff;
-    font-size:17px;
-    transition:.18s ease;
+
+    border:1px solid rgba(54,226,123,.3);
+
+    background:
+        rgba(54,226,123,.12);
+
+    color:var(--green);
+
+    font-size:18px;
+
+    transition:.2s;
 }
 
 .send-button:hover{
-    transform:translateY(-1px);
-}
-
-.send-button:active{
-    transform:scale(.94);
-}
-
-.send-button.sending{
-    animation:sendPulse .7s infinite;
-}
-
-@keyframes sendPulse{
-    50%{
-        opacity:.55;
-        transform:scale(.94);
-    }
-}
-
-/* =========================
-   MODALS
-========================= */
-
-.modal-layer{
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:18px;
-    background:rgba(0,0,0,.65);
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-}
-
-.modal-layer.show{
-    display:flex;
-}
-
-.modal{
-    width:min(430px,100%);
-    padding:18px;
-    border-radius:25px;
     background:
-        linear-gradient(
-            145deg,
-            rgba(28,28,28,.95),
-            rgba(8,8,8,.96)
-        );
-    border:1px solid rgba(255,255,255,.13);
-    box-shadow:var(--shadow);
-    animation:modalIn .25s ease;
+        rgba(54,226,123,.2);
 }
 
-@keyframes modalIn{
-    from{
-        opacity:0;
-        transform:scale(.94) translateY(8px);
-    }
-    to{
-        opacity:1;
-        transform:scale(1) translateY(0);
-    }
+.send-button:disabled{
+    opacity:.45;
+    cursor:default;
 }
 
-.modal h3{
-    font-size:17px;
-    margin-bottom:8px;
-}
-
-.modal p{
-    color:#999;
-    font-size:12px;
-    line-height:1.7;
-}
-
-.modal-actions{
-    display:flex;
-    gap:8px;
-    margin-top:17px;
-}
-
-.modal-actions button{
-    flex:1;
-    height:43px;
-    border-radius:13px;
-    color:#fff;
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.08);
-}
-
-.modal-actions .danger{
-    background:rgba(255,82,82,.12);
-    color:#ff7777;
-    border-color:rgba(255,82,82,.16);
-}
-
-/* =========================
-   ACTIVITY
-========================= */
-
-.activity-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    padding:14px;
-    margin-top:14px;
-    border-radius:17px;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.07);
-}
-
-.activity-info strong{
-    display:block;
-    font-size:13px;
-}
-
-.activity-info span{
-    display:block;
-    color:#777;
-    font-size:10px;
-    margin-top:4px;
-}
-
-.switch{
-    position:relative;
-    width:48px;
-    height:27px;
-    border-radius:20px;
-    background:#303030;
-    transition:.2s;
-}
-
-.switch::after{
-    content:"";
-    position:absolute;
-    top:4px;
-    right:4px;
-    width:19px;
-    height:19px;
-    border-radius:50%;
-    background:#888;
-    transition:.2s;
-}
-
-.switch.on{
-    background:rgba(54,226,123,.28);
-}
-
-.switch.on::after{
-    right:25px;
-    background:var(--green);
-}
-
-/* =========================
+/* =========================================================
    CONTEXT MENU
-========================= */
+========================================================= */
 
 .context-menu{
-    position:fixed;
-    z-index:10000;
     display:none;
+
+    position:fixed;
+
+    z-index:100500;
+
     width:205px;
-    padding:7px;
-    border-radius:17px;
-    background:rgba(20,20,20,.96);
-    border:1px solid rgba(255,255,255,.13);
-    box-shadow:0 18px 50px rgba(0,0,0,.65);
-    backdrop-filter:blur(25px);
-    -webkit-backdrop-filter:blur(25px);
+
+    padding:6px;
+
+    border-radius:16px;
+
+    background:
+        rgba(15,15,15,.96);
+
+    border:1px solid var(--border);
+
+    box-shadow:var(--shadow);
+
+    backdrop-filter:blur(30px);
 }
 
 .context-menu.show{
     display:block;
-    animation:menuIn .18s ease;
-}
-
-@keyframes menuIn{
-    from{
-        opacity:0;
-        transform:scale(.96);
-    }
-    to{
-        opacity:1;
-        transform:scale(1);
-    }
 }
 
 .context-menu button{
-    display:block;
     width:100%;
-    padding:11px;
-    text-align:right;
-    color:#ddd;
-    background:transparent;
+
+    height:42px;
+
+    border:0;
+
     border-radius:11px;
-    font-size:12px;
+
+    background:transparent;
+
+    color:#ddd;
+
+    text-align:right;
+
+    padding:0 12px;
+
+    font-size:11px;
 }
 
 .context-menu button:hover{
     background:rgba(255,255,255,.07);
 }
 
-.context-menu button.danger{
-    color:#ff6b6b;
+.context-menu .danger{
+    color:var(--danger);
 }
 
-/* =========================
+/* =========================================================
+   MODALS
+========================================================= */
+
+.modal-overlay{
+    position:fixed;
+
+    inset:0;
+
+    z-index:1000000;
+
+    display:none;
+
+    align-items:center;
+    justify-content:center;
+
+    padding:18px;
+
+    background:rgba(0,0,0,.72);
+
+    backdrop-filter:blur(15px);
+}
+
+.modal-overlay.show{
+    display:flex;
+
+    animation:
+        modalFade
+        .2s
+        ease;
+}
+
+.modal{
+    width:min(460px,100%);
+
+    padding:18px;
+
+    border-radius:23px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(25,25,25,.97),
+            rgba(7,7,7,.97)
+        );
+
+    border:1px solid var(--border);
+
+    box-shadow:
+        0 30px 100px rgba(0,0,0,.7);
+}
+
+.modal h2{
+    font-size:16px;
+    margin-bottom:8px;
+}
+
+.modal-description{
+    color:var(--muted);
+
+    font-size:11px;
+
+    line-height:1.8;
+
+    margin-bottom:17px;
+}
+
+.modal-actions{
+    display:flex;
+    gap:7px;
+
+    margin-top:17px;
+}
+
+.modal-actions button{
+    flex:1;
+
+    height:43px;
+
+    border-radius:13px;
+
+    border:1px solid var(--border);
+
+    background:rgba(255,255,255,.045);
+
+    color:#fff;
+}
+
+.modal-actions .primary{
+    color:#06140b;
+
+    background:var(--green);
+
+    border-color:var(--green);
+}
+
+/* =========================================================
+   ACTIVITY
+========================================================= */
+
+.activity-switch{
+    width:100%;
+
+    min-height:54px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 13px;
+
+    border-radius:15px;
+
+    border:1px solid var(--border);
+
+    background:rgba(255,255,255,.035);
+
+    color:#fff;
+}
+
+.switch-dot{
+    width:13px;
+    height:13px;
+
+    border-radius:50%;
+
+    background:#555;
+}
+
+.activity-switch.active .switch-dot{
+    background:var(--green);
+
+    box-shadow:
+        0 0 15px
+        rgba(54,226,123,.7);
+}
+
+/* =========================================================
+   MESSAGE VIEW SETTINGS
+========================================================= */
+
+.message-view-settings{
+    width:min(470px,100%);
+}
+
+.settings-slider-area{
+    padding:16px;
+
+    border-radius:18px;
+
+    border:1px solid var(--border);
+
+    background:rgba(255,255,255,.025);
+}
+
+.settings-range-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.settings-range-label{
+    color:#777;
+    font-size:10px;
+    white-space:nowrap;
+}
+
+#messageViewRange{
+    flex:1;
+
+    width:100%;
+
+    direction:ltr;
+
+    accent-color:var(--green);
+
+    cursor:pointer;
+}
+
+.settings-value{
+    text-align:center;
+
+    color:var(--green);
+
+    font-size:10px;
+
+    margin-top:10px;
+}
+
+/* =========================================================
+   LIVE PREVIEW
+========================================================= */
+
+.message-preview{
+    margin-top:15px;
+
+    padding:14px;
+
+    border-radius:18px;
+
+    background:
+        rgba(0,0,0,.25);
+
+    border:1px solid var(--border);
+}
+
+.preview-title{
+    color:#777;
+
+    font-size:10px;
+
+    margin-bottom:12px;
+}
+
+.preview-messages{
+    display:flex;
+    flex-direction:column;
+
+    gap:7px;
+}
+
+.preview-row{
+    display:flex;
+}
+
+.preview-row.incoming{
+    justify-content:flex-end;
+}
+
+.preview-row.outgoing{
+    justify-content:flex-start;
+}
+
+.preview-bubble{
+    max-width:72%;
+
+    padding:
+        calc(8px * var(--preview-scale,1))
+        calc(11px * var(--preview-scale,1));
+
+    border-radius:15px;
+
+    background:rgba(255,255,255,.07);
+
+    font-size:
+        calc(12px * var(--preview-scale,1));
+
+    line-height:1.55;
+
+    overflow-wrap:break-word;
+}
+
+.preview-row.outgoing
+.preview-bubble{
+    background:
+        rgba(54,226,123,.14);
+
+    border:1px solid rgba(54,226,123,.18);
+}
+
+/* =========================================================
+   SETTINGS SUCCESS
+========================================================= */
+
+.settings-success{
+    position:fixed;
+
+    inset:0;
+
+    z-index:2000000;
+
+    display:none;
+
+    align-items:center;
+    justify-content:center;
+
+    background:
+        rgba(0,0,0,.76);
+
+    backdrop-filter:blur(15px);
+}
+
+.settings-success.show{
+    display:flex;
+
+    animation:
+        modalFade
+        .2s
+        ease;
+}
+
+.settings-success-box{
+    width:min(350px,90%);
+
+    padding:28px 20px;
+
+    text-align:center;
+
+    border-radius:24px;
+
+    border:
+        1px solid
+        rgba(54,226,123,.55);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(54,226,123,.14),
+            rgba(10,10,10,.96)
+        );
+
+    box-shadow:
+        0 0 60px
+        rgba(54,226,123,.15);
+}
+
+.success-icon{
+    width:58px;
+    height:58px;
+
+    margin:0 auto 14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:rgba(54,226,123,.16);
+
+    border:1px solid rgba(54,226,123,.4);
+
+    color:var(--green);
+
+    font-size:27px;
+}
+
+.settings-success-box strong{
+    display:block;
+
+    font-size:14px;
+
+    color:#fff;
+}
+
+.settings-success-box p{
+    margin-top:8px;
+
+    color:#999;
+
+    font-size:10px;
+}
+
+/* =========================================================
    NOTIFICATIONS
-========================= */
+========================================================= */
 
 .notifications-panel{
     position:fixed;
-    z-index:9000;
-    top:15px;
-    left:15px;
-    width:min(430px,calc(100% - 30px));
-    max-height:78vh;
-    overflow:auto;
+
+    z-index:999999;
+
+    top:
+        calc(
+            env(safe-area-inset-top)
+            + 75px
+        );
+
+    left:12px;
+    right:12px;
+
+    max-width:500px;
+
+    margin:auto;
+
+    max-height:
+        calc(
+            100vh -
+            110px
+        );
+
+    overflow-y:auto;
+
     display:none;
-    padding:12px;
-    border-radius:23px;
-    background:rgba(16,16,16,.96);
-    border:1px solid rgba(255,255,255,.12);
-    box-shadow:0 25px 70px rgba(0,0,0,.7);
+
+    padding:8px;
+
+    border-radius:21px;
+
+    background:
+        rgba(10,10,10,.96);
+
+    border:1px solid var(--border);
+
+    box-shadow:var(--shadow);
+
     backdrop-filter:blur(30px);
-    -webkit-backdrop-filter:blur(30px);
 }
 
 .notifications-panel.show{
     display:block;
-    animation:menuIn .22s ease;
+
+    animation:
+        panelIn
+        .22s
+        ease;
 }
 
-.notifications-head{
+.notifications-header{
     display:flex;
-    justify-content:space-between;
+
     align-items:center;
-    gap:8px;
-    padding:7px 5px 12px;
+    justify-content:space-between;
+
+    padding:10px;
+
+    border-bottom:1px solid var(--border);
+
+    margin-bottom:6px;
 }
 
-.notifications-head strong{
-    font-size:14px;
+.notifications-header strong{
+    font-size:13px;
 }
 
-.notifications-head button{
-    color:#888;
+.notifications-header button{
+    border:0;
+
     background:transparent;
-    font-size:11px;
+
+    color:#777;
+
+    font-size:10px;
 }
 
 .notification-item{
     display:flex;
-    gap:9px;
-    padding:11px;
-    border-radius:15px;
-    background:rgba(255,255,255,.04);
-    margin-bottom:7px;
-    border:1px solid rgba(255,255,255,.05);
-    cursor:pointer;
-    transition:.18s ease;
-}
 
-.notification-item:hover{
-    background:rgba(255,255,255,.07);
+    align-items:center;
+
+    gap:9px;
+
+    padding:10px;
+
+    border-radius:15px;
+
+    margin-bottom:5px;
+
+    background:rgba(255,255,255,.025);
+
+    border:1px solid transparent;
+
+    cursor:pointer;
 }
 
 .notification-item.unread{
-    background:rgba(255,255,255,.075);
+    background:
+        rgba(54,226,123,.06);
+
+    border-color:
+        rgba(54,226,123,.13);
 }
 
 .notification-icon{
-    width:34px;
-    height:34px;
-    flex:0 0 34px;
+    width:36px;
+    height:36px;
+
+    flex:none;
+
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:11px;
-    background:rgba(255,255,255,.06);
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.05);
 }
 
 .notification-content{
     flex:1;
+    min-width:0;
+
     font-size:11px;
+
     line-height:1.6;
-    color:#ddd;
 }
 
 .notification-time{
     display:block;
-    margin-top:3px;
+
     color:#666;
-    font-size:9px;
+
+    font-size:8px;
+
+    margin-top:3px;
 }
 
 .notification-delete{
-    color:#777;
+    width:30px;
+    height:30px;
+
+    flex:none;
+
+    border:0;
+
+    border-radius:10px;
+
     background:transparent;
-    width:25px;
-    height:25px;
-    border-radius:8px;
+
+    color:#777;
+
+    font-size:17px;
 }
 
-.notification-delete:hover{
-    color:#fff;
-    background:rgba(255,255,255,.07);
-}
-
-/* =========================
+/* =========================================================
    LOADING
-========================= */
+========================================================= */
 
 .loading{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:35px;
+    padding:25px;
+
+    text-align:center;
+
     color:#777;
-    font-size:12px;
+
+    font-size:11px;
 }
 
-.loader-ring{
-    width:19px;
-    height:19px;
-    margin-left:8px;
-    border:2px solid #333;
-    border-top-color:#fff;
+.loading::after{
+    content:"";
+
+    display:block;
+
+    width:22px;
+    height:22px;
+
+    margin:10px auto 0;
+
+    border:
+        2px solid
+        rgba(255,255,255,.08);
+
+    border-top-color:var(--green);
+
     border-radius:50%;
-    animation:spin .7s linear infinite;
+
+    animation:
+        spin
+        .8s
+        linear
+        infinite;
+}
+
+/* =========================================================
+   NAVIGATION KEYBOARD LOCK
+========================================================= */
+
+#wfesc-navigation.wfesc-navigation-keyboard-lock{
+    transform:
+        translate3d(
+            0,
+            var(--wfesc-nav-keyboard-shift,0px),
+            0
+        ) !important;
+}
+
+/* =========================================================
+   SHAKE
+========================================================= */
+
+.messages-page.settings-shake{
+    animation:
+        pageShake
+        .38s
+        ease;
+}
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes conversationIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes messageIn{
+    from{
+        opacity:0;
+        transform:translateY(7px)
+            scale(.985);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0)
+            scale(1);
+    }
+}
+
+@keyframes chatOpen{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes modalFade{
+    from{
+        opacity:0;
+    }
+
+    to{
+        opacity:1;
+    }
+}
+
+@keyframes panelIn{
+    from{
+        opacity:0;
+        transform:translateY(-8px)
+            scale(.98);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0)
+            scale(1);
+    }
+}
+
+@keyframes typingDot{
+    0%,100%{
+        opacity:.25;
+        transform:translateY(0);
+    }
+
+    50%{
+        opacity:1;
+        transform:translateY(-2px);
+    }
 }
 
 @keyframes spin{
@@ -1365,86 +1917,79 @@ button:disabled{
     }
 }
 
-/* =========================
-   SUPPORT
-========================= */
+@keyframes pageShake{
+    0%,100%{
+        transform:translateX(0);
+    }
 
-.support-label{
-    color:#888;
-    font-size:9px;
-    margin-right:5px;
+    20%{
+        transform:translateX(-5px);
+    }
+
+    40%{
+        transform:translateX(5px);
+    }
+
+    60%{
+        transform:translateX(-4px);
+    }
+
+    80%{
+        transform:translateX(4px);
+    }
 }
 
-/* =========================
-   RESPONSIVE
-========================= */
+/* =========================================================
+   MOBILE
+========================================================= */
 
 @media(max-width:650px){
 
     .messages-page{
-        padding:12px 9px 115px;
+        padding-left:8px;
+        padding-right:8px;
     }
 
-    .title-icon{
-        width:44px;
-        height:44px;
-        border-radius:15px;
-    }
-
-    .title-text h1{
-        font-size:21px;
+    .title-text p{
+        display:none;
     }
 
     .activity-button{
-        padding:0 10px;
+        padding:0 8px;
     }
 
-    .chat-view{
-        min-height:calc(100vh - 12px);
-        padding-bottom:82px;
+    .activity-button span:last-child{
+        display:none;
     }
 
-    .chat-messages{
-        min-height:calc(100vh - 220px);
-        max-height:calc(100vh - 220px);
-        padding-left:7px;
-        padding-right:7px;
+    .search-box{
+        flex-wrap:wrap;
+    }
+
+    .search-box input{
+        width:100%;
+        flex-basis:100%;
+    }
+
+    .search-button{
+        flex:1;
+    }
+
+    .chat-header{
+        border-radius:0 0 17px 17px;
     }
 
     .message-bubble{
-        max-width:84%;
-        padding:8px 12px;
+        max-width:
+            min(
+                calc(82% * var(--message-bubble-scale)),
+                600px
+            );
     }
 
-    .chat-actions{
-        display:none;
-    }
-
-    .search-mode button{
-        padding:8px 9px;
-    }
-
-    .search-input{
-        font-size:13px;
-    }
-
-    .header-actions{
-        gap:5px;
-    }
-
-    .activity-button{
-        min-width:40px;
-        width:40px;
-        padding:0;
-    }
-
-    .activity-button #activityText{
-        display:none;
-    }
-
-    .notifications-open-button{
-        width:40px;
-        padding:0;
+    .chat-composer{
+        right:7px;
+        left:7px;
     }
 }
 
@@ -1453,18 +1998,28 @@ button:disabled{
     *,
     *::before,
     *::after{
-        animation-duration:.01ms !important;
+        animation-duration:.001ms !important;
         animation-iteration-count:1 !important;
-        transition-duration:.01ms !important;
         scroll-behavior:auto !important;
+        transition-duration:.001ms !important;
     }
+
 }
+
 </style>
+
 </head>
 
 <body>
 
-<div class="messages-page" id="messagesPage">
+<div
+    class="messages-page"
+    id="messagesPage"
+>
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
     <header class="top-header">
 
@@ -1475,41 +2030,57 @@ button:disabled{
             </div>
 
             <div class="title-text">
-                <h1>الرسائل</h1>
-                <p>محادثاتك وإشعاراتك</p>
+
+                <h1>
+                    الرسائل
+                </h1>
+
+                <p>
+                    محادثاتك وإشعاراتك
+                </p>
+
             </div>
 
         </div>
 
         <div class="header-actions">
 
-            <!-- الإشعارات: يسار الهيدر -->
             <button
                 type="button"
                 class="notifications-open-button"
                 id="notificationsOpenButton"
-                aria-label="الإشعارات">
-
+                aria-label="الإشعارات"
+            >
                 🔔
 
                 <span
                     class="notification-badge"
-                    id="notificationBadge">
+                    id="notificationBadge"
+                >
                     0
                 </span>
 
             </button>
 
-            <!-- النشاط -->
+            <button
+                type="button"
+                class="message-view-settings-button"
+                id="messageViewSettingsButton"
+                aria-label="إعدادات عرض الرسائل"
+            >
+                ⚙️
+            </button>
+
             <button
                 type="button"
                 class="activity-button"
-                id="activityButton">
+                id="activityButton"
+            >
 
                 <span
                     class="activity-dot"
-                    id="topActivityDot">
-                </span>
+                    id="topActivityDot"
+                ></span>
 
                 <span id="activityText">
                     غير نشط
@@ -1522,73 +2093,87 @@ button:disabled{
     </header>
 
 
-    <section class="search-section">
+    <!-- =====================================================
+         SEARCH
+    ====================================================== -->
+
+    <section
+        class="search-section"
+        id="searchSection"
+    >
 
         <div class="search-box glass">
 
-            <div class="search-icon">
-                🔎
-            </div>
-
             <input
                 id="messageSearch"
-                class="search-input"
-                type="search"
+                type="text"
                 autocomplete="off"
-                placeholder="ابحث في الرسائل...">
+                placeholder="ابحث في الرسائل..."
+            >
 
-            <div class="search-mode">
+            <button
+                type="button"
+                class="search-button active"
+                id="searchMessagesBtn"
+            >
+                الرسائل
+            </button>
 
-                <button
-                    type="button"
-                    id="searchMessagesBtn"
-                    class="active">
-                    الرسائل
-                </button>
-
-                <button
-                    type="button"
-                    id="searchUsersBtn">
-                    المستخدمين
-                </button>
-
-            </div>
+            <button
+                type="button"
+                class="search-button"
+                id="searchUsersBtn"
+            >
+                المستخدمون
+            </button>
 
         </div>
+
+        <div
+            class="search-results"
+            id="searchResults"
+        ></div>
 
     </section>
 
 
-    <main class="main-list" id="mainList">
+    <!-- =====================================================
+         MAIN LIST
+    ====================================================== -->
 
-        <div class="list-title">
-            <strong>المحادثات</strong>
-            <span id="conversationCount">0</span>
+    <main
+        class="main-list"
+        id="mainList"
+    >
+
+        <div class="list-header">
+
+            <span>
+                المحادثات
+            </span>
+
+            <span id="conversationCount">
+                0
+            </span>
+
         </div>
 
         <div
             class="conversation-list"
-            id="conversationList">
-
-            <div class="loading">
-                <span class="loader-ring"></span>
-                جاري تحميل الرسائل
-            </div>
-
-        </div>
+            id="conversationList"
+        ></div>
 
     </main>
 
 
-    <div
-        class="search-results"
-        id="searchResults">
-    </div>
-
+    <!-- =====================================================
+         CHAT VIEW
+    ====================================================== -->
 
     <section
         class="chat-view"
-        id="chatView">
+        id="chatView"
+    >
 
         <div class="chat-header glass">
 
@@ -1596,13 +2181,15 @@ button:disabled{
                 type="button"
                 class="back-button"
                 id="backChatButton"
-                aria-label="رجوع">
+                aria-label="رجوع"
+            >
                 ←
             </button>
 
             <div
                 class="chat-person"
-                id="chatPersonButton">
+                id="chatPersonButton"
+            >
 
                 <div class="chat-avatar-wrap">
 
@@ -1610,12 +2197,13 @@ button:disabled{
                         id="chatAvatar"
                         class="avatar"
                         src=""
-                        alt="">
+                        alt=""
+                    >
 
                     <span
                         id="chatOnlineDot"
-                        class="online-dot">
-                    </span>
+                        class="online-dot"
+                    ></span>
 
                 </div>
 
@@ -1623,13 +2211,15 @@ button:disabled{
 
                     <div
                         id="chatName"
-                        class="chat-person-name">
+                        class="chat-person-name"
+                    >
                         المستخدم
                     </div>
 
                     <div
                         id="chatStatus"
-                        class="chat-person-status">
+                        class="chat-person-status"
+                    >
                         غير نشط
                     </div>
 
@@ -1642,14 +2232,18 @@ button:disabled{
                 <button
                     type="button"
                     class="chat-action"
-                    id="chatNotificationButton">
+                    id="chatNotificationButton"
+                    aria-label="إشعارات المحادثة"
+                >
                     🔔
                 </button>
 
                 <button
                     type="button"
                     class="chat-action"
-                    id="chatMenuButton">
+                    id="chatMenuButton"
+                    aria-label="خيارات المحادثة"
+                >
                     ⋮
                 </button>
 
@@ -1658,320 +2252,479 @@ button:disabled{
         </div>
 
 
-        <div class="chat-body glass">
+        <div
+            class="search-match-navigator"
+            id="searchMatchNavigator"
+        >
 
-            <div
-                class="chat-messages"
-                id="chatMessages">
+            <button
+                type="button"
+                id="searchMatchUp"
+            >
+                ↑
+            </button>
 
-                <div class="loading">
-                    <span class="loader-ring"></span>
-                    جاري تحميل المحادثة
+            <span id="searchMatchCount">
+                0 / 0
+            </span>
+
+            <button
+                type="button"
+                id="searchMatchDown"
+            >
+                ↓
+            </button>
+
+        </div>
+
+
+        <div
+            class="chat-messages"
+            id="chatMessages"
+        ></div>
+
+
+        <div
+            class="typing-indicator"
+            id="typingIndicator"
+        >
+
+            <span>
+                يكتب
+            </span>
+
+            <span class="typing-dots">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </span>
+
+        </div>
+
+
+        <form
+            class="chat-composer"
+            id="messageForm"
+        >
+
+            <textarea
+                id="messageInput"
+                class="message-input"
+                rows="1"
+                maxlength="5000"
+                placeholder="اكتب رسالة..."
+                autocomplete="off"
+            ></textarea>
+
+            <button
+                type="submit"
+                class="send-button"
+                id="sendButton"
+                aria-label="إرسال"
+            >
+                ➤
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <!-- =====================================================
+         ACTIVITY MODAL
+    ====================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="activityModal"
+    >
+
+        <div class="modal">
+
+            <h2>
+                حالة النشاط
+            </h2>
+
+            <p class="modal-description">
+                تحكم فيما إذا كان الآخرون يستطيعون معرفة أنك نشط.
+            </p>
+
+            <button
+                type="button"
+                class="activity-switch"
+                id="activitySwitch"
+            >
+
+                <span>
+                    إظهار حالة النشاط
+                </span>
+
+                <span
+                    class="switch-dot"
+                    id="activitySwitchDot"
+                ></span>
+
+            </button>
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    id="closeActivityModal"
+                >
+                    إغلاق
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MESSAGE VIEW SETTINGS
+    ====================================================== -->
+
+    <div
+        class="modal-overlay"
+        id="messageViewSettingsModal"
+    >
+
+        <div class="modal message-view-settings">
+
+            <h2>
+                تحكم بكيفية رؤيتك للرسائل
+            </h2>
+
+            <p class="modal-description">
+                كبّر أو صغّر حجم النص والفقاعة وشاهد المعاينة قبل الحفظ.
+            </p>
+
+            <div class="settings-slider-area">
+
+                <div class="settings-range-row">
+
+                    <span class="settings-range-label">
+                        أصغر
+                    </span>
+
+                    <input
+                        type="range"
+                        id="messageViewRange"
+                        min="0.85"
+                        max="1.25"
+                        step="0.05"
+                        value="1"
+                    >
+
+                    <span class="settings-range-label">
+                        أكبر
+                    </span>
+
+                </div>
+
+                <div
+                    class="settings-value"
+                    id="messageViewValue"
+                >
+                    100%
                 </div>
 
             </div>
 
-            <!-- التنقل بين نتائج البحث -->
-            <div
-                class="search-match-navigator"
-                id="searchMatchNavigator">
+
+            <div class="message-preview">
+
+                <div class="preview-title">
+                    معاينة مباشرة
+                </div>
+
+                <div class="preview-messages">
+
+                    <div class="preview-row incoming">
+
+                        <div class="preview-bubble">
+                            هلو علي شلونك؟
+                        </div>
+
+                    </div>
+
+                    <div class="preview-row outgoing">
+
+                        <div class="preview-bubble">
+                            تمام الحمدلله، إنت شخبارك؟
+                        </div>
+
+                    </div>
+
+                    <div class="preview-row incoming">
+
+                        <div class="preview-bubble">
+                            بخير والحمدلله 🌿
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-actions">
 
                 <button
                     type="button"
-                    id="searchMatchUp"
-                    aria-label="النتيجة السابقة">
-                    ↑
+                    id="messageViewSettingsCancel"
+                >
+                    إلغاء
                 </button>
-
-                <span
-                    class="search-match-count"
-                    id="searchMatchCount">
-                    0 / 0
-                </span>
 
                 <button
                     type="button"
-                    id="searchMatchDown"
-                    aria-label="النتيجة التالية">
-                    ↓
+                    class="primary"
+                    id="messageViewSettingsSave"
+                >
+                    حفظ الإعدادات
                 </button>
 
             </div>
-
-
-            <div
-                class="typing-indicator"
-                id="typingIndicator">
-
-                <span class="typing-text">
-                    يكتب
-                </span>
-
-                <span class="typing-dots">
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                </span>
-
-            </div>
-
-
-            <form
-                class="chat-composer"
-                id="messageForm">
-
-                <textarea
-                    id="messageInput"
-                    class="message-input"
-                    rows="1"
-                    maxlength="5000"
-                    placeholder="اكتب رسالة..."></textarea>
-
-                <button
-                    type="submit"
-                    class="send-button"
-                    id="sendButton">
-                    ➤
-                </button>
-
-            </form>
-
-        </div>
-
-    </section>
-
-</div>
-
-
-<!-- =========================
-     ACTIVITY MODAL
-========================== -->
-
-<div
-    class="modal-layer"
-    id="activityModal">
-
-    <div class="modal">
-
-        <h3>النشاط</h3>
-
-        <p>
-            يمكنك التحكم بظهور حالة نشاطك للمستخدمين الذين تتواصل معهم.
-        </p>
-
-        <div class="activity-row">
-
-            <div class="activity-info">
-
-                <strong>
-                    إظهار حالة النشاط
-                </strong>
-
-                <span>
-                    عند الإيقاف لن يظهر أنك نشط
-                </span>
-
-            </div>
-
-            <button
-                type="button"
-                class="switch"
-                id="activitySwitch">
-            </button>
-
-        </div>
-
-        <div class="modal-actions">
-
-            <button
-                type="button"
-                id="closeActivityModal">
-                إغلاق
-            </button>
 
         </div>
 
     </div>
 
-</div>
 
+    <!-- =====================================================
+         CONFIRM
+    ====================================================== -->
 
-<!-- =========================
-     DELETE/HIDE MODAL
-========================== -->
+    <div
+        class="modal-overlay"
+        id="confirmModal"
+    >
 
-<div
-    class="modal-layer"
-    id="confirmModal">
+        <div class="modal">
 
-    <div class="modal">
+            <h2 id="confirmTitle">
+                تأكيد
+            </h2>
 
-        <h3 id="confirmTitle">
-            إخفاء المحادثة
-        </h3>
+            <p
+                class="modal-description"
+                id="confirmText"
+            ></p>
 
-        <p id="confirmText">
-            سيتم إخفاء المحادثة من قائمتك.
-        </p>
+            <div class="modal-actions">
 
-        <div class="modal-actions">
+                <button
+                    type="button"
+                    id="confirmCancel"
+                >
+                    إلغاء
+                </button>
 
-            <button
-                type="button"
-                id="confirmCancel">
-                إلغاء
-            </button>
+                <button
+                    type="button"
+                    class="primary"
+                    id="confirmOk"
+                >
+                    تأكيد
+                </button>
 
-            <button
-                type="button"
-                class="danger"
-                id="confirmOk">
-                متابعة
-            </button>
+            </div>
 
         </div>
 
     </div>
 
-</div>
 
+    <!-- =====================================================
+         CONTEXT MENU
+    ====================================================== -->
 
-<!-- =========================
-     CONTEXT MENU
-========================== -->
-
-<div
-    class="context-menu"
-    id="contextMenu">
-
-    <button
-        type="button"
-        id="muteConversationButton">
-        🔕 كتم الإشعارات
-    </button>
-
-    <button
-        type="button"
-        id="hideConversationButton"
-        class="danger">
-        🗑️ إخفاء المحادثة
-    </button>
-
-</div>
-
-
-<!-- =========================
-     NOTIFICATIONS
-========================== -->
-
-<div
-    class="notifications-panel"
-    id="notificationsPanel">
-
-    <div class="notifications-head">
-
-        <strong>
-            الإشعارات
-        </strong>
+    <div
+        class="context-menu"
+        id="contextMenu"
+    >
 
         <button
             type="button"
-            id="markAllNotifications">
-            تحديد الكل كمقروء
+            id="muteConversationButton"
+        >
+            🔕 كتم إشعارات المحادثة
+        </button>
+
+        <button
+            type="button"
+            id="hideConversationButton"
+            class="danger"
+        >
+            🗑️ إخفاء المحادثة
         </button>
 
     </div>
 
-    <div id="notificationsList"></div>
+
+    <!-- =====================================================
+         NOTIFICATIONS
+    ====================================================== -->
+
+    <div
+        class="notifications-panel"
+        id="notificationsPanel"
+    >
+
+        <div class="notifications-header">
+
+            <strong>
+                الإشعارات
+            </strong>
+
+            <button
+                type="button"
+                id="markAllNotifications"
+            >
+                تحديد الكل كمقروء
+            </button>
+
+        </div>
+
+        <div
+            id="notificationsList"
+        ></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SETTINGS SUCCESS
+    ====================================================== -->
+
+    <div
+        class="settings-success"
+        id="settingsSuccess"
+    >
+
+        <div class="settings-success-box">
+
+            <div class="success-icon">
+                ✓
+            </div>
+
+            <strong>
+                تم تطبيق الإعدادات على المحادثات
+            </strong>
+
+            <p>
+                سيتم إعادتك إلى قائمة الرسائل...
+            </p>
+
+        </div>
+
+    </div>
 
 </div>
 
 
-<!-- =========================
-     SUPABASE
-========================== -->
+<!-- =========================================================
+     SUPABASE + AUTH
+========================================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="./settings-features/settings-auth-config.js"></script>
+
 <script src="./settings-features/settings-auth.js"></script>
+
 <script src="./settings-features/settings-auth-ui.js"></script>
 
+
 <script>
+
+/* =========================================================
+   WFESC MESSAGES SCRIPT
+========================================================= */
+
 (function(){
 
 "use strict";
 
-/* =====================================================
-   CONFIG
-===================================================== */
+
+/* =========================================================
+   SUPABASE
+========================================================= */
 
 const SUPABASE_URL =
-    "https://mcgbzfgbaxwmutniorlw.supabase.co";
+"https://mcgbzfgbaxwmutniorlw.supabase.co";
 
 const SUPABASE_KEY =
-    "sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
+"sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
 
-const DEFAULT_AVATAR =
-    "data:image/svg+xml;charset=UTF-8," +
-    encodeURIComponent(`
-        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
-            <rect width="200" height="200" fill="#111"/>
-            <text x="100" y="125"
-                text-anchor="middle"
-                fill="#fff"
-                font-size="70"
-                font-family="Arial">
-                𝑾
-            </text>
-        </svg>
-    `);
+const client =
+window.WFESCSupabase ||
+window.supabase?.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
 const SUPPORT_AVATAR =
-    "./sborts-wfesc-help.jpg";
+"./sborts-wfesc-help.jpg";
 
 const SUPPORT_NAME =
-    "تواصل مع فريق الدعم الشامل";
+"تواصل مع فريق الدعم الشامل";
+
+const DEFAULT_AVATAR =
+"data:image/svg+xml;charset=UTF-8," +
+encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg"
+width="200"
+height="200"
+viewBox="0 0 200 200">
+<rect width="200" height="200" fill="#111"/>
+<circle cx="100" cy="76" r="42" fill="#333"/>
+<path d="M35 180c8-45 37-65 65-65s57 20 65 65"
+fill="#333"/>
+</svg>
+`);
 
 
-/* =====================================================
-   SUPABASE
-===================================================== */
-
-let client = window.WFESCSupabase;
-
-if(!client){
-
-    client = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
-
-    window.WFESCSupabase = client;
-}
-
-
-/* =====================================================
+/* =========================================================
    STATE
-===================================================== */
+========================================================= */
 
 let currentUser = null;
+
 let currentConversationId = null;
+
 let currentConversationContact = null;
+
 let conversations = [];
 
+let currentMessages = [];
+
 let messageChannel = null;
+
 let typingChannel = null;
+
 let presenceChannel = null;
+
 let notificationChannel = null;
 
 let typingTimer = null;
+
 let typingCleanupTimer = null;
 
 let isSending = false;
+
 let searchMode = "messages";
+
 let contextConversationId = null;
+
 let pendingConfirmAction = null;
+
 let initialized = false;
 
 let activityEnabled = false;
@@ -1979,339 +2732,810 @@ let activityEnabled = false;
 let notificationsRows = [];
 
 let searchMatches = [];
+
 let searchMatchIndex = -1;
 
+let searchDelay = null;
 
-/* =====================================================
+
+/* =========================================================
    DOM
-===================================================== */
+========================================================= */
 
 const page =
-    document.getElementById("messagesPage");
+document.getElementById(
+    "messagesPage"
+);
 
 const mainList =
-    document.getElementById("mainList");
+document.getElementById(
+    "mainList"
+);
 
 const conversationList =
-    document.getElementById("conversationList");
+document.getElementById(
+    "conversationList"
+);
 
 const conversationCount =
-    document.getElementById("conversationCount");
-
-const chatView =
-    document.getElementById("chatView");
-
-const chatMessages =
-    document.getElementById("chatMessages");
-
-const messageInput =
-    document.getElementById("messageInput");
-
-const messageForm =
-    document.getElementById("messageForm");
-
-const sendButton =
-    document.getElementById("sendButton");
-
-const backChatButton =
-    document.getElementById("backChatButton");
+document.getElementById(
+    "conversationCount"
+);
 
 const searchInput =
-    document.getElementById("messageSearch");
+document.getElementById(
+    "messageSearch"
+);
 
 const searchResults =
-    document.getElementById("searchResults");
+document.getElementById(
+    "searchResults"
+);
 
 const searchMessagesBtn =
-    document.getElementById("searchMessagesBtn");
+document.getElementById(
+    "searchMessagesBtn"
+);
 
 const searchUsersBtn =
-    document.getElementById("searchUsersBtn");
+document.getElementById(
+    "searchUsersBtn"
+);
 
-const activityButton =
-    document.getElementById("activityButton");
+const chatView =
+document.getElementById(
+    "chatView"
+);
 
-const activityModal =
-    document.getElementById("activityModal");
+const chatMessages =
+document.getElementById(
+    "chatMessages"
+);
 
-const activitySwitch =
-    document.getElementById("activitySwitch");
-
-const closeActivityModal =
-    document.getElementById("closeActivityModal");
-
-const topActivityDot =
-    document.getElementById("topActivityDot");
-
-const activityText =
-    document.getElementById("activityText");
-
-const typingIndicator =
-    document.getElementById("typingIndicator");
-
-const chatName =
-    document.getElementById("chatName");
+const backChatButton =
+document.getElementById(
+    "backChatButton"
+);
 
 const chatAvatar =
-    document.getElementById("chatAvatar");
+document.getElementById(
+    "chatAvatar"
+);
 
-const chatOnlineDot =
-    document.getElementById("chatOnlineDot");
+const chatName =
+document.getElementById(
+    "chatName"
+);
 
 const chatStatus =
-    document.getElementById("chatStatus");
+document.getElementById(
+    "chatStatus"
+);
+
+const chatOnlineDot =
+document.getElementById(
+    "chatOnlineDot"
+);
 
 const chatPersonButton =
-    document.getElementById("chatPersonButton");
+document.getElementById(
+    "chatPersonButton"
+);
 
-const contextMenu =
-    document.getElementById("contextMenu");
+const messageForm =
+document.getElementById(
+    "messageForm"
+);
 
-const confirmModal =
-    document.getElementById("confirmModal");
+const messageInput =
+document.getElementById(
+    "messageInput"
+);
 
-const confirmTitle =
-    document.getElementById("confirmTitle");
+const sendButton =
+document.getElementById(
+    "sendButton"
+);
 
-const confirmText =
-    document.getElementById("confirmText");
-
-const confirmOk =
-    document.getElementById("confirmOk");
-
-const confirmCancel =
-    document.getElementById("confirmCancel");
-
-const notificationsPanel =
-    document.getElementById("notificationsPanel");
-
-const notificationsList =
-    document.getElementById("notificationsList");
-
-const markAllNotifications =
-    document.getElementById("markAllNotifications");
-
-const notificationsOpenButton =
-    document.getElementById("notificationsOpenButton");
-
-const notificationBadge =
-    document.getElementById("notificationBadge");
+const typingIndicator =
+document.getElementById(
+    "typingIndicator"
+);
 
 const searchMatchNavigator =
-    document.getElementById("searchMatchNavigator");
-
-const searchMatchUp =
-    document.getElementById("searchMatchUp");
-
-const searchMatchDown =
-    document.getElementById("searchMatchDown");
+document.getElementById(
+    "searchMatchNavigator"
+);
 
 const searchMatchCount =
-    document.getElementById("searchMatchCount");
+document.getElementById(
+    "searchMatchCount"
+);
+
+const searchMatchUp =
+document.getElementById(
+    "searchMatchUp"
+);
+
+const searchMatchDown =
+document.getElementById(
+    "searchMatchDown"
+);
+
+const contextMenu =
+document.getElementById(
+    "contextMenu"
+);
+
+const notificationsPanel =
+document.getElementById(
+    "notificationsPanel"
+);
+
+const notificationsList =
+document.getElementById(
+    "notificationsList"
+);
+
+const notificationBadge =
+document.getElementById(
+    "notificationBadge"
+);
+
+const notificationsOpenButton =
+document.getElementById(
+    "notificationsOpenButton"
+);
+
+const activityButton =
+document.getElementById(
+    "activityButton"
+);
+
+const activityText =
+document.getElementById(
+    "activityText"
+);
+
+const topActivityDot =
+document.getElementById(
+    "topActivityDot"
+);
+
+const activityModal =
+document.getElementById(
+    "activityModal"
+);
+
+const closeActivityModal =
+document.getElementById(
+    "closeActivityModal"
+);
+
+const activitySwitch =
+document.getElementById(
+    "activitySwitch"
+);
+
+const activitySwitchDot =
+document.getElementById(
+    "activitySwitchDot"
+);
+
+const confirmModal =
+document.getElementById(
+    "confirmModal"
+);
+
+const confirmTitle =
+document.getElementById(
+    "confirmTitle"
+);
+
+const confirmText =
+document.getElementById(
+    "confirmText"
+);
+
+const confirmCancel =
+document.getElementById(
+    "confirmCancel"
+);
+
+const confirmOk =
+document.getElementById(
+    "confirmOk"
+);
+
+const markAllNotifications =
+document.getElementById(
+    "markAllNotifications"
+);
+
+const messageViewSettingsButton =
+document.getElementById(
+    "messageViewSettingsButton"
+);
+
+const messageViewSettingsModal =
+document.getElementById(
+    "messageViewSettingsModal"
+);
+
+const messageViewRange =
+document.getElementById(
+    "messageViewRange"
+);
+
+const messageViewValue =
+document.getElementById(
+    "messageViewValue"
+);
+
+const messageViewSettingsCancel =
+document.getElementById(
+    "messageViewSettingsCancel"
+);
+
+const messageViewSettingsSave =
+document.getElementById(
+    "messageViewSettingsSave"
+);
+
+const settingsSuccess =
+document.getElementById(
+    "settingsSuccess"
+);
 
 
-/* =====================================================
+/* =========================================================
    HELPERS
-===================================================== */
+========================================================= */
 
 function escapeHtml(value){
 
-    return String(value ?? "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
+    return String(
+        value ?? ""
+    )
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
 }
 
 
-function formatTime(dateValue){
+function formatTime(value){
 
-    if(!dateValue){
+    if(!value){
         return "";
     }
 
     const date =
-        new Date(dateValue);
+        new Date(value);
 
     if(Number.isNaN(date.getTime())){
         return "";
     }
 
-    const now =
-        new Date();
-
-    if(date.toDateString() === now.toDateString()){
-
-        return date.toLocaleTimeString(
-            "ar-IQ",
-            {
-                hour:"2-digit",
-                minute:"2-digit"
-            }
-        );
-
-    }
-
-    return date.toLocaleDateString(
+    return date.toLocaleTimeString(
         "ar-IQ",
         {
-            day:"numeric",
-            month:"short"
+            hour:"2-digit",
+            minute:"2-digit"
         }
     );
+
 }
 
 
 function getDisplayName(contact){
 
     if(!contact){
-        return "بدون اسم";
+        return "المستخدم";
     }
 
-    /*
-      display_name هو الاسم الذي اختاره
-      المستخدم ويظهر في واجهة الرسائل.
-    */
     if(
         contact.display_name &&
-        String(contact.display_name).trim()
+        String(
+            contact.display_name
+        ).trim()
     ){
-        return String(contact.display_name).trim();
-    }
-
-    /*
-      لا نعرض @username في المحادثة.
-      إذا لا يوجد display_name نستخدم الاسم
-      المتوفر من profile بدون كتابة "مستخدم".
-    */
-    if(
-        contact.name &&
-        String(contact.name).trim()
-    ){
-        return String(contact.name).trim();
+        return String(
+            contact.display_name
+        ).trim();
     }
 
     if(
-        contact.full_name &&
-        String(contact.full_name).trim()
+        contact.username &&
+        String(
+            contact.username
+        ).trim()
     ){
-        return String(contact.full_name).trim();
+        return String(
+            contact.username
+        ).trim();
     }
 
     return "بدون اسم";
+
 }
 
 
 function avatarUrl(contact){
 
-    if(contact?.is_support){
+    if(
+        contact?.is_support
+    ){
         return SUPPORT_AVATAR;
     }
 
-    if(
-        contact?.avatar_url &&
-        String(contact.avatar_url).trim()
-    ){
-        return contact.avatar_url;
-    }
+    return (
+        contact?.avatar_url ||
+        DEFAULT_AVATAR
+    );
 
-    return DEFAULT_AVATAR;
 }
 
 
-function showImage(img,url){
+function showImage(
+    image,
+    src
+){
 
-    img.onerror = function(){
+    if(!image){
+        return;
+    }
 
-        img.onerror = null;
+    image.onerror =
+    function(){
 
-        img.src = DEFAULT_AVATAR;
+        image.onerror = null;
+
+        image.src =
+            DEFAULT_AVATAR;
 
     };
 
-    img.src =
-        url ||
+    image.src =
+        src ||
         DEFAULT_AVATAR;
+
 }
 
 
-function scrollChatToBottom(smooth=true){
+function scrollChatToBottom(
+    smooth=true
+){
 
-    requestAnimationFrame(function(){
+    requestAnimationFrame(
+        function(){
 
-        chatMessages.scrollTo({
+            chatMessages.scrollTo({
+                top:
+                    chatMessages.scrollHeight,
+                behavior:
+                    smooth
+                    ? "smooth"
+                    : "auto"
+            });
 
-            top:chatMessages.scrollHeight,
+        }
+    );
 
-            behavior:
-                smooth ? "smooth" : "auto"
-
-        });
-
-    });
 }
 
 
-function setLoading(container,text){
+function setLoading(
+    container,
+    text
+){
 
     container.innerHTML = `
         <div class="loading">
-            <span class="loader-ring"></span>
             ${escapeHtml(text)}
         </div>
     `;
+
 }
 
 
-function normalizeSearchText(text){
+function normalizeSearchText(
+    text
+){
 
-    return String(text || "")
-        .trim()
-        .replace(/\s+/g," ");
+    return String(
+        text || ""
+    )
+    .trim()
+    .replace(/\s+/g," ");
+
 }
 
 
-function normalizeArabic(text){
+function normalizeArabic(
+    text
+){
 
-    return String(text || "")
-        .toLowerCase()
-        .replace(/[أإآ]/g,"ا")
-        .replace(/ة/g,"ه")
-        .replace(/ى/g,"ي")
-        .replace(/ؤ/g,"و")
-        .replace(/ئ/g,"ي")
-        .replace(/ـ/g,"");
+    return String(
+        text || ""
+    )
+    .toLowerCase()
+    .replace(/[أإآ]/g,"ا")
+    .replace(/ى/g,"ي")
+    .replace(/ة/g,"ه")
+    .replace(/ؤ/g,"و")
+    .replace(/ئ/g,"ي")
+    .replace(/ـ/g,"")
+    .replace(/[ًٌٍَُِّْ]/g,"")
+    .trim();
+
 }
 
 
-function getConversationSortTime(conversation){
+function getConversationSortTime(
+    conversation
+){
 
-    return new Date(
-        conversation?.updated_at ||
+    const value =
         conversation?.last_message_at ||
-        conversation?.created_at ||
-        0
-    ).getTime();
+        conversation?.updated_at;
+
+    const time =
+        new Date(value || 0)
+        .getTime();
+
+    return Number.isFinite(time)
+        ? time
+        : 0;
+
 }
 
 
-/* =====================================================
+/* =========================================================
+   MESSAGE VIEW SETTINGS
+   per-user local persistent settings
+========================================================= */
+
+const MESSAGE_SETTINGS_PREFIX =
+    "wfesc_message_view_settings_";
+
+const DEFAULT_MESSAGE_VIEW_SETTINGS = {
+    scale:1
+};
+
+
+function getMessageSettingsKey(){
+
+    return (
+        MESSAGE_SETTINGS_PREFIX +
+        (
+            currentUser?.id ||
+            "guest"
+        )
+    );
+
+}
+
+
+function getMessageViewSettings(){
+
+    try{
+
+        const raw =
+            localStorage.getItem(
+                getMessageSettingsKey()
+            );
+
+        if(!raw){
+            return {
+                ...DEFAULT_MESSAGE_VIEW_SETTINGS
+            };
+        }
+
+        const parsed =
+            JSON.parse(raw);
+
+        let scale =
+            Number(
+                parsed.scale
+            );
+
+        if(!Number.isFinite(scale)){
+            scale = 1;
+        }
+
+        scale =
+            Math.max(
+                .85,
+                Math.min(
+                    1.25,
+                    scale
+                )
+            );
+
+        return {
+            scale
+        };
+
+    }catch(error){
+
+        return {
+            ...DEFAULT_MESSAGE_VIEW_SETTINGS
+        };
+
+    }
+
+}
+
+
+function saveMessageViewSettings(
+    scale
+){
+
+    const value = {
+        scale:
+            Math.max(
+                .85,
+                Math.min(
+                    1.25,
+                    Number(scale) || 1
+                )
+            )
+    };
+
+    localStorage.setItem(
+        getMessageSettingsKey(),
+        JSON.stringify(value)
+    );
+
+    applyMessageViewSettings(
+        value
+    );
+
+}
+
+
+function applyMessageViewSettings(
+    settings
+){
+
+    const scale =
+        Number(
+            settings?.scale
+        ) || 1;
+
+    page.style.setProperty(
+        "--message-text-scale",
+        scale
+    );
+
+    page.style.setProperty(
+        "--message-bubble-scale",
+        scale
+    );
+
+}
+
+
+function updateMessagePreview(){
+
+    const scale =
+        Number(
+            messageViewRange.value
+        ) || 1;
+
+    messageViewValue.textContent =
+        Math.round(
+            scale * 100
+        ) + "%";
+
+    messageViewSettingsModal.style
+        .setProperty(
+            "--preview-scale",
+            scale
+        );
+
+    document.querySelectorAll(
+        ".preview-bubble"
+    ).forEach(
+        function(item){
+
+            item.style.fontSize =
+                `calc(12px * ${scale})`;
+
+            item.style.padding =
+                `calc(8px * ${scale}) calc(11px * ${scale})`;
+
+        }
+    );
+
+}
+
+
+function openMessageViewSettings(){
+
+    const settings =
+        getMessageViewSettings();
+
+    messageViewRange.value =
+        String(
+            settings.scale
+        );
+
+    updateMessagePreview();
+
+    messageViewSettingsModal
+        .classList.add("show");
+
+}
+
+
+messageViewSettingsButton.addEventListener(
+    "click",
+    function(){
+
+        openMessageViewSettings();
+
+    }
+);
+
+
+messageViewRange.addEventListener(
+    "input",
+    function(){
+
+        const scale =
+            Number(
+                messageViewRange.value
+            ) || 1;
+
+        messageViewValue.textContent =
+            Math.round(
+                scale * 100
+            ) + "%";
+
+        messageViewSettingsModal
+            .style
+            .setProperty(
+                "--preview-scale",
+                scale
+            );
+
+        document.querySelectorAll(
+            ".preview-bubble"
+        ).forEach(
+            function(item){
+
+                item.style.fontSize =
+                    `calc(12px * ${scale})`;
+
+                item.style.padding =
+                    `calc(8px * ${scale}) calc(11px * ${scale})`;
+
+            }
+        );
+
+    }
+);
+
+
+messageViewSettingsCancel.addEventListener(
+    "click",
+    function(){
+
+        messageViewSettingsModal
+            .classList.remove("show");
+
+    }
+);
+
+
+messageViewSettingsModal.addEventListener(
+    "click",
+    function(event){
+
+        if(
+            event.target ===
+            messageViewSettingsModal
+        ){
+
+            messageViewSettingsModal
+                .classList.remove("show");
+
+        }
+
+    }
+);
+
+
+messageViewSettingsSave.addEventListener(
+    "click",
+    function(){
+
+        const scale =
+            Number(
+                messageViewRange.value
+            ) || 1;
+
+        saveMessageViewSettings(
+            scale
+        );
+
+        messageViewSettingsModal
+            .classList.remove("show");
+
+        page.classList.add(
+            "settings-shake"
+        );
+
+        settingsSuccess.classList.add(
+            "show"
+        );
+
+        setTimeout(
+            function(){
+
+                page.classList.remove(
+                    "settings-shake"
+                );
+
+            },
+            500
+        );
+
+        setTimeout(
+            function(){
+
+                settingsSuccess.classList.remove(
+                    "show"
+                );
+
+                if(
+                    page.classList.contains(
+                        "chat-active"
+                    )
+                ){
+
+                    backChatButton.click();
+
+                }
+
+                window.scrollTo({
+                    top:0,
+                    behavior:"smooth"
+                });
+
+            },
+            2000
+        );
+
+    }
+);
+
+
+/* =========================================================
    AUTH
-===================================================== */
+========================================================= */
 
 async function getSession(){
 
     try{
 
+        if(
+            !client?.auth
+        ){
+            return null;
+        }
+
         const result =
             await client.auth.getSession();
 
-        currentUser =
+        return (
             result?.data?.session?.user ||
-            null;
-
-        return currentUser;
+            null
+        );
 
     }catch(error){
 
@@ -2320,16 +3544,16 @@ async function getSession(){
             error
         );
 
-        currentUser = null;
-
         return null;
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    ACTIVITY
-===================================================== */
+========================================================= */
 
 async function loadActivity(){
 
@@ -2341,10 +3565,13 @@ async function loadActivity(){
 
         const {data,error} =
             await client
-                .from("profiles")
-                .select("show_activity")
-                .eq("id",currentUser.id)
-                .maybeSingle();
+            .from("profiles")
+            .select("show_activity")
+            .eq(
+                "id",
+                currentUser.id
+            )
+            .maybeSingle();
 
         if(error){
             throw error;
@@ -2354,20 +3581,14 @@ async function loadActivity(){
             data?.show_activity !== false;
 
         updateActivityUI(
-            activityEnabled,
-            false
+            activityEnabled
         );
 
-        await client.rpc(
-            "set_my_presence",
-            {
-                online:activityEnabled
-            }
-        );
+        await updateOwnPresence();
 
     }catch(error){
 
-        console.error(
+        console.warn(
             "loadActivity",
             error
         );
@@ -2375,67 +3596,43 @@ async function loadActivity(){
         activityEnabled = true;
 
         updateActivityUI(
-            true,
-            false
+            true
         );
+
     }
+
 }
 
 
-function updateActivityUI(enabled,animate=true){
+function updateActivityUI(
+    enabled,
+    forceInactive=false
+){
 
-    activityEnabled =
-        Boolean(enabled);
-
-    if(animate){
-
-        activityButton.animate(
-            [
-                {
-                    transform:"scale(.94)",
-                    opacity:.65
-                },
-                {
-                    transform:"scale(1)",
-                    opacity:1
-                }
-            ],
-            {
-                duration:190,
-                easing:"ease-out"
-            }
-        );
-
-        activitySwitch.animate(
-            [
-                {
-                    transform:"scale(.88)"
-                },
-                {
-                    transform:"scale(1)"
-                }
-            ],
-            {
-                duration:190,
-                easing:"ease-out"
-            }
-        );
-    }
-
-    activitySwitch.classList.toggle(
-        "on",
-        activityEnabled
-    );
+    const active =
+        !forceInactive &&
+        enabled;
 
     topActivityDot.classList.toggle(
         "active",
-        activityEnabled
+        active
     );
 
     activityText.textContent =
-        activityEnabled
-            ? "نشط"
-            : "غير نشط";
+        active
+        ? "نشط"
+        : "غير نشط";
+
+    activitySwitch.classList.toggle(
+        "active",
+        active
+    );
+
+    activitySwitchDot.style.background =
+        active
+        ? "var(--green)"
+        : "#555";
+
 }
 
 
@@ -2445,39 +3642,36 @@ async function toggleActivity(){
         return;
     }
 
-    /*
-      تحديث الواجهة فوراً حتى لا يشعر المستخدم
-      أن الزر متأخر.
-    */
-
     const next =
         !activityEnabled;
-
-    updateActivityUI(
-        next,
-        true
-    );
 
     try{
 
         const {error} =
             await client
-                .from("profiles")
-                .update({
-                    show_activity:next
-                })
-                .eq("id",currentUser.id);
+            .from("profiles")
+            .update({
+                show_activity:next
+            })
+            .eq(
+                "id",
+                currentUser.id
+            );
 
         if(error){
             throw error;
         }
 
-        await client.rpc(
-            "set_my_presence",
-            {
-                online:next
-            }
+        activityEnabled =
+            next;
+
+        updateActivityUI(
+            next
         );
+
+        await updateOwnPresence();
+
+        await refreshConversationListSilently();
 
     }catch(error){
 
@@ -2486,30 +3680,47 @@ async function toggleActivity(){
             error
         );
 
-        /*
-          إذا فشل الحفظ نرجع الحالة السابقة.
-        */
-
-        updateActivityUI(
-            !next,
-            true
-        );
-
         alert(
-            "تعذر تحديث حالة النشاط."
+            error.message ||
+            "تعذر تغيير حالة النشاط."
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    CONTACT
-===================================================== */
+========================================================= */
 
 async function getConversationContact(
     conversationId,
     type
 ){
+
+    if(
+        type === "support"
+    ){
+
+        return {
+            user_id:
+                null,
+            display_name:
+                SUPPORT_NAME,
+            username:
+                "wfesc",
+            avatar_url:
+                SUPPORT_AVATAR,
+            is_online:
+                true,
+            show_activity:
+                true,
+            is_support:
+                true
+        };
+
+    }
 
     try{
 
@@ -2526,44 +3737,29 @@ async function getConversationContact(
             throw error;
         }
 
-        let contact =
+        return (
             Array.isArray(data)
-                ? data[0]
-                : data;
-
-        if(!contact){
-            return null;
-        }
-
-        if(type === "support"){
-
-            contact = {
-                ...contact,
-                is_support:true,
-                display_name:
-                    SUPPORT_NAME,
-                avatar_url:
-                    SUPPORT_AVATAR
-            };
-        }
-
-        return contact;
+            ? data[0]
+            : data
+        ) || null;
 
     }catch(error){
 
-        console.error(
-            "getConversationContact",
+        console.warn(
+            "contact",
             error
         );
 
         return null;
+
     }
+
 }
 
 
-/* =====================================================
-   SUPPORT AUTO CREATE
-===================================================== */
+/* =========================================================
+   SUPPORT
+========================================================= */
 
 async function ensureSupportConversation(){
 
@@ -2582,23 +3778,42 @@ async function ensureSupportConversation(){
             throw error;
         }
 
-        return data || null;
+        if(
+            Array.isArray(data)
+        ){
+            return data[0];
+        }
+
+        if(
+            typeof data === "string"
+        ){
+            return data;
+        }
+
+        return (
+            data?.conversation_id ||
+            data?.id ||
+            data ||
+            null
+        );
 
     }catch(error){
 
         console.warn(
-            "support init",
+            "support conversation",
             error
         );
 
         return null;
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    CONVERSATIONS
-===================================================== */
+========================================================= */
 
 async function loadConversations(){
 
@@ -2607,26 +3822,21 @@ async function loadConversations(){
         conversationList.innerHTML = `
             <div class="empty-state glass">
                 <div class="empty-icon">🔐</div>
-                <strong>سجّل الدخول أولاً</strong>
+                <strong>سجّل الدخول</strong>
                 <p>
-                    الرسائل والمحادثات الخاصة تظهر بعد تسجيل الدخول.
+                    سجّل الدخول حتى تتمكن من استخدام الرسائل.
                 </p>
             </div>
         `;
 
-        conversationCount.textContent = "0";
+        conversationCount.textContent =
+            "0";
 
         return;
+
     }
 
-    setLoading(
-        conversationList,
-        "جاري تحميل المحادثات"
-    );
-
     try{
-
-        await ensureSupportConversation();
 
         const {data,error} =
             await client.rpc(
@@ -2639,17 +3849,14 @@ async function loadConversations(){
 
         conversations =
             Array.isArray(data)
-                ? data
-                : [];
+            ? data
+            : [];
 
         conversations.sort(
             (a,b) =>
                 getConversationSortTime(b) -
                 getConversationSortTime(a)
         );
-
-        conversationCount.textContent =
-            String(conversations.length);
 
         await renderConversationsInitial();
 
@@ -2663,23 +3870,28 @@ async function loadConversations(){
         conversationList.innerHTML = `
             <div class="empty-state glass">
                 <div class="empty-icon">⚠️</div>
-                <strong>تعذر تحميل الرسائل</strong>
+                <strong>تعذر تحميل المحادثات</strong>
                 <p>
-                    ${escapeHtml(error.message || "حدث خطأ غير معروف")}
+                    ${escapeHtml(
+                        error.message || ""
+                    )}
                 </p>
             </div>
         `;
+
     }
+
 }
 
-
-/* =====================================================
-   INITIAL PROGRESSIVE RENDER
-===================================================== */
 
 async function renderConversationsInitial(){
 
     conversationList.innerHTML = "";
+
+    conversationCount.textContent =
+        String(
+            conversations.length
+        );
 
     if(!conversations.length){
 
@@ -2694,6 +3906,7 @@ async function renderConversationsInitial(){
         `;
 
         return;
+
     }
 
     for(
@@ -2702,12 +3915,9 @@ async function renderConversationsInitial(){
         index++
     ){
 
-        const conversation =
-            conversations[index];
-
         const card =
             await createConversationCard(
-                conversation
+                conversations[index]
             );
 
         if(!card){
@@ -2715,24 +3925,19 @@ async function renderConversationsInitial(){
         }
 
         card.style.animationDelay =
-            Math.min(index * 65,700) + "ms";
+            Math.min(
+                index * 45,
+                600
+            ) + "ms";
 
-        conversationList.appendChild(card);
-
-        await new Promise(
-            resolve =>
-                setTimeout(
-                    resolve,
-                    55
-                )
+        conversationList.appendChild(
+            card
         );
+
     }
+
 }
 
-
-/* =====================================================
-   UPDATE EXISTING CARD
-===================================================== */
 
 function updateConversationCard(
     card,
@@ -2740,137 +3945,118 @@ function updateConversationCard(
     contact
 ){
 
-    card._contact =
-        contact;
+    const online =
+        contact.show_activity !== false &&
+        contact.is_online === true;
 
-    card._conversation =
-        conversation;
+    const unread =
+        Number(
+            conversation.unread_count || 0
+        );
 
     const name =
         conversation.type === "support"
-            ? SUPPORT_NAME
-            : getDisplayName(contact);
+        ? SUPPORT_NAME
+        : getDisplayName(contact);
 
     const preview =
         conversation.last_message ||
         "لا توجد رسائل بعد";
 
-    const unread =
-        Number(
-            conversation.unread_count ||
-            0
-        );
-
-    const online =
-        contact.show_activity !== false &&
-        contact.is_online === true;
-
-    const nameNode =
-        card.querySelector(
-            ".conversation-name"
-        );
-
-    const timeNode =
-        card.querySelector(
-            ".conversation-time"
-        );
-
-    const previewNode =
-        card.querySelector(
-            ".conversation-preview > span"
-        );
-
-    const badge =
-        card.querySelector(
-            ".unread-badge"
-        );
-
-    const avatar =
+    const image =
         card.querySelector(
             ".avatar"
         );
 
-    const dot =
+    showImage(
+        image,
+        avatarUrl(contact)
+    );
+
+    const nameElement =
         card.querySelector(
-            ".online-dot"
+            ".conversation-name"
         );
 
-    if(nameNode){
-        nameNode.textContent =
+    if(nameElement){
+        nameElement.textContent =
             name;
     }
 
-    if(timeNode){
-        timeNode.textContent =
+    const timeElement =
+        card.querySelector(
+            ".conversation-time"
+        );
+
+    if(timeElement){
+        timeElement.textContent =
             formatTime(
                 conversation.last_message_at ||
                 conversation.updated_at
             );
     }
 
-    if(previewNode){
-        previewNode.textContent =
+    const previewElement =
+        card.querySelector(
+            ".conversation-preview > span"
+        );
+
+    if(previewElement){
+        previewElement.textContent =
             preview;
     }
 
-    if(avatar){
-
-        showImage(
-            avatar,
-            avatarUrl(contact)
+    const onlineDot =
+        card.querySelector(
+            ".online-dot"
         );
-    }
 
-    if(dot){
+    onlineDot?.classList.toggle(
+        "active",
+        online
+    );
 
-        dot.classList.toggle(
-            "active",
-            online
+    let badge =
+        card.querySelector(
+            ".unread-badge"
         );
-    }
 
-    if(
-        unread > 0 &&
-        !badge
-    ){
+    if(unread > 0){
 
-        const newBadge =
-            document.createElement("span");
+        if(!badge){
 
-        newBadge.className =
-            "unread-badge";
+            badge =
+                document.createElement(
+                    "span"
+                );
 
-        newBadge.textContent =
-            unread > 99
-                ? "99+"
-                : String(unread);
+            badge.className =
+                "unread-badge";
 
-        card
-            .querySelector(".conversation-preview")
-            ?.appendChild(
-                newBadge
+            const preview =
+                card.querySelector(
+                    ".conversation-preview"
+                );
+
+            preview.appendChild(
+                badge
             );
 
-    }else if(
-        unread <= 0 &&
-        badge
-    ){
-
-        badge.remove();
-
-    }else if(badge){
+        }
 
         badge.textContent =
             unread > 99
-                ? "99+"
-                : String(unread);
+            ? "99+"
+            : String(unread);
+
+    }else if(badge){
+
+        badge.remove();
+
     }
+
 }
 
-
-/* =====================================================
-   CREATE CONVERSATION CARD
-===================================================== */
 
 async function createConversationCard(
     conversation
@@ -2887,7 +4073,9 @@ async function createConversationCard(
     }
 
     const card =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     card.className =
         "conversation-card";
@@ -2907,14 +4095,13 @@ async function createConversationCard(
 
     const unread =
         Number(
-            conversation.unread_count ||
-            0
+            conversation.unread_count || 0
         );
 
     const name =
         conversation.type === "support"
-            ? SUPPORT_NAME
-            : getDisplayName(contact);
+        ? SUPPORT_NAME
+        : getDisplayName(contact);
 
     const preview =
         conversation.last_message ||
@@ -2929,11 +4116,14 @@ async function createConversationCard(
                 src="${escapeHtml(
                     avatarUrl(contact)
                 )}"
-                alt="">
+                alt=""
+            >
 
             <span
-                class="online-dot ${online ? "active" : ""}">
-            </span>
+                class="online-dot ${
+                    online ? "active" : ""
+                }"
+            ></span>
 
         </div>
 
@@ -2958,7 +4148,12 @@ async function createConversationCard(
 
             <div class="conversation-preview">
 
-                <span style="overflow:hidden;text-overflow:ellipsis;">
+                <span
+                    style="
+                        overflow:hidden;
+                        text-overflow:ellipsis;
+                    "
+                >
                     ${escapeHtml(preview)}
                 </span>
 
@@ -2966,7 +4161,11 @@ async function createConversationCard(
                     unread > 0
                     ? `
                         <span class="unread-badge">
-                            ${unread > 99 ? "99+" : unread}
+                            ${
+                                unread > 99
+                                ? "99+"
+                                : unread
+                            }
                         </span>
                     `
                     : ""
@@ -2979,25 +4178,37 @@ async function createConversationCard(
         <button
             type="button"
             class="card-menu"
-            aria-label="خيارات">
+            aria-label="خيارات"
+        >
             ⋮
         </button>
+
     `;
 
     const image =
-        card.querySelector(".avatar");
+        card.querySelector(
+            ".avatar"
+        );
 
     image.addEventListener(
-        "error",
-        function(){
+        "click",
+        function(event){
 
-            image.src =
-                DEFAULT_AVATAR;
+            event.stopPropagation();
+
+            if(contact.user_id){
+                openProfile(
+                    contact.user_id
+                );
+            }
+
         }
     );
 
     const menuButton =
-        card.querySelector(".card-menu");
+        card.querySelector(
+            ".card-menu"
+        );
 
     menuButton.addEventListener(
         "click",
@@ -3009,18 +4220,7 @@ async function createConversationCard(
                 event,
                 conversation.conversation_id
             );
-        }
-    );
 
-    image.addEventListener(
-        "click",
-        function(event){
-
-            event.stopPropagation();
-
-            openProfile(
-                contact.user_id
-            );
         }
     );
 
@@ -3033,22 +4233,25 @@ async function createConversationCard(
                 contact,
                 conversation.type
             );
+
         }
     );
 
     return card;
+
 }
 
 
-/* =====================================================
+/* =========================================================
    SILENT LIST SYNC
-   لا نمسح القائمة ولا نعيد الـAnimation
-===================================================== */
+========================================================= */
 
 async function syncConversationList(){
 
     if(
-        page.classList.contains("chat-active") ||
+        page.classList.contains(
+            "chat-active"
+        ) ||
         searchInput.value.trim()
     ){
         return;
@@ -3061,13 +4264,16 @@ async function syncConversationList(){
         .querySelectorAll(
             ".conversation-card"
         )
-        .forEach(function(card){
+        .forEach(
+            function(card){
 
-            cards.set(
-                card.dataset.conversationId,
-                card
-            );
-        });
+                cards.set(
+                    card.dataset.conversationId,
+                    card
+                );
+
+            }
+        );
 
     const empty =
         conversationList.querySelector(
@@ -3080,24 +4286,18 @@ async function syncConversationList(){
 
     if(!conversations.length){
 
-        if(
-            !conversationList.querySelector(
-                ".empty-state"
-            )
-        ){
-
-            conversationList.innerHTML = `
-                <div class="empty-state glass">
-                    <div class="empty-icon">💬</div>
-                    <strong>لا توجد محادثات بعد</strong>
-                    <p>
-                        ابدأ محادثة جديدة من البحث عن المستخدمين.
-                    </p>
-                </div>
-            `;
-        }
+        conversationList.innerHTML = `
+            <div class="empty-state glass">
+                <div class="empty-icon">💬</div>
+                <strong>لا توجد محادثات بعد</strong>
+                <p>
+                    ابدأ محادثة جديدة من البحث عن المستخدمين.
+                </p>
+            </div>
+        `;
 
         return;
+
     }
 
     for(
@@ -3130,9 +4330,6 @@ async function syncConversationList(){
                 continue;
             }
 
-            card.classList.add(
-                "existing-card"
-            );
         }else{
 
             updateConversationCard(
@@ -3140,25 +4337,26 @@ async function syncConversationList(){
                 conversation,
                 contact
             );
+
         }
 
-        /*
-          appendChild لعنصر موجود ينقله فقط
-          بدون إنشاء Animation أو Reset.
-        */
         conversationList.appendChild(
             card
         );
+
     }
 
     conversationCount.textContent =
-        String(conversations.length);
+        String(
+            conversations.length
+        );
+
 }
 
 
-/* =====================================================
-   FETCH + SILENT REFRESH
-===================================================== */
+/* =========================================================
+   REFRESH
+========================================================= */
 
 async function refreshConversationListSilently(){
 
@@ -3179,8 +4377,8 @@ async function refreshConversationListSilently(){
 
         conversations =
             Array.isArray(data)
-                ? data
-                : [];
+            ? data
+            : [];
 
         conversations.sort(
             (a,b) =>
@@ -3196,13 +4394,15 @@ async function refreshConversationListSilently(){
             "silent refresh",
             error
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    OPEN CONVERSATION
-===================================================== */
+========================================================= */
 
 async function openConversation(
     conversationId,
@@ -3223,13 +4423,19 @@ async function openConversation(
     if(type === "support"){
 
         currentConversationContact = {
+
             ...currentConversationContact,
+
             is_support:true,
+
             display_name:
                 SUPPORT_NAME,
+
             avatar_url:
                 SUPPORT_AVATAR
+
         };
+
     }
 
     page.classList.add(
@@ -3240,11 +4446,24 @@ async function openConversation(
         "open"
     );
 
+    mainList.style.display =
+        "none";
+
+    document.getElementById(
+        "searchSection"
+    ).style.display =
+        "none";
+
+    notificationsPanel.classList.remove(
+        "show"
+    );
+
     searchMatchNavigator.classList.remove(
         "show"
     );
 
     searchMatches = [];
+
     searchMatchIndex = -1;
 
     updateChatHeader();
@@ -3271,15 +4490,18 @@ async function openConversation(
 
             messageInput.focus();
 
+            autoResizeTextarea();
+
         },
         120
     );
+
 }
 
 
-/* =====================================================
+/* =========================================================
    CHAT HEADER
-===================================================== */
+========================================================= */
 
 function updateChatHeader(){
 
@@ -3288,8 +4510,8 @@ function updateChatHeader(){
 
     chatName.textContent =
         contact?.is_support
-            ? SUPPORT_NAME
-            : getDisplayName(contact);
+        ? SUPPORT_NAME
+        : getDisplayName(contact);
 
     showImage(
         chatAvatar,
@@ -3307,16 +4529,15 @@ function updateChatHeader(){
 
     chatStatus.textContent =
         active
-            ? "نشط الآن"
-            : "غير نشط";
+        ? "نشط الآن"
+        : "غير نشط";
+
 }
 
 
-/* =====================================================
+/* =========================================================
    LOAD MESSAGES
-===================================================== */
-
-let currentMessages = [];
+========================================================= */
 
 async function loadConversationMessages(){
 
@@ -3332,7 +4553,9 @@ async function loadConversationMessages(){
                 {
                     target_conversation_id:
                         currentConversationId,
-                    message_limit:100
+
+                    message_limit:
+                        100
                 }
             );
 
@@ -3342,13 +4565,17 @@ async function loadConversationMessages(){
 
         currentMessages =
             Array.isArray(data)
-                ? data
-                : [];
+            ? data
+            : [];
 
         currentMessages.sort(
             (a,b) =>
-                new Date(a.created_at) -
-                new Date(b.created_at)
+                new Date(
+                    a.created_at
+                ) -
+                new Date(
+                    b.created_at
+                )
         );
 
         renderMessages();
@@ -3363,19 +4590,25 @@ async function loadConversationMessages(){
         chatMessages.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">⚠️</div>
-                <strong>تعذر تحميل المحادثة</strong>
+                <strong>
+                    تعذر تحميل المحادثة
+                </strong>
                 <p>
-                    ${escapeHtml(error.message || "")}
+                    ${escapeHtml(
+                        error.message || ""
+                    )}
                 </p>
             </div>
         `;
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    RENDER MESSAGES
-===================================================== */
+========================================================= */
 
 function renderMessages(){
 
@@ -3386,7 +4619,9 @@ function renderMessages(){
         chatMessages.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">👋</div>
-                <strong>ابدأ المحادثة</strong>
+                <strong>
+                    ابدأ المحادثة
+                </strong>
                 <p>
                     اكتب أول رسالة من الأسفل.
                 </p>
@@ -3394,6 +4629,7 @@ function renderMessages(){
         `;
 
         return;
+
     }
 
     currentMessages.forEach(
@@ -3406,19 +4642,24 @@ function renderMessages(){
                 );
 
             row.style.animationDelay =
-                Math.min(index * 18,350) + "ms";
+                Math.min(
+                    index * 18,
+                    350
+                ) + "ms";
 
             chatMessages.appendChild(
                 row
             );
+
         }
     );
+
 }
 
 
-/* =====================================================
+/* =========================================================
    MESSAGE ELEMENT
-===================================================== */
+========================================================= */
 
 function createMessageElement(
     message,
@@ -3430,17 +4671,24 @@ function createMessageElement(
         currentUser?.id;
 
     const row =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     row.className =
         "message-row " +
-        (mine ? "mine" : "theirs");
+        (
+            mine
+            ? "mine"
+            : "theirs"
+        );
 
     if(isNew){
 
         row.classList.add(
             "message-new"
         );
+
     }
 
     if(message.optimistic){
@@ -3451,6 +4699,7 @@ function createMessageElement(
 
         row.dataset.optimistic =
             "true";
+
     }
 
     row.dataset.messageId =
@@ -3459,7 +4708,9 @@ function createMessageElement(
         "";
 
     const wrapper =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     wrapper.style.display =
         "flex";
@@ -3469,17 +4720,21 @@ function createMessageElement(
 
     wrapper.style.alignItems =
         mine
-            ? "flex-start"
-            : "flex-end";
+        ? "flex-start"
+        : "flex-end";
 
     const bubble =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     bubble.className =
         "message-bubble";
 
     const content =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     content.className =
         "message-content";
@@ -3488,7 +4743,9 @@ function createMessageElement(
         message.content || "";
 
     const time =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     time.className =
         "message-time";
@@ -3506,10 +4763,6 @@ function createMessageElement(
         bubble
     );
 
-    /*
-      الوقت عنصر منفصل خارج الفقاعة.
-    */
-
     wrapper.appendChild(
         time
     );
@@ -3519,12 +4772,13 @@ function createMessageElement(
     );
 
     return row;
+
 }
 
 
-/* =====================================================
-   OPTIMISTIC MESSAGE
-===================================================== */
+/* =========================================================
+   OPTIMISTIC
+========================================================= */
 
 function appendOptimisticMessage(
     content
@@ -3565,9 +4819,11 @@ function appendOptimisticMessage(
             content,
 
         created_at:
-            new Date().toISOString(),
+            new Date()
+                .toISOString(),
 
         optimistic:true
+
     };
 
     const row =
@@ -3583,6 +4839,10 @@ function appendOptimisticMessage(
         row
     );
 
+    currentMessages.push(
+        message
+    );
+
     requestAnimationFrame(
         function(){
 
@@ -3594,85 +4854,144 @@ function appendOptimisticMessage(
     );
 
     return {
-        id:optimisticId,
-        row:row
+        id:
+            optimisticId,
+
+        row:
+            row
     };
+
 }
 
 
-/* =====================================================
-   RECONCILE OPTIMISTIC
-===================================================== */
+/* =========================================================
+   RECONCILE
+========================================================= */
 
 function reconcileOptimisticMessage(
     realMessage
 ){
 
-    const optimistic =
+    if(!realMessage){
+        return;
+    }
+
+    const realId =
+        realMessage.id ||
+        realMessage.message_id;
+
+    const optimisticRows =
         Array.from(
             chatMessages.querySelectorAll(
                 '.message-row[data-optimistic="true"]'
             )
-        ).find(function(row){
+        );
 
-            return (
-                row.dataset.optimisticContent ===
-                String(realMessage.content || "")
+    let optimistic =
+        optimisticRows.find(
+            function(row){
+
+                return (
+                    row.dataset.optimisticContent ===
+                    String(
+                        realMessage.content || ""
+                    )
+                );
+
+            }
+        );
+
+    if(
+        !optimistic &&
+        realId
+    ){
+
+        const alreadyReal =
+            chatMessages.querySelector(
+                `.message-row[data-message-id="${CSS.escape(
+                    String(realId)
+                )}"]`
             );
 
-        });
+        if(alreadyReal){
+            return;
+        }
+
+    }
 
     if(!optimistic){
 
         const exists =
             currentMessages.some(
                 item =>
-                    (
+                    String(
                         item.message_id ||
-                        item.id
+                        item.id ||
+                        ""
                     ) ===
-                    realMessage.id
+                    String(
+                        realId || ""
+                    )
             );
 
         if(!exists){
 
-            currentMessages.push({
+            const normalized = {
+
                 message_id:
-                    realMessage.id,
+                    realId,
+
                 id:
-                    realMessage.id,
+                    realId,
+
                 conversation_id:
                     realMessage.conversation_id,
+
                 sender_id:
                     realMessage.sender_id,
+
                 content:
                     realMessage.content,
+
                 created_at:
                     realMessage.created_at,
+
                 edited_at:
                     realMessage.edited_at,
+
                 deleted_at:
                     realMessage.deleted_at
-            });
+
+            };
+
+            currentMessages.push(
+                normalized
+            );
 
             currentMessages.sort(
                 (a,b) =>
-                    new Date(a.created_at) -
-                    new Date(b.created_at)
+                    new Date(
+                        a.created_at
+                    ) -
+                    new Date(
+                        b.created_at
+                    )
             );
 
             const row =
                 createMessageElement(
-                    realMessage,
+                    normalized,
                     true
                 );
 
             chatMessages.appendChild(
                 row
             );
+
         }
 
         return;
+
     }
 
     optimistic.classList.remove(
@@ -3684,60 +5003,77 @@ function reconcileOptimisticMessage(
     );
 
     optimistic.dataset.messageId =
-        realMessage.id;
+        realId || "";
 
-    optimistic
-        .querySelector(
+    const time =
+        optimistic.querySelector(
             ".message-time"
-        )
-        .textContent =
-        formatTime(
-            realMessage.created_at
         );
+
+    if(time){
+
+        time.textContent =
+            formatTime(
+                realMessage.created_at
+            );
+
+    }
 
     const index =
         currentMessages.findIndex(
             item =>
                 item.optimistic === true &&
                 item.content ===
-                    realMessage.content
+                realMessage.content
         );
+
+    const normalized = {
+
+        message_id:
+            realId,
+
+        id:
+            realId,
+
+        conversation_id:
+            realMessage.conversation_id,
+
+        sender_id:
+            realMessage.sender_id,
+
+        content:
+            realMessage.content,
+
+        created_at:
+            realMessage.created_at,
+
+        edited_at:
+            realMessage.edited_at,
+
+        deleted_at:
+            realMessage.deleted_at
+
+    };
 
     if(index >= 0){
 
-        currentMessages[index] = {
+        currentMessages[index] =
+            normalized;
 
-            message_id:
-                realMessage.id,
+    }else{
 
-            id:
-                realMessage.id,
+        currentMessages.push(
+            normalized
+        );
 
-            conversation_id:
-                realMessage.conversation_id,
-
-            sender_id:
-                realMessage.sender_id,
-
-            content:
-                realMessage.content,
-
-            created_at:
-                realMessage.created_at,
-
-            edited_at:
-                realMessage.edited_at,
-
-            deleted_at:
-                realMessage.deleted_at
-        };
     }
+
 }
 
 
-/* =====================================================
-   APPEND INCOMING MESSAGE
-===================================================== */
+/* =========================================================
+   INCOMING
+========================================================= */
 
 function appendIncomingMessage(
     message
@@ -3746,15 +5082,10 @@ function appendIncomingMessage(
     if(
         !message ||
         message.conversation_id !==
-            currentConversationId
+        currentConversationId
     ){
         return;
     }
-
-    /*
-      رسالتنا نحن:
-      لا نتجاهلها، بل نستبدل الفقاعة المؤقتة.
-    */
 
     if(
         message.sender_id ===
@@ -3770,19 +5101,40 @@ function appendIncomingMessage(
         );
 
         return;
+
     }
+
+    const messageId =
+        message.id ||
+        message.message_id;
 
     const exists =
         currentMessages.some(
             item =>
-                (
+                String(
                     item.message_id ||
-                    item.id
+                    item.id ||
+                    ""
                 ) ===
-                message.id
+                String(
+                    messageId || ""
+                )
         );
 
     if(exists){
+        return;
+    }
+
+    const existingDom =
+        messageId
+        ? chatMessages.querySelector(
+            `.message-row[data-message-id="${CSS.escape(
+                String(messageId)
+            )}"]`
+        )
+        : null;
+
+    if(existingDom){
         return;
     }
 
@@ -3798,10 +5150,10 @@ function appendIncomingMessage(
     const normalized = {
 
         message_id:
-            message.id,
+            messageId,
 
         id:
-            message.id,
+            messageId,
 
         conversation_id:
             message.conversation_id,
@@ -3820,16 +5172,11 @@ function appendIncomingMessage(
 
         deleted_at:
             message.deleted_at
+
     };
 
     currentMessages.push(
         normalized
-    );
-
-    currentMessages.sort(
-        (a,b) =>
-            new Date(a.created_at) -
-            new Date(b.created_at)
     );
 
     const row =
@@ -3847,18 +5194,20 @@ function appendIncomingMessage(
     );
 
     markConversationRead();
+
 }
 
 
-/* =====================================================
-   SEND MESSAGE
-===================================================== */
+/* =========================================================
+   SEND
+========================================================= */
 
 messageForm.addEventListener(
     "submit",
     async function(event){
 
         event.preventDefault();
+
         event.stopPropagation();
 
         await sendCurrentMessage();
@@ -3884,10 +5233,6 @@ async function sendCurrentMessage(){
         return;
     }
 
-    /*
-      الرسالة تظهر فوراً قبل انتظار Supabase.
-    */
-
     const optimistic =
         appendOptimisticMessage(
             content
@@ -3899,7 +5244,8 @@ async function sendCurrentMessage(){
 
     isSending = true;
 
-    sendButton.disabled = true;
+    sendButton.disabled =
+        true;
 
     sendButton.classList.add(
         "sending"
@@ -3929,21 +5275,17 @@ async function sendCurrentMessage(){
             throw error;
         }
 
-        /*
-          بعض نسخ RPC ترجع البيانات
-          وبعضها لا ترجع شيئاً.
-        */
-
         if(data){
 
             const message =
                 Array.isArray(data)
-                    ? data[0]
-                    : data;
+                ? data[0]
+                : data;
 
             if(message){
 
                 reconcileOptimisticMessage({
+
                     ...message,
 
                     id:
@@ -3962,15 +5304,19 @@ async function sendCurrentMessage(){
 
                     created_at:
                         message.created_at ||
-                        new Date().toISOString()
+                        new Date()
+                            .toISOString()
+
                 });
+
             }
+
         }
 
         /*
-          تأكيد الرسالة من قاعدة البيانات
-          حتى إذا كان RPC لا يرجع الرسالة.
-        */
+         * إذا كانت RPC لا ترجع الرسالة،
+         * نبحث عنها في آخر الرسائل.
+         */
 
         setTimeout(
             async function(){
@@ -3985,13 +5331,18 @@ async function sendCurrentMessage(){
 
                 try{
 
-                    const {data:rows,error:fetchError} =
+                    const {
+                        data:rows,
+                        error:fetchError
+                    } =
                         await client.rpc(
                             "get_conversation_messages",
                             {
                                 target_conversation_id:
                                     currentConversationId,
-                                message_limit:20
+
+                                message_limit:
+                                    20
                             }
                         );
 
@@ -4001,21 +5352,22 @@ async function sendCurrentMessage(){
 
                     const latest =
                         (rows || [])
-                            .slice()
-                            .reverse()
-                            .find(
-                                row =>
-                                    row.sender_id ===
-                                        currentUser.id &&
-                                    row.content ===
-                                        content
-                            );
+                        .slice()
+                        .reverse()
+                        .find(
+                            row =>
+                                row.sender_id ===
+                                    currentUser.id &&
+                                row.content ===
+                                    content
+                        );
 
                     if(latest){
 
                         reconcileOptimisticMessage(
                             latest
                         );
+
                     }
 
                 }catch(error){
@@ -4024,6 +5376,7 @@ async function sendCurrentMessage(){
                         "message confirmation",
                         error
                     );
+
                 }
 
             },
@@ -4031,10 +5384,6 @@ async function sendCurrentMessage(){
         );
 
         await stopTyping();
-
-        /*
-          تحديث القائمة بدون مسحها.
-        */
 
         refreshConversationListSilently();
 
@@ -4045,11 +5394,6 @@ async function sendCurrentMessage(){
             error
         );
 
-        /*
-          فشل الإرسال:
-          نحذف الفقاعة المؤقتة فقط.
-        */
-
         if(
             optimistic.row &&
             optimistic.row.parentNode
@@ -4059,11 +5403,13 @@ async function sendCurrentMessage(){
                 [
                     {
                         opacity:1,
-                        transform:"translateX(0)"
+                        transform:
+                            "translateX(0)"
                     },
                     {
                         opacity:0,
-                        transform:"translateX(-20px)"
+                        transform:
+                            "translateX(-20px)"
                     }
                 ],
                 {
@@ -4076,7 +5422,15 @@ async function sendCurrentMessage(){
                     optimistic.row.remove();
 
                 };
+
         }
+
+        currentMessages =
+            currentMessages.filter(
+                item =>
+                    item.id !==
+                    optimistic.id
+            );
 
         messageInput.value =
             content;
@@ -4092,7 +5446,8 @@ async function sendCurrentMessage(){
 
         isSending = false;
 
-        sendButton.disabled = false;
+        sendButton.disabled =
+            false;
 
         sendButton.classList.remove(
             "sending"
@@ -4100,13 +5455,15 @@ async function sendCurrentMessage(){
 
         sendButton.textContent =
             original;
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    TEXTAREA
-===================================================== */
+========================================================= */
 
 function autoResizeTextarea(){
 
@@ -4118,6 +5475,7 @@ function autoResizeTextarea(){
             messageInput.scrollHeight,
             100
         ) + "px";
+
 }
 
 
@@ -4145,15 +5503,16 @@ messageInput.addEventListener(
             event.preventDefault();
 
             messageForm.requestSubmit();
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    TYPING
-===================================================== */
+========================================================= */
 
 async function startTyping(){
 
@@ -4168,6 +5527,7 @@ async function startTyping(){
             {
                 target_conversation_id:
                     currentConversationId,
+
                 typing:true
             }
         );
@@ -4178,6 +5538,7 @@ async function startTyping(){
             "typing start",
             error
         );
+
     }
 
     clearTimeout(
@@ -4189,6 +5550,7 @@ async function startTyping(){
             stopTyping,
             850
         );
+
 }
 
 
@@ -4209,6 +5571,7 @@ async function stopTyping(){
             {
                 target_conversation_id:
                     currentConversationId,
+
                 typing:false
             }
         );
@@ -4219,13 +5582,15 @@ async function stopTyping(){
             "typing stop",
             error
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    TYPING REALTIME
-===================================================== */
+========================================================= */
 
 function removeTypingRealtime(){
 
@@ -4239,12 +5604,15 @@ function removeTypingRealtime(){
 
         }catch(error){}
 
-        typingChannel = null;
+        typingChannel =
+            null;
+
     }
 
     typingIndicator.classList.remove(
         "show"
     );
+
 }
 
 
@@ -4258,43 +5626,43 @@ function subscribeTypingRealtime(){
 
     typingChannel =
         client
-            .channel(
-                "typing-" +
-                currentConversationId +
-                "-" +
-                Date.now()
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"*",
-                    schema:"public",
-                    table:"typing_status",
-                    filter:
-                        "conversation_id=eq." +
-                        currentConversationId
-                },
-                function(payload){
+        .channel(
+            "typing-" +
+            currentConversationId +
+            "-" +
+            Date.now()
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"*",
+                schema:"public",
+                table:"typing_status",
+                filter:
+                    "conversation_id=eq." +
+                    currentConversationId
+            },
+            function(payload){
 
-                    const row =
-                        payload.new;
+                const row =
+                    payload.new;
 
-                    if(
-                        !row ||
-                        row.user_id ===
-                            currentUser?.id
-                    ){
-                        return;
-                    }
-
-                    typingIndicator.classList.toggle(
-                        "show",
-                        row.is_typing === true
-                    );
-
+                if(
+                    !row ||
+                    row.user_id ===
+                    currentUser?.id
+                ){
+                    return;
                 }
-            )
-            .subscribe();
+
+                typingIndicator.classList.toggle(
+                    "show",
+                    row.is_typing === true
+                );
+
+            }
+        )
+        .subscribe();
 
     clearInterval(
         typingCleanupTimer
@@ -4313,12 +5681,13 @@ function subscribeTypingRealtime(){
             },
             5000
         );
+
 }
 
 
-/* =====================================================
+/* =========================================================
    MESSAGE REALTIME
-===================================================== */
+========================================================= */
 
 function removeMessageRealtime(){
 
@@ -4332,8 +5701,11 @@ function removeMessageRealtime(){
 
         }catch(error){}
 
-        messageChannel = null;
+        messageChannel =
+            null;
+
     }
+
 }
 
 
@@ -4347,46 +5719,47 @@ function subscribeMessageRealtime(){
 
     messageChannel =
         client
-            .channel(
-                "messages-" +
-                currentConversationId +
-                "-" +
-                Date.now()
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"INSERT",
-                    schema:"public",
-                    table:"messages",
-                    filter:
-                        "conversation_id=eq." +
-                        currentConversationId
-                },
-                function(payload){
+        .channel(
+            "messages-" +
+            currentConversationId +
+            "-" +
+            Date.now()
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"INSERT",
+                schema:"public",
+                table:"messages",
+                filter:
+                    "conversation_id=eq." +
+                    currentConversationId
+            },
+            function(payload){
 
-                    const message =
-                        payload.new;
+                const message =
+                    payload.new;
 
-                    if(!message){
-                        return;
-                    }
-
-                    appendIncomingMessage(
-                        message
-                    );
-
-                    refreshConversationListSilently();
-
+                if(!message){
+                    return;
                 }
-            )
-            .subscribe();
+
+                appendIncomingMessage(
+                    message
+                );
+
+                refreshConversationListSilently();
+
+            }
+        )
+        .subscribe();
+
 }
 
 
-/* =====================================================
-   PRESENCE REALTIME
-===================================================== */
+/* =========================================================
+   PRESENCE
+========================================================= */
 
 function removePresenceRealtime(){
 
@@ -4400,8 +5773,11 @@ function removePresenceRealtime(){
 
         }catch(error){}
 
-        presenceChannel = null;
+        presenceChannel =
+            null;
+
     }
+
 }
 
 
@@ -4409,7 +5785,9 @@ function subscribePresenceRealtime(){
 
     removePresenceRealtime();
 
-    if(!currentConversationContact?.user_id){
+    if(
+        !currentConversationContact?.user_id
+    ){
         return;
     }
 
@@ -4418,60 +5796,61 @@ function subscribePresenceRealtime(){
 
     presenceChannel =
         client
-            .channel(
-                "presence-" +
-                targetId +
-                "-" +
-                Date.now()
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"UPDATE",
-                    schema:"public",
-                    table:"user_presence",
-                    filter:
-                        "user_id=eq." +
-                        targetId
-                },
-                function(payload){
+        .channel(
+            "presence-" +
+            targetId +
+            "-" +
+            Date.now()
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"UPDATE",
+                schema:"public",
+                table:"user_presence",
+                filter:
+                    "user_id=eq." +
+                    targetId
+            },
+            function(payload){
 
-                    const row =
-                        payload.new;
+                const row =
+                    payload.new;
 
-                    if(!row){
-                        return;
-                    }
-
-                    const active =
-                        row.show_activity === true &&
-                        row.is_online === true;
-
-                    currentConversationContact.is_online =
-                        active;
-
-                    currentConversationContact.show_activity =
-                        row.show_activity === true;
-
-                    chatOnlineDot.classList.toggle(
-                        "active",
-                        active
-                    );
-
-                    chatStatus.textContent =
-                        active
-                            ? "نشط الآن"
-                            : "غير نشط";
-
+                if(!row){
+                    return;
                 }
-            )
-            .subscribe();
+
+                const active =
+                    row.show_activity === true &&
+                    row.is_online === true;
+
+                currentConversationContact.is_online =
+                    active;
+
+                currentConversationContact.show_activity =
+                    row.show_activity === true;
+
+                chatOnlineDot.classList.toggle(
+                    "active",
+                    active
+                );
+
+                chatStatus.textContent =
+                    active
+                    ? "نشط الآن"
+                    : "غير نشط";
+
+            }
+        )
+        .subscribe();
+
 }
 
 
-/* =====================================================
+/* =========================================================
    BACK
-===================================================== */
+========================================================= */
 
 backChatButton.addEventListener(
     "click",
@@ -4508,7 +5887,8 @@ backChatButton.addEventListener(
             "show"
         );
 
-        chatMessages.innerHTML = "";
+        chatMessages.innerHTML =
+            "";
 
         chatView.classList.remove(
             "open"
@@ -4518,10 +5898,13 @@ backChatButton.addEventListener(
             "chat-active"
         );
 
-        /*
-          نرجع للقائمة بدون إعادة بناء
-          إذا كانت موجودة.
-        */
+        mainList.style.display =
+            "";
+
+        document.getElementById(
+            "searchSection"
+        ).style.display =
+            "";
 
         await refreshConversationListSilently();
 
@@ -4529,11 +5912,13 @@ backChatButton.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    PROFILE
-===================================================== */
+========================================================= */
 
-function openProfile(userId){
+function openProfile(
+    userId
+){
 
     if(!userId){
         return;
@@ -4541,7 +5926,10 @@ function openProfile(userId){
 
     window.location.href =
         "./profile.html?id=" +
-        encodeURIComponent(userId);
+        encodeURIComponent(
+            userId
+        );
+
 }
 
 
@@ -4556,15 +5944,16 @@ chatPersonButton.addEventListener(
             openProfile(
                 currentConversationContact.user_id
             );
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    SEARCH MODE
-===================================================== */
+========================================================= */
 
 searchMessagesBtn.addEventListener(
     "click",
@@ -4584,7 +5973,8 @@ searchMessagesBtn.addEventListener(
         searchInput.placeholder =
             "ابحث في الرسائل...";
 
-        searchInput.value = "";
+        searchInput.value =
+            "";
 
         clearSearchResults();
 
@@ -4610,15 +6000,13 @@ searchUsersBtn.addEventListener(
         searchInput.placeholder =
             "ابحث باسم المستخدم أو الاسم...";
 
-        searchInput.value = "";
+        searchInput.value =
+            "";
 
         clearSearchResults();
 
     }
 );
-
-
-let searchDelay = null;
 
 
 searchInput.addEventListener(
@@ -4639,13 +6027,17 @@ searchInput.addEventListener(
             clearSearchResults();
 
             return;
+
         }
 
         searchDelay =
             setTimeout(
                 function(){
 
-                    if(searchMode === "messages"){
+                    if(
+                        searchMode ===
+                        "messages"
+                    ){
 
                         searchMessages(
                             value
@@ -4656,6 +6048,7 @@ searchInput.addEventListener(
                         searchUsers(
                             value
                         );
+
                     }
 
                 },
@@ -4668,7 +6061,8 @@ searchInput.addEventListener(
 
 function clearSearchResults(){
 
-    searchResults.innerHTML = "";
+    searchResults.innerHTML =
+        "";
 
     searchResults.classList.remove(
         "visible"
@@ -4682,23 +6076,29 @@ function clearSearchResults(){
 
         mainList.style.display =
             "";
+
     }
 
-    searchMatches = [];
+    searchMatches =
+        [];
 
-    searchMatchIndex = -1;
+    searchMatchIndex =
+        -1;
 
     searchMatchNavigator.classList.remove(
         "show"
     );
+
 }
 
 
-/* =====================================================
+/* =========================================================
    SEARCH MESSAGES
-===================================================== */
+========================================================= */
 
-async function searchMessages(text){
+async function searchMessages(
+    text
+){
 
     if(!currentUser){
         return;
@@ -4722,7 +6122,8 @@ async function searchMessages(text){
             await client.rpc(
                 "search_messages",
                 {
-                    search_text:text
+                    search_text:
+                        text
                 }
             );
 
@@ -4730,19 +6131,22 @@ async function searchMessages(text){
             throw error;
         }
 
-        searchResults.innerHTML = "";
+        searchResults.innerHTML =
+            "";
 
         const rows =
             Array.isArray(data)
-                ? data
-                : [];
+            ? data
+            : [];
 
         if(!rows.length){
 
             searchResults.innerHTML = `
                 <div class="empty-state glass">
                     <div class="empty-icon">🔎</div>
-                    <strong>لا توجد نتائج</strong>
+                    <strong>
+                        لا توجد نتائج
+                    </strong>
                     <p>
                         لم يتم العثور على هذه الكلمة في محادثاتك.
                     </p>
@@ -4750,32 +6154,36 @@ async function searchMessages(text){
             `;
 
             return;
+
         }
 
         const grouped =
             new Map();
 
-        rows.forEach(function(row){
+        rows.forEach(
+            function(row){
 
-            if(
-                !grouped.has(
-                    row.conversation_id
-                )
-            ){
+                if(
+                    !grouped.has(
+                        row.conversation_id
+                    )
+                ){
 
-                grouped.set(
-                    row.conversation_id,
-                    []
-                );
+                    grouped.set(
+                        row.conversation_id,
+                        []
+                    );
+
+                }
+
+                grouped
+                    .get(
+                        row.conversation_id
+                    )
+                    .push(row);
+
             }
-
-            grouped
-                .get(
-                    row.conversation_id
-                )
-                .push(row);
-
-        });
+        );
 
         let index = 0;
 
@@ -4783,10 +6191,12 @@ async function searchMessages(text){
             const [
                 conversationId,
                 matches
-            ] of grouped
+            ]
+            of grouped
         ){
 
-            let contact = null;
+            let contact =
+                null;
 
             let conversationType =
                 "direct";
@@ -4803,9 +6213,11 @@ async function searchMessages(text){
                     );
 
                 contact =
-                    Array.isArray(result.data)
-                        ? result.data[0]
-                        : result.data;
+                    Array.isArray(
+                        result.data
+                    )
+                    ? result.data[0]
+                    : result.data;
 
             }catch(error){}
 
@@ -4829,27 +6241,37 @@ async function searchMessages(text){
                     "support";
 
                 contact = {
+
                     ...contact,
+
                     is_support:true,
+
                     display_name:
                         SUPPORT_NAME,
+
                     avatar_url:
                         SUPPORT_AVATAR
+
                 };
+
             }
 
             const first =
                 matches[0];
 
             const result =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             result.className =
                 "search-result";
 
             result.style.animationDelay =
-                Math.min(index * 55,600) +
-                "ms";
+                Math.min(
+                    index * 55,
+                    600
+                ) + "ms";
 
             result.innerHTML = `
 
@@ -4860,7 +6282,8 @@ async function searchMessages(text){
                         src="${escapeHtml(
                             avatarUrl(contact)
                         )}"
-                        alt="">
+                        alt=""
+                    >
 
                 </div>
 
@@ -4868,7 +6291,9 @@ async function searchMessages(text){
 
                     <div class="result-name">
                         ${escapeHtml(
-                            getDisplayName(contact)
+                            getDisplayName(
+                                contact
+                            )
                         )}
                     </div>
 
@@ -4883,6 +6308,7 @@ async function searchMessages(text){
                 <div class="match-count">
                     ${matches.length} تطابق
                 </div>
+
             `;
 
             const img =
@@ -4896,9 +6322,13 @@ async function searchMessages(text){
 
                     event.stopPropagation();
 
-                    openProfile(
-                        contact.user_id
-                    );
+                    if(contact.user_id){
+
+                        openProfile(
+                            contact.user_id
+                        );
+
+                    }
 
                 }
             );
@@ -4912,11 +6342,6 @@ async function searchMessages(text){
                         contact,
                         conversationType
                     );
-
-                    /*
-                      بعد فتح المحادثة نحدد كل الرسائل
-                      التي تحتوي على البحث نفسه.
-                    */
 
                     setTimeout(
                         function(){
@@ -4937,6 +6362,7 @@ async function searchMessages(text){
             );
 
             index++;
+
         }
 
     }catch(error){
@@ -4949,21 +6375,29 @@ async function searchMessages(text){
         searchResults.innerHTML = `
             <div class="empty-state glass">
                 <div class="empty-icon">⚠️</div>
-                <strong>تعذر البحث</strong>
+                <strong>
+                    تعذر البحث
+                </strong>
                 <p>
-                    ${escapeHtml(error.message || "")}
+                    ${escapeHtml(
+                        error.message || ""
+                    )}
                 </p>
             </div>
         `;
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    SEARCH USERS
-===================================================== */
+========================================================= */
 
-async function searchUsers(text){
+async function searchUsers(
+    text
+){
 
     if(!currentUser){
         return;
@@ -4983,17 +6417,12 @@ async function searchUsers(text){
 
     try{
 
-        /*
-          RPC يدعم البحث بالـILIKE.
-          نرسل النص كما كتبه المستخدم، لذلك
-          العربي يعمل أيضاً.
-        */
-
         const {data,error} =
             await client.rpc(
                 "search_users",
                 {
-                    search_text:text
+                    search_text:
+                        text
                 }
             );
 
@@ -5003,48 +6432,53 @@ async function searchUsers(text){
 
         let rows =
             Array.isArray(data)
-                ? data
-                : [];
-
-        /*
-          حماية إضافية من اختلاف التطابق العربي.
-        */
+            ? data
+            : [];
 
         const normalizedQuery =
-            normalizeArabic(text);
+            normalizeArabic(
+                text
+            );
 
         rows =
-            rows.filter(function(user){
+            rows.filter(
+                function(user){
 
-                const display =
-                    normalizeArabic(
-                        user.display_name || ""
+                    const display =
+                        normalizeArabic(
+                            user.display_name ||
+                            ""
+                        );
+
+                    const username =
+                        normalizeArabic(
+                            user.username ||
+                            ""
+                        );
+
+                    return (
+                        display.includes(
+                            normalizedQuery
+                        ) ||
+                        username.includes(
+                            normalizedQuery
+                        )
                     );
 
-                const username =
-                    normalizeArabic(
-                        user.username || ""
-                    );
+                }
+            );
 
-                return (
-                    display.includes(
-                        normalizedQuery
-                    ) ||
-                    username.includes(
-                        normalizedQuery
-                    )
-                );
-
-            });
-
-        searchResults.innerHTML = "";
+        searchResults.innerHTML =
+            "";
 
         if(!rows.length){
 
             searchResults.innerHTML = `
                 <div class="empty-state glass">
                     <div class="empty-icon">👤</div>
-                    <strong>لا يوجد مستخدم</strong>
+                    <strong>
+                        لا يوجد مستخدم
+                    </strong>
                     <p>
                         جرّب الاسم أو اسم المستخدم.
                     </p>
@@ -5052,28 +6486,33 @@ async function searchUsers(text){
             `;
 
             return;
+
         }
 
         rows.forEach(
             function(user,index){
 
                 const item =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
 
                 item.className =
                     "search-result";
 
                 item.style.animationDelay =
-                    Math.min(index * 55,600) +
-                    "ms";
+                    Math.min(
+                        index * 55,
+                        600
+                    ) + "ms";
 
                 const displayName =
                     user.display_name &&
                     String(
                         user.display_name
                     ).trim()
-                        ? user.display_name
-                        : "بدون اسم";
+                    ? user.display_name
+                    : "بدون اسم";
 
                 item.innerHTML = `
 
@@ -5085,7 +6524,8 @@ async function searchUsers(text){
                                 user.avatar_url ||
                                 DEFAULT_AVATAR
                             )}"
-                            alt="">
+                            alt=""
+                        >
 
                     </div>
 
@@ -5100,15 +6540,16 @@ async function searchUsers(text){
                         <div class="result-preview result-username">
                             ${
                                 user.username
-                                    ? "@" +
-                                      escapeHtml(
-                                          user.username
-                                      )
-                                    : ""
+                                ? "@" +
+                                    escapeHtml(
+                                        user.username
+                                    )
+                                : ""
                             }
                         </div>
 
                     </div>
+
                 `;
 
                 const img =
@@ -5135,7 +6576,10 @@ async function searchUsers(text){
 
                         try{
 
-                            const {data,error} =
+                            const {
+                                data,
+                                error
+                            } =
                                 await client.rpc(
                                     "get_or_create_direct_conversation",
                                     {
@@ -5164,6 +6608,7 @@ async function searchUsers(text){
                                 error.message ||
                                 "تعذر فتح المحادثة."
                             );
+
                         }
 
                     }
@@ -5172,6 +6617,7 @@ async function searchUsers(text){
                 searchResults.appendChild(
                     item
                 );
+
             }
         );
 
@@ -5185,54 +6631,64 @@ async function searchUsers(text){
         searchResults.innerHTML = `
             <div class="empty-state glass">
                 <div class="empty-icon">⚠️</div>
-                <strong>تعذر البحث</strong>
+                <strong>
+                    تعذر البحث
+                </strong>
                 <p>
-                    ${escapeHtml(error.message || "")}
+                    ${escapeHtml(
+                        error.message || ""
+                    )}
                 </p>
             </div>
         `;
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    SEARCH MATCHES
-===================================================== */
+========================================================= */
 
 function setSearchMatches(
     query
 ){
 
     const wanted =
-        normalizeArabic(query);
+        normalizeArabic(
+            query
+        );
 
     searchMatches =
         Array.from(
             chatMessages.querySelectorAll(
                 ".message-row"
             )
-        ).filter(function(row){
+        ).filter(
+            function(row){
 
-            const content =
-                row.querySelector(
-                    ".message-content"
+                const content =
+                    row.querySelector(
+                        ".message-content"
+                    );
+
+                return (
+                    content &&
+                    normalizeArabic(
+                        content.textContent
+                    ).includes(
+                        wanted
+                    )
                 );
 
-            return (
-                content &&
-                normalizeArabic(
-                    content.textContent
-                ).includes(
-                    wanted
-                )
-            );
-
-        });
+            }
+        );
 
     searchMatchIndex =
         searchMatches.length
-            ? 0
-            : -1;
+        ? 0
+        : -1;
 
     if(
         searchMatches.length
@@ -5251,7 +6707,9 @@ function setSearchMatches(
         searchMatchNavigator.classList.remove(
             "show"
         );
+
     }
+
 }
 
 
@@ -5266,6 +6724,7 @@ function updateSearchMatchCounter(){
             "0 / 0";
 
         return;
+
     }
 
     searchMatchCount.textContent =
@@ -5274,6 +6733,7 @@ function updateSearchMatchCounter(){
         ) +
         " / " +
         searchMatches.length;
+
 }
 
 
@@ -5312,6 +6772,7 @@ function scrollToSearchMatch(){
     });
 
     updateSearchMatchCounter();
+
 }
 
 
@@ -5339,9 +6800,11 @@ function moveSearchMatch(
 
         searchMatchIndex =
             searchMatches.length - 1;
+
     }
 
     scrollToSearchMatch();
+
 }
 
 
@@ -5365,9 +6828,9 @@ searchMatchDown.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    READ
-===================================================== */
+========================================================= */
 
 async function markConversationRead(){
 
@@ -5391,13 +6854,15 @@ async function markConversationRead(){
             "mark read",
             error
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    CONTEXT MENU
-===================================================== */
+========================================================= */
 
 function openContextMenu(
     event,
@@ -5424,10 +6889,17 @@ function openContextMenu(
         );
 
     contextMenu.style.left =
-        Math.max(8,x) + "px";
+        Math.max(
+            8,
+            x
+        ) + "px";
 
     contextMenu.style.top =
-        Math.max(8,y) + "px";
+        Math.max(
+            8,
+            y
+        ) + "px";
+
 }
 
 
@@ -5439,6 +6911,7 @@ function closeContextMenu(){
 
     contextConversationId =
         null;
+
 }
 
 
@@ -5456,15 +6929,16 @@ document.addEventListener(
         ){
 
             closeContextMenu();
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    MUTE
-===================================================== */
+========================================================= */
 
 document.getElementById(
     "muteConversationButton"
@@ -5477,7 +6951,10 @@ document.getElementById(
 
         closeContextMenu();
 
-        if(!id || !currentUser){
+        if(
+            !id ||
+            !currentUser
+        ){
             return;
         }
 
@@ -5485,19 +6962,19 @@ document.getElementById(
 
             const {data,error} =
                 await client
-                    .from(
-                        "notification_settings"
-                    )
-                    .select("muted")
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    )
-                    .eq(
-                        "conversation_id",
-                        id
-                    )
-                    .maybeSingle();
+                .from(
+                    "notification_settings"
+                )
+                .select("muted")
+                .eq(
+                    "user_id",
+                    currentUser.id
+                )
+                .eq(
+                    "conversation_id",
+                    id
+                )
+                .maybeSingle();
 
             if(error){
                 throw error;
@@ -5508,10 +6985,11 @@ document.getElementById(
 
             const result =
                 await client
-                    .from(
-                        "notification_settings"
-                    )
-                    .upsert({
+                .from(
+                    "notification_settings"
+                )
+                .upsert(
+                    {
                         user_id:
                             currentUser.id,
 
@@ -5519,31 +6997,30 @@ document.getElementById(
                             id,
 
                         muted:
-
                             muted,
 
                         updated_at:
-                            new Date().toISOString()
+                            new Date()
+                            .toISOString()
 
-                    },{
+                    },
+                    {
                         onConflict:
                             "user_id,conversation_id"
-                    });
+                    }
+                );
 
             if(result.error){
                 throw result.error;
             }
-
-            /*
-              أيضاً نحفظها في عضوية المحادثة.
-            */
 
             await client
                 .from(
                     "conversation_members"
                 )
                 .update({
-                    muted:muted
+                    muted:
+                        muted
                 })
                 .eq(
                     "conversation_id",
@@ -5564,15 +7041,16 @@ document.getElementById(
             alert(
                 "تعذر تغيير إعداد الإشعارات."
             );
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    HIDE
-===================================================== */
+========================================================= */
 
 document.getElementById(
     "hideConversationButton"
@@ -5619,6 +7097,7 @@ document.getElementById(
                     }else{
 
                         await loadConversations();
+
                     }
 
                 }catch(error){
@@ -5632,6 +7111,7 @@ document.getElementById(
                         error.message ||
                         "تعذر إخفاء المحادثة."
                     );
+
                 }
 
             }
@@ -5641,9 +7121,9 @@ document.getElementById(
 );
 
 
-/* =====================================================
+/* =========================================================
    CONFIRM
-===================================================== */
+========================================================= */
 
 function showConfirm(
     title,
@@ -5663,6 +7143,7 @@ function showConfirm(
     confirmModal.classList.add(
         "show"
     );
+
 }
 
 
@@ -5703,9 +7184,9 @@ confirmOk.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    ACTIVITY MODAL
-===================================================== */
+========================================================= */
 
 activityButton.addEventListener(
     "click",
@@ -5762,9 +7243,9 @@ activitySwitch.addEventListener(
 );
 
 
-/* =====================================================
-   NOTIFICATION HELPERS
-===================================================== */
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
 
 function notificationIcon(
     type
@@ -5787,12 +7268,14 @@ function notificationIcon(
         system:"🔔",
 
         default:"🔔"
+
     };
 
     return (
         icons[type] ||
         icons.default
     );
+
 }
 
 
@@ -5810,8 +7293,8 @@ function updateNotificationBadge(
 
         notificationBadge.textContent =
             unread > 99
-                ? "99+"
-                : String(unread);
+            ? "99+"
+            : String(unread);
 
         notificationBadge.classList.add(
             "show"
@@ -5822,13 +7305,15 @@ function updateNotificationBadge(
         notificationBadge.classList.remove(
             "show"
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    LOAD NOTIFICATIONS
-===================================================== */
+========================================================= */
 
 async function loadNotifications(){
 
@@ -5840,21 +7325,21 @@ async function loadNotifications(){
 
         const {data,error} =
             await client
-                .from("notifications")
-                .select(
-                    "id,actor_id,type,message,is_read,created_at,conversation_id"
-                )
-                .eq(
-                    "user_id",
-                    currentUser.id
-                )
-                .order(
-                    "created_at",
-                    {
-                        ascending:false
-                    }
-                )
-                .limit(50);
+            .from("notifications")
+            .select(
+                "id,actor_id,type,message,is_read,created_at,conversation_id"
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .order(
+                "created_at",
+                {
+                    ascending:false
+                }
+            )
+            .limit(50);
 
         if(error){
             throw error;
@@ -5862,8 +7347,8 @@ async function loadNotifications(){
 
         notificationsRows =
             Array.isArray(data)
-                ? data
-                : [];
+            ? data
+            : [];
 
         updateNotificationBadge(
             notificationsRows
@@ -5879,26 +7364,31 @@ async function loadNotifications(){
             "notifications",
             error
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    RENDER NOTIFICATIONS
-===================================================== */
+========================================================= */
 
 function renderNotifications(
     rows
 ){
 
-    notificationsList.innerHTML = "";
+    notificationsList.innerHTML =
+        "";
 
     if(!rows.length){
 
         notificationsList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">🔔</div>
-                <strong>لا توجد إشعارات</strong>
+                <strong>
+                    لا توجد إشعارات
+                </strong>
                 <p>
                     لا توجد إشعارات جديدة حالياً.
                 </p>
@@ -5906,20 +7396,23 @@ function renderNotifications(
         `;
 
         return;
+
     }
 
     rows.forEach(
         function(row,index){
 
             const item =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             item.className =
                 "notification-item " +
                 (
                     row.is_read
-                        ? ""
-                        : "unread"
+                    ? ""
+                    : "unread"
                 );
 
             item.style.animation =
@@ -5934,7 +7427,9 @@ function renderNotifications(
             item.innerHTML = `
 
                 <div class="notification-icon">
-                    ${notificationIcon(row.type)}
+                    ${notificationIcon(
+                        row.type
+                    )}
                 </div>
 
                 <div class="notification-content">
@@ -5956,9 +7451,11 @@ function renderNotifications(
                 <button
                     type="button"
                     class="notification-delete"
-                    aria-label="حذف">
+                    aria-label="حذف"
+                >
                     ×
                 </button>
+
             `;
 
             item.querySelector(
@@ -5997,6 +7494,7 @@ function renderNotifications(
                         console.error(
                             error
                         );
+
                     }
 
                 }
@@ -6026,12 +7524,8 @@ function renderNotifications(
                         updateNotificationBadge(
                             notificationsRows
                         );
-                    }
 
-                    /*
-                      إشعار رسالة:
-                      نفتح المحادثة مباشرة.
-                    */
+                    }
 
                     if(
                         row.conversation_id
@@ -6054,9 +7548,10 @@ function renderNotifications(
 
                             if(contact){
 
-                                notificationsPanel.classList.remove(
-                                    "show"
-                                );
+                                notificationsPanel
+                                    .classList.remove(
+                                        "show"
+                                    );
 
                                 await openConversation(
                                     row.conversation_id,
@@ -6064,6 +7559,7 @@ function renderNotifications(
                                     conversation?.type ||
                                     "direct"
                                 );
+
                             }
 
                         }catch(error){
@@ -6072,20 +7568,17 @@ function renderNotifications(
                                 "notification conversation",
                                 error
                             );
+
                         }
 
                     }else if(
                         row.actor_id
                     ){
 
-                        /*
-                          الإشعارات المستقبلية مثل:
-                          زيارة الملف، تعليق، متابعة...
-                        */
-
                         openProfile(
                             row.actor_id
                         );
+
                     }
 
                 }
@@ -6094,14 +7587,16 @@ function renderNotifications(
             notificationsList.appendChild(
                 item
             );
+
         }
     );
+
 }
 
 
-/* =====================================================
+/* =========================================================
    OPEN NOTIFICATIONS
-===================================================== */
+========================================================= */
 
 notificationsOpenButton.addEventListener(
     "click",
@@ -6122,15 +7617,16 @@ notificationsOpenButton.addEventListener(
         ){
 
             await loadNotifications();
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    MARK ALL
-===================================================== */
+========================================================= */
 
 markAllNotifications.addEventListener(
     "click",
@@ -6148,7 +7644,8 @@ markAllNotifications.addEventListener(
 
             notificationsRows.forEach(
                 row =>
-                    row.is_read = true
+                    row.is_read =
+                        true
             );
 
             updateNotificationBadge(
@@ -6164,15 +7661,16 @@ markAllNotifications.addEventListener(
             console.error(
                 error
             );
+
         }
 
     }
 );
 
 
-/* =====================================================
-   CLOSE NOTIFICATIONS OUTSIDE
-===================================================== */
+/* =========================================================
+   CLOSE NOTIFICATIONS
+========================================================= */
 
 document.addEventListener(
     "click",
@@ -6193,15 +7691,16 @@ document.addEventListener(
             notificationsPanel.classList.remove(
                 "show"
             );
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    REALTIME NOTIFICATIONS
-===================================================== */
+========================================================= */
 
 function subscribeNotifications(){
 
@@ -6214,6 +7713,7 @@ function subscribeNotifications(){
             );
 
         }catch(error){}
+
     }
 
     if(!currentUser){
@@ -6222,35 +7722,36 @@ function subscribeNotifications(){
 
     notificationChannel =
         client
-            .channel(
-                "notifications-" +
-                currentUser.id +
-                "-" +
-                Date.now()
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:"INSERT",
-                    schema:"public",
-                    table:"notifications",
-                    filter:
-                        "user_id=eq." +
-                        currentUser.id
-                },
-                function(){
+        .channel(
+            "notifications-" +
+            currentUser.id +
+            "-" +
+            Date.now()
+        )
+        .on(
+            "postgres_changes",
+            {
+                event:"INSERT",
+                schema:"public",
+                table:"notifications",
+                filter:
+                    "user_id=eq." +
+                    currentUser.id
+            },
+            function(){
 
-                    loadNotifications();
+                loadNotifications();
 
-                }
-            )
-            .subscribe();
+            }
+        )
+        .subscribe();
+
 }
 
 
-/* =====================================================
+/* =========================================================
    SUPPORT
-===================================================== */
+========================================================= */
 
 async function openSupport(){
 
@@ -6264,9 +7765,11 @@ async function openSupport(){
             await ensureSupportConversation();
 
         if(!supportId){
+
             throw new Error(
                 "تعذر إنشاء محادثة الدعم."
             );
+
         }
 
         const contact =
@@ -6282,6 +7785,7 @@ async function openSupport(){
                 contact,
                 "support"
             );
+
         }
 
     }catch(error){
@@ -6295,13 +7799,15 @@ async function openSupport(){
             error.message ||
             "تعذر فتح دعم WFESC."
         );
+
     }
+
 }
 
 
-/* =====================================================
-   CHAT NOTIFICATION BUTTON
-===================================================== */
+/* =========================================================
+   CHAT NOTIFICATION
+========================================================= */
 
 document.getElementById(
     "chatNotificationButton"
@@ -6316,27 +7822,23 @@ document.getElementById(
             return;
         }
 
-        /*
-          زر سريع لكتم/إلغاء كتم المحادثة.
-        */
-
         try{
 
             const {data,error} =
                 await client
-                    .from(
-                        "notification_settings"
-                    )
-                    .select("muted")
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    )
-                    .eq(
-                        "conversation_id",
-                        currentConversationId
-                    )
-                    .maybeSingle();
+                .from(
+                    "notification_settings"
+                )
+                .select("muted")
+                .eq(
+                    "user_id",
+                    currentUser.id
+                )
+                .eq(
+                    "conversation_id",
+                    currentConversationId
+                )
+                .maybeSingle();
 
             if(error){
                 throw error;
@@ -6347,10 +7849,11 @@ document.getElementById(
 
             const result =
                 await client
-                    .from(
-                        "notification_settings"
-                    )
-                    .upsert({
+                .from(
+                    "notification_settings"
+                )
+                .upsert(
+                    {
                         user_id:
                             currentUser.id,
 
@@ -6361,12 +7864,15 @@ document.getElementById(
                             muted,
 
                         updated_at:
-                            new Date().toISOString()
+                            new Date()
+                            .toISOString()
 
-                    },{
+                    },
+                    {
                         onConflict:
                             "user_id,conversation_id"
-                    });
+                    }
+                );
 
             if(result.error){
                 throw result.error;
@@ -6378,14 +7884,16 @@ document.getElementById(
                 "chat notification",
                 error
             );
+
         }
+
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    CHAT MENU
-===================================================== */
+========================================================= */
 
 document.getElementById(
     "chatMenuButton"
@@ -6401,13 +7909,14 @@ document.getElementById(
             event,
             currentConversationId
         );
+
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    OWN PRESENCE
-===================================================== */
+========================================================= */
 
 async function updateOwnPresence(){
 
@@ -6431,28 +7940,33 @@ async function updateOwnPresence(){
             "presence",
             error
         );
+
     }
+
 }
 
 
-/* =====================================================
+/* =========================================================
    KEYBOARD / VISUAL VIEWPORT
-===================================================== */
+========================================================= */
 
 function updateKeyboardPosition(){
 
     if(!window.visualViewport){
+
+        document.documentElement
+            .style
+            .setProperty(
+                "--keyboard-height",
+                "0px"
+            );
+
         return;
+
     }
 
     const viewport =
         window.visualViewport;
-
-    /*
-      نحسب ارتفاع الكيبورد فقط.
-      لا نغيّر navigation هنا.
-      حقل الإرسال وحده يتحرك.
-    */
 
     const keyboardHeight =
         Math.max(
@@ -6467,15 +7981,58 @@ function updateKeyboardPosition(){
 
     const meaningfulKeyboard =
         keyboardHeight > 80
-            ? keyboardHeight
-            : 0;
+        ? keyboardHeight
+        : 0;
 
-    document.documentElement.style
+    document.documentElement
+        .style
         .setProperty(
             "--keyboard-height",
             meaningfulKeyboard +
             "px"
         );
+
+    /*
+     * شريط التنقل لا يصعد فوق الكيبورد.
+     * نزيحه للأسفل بنفس مقدار الكيبورد
+     * حتى يبقى في مكانه الطبيعي خلف لوحة المفاتيح.
+     */
+
+    const nav =
+        document.getElementById(
+            "wfesc-navigation"
+        );
+
+    if(nav){
+
+        if(
+            meaningfulKeyboard > 120
+        ){
+
+            nav.style.setProperty(
+                "--wfesc-nav-keyboard-shift",
+                meaningfulKeyboard +
+                "px"
+            );
+
+            nav.classList.add(
+                "wfesc-navigation-keyboard-lock"
+            );
+
+        }else{
+
+            nav.classList.remove(
+                "wfesc-navigation-keyboard-lock"
+            );
+
+            nav.style.removeProperty(
+                "--wfesc-nav-keyboard-shift"
+            );
+
+        }
+
+    }
+
 }
 
 
@@ -6490,6 +8047,7 @@ if(window.visualViewport){
         "scroll",
         updateKeyboardPosition
     );
+
 }
 
 window.addEventListener(
@@ -6497,14 +8055,44 @@ window.addEventListener(
     updateKeyboardPosition
 );
 
+messageInput.addEventListener(
+    "focus",
+    function(){
+
+        setTimeout(
+            updateKeyboardPosition,
+            100
+        );
+
+    }
+);
+
+messageInput.addEventListener(
+    "blur",
+    function(){
+
+        setTimeout(
+            updateKeyboardPosition,
+            100
+        );
+
+    }
+);
+
 updateKeyboardPosition();
 
 
-/* =====================================================
+/* =========================================================
    AUTH STATE
-===================================================== */
+========================================================= */
 
 function subscribeAuth(){
+
+    if(
+        !client?.auth
+    ){
+        return;
+    }
 
     client.auth.onAuthStateChange(
         async function(
@@ -6526,11 +8114,22 @@ function subscribeAuth(){
                     "open"
                 );
 
+                mainList.style.display =
+                    "";
+
+                document.getElementById(
+                    "searchSection"
+                ).style.display =
+                    "";
+
                 currentConversationId =
                     null;
 
                 currentConversationContact =
                     null;
+
+                currentMessages =
+                    [];
 
                 removeMessageRealtime();
 
@@ -6553,7 +8152,12 @@ function subscribeAuth(){
                 await loadConversations();
 
                 return;
+
             }
+
+            applyMessageViewSettings(
+                getMessageViewSettings()
+            );
 
             await loadActivity();
 
@@ -6567,12 +8171,13 @@ function subscribeAuth(){
 
         }
     );
+
 }
 
 
-/* =====================================================
+/* =========================================================
    VISIBILITY
-===================================================== */
+========================================================= */
 
 document.addEventListener(
     "visibilitychange",
@@ -6586,6 +8191,7 @@ document.addEventListener(
             if(currentUser){
 
                 await updateOwnPresence();
+
             }
 
         }else{
@@ -6602,16 +8208,18 @@ document.addEventListener(
                     );
 
                 }catch(error){}
+
             }
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    BEFORE UNLOAD
-===================================================== */
+========================================================= */
 
 window.addEventListener(
     "beforeunload",
@@ -6627,15 +8235,16 @@ window.addEventListener(
             ).catch(
                 () => {}
             );
+
         }
 
     }
 );
 
 
-/* =====================================================
+/* =========================================================
    INITIALIZE
-===================================================== */
+========================================================= */
 
 async function initialize(){
 
@@ -6643,19 +8252,23 @@ async function initialize(){
         return;
     }
 
-    initialized = true;
+    initialized =
+        true;
 
     currentUser =
         await getSession();
+
+    applyMessageViewSettings(
+        getMessageViewSettings()
+    );
 
     if(currentUser){
 
         await loadActivity();
 
         /*
-          إنشاء الدعم فوراً بعد وجود جلسة.
-          هذا يجعل محادثة الدعم تظهر بالقائمة.
-        */
+         * إنشاء دعم WFESC
+         */
 
         await ensureSupportConversation();
 
@@ -6668,17 +8281,19 @@ async function initialize(){
     }else{
 
         await loadConversations();
+
     }
 
     subscribeAuth();
 
     updateKeyboardPosition();
+
 }
 
 
-/* =====================================================
+/* =========================================================
    START
-===================================================== */
+========================================================= */
 
 if(
     document.readyState ===
@@ -6700,9 +8315,9 @@ if(
 }
 
 
-/* =====================================================
-   DEBUG / PUBLIC API
-===================================================== */
+/* =========================================================
+   PUBLIC API
+========================================================= */
 
 window.WFESC_MESSAGES = {
 
@@ -6715,22 +8330,29 @@ window.WFESC_MESSAGES = {
     loadNotifications,
 
     getCurrentConversation(){
+
         return currentConversationId;
+
     },
 
     getCurrentUser(){
+
         return currentUser;
-    }
+
+    },
+
+    getMessageViewSettings
 
 };
 
 })();
+
 </script>
 
 
-<!-- =========================
+<!-- =========================================================
      NAVIGATION
-========================== -->
+========================================================= -->
 
 <script src="./navigation/navigation-loader.js"></script>
 
