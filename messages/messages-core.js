@@ -64,6 +64,10 @@ Activity Contact Normalization
 توحيد user_id / id / userId
 وضمان وصول هوية المستخدم لرأس المحادثة
 
+Soft Delete Support
+الحفاظ على الرسائل داخل قاعدة البيانات
+وعدم اعتبار deleted_at حذفاً فعلياً
+
 ============================================================
 */
 
@@ -584,7 +588,7 @@ wfescDebugShow(
     `${errorText}
 
 ---
-    
+
 ${extraText}`
 );
 
@@ -899,6 +903,44 @@ return (
     message?.message ??
     message?.message_content ??
     ""
+);
+
+}
+
+
+/* =========================================================
+SOFT DELETE HELPERS
+========================================================= */
+
+function isMessageDeleted(message) {
+
+if (!message) {
+    return false;
+}
+
+return Boolean(
+    message.deleted_at
+);
+
+}
+
+
+function getMessageDisplayContent(
+message
+) {
+
+if (
+    isMessageDeleted(
+        message
+    )
+) {
+
+    return "تم حذف هذه الرسالة";
+
+}
+
+return getMessageContent(
+    message
 );
 
 }
@@ -3376,6 +3418,28 @@ element.dataset.content =
         message
     );
 
+if (
+    isMessageDeleted(
+        message
+    )
+) {
+
+    element.dataset.deleted =
+        "true";
+
+    element.classList.add(
+        "message-deleted"
+    );
+
+} else {
+
+    delete element.dataset.deleted;
+
+    element.classList.remove(
+        "message-deleted"
+    );
+}
+
 const contentElement =
     element.querySelector(
         ".message-content"
@@ -3384,7 +3448,7 @@ const contentElement =
 if (contentElement) {
 
     contentElement.textContent =
-        getMessageContent(
+        getMessageDisplayContent(
             message
         );
 }
@@ -3576,20 +3640,49 @@ if (index < 0) {
 const conversation =
     conversations[index];
 
-conversation.last_message =
-    getMessageContent(
-        message
-    );
 
-conversation.last_message_text =
-    getMessageContent(
-        message
-    );
+/*
+ * الرسالة التي أصبحت soft-deleted
+ * لا يتم عرض محتواها كآخر رسالة.
+ *
+ * تبقى محفوظة في قاعدة البيانات،
+ * لكن لا يتم استخدامها كـ preview.
+ */
 
-conversation.last_message_at =
-    getMessageTime(
+if (
+    isMessageDeleted(
         message
-    );
+    )
+) {
+
+    conversation.last_message =
+        "تم حذف هذه الرسالة";
+
+    conversation.last_message_text =
+        "تم حذف هذه الرسالة";
+
+    conversation.last_message_at =
+        getMessageTime(
+            message
+        );
+
+} else {
+
+    conversation.last_message =
+        getMessageContent(
+            message
+        );
+
+    conversation.last_message_text =
+        getMessageContent(
+            message
+        );
+
+    conversation.last_message_at =
+        getMessageTime(
+            message
+        );
+}
 
 conversations.splice(
     index,
@@ -3901,9 +3994,77 @@ messageChannel =
                     return;
                 }
 
+                /*
+                 * UPDATE هنا مهم جداً للـ soft delete.
+                 *
+                 * الرسالة لا تُحذف من قاعدة البيانات،
+                 * وإنما يتغير deleted_at فقط.
+                 */
+
                 updateConversationPreview(
                     message
                 );
+
+                if (
+                    messageBelongsToCurrentConversation(
+                        message
+                    )
+                ) {
+
+                    const messageId =
+                        getMessageId(
+                            message
+                        );
+
+                    const stateMessage =
+                        messageId != null
+                            ? findMessageInStateById(
+                                messageId
+                            )
+                            : null;
+
+                    if (stateMessage) {
+
+                        const stateIndex =
+                            currentMessages.indexOf(
+                                stateMessage
+                            );
+
+                        if (
+                            stateIndex >= 0
+                        ) {
+
+                            currentMessages[
+                                stateIndex
+                            ] =
+                                message;
+                        }
+
+                        const domElement =
+                            findDomMessageById(
+                                messageId
+                            );
+
+                        if (domElement) {
+
+                            reconcileExistingMessage(
+                                domElement,
+                                message
+                            );
+                        }
+
+                    } else if (
+                        messageId != null
+                    ) {
+
+                        /*
+                         * إذا جاء UPDATE لرسالة غير موجودة
+                         * حالياً بالواجهة، نتركها محفوظة
+                         * بدون إنشاء رسالة جديدة تلقائياً.
+                         */
+
+                    }
+                }
 
             }
         );
@@ -5099,6 +5260,11 @@ const isMine =
         message
     );
 
+const deleted =
+    isMessageDeleted(
+        message
+    );
+
 const row =
     document.createElement(
         "div"
@@ -5119,6 +5285,16 @@ if (
     row.classList.add(
         "optimistic"
     );
+}
+
+if (deleted) {
+
+    row.classList.add(
+        "message-deleted"
+    );
+
+    row.dataset.deleted =
+        "true";
 }
 
 const messageId =
@@ -5161,6 +5337,12 @@ bubble.dataset.side =
         ? "mine"
         : "theirs";
 
+if (deleted) {
+
+    bubble.dataset.deleted =
+        "true";
+}
+
 const content =
     document.createElement(
         "div"
@@ -5170,9 +5352,16 @@ content.className =
     "message-content";
 
 content.textContent =
-    getMessageContent(
+    getMessageDisplayContent(
         message
     );
+
+if (deleted) {
+
+    content.classList.add(
+        "message-deleted-content"
+    );
+}
 
 const time =
     document.createElement(
@@ -5291,6 +5480,7 @@ if (
     }
 
     return element;
+
 }
 
 renderMessages();
@@ -5734,6 +5924,10 @@ normalizeContact,
 
 refreshCurrentContactActivity,
 
+isMessageDeleted,
+
+getMessageDisplayContent,
+
 debug(
     title,
     details
@@ -5743,6 +5937,7 @@ debug(
         title,
         details
     );
+
 },
 
 debugError(
@@ -5756,6 +5951,7 @@ debugError(
         error,
         extra
     );
+
 }
 
 };
