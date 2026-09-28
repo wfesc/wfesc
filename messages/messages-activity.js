@@ -1,19 +1,18 @@
 /* =========================================================
-   WFESC MESSAGES ACTIVITY
-   messages/messages-activity.js
+   WFESC MESSAGES — CHAT HEADER
+   messages/messages-chat-header.js
 
    المسؤول عن:
-   - زر النشاط
-   - نافذة النشاط
-   - Animation
-   - تشغيل / إيقاف النشاط
-   - حفظ الإعداد
-   - Supabase Presence
-   - Online / Offline
-   - last seen داخل Presence
-   - أحداث التواصل مع بقية ملفات الرسائل
+   - صورة المستخدم
+   - اسم المستخدم
+   - حالة النشاط
+   - النقطة الخضراء / الرمادية
+   - مزامنة Presence
+   - تحديث الرأس فوراً
+   - تجهيز زر الملف الشخصي للمستقبل
 
    لا يعدل messages-core.js
+   لا يعدل messages-activity.js
 ========================================================= */
 
 (() => {
@@ -22,68 +21,20 @@
 
 
     /* =====================================================
-       CONFIG
-    ===================================================== */
-
-    const ACTIVITY_DEBUG = true;
-
-    const ACTIVITY_TABLE = "profiles";
-
-    const ACTIVITY_FIELD = "show_activity";
-
-    const ACTIVITY_CHANNEL =
-        "wfesc-activity-presence";
-
-    const HEARTBEAT_TIME =
-        30000;
-
-    const OFFLINE_AFTER =
-        70000;
-
-
-    /* =====================================================
-       STATE
-    ===================================================== */
-
-    let client = null;
-
-    let currentUser = null;
-
-    let showActivity = true;
-
-    let activityModal = null;
-
-    let activityButton = null;
-
-    let activitySwitch = null;
-
-    let closeActivityButton = null;
-
-    let presenceChannel = null;
-
-    let presenceStarted = false;
-
-    let heartbeatTimer = null;
-
-    let initialized = false;
-
-    let uiReady = false;
-
-    let visibilityReady = false;
-
-
-    /* =====================================================
        DEBUG
     ===================================================== */
 
+    const HEADER_DEBUG = true;
+
+
     function debug(...args) {
 
-        if (!ACTIVITY_DEBUG) {
+        if (!HEADER_DEBUG) {
             return;
         }
 
         console.log(
-            "[WFESC Activity]",
+            "[WFESC Chat Header]",
             ...args
         );
 
@@ -93,7 +44,7 @@
     function debugError(...args) {
 
         console.error(
-            "[WFESC Activity]",
+            "[WFESC Chat Header]",
             ...args
         );
 
@@ -101,37 +52,18 @@
 
 
     /* =====================================================
-       DOM
-    ===================================================== */
-
-    function getElements() {
-
-        activityButton =
-            document.getElementById(
-                "activityButton"
-            );
-
-        activityModal =
-            document.getElementById(
-                "activityModal"
-            );
-
-        activitySwitch =
-            document.getElementById(
-                "activitySwitch"
-            );
-
-        closeActivityButton =
-            document.getElementById(
-                "closeActivityModal"
-            );
-
-    }
-
-
-    /* =====================================================
        SUPABASE
     ===================================================== */
+
+    const SUPABASE_URL =
+        "https://mcgbzfgbaxwmutniorlw.supabase.co";
+
+    const SUPABASE_KEY =
+        "sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
+
+
+    let client = null;
+
 
     function getClient() {
 
@@ -153,11 +85,8 @@
             ) {
 
                 return window.supabase.createClient(
-
-                    "https://mcgbzfgbaxwmutniorlw.supabase.co",
-
-                    "sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L"
-
+                    SUPABASE_URL,
+                    SUPABASE_KEY
                 );
 
             }
@@ -177,1215 +106,273 @@
 
 
     /* =====================================================
-       USER
+       CORE / ACTIVITY
     ===================================================== */
 
-    async function loadUser() {
+    function getCore() {
 
-        if (!client) {
-            return null;
-        }
+        return (
+            window.WFESC_MESSAGES_CORE ||
+            null
+        );
 
-        try {
-
-            const result =
-                await client.auth.getUser();
+    }
 
 
-            if (
-                result &&
-                result.data &&
-                result.data.user
-            ) {
+    function getActivity() {
 
-                currentUser =
-                    result.data.user;
-
-                return currentUser;
-
-            }
-
-        } catch (error) {
-
-            debugError(
-                "getUser:",
-                error
-            );
-
-        }
-
-        return null;
+        return (
+            window.WFESC_MESSAGES_ACTIVITY ||
+            null
+        );
 
     }
 
 
     /* =====================================================
-       LOCAL STORAGE
+       DOM
     ===================================================== */
 
-    function localKey() {
+    const chatPersonButton =
+        document.getElementById(
+            "chatPersonButton"
+        );
 
-        if (!currentUser) {
-            return null;
+    const chatAvatar =
+        document.getElementById(
+            "chatAvatar"
+        );
+
+    const chatName =
+        document.getElementById(
+            "chatName"
+        );
+
+    const chatStatus =
+        document.getElementById(
+            "chatStatus"
+        );
+
+    const chatOnlineDot =
+        document.getElementById(
+            "chatOnlineDot"
+        );
+
+
+    /* =====================================================
+       DEFAULT AVATAR
+    ===================================================== */
+
+    const DEFAULT_AVATAR =
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(`
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="200"
+                height="200"
+                viewBox="0 0 200 200"
+            >
+
+                <rect
+                    width="200"
+                    height="200"
+                    rx="100"
+                    fill="#151515"
+                />
+
+                <circle
+                    cx="100"
+                    cy="76"
+                    r="38"
+                    fill="#777"
+                />
+
+                <path
+                    d="
+                        M35 175
+                        C42 132 66 112 100 112
+                        C134 112 158 132 165 175
+                        Z
+                    "
+                    fill="#777"
+                />
+
+            </svg>
+        `);
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    let currentContact = null;
+
+    let currentConversationId = null;
+
+    let profileLoading = false;
+
+    let lastRenderedUserId = null;
+
+
+    /* =====================================================
+       NAME
+    ===================================================== */
+
+    function getDisplayName(
+        contact
+    ) {
+
+        if (!contact) {
+            return "مستخدم";
         }
 
         return (
-            "wfesc_activity_" +
-            currentUser.id
+            contact.display_name ||
+            contact.full_name ||
+            contact.name ||
+            contact.username ||
+            "مستخدم"
         );
-
-    }
-
-
-    function readLocalSetting() {
-
-        const key =
-            localKey();
-
-        if (!key) {
-            return null;
-        }
-
-        try {
-
-            const value =
-                localStorage.getItem(
-                    key
-                );
-
-            if (
-                value === null
-            ) {
-
-                return null;
-
-            }
-
-            return value === "true";
-
-        } catch {
-
-            return null;
-
-        }
-
-    }
-
-
-    function saveLocalSetting(
-        value
-    ) {
-
-        const key =
-            localKey();
-
-        if (!key) {
-            return;
-        }
-
-        try {
-
-            localStorage.setItem(
-                key,
-                value ? "true" : "false"
-            );
-
-        } catch {}
 
     }
 
 
     /* =====================================================
-       UI ANIMATION HELPERS
+       AVATAR
     ===================================================== */
 
-    function animateElement(
-        element,
-        animation
+    function getAvatarUrl(
+        contact
     ) {
 
-        if (!element) {
-            return;
+        if (!contact) {
+            return DEFAULT_AVATAR;
         }
 
-        element.classList.remove(
-            animation
-        );
-
-        void element.offsetWidth;
-
-        element.classList.add(
-            animation
+        return (
+            contact.avatar_url ||
+            contact.avatar ||
+            contact.photo_url ||
+            DEFAULT_AVATAR
         );
 
     }
 
 
-    function addActivityAnimationStyles() {
+    /* =====================================================
+       ACTIVITY VISIBILITY
+    ===================================================== */
+
+    function canShowActivity(
+        contact
+    ) {
+
+        if (!contact) {
+            return false;
+        }
+
+
+        return (
+            contact.show_activity !== false
+        );
+
+    }
+
+
+    /* =====================================================
+       GET ONLINE STATE
+    ===================================================== */
+
+    function getOnlineState(
+        contact
+    ) {
+
+        if (!contact) {
+            return false;
+        }
+
 
         if (
-            document.getElementById(
-                "wfescActivityAnimations"
+            !canShowActivity(
+                contact
             )
         ) {
 
-            return;
-
-        }
-
-
-        const style =
-            document.createElement(
-                "style"
-            );
-
-
-        style.id =
-            "wfescActivityAnimations";
-
-
-        style.textContent = `
-
-            /* ================================
-               ACTIVITY BUTTON
-            ================================= */
-
-            #activityButton{
-                transition:
-                    transform .22s cubic-bezier(.2,.8,.2,1),
-                    opacity .22s ease,
-                    filter .22s ease;
-            }
-
-            #activityButton.wfesc-activity-click{
-                animation:
-                    wfescActivityButtonClick
-                    .38s
-                    cubic-bezier(.2,.8,.2,1);
-            }
-
-            @keyframes wfescActivityButtonClick{
-
-                0%{
-                    transform:scale(1);
-                }
-
-                35%{
-                    transform:scale(.84)
-                               rotate(-7deg);
-                }
-
-                70%{
-                    transform:scale(1.08)
-                               rotate(4deg);
-                }
-
-                100%{
-                    transform:scale(1)
-                               rotate(0);
-                }
-
-            }
-
-
-            /* ================================
-               MODAL
-            ================================= */
-
-            #activityModal{
-                opacity:0;
-                transition:
-                    opacity .22s ease;
-            }
-
-            #activityModal.show{
-                opacity:1;
-            }
-
-            #activityModal .modal-card{
-                animation:
-                    wfescActivityModalIn
-                    .32s
-                    cubic-bezier(.2,.8,.2,1)
-                    both;
-            }
-
-            @keyframes wfescActivityModalIn{
-
-                from{
-                    opacity:0;
-                    transform:
-                        translateY(18px)
-                        scale(.94);
-                }
-
-                60%{
-                    opacity:1;
-                    transform:
-                        translateY(-3px)
-                        scale(1.015);
-                }
-
-                to{
-                    opacity:1;
-                    transform:
-                        translateY(0)
-                        scale(1);
-                }
-
-            }
-
-
-            /* ================================
-               SWITCH
-            ================================= */
-
-            #activitySwitch{
-                transition:
-                    background .25s ease,
-                    transform .2s ease,
-                    box-shadow .25s ease;
-            }
-
-            #activitySwitch::after{
-                transition:
-                    transform .28s
-                    cubic-bezier(.2,.8,.2,1),
-                    background .25s ease,
-                    box-shadow .25s ease;
-            }
-
-            #activitySwitch.wfesc-switch-changing{
-                animation:
-                    wfescSwitchPulse
-                    .36s
-                    ease;
-            }
-
-            #activitySwitch.active{
-                box-shadow:
-                    0 0 0 5px
-                    rgba(154,167,255,.045),
-                    0 0 20px
-                    rgba(154,167,255,.08);
-            }
-
-            @keyframes wfescSwitchPulse{
-
-                0%{
-                    transform:scale(1);
-                }
-
-                45%{
-                    transform:scale(.91);
-                }
-
-                100%{
-                    transform:scale(1);
-                }
-
-            }
-
-
-            /* ================================
-               ACTIVITY BUTTON ICON
-            ================================= */
-
-            #activityButton{
-                position:relative;
-                overflow:hidden;
-            }
-
-            #activityButton::after{
-
-                content:"";
-
-                position:absolute;
-
-                width:7px;
-                height:7px;
-
-                border-radius:50%;
-
-                background:
-                    rgba(54,226,123,.9);
-
-                right:7px;
-                top:7px;
-
-                box-shadow:
-                    0 0 10px
-                    rgba(54,226,123,.55);
-
-                animation:
-                    wfescActivityDot
-                    2s
-                    ease-in-out
-                    infinite;
-
-                pointer-events:none;
-
-            }
-
-            @keyframes wfescActivityDot{
-
-                0%,
-                100%{
-                    opacity:.55;
-                    transform:scale(.8);
-                }
-
-                50%{
-                    opacity:1;
-                    transform:scale(1.15);
-                }
-
-            }
-
-
-            /* ================================
-               SAVE FEEDBACK
-            ================================= */
-
-            #activityModal.wfesc-activity-saving
-            .modal-card{
-
-                animation:
-                    wfescActivitySaving
-                    .42s
-                    ease;
-
-            }
-
-            @keyframes wfescActivitySaving{
-
-                0%{
-                    transform:scale(1);
-                }
-
-                35%{
-                    transform:scale(.985);
-                }
-
-                70%{
-                    transform:scale(1.008);
-                }
-
-                100%{
-                    transform:scale(1);
-                }
-
-            }
-
-
-            /* ================================
-               SUCCESS FLASH
-            ================================= */
-
-            #activityModal.wfesc-activity-success
-            .modal-card{
-
-                box-shadow:
-                    0 20px 70px
-                    rgba(0,0,0,.55),
-                    0 0 0 1px
-                    rgba(54,226,123,.20),
-                    0 0 35px
-                    rgba(54,226,123,.08);
-
-            }
-
-
-            /* ================================
-               CLOSING
-            ================================= */
-
-            #activityModal.wfesc-activity-closing{
-                opacity:0;
-            }
-
-            #activityModal.wfesc-activity-closing
-            .modal-card{
-
-                animation:
-                    wfescActivityModalOut
-                    .2s
-                    ease
-                    both;
-
-            }
-
-            @keyframes wfescActivityModalOut{
-
-                from{
-                    opacity:1;
-                    transform:
-                        translateY(0)
-                        scale(1);
-                }
-
-                to{
-                    opacity:0;
-                    transform:
-                        translateY(10px)
-                        scale(.96);
-                }
-
-            }
-
-        `;
-
-
-        document.head.appendChild(
-            style
-        );
-
-    }
-
-
-    /* =====================================================
-       ACTIVITY UI
-    ===================================================== */
-
-    function updateSwitch() {
-
-        if (!activitySwitch) {
-            return;
-        }
-
-
-        if (showActivity) {
-
-            activitySwitch.classList.add(
-                "active"
-            );
-
-            activitySwitch.setAttribute(
-                "aria-pressed",
-                "true"
-            );
-
-        } else {
-
-            activitySwitch.classList.remove(
-                "active"
-            );
-
-            activitySwitch.setAttribute(
-                "aria-pressed",
-                "false"
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       OPEN MODAL
-    ===================================================== */
-
-    function openModal() {
-
-        if (!activityModal) {
-            return;
-        }
-
-
-        updateSwitch();
-
-
-        animateElement(
-            activityButton,
-            "wfesc-activity-click"
-        );
-
-
-        activityModal.classList.remove(
-            "wfesc-activity-closing"
-        );
-
-
-        activityModal.classList.add(
-            "show"
-        );
-
-
-        document.body.style.overflow =
-            "hidden";
-
-
-        setTimeout(() => {
-
-            if (activitySwitch) {
-
-                activitySwitch.focus({
-                    preventScroll:true
-                });
-
-            }
-
-        }, 180);
-
-    }
-
-
-    /* =====================================================
-       CLOSE MODAL
-    ===================================================== */
-
-    function closeModal() {
-
-        if (!activityModal) {
-            return;
-        }
-
-
-        activityModal.classList.add(
-            "wfesc-activity-closing"
-        );
-
-
-        setTimeout(() => {
-
-            activityModal.classList.remove(
-                "show",
-                "wfesc-activity-closing",
-                "wfesc-activity-saving",
-                "wfesc-activity-success"
-            );
-
-
-            document.body.style.overflow =
-                "";
-
-        }, 190);
-
-    }
-
-
-    /* =====================================================
-       LOAD SETTING
-    ===================================================== */
-
-    async function loadSetting() {
-
-        if (
-            !client ||
-            !currentUser
-        ) {
-
-            return;
-
-        }
-
-
-        try {
-
-            const result =
-                await client
-                    .from(
-                        ACTIVITY_TABLE
-                    )
-                    .select(
-                        ACTIVITY_FIELD
-                    )
-                    .eq(
-                        "id",
-                        currentUser.id
-                    )
-                    .maybeSingle();
-
-
-            if (
-                !result.error &&
-                result.data &&
-                typeof result.data[
-                    ACTIVITY_FIELD
-                ] === "boolean"
-            ) {
-
-                showActivity =
-                    result.data[
-                        ACTIVITY_FIELD
-                    ];
-
-                saveLocalSetting(
-                    showActivity
-                );
-
-                updateSwitch();
-
-                return;
-
-            }
-
-        } catch (error) {
-
-            debugError(
-                "قراءة النشاط:",
-                error
-            );
-
-        }
-
-
-        const local =
-            readLocalSetting();
-
-
-        if (
-            typeof local ===
-            "boolean"
-        ) {
-
-            showActivity =
-                local;
-
-        }
-
-
-        updateSwitch();
-
-    }
-
-
-    /* =====================================================
-       SAVE SETTING
-    ===================================================== */
-
-    async function saveSetting(
-        value
-    ) {
-
-        value =
-            Boolean(value);
-
-
-        showActivity =
-            value;
-
-
-        saveLocalSetting(
-            value
-        );
-
-
-        updateSwitch();
-
-
-        if (
-            activityModal
-        ) {
-
-            activityModal.classList.add(
-                "wfesc-activity-saving"
-            );
-
-        }
-
-
-        if (
-            !client ||
-            !currentUser
-        ) {
-
             return false;
 
         }
 
 
-        try {
+        const activity =
+            getActivity();
 
-            const result =
-                await client
-                    .from(
-                        ACTIVITY_TABLE
-                    )
-                    .update({
 
-                        [ACTIVITY_FIELD]:
-                            value
+        if (
+            activity &&
+            typeof activity.getUserActivity ===
+                "function" &&
+            contact.user_id
+        ) {
 
-                    })
-                    .eq(
-                        "id",
-                        currentUser.id
+            try {
+
+                const result =
+                    activity.getUserActivity(
+                        contact.user_id
                     );
 
 
-            if (
-                result.error
-            ) {
+                if (
+                    result &&
+                    typeof result.online ===
+                        "boolean"
+                ) {
 
-                debug(
-                    "تعذر حفظ النشاط:",
-                    result.error.message
-                );
+                    return result.online;
 
-                return false;
+                }
 
-            }
+            } catch (error) {
 
-
-            if (
-                activityModal
-            ) {
-
-                activityModal.classList.add(
-                    "wfesc-activity-success"
+                debugError(
+                    "Activity:",
+                    error
                 );
 
             }
-
-
-            return true;
-
-        } catch (error) {
-
-            debugError(
-                "حفظ النشاط:",
-                error
-            );
-
-            return false;
 
         }
-
-    }
-
-
-    /* =====================================================
-       TOGGLE
-    ===================================================== */
-
-    async function toggleActivity() {
-
-        const newValue =
-            !showActivity;
-
-
-        animateElement(
-            activitySwitch,
-            "wfesc-switch-changing"
-        );
-
-
-        showActivity =
-            newValue;
-
-
-        updateSwitch();
-
-
-        await saveSetting(
-            newValue
-        );
-
-
-        await publishPresence();
 
 
         /*
-         * إلغاء Animation الحفظ بعد فترة قصيرة
+         * احتياط في حالة أن Presence
+         * لم يجهز بعد.
          */
 
-        setTimeout(() => {
-
-            if (activityModal) {
-
-                activityModal.classList.remove(
-                    "wfesc-activity-saving"
-                );
-
-            }
-
-        }, 450);
+        return Boolean(
+            contact.is_online
+        );
 
     }
 
 
     /* =====================================================
-       PRESENCE CHANNEL
+       STATUS TEXT
     ===================================================== */
 
-    async function createPresence() {
-
-        if (
-            !client ||
-            !currentUser
-        ) {
-
-            return;
-
-        }
-
-
-        if (
-            presenceChannel
-        ) {
-
-            return presenceChannel;
-
-        }
-
-
-        try {
-
-            presenceChannel =
-                client.channel(
-                    ACTIVITY_CHANNEL,
-                    {
-                        config:{
-                            presence:{
-                                key:
-                                    currentUser.id
-                            }
-                        }
-                    }
-                );
-
-
-            presenceChannel.on(
-                "presence",
-                {
-                    event:"sync"
-                },
-                () => {
-
-                    processPresence();
-
-                }
-            );
-
-
-            presenceChannel.on(
-                "presence",
-                {
-                    event:"join"
-                },
-                () => {
-
-                    processPresence();
-
-                }
-            );
-
-
-            presenceChannel.on(
-                "presence",
-                {
-                    event:"leave"
-                },
-                () => {
-
-                    processPresence();
-
-                }
-            );
-
-
-            await presenceChannel.subscribe(
-                status => {
-
-                    debug(
-                        "Presence:",
-                        status
-                    );
-
-
-                    if (
-                        status ===
-                        "SUBSCRIBED"
-                    ) {
-
-                        presenceStarted =
-                            true;
-
-                        publishPresence();
-
-                    }
-
-                }
-            );
-
-
-        } catch (error) {
-
-            debugError(
-                "Presence:",
-                error
-            );
-
-            presenceChannel =
-                null;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       PUBLISH
-    ===================================================== */
-
-    async function publishPresence() {
-
-        if (
-            !presenceChannel ||
-            !currentUser ||
-            !presenceStarted
-        ) {
-
-            return;
-
-        }
-
-
-        try {
-
-            const visible =
-                document.visibilityState ===
-                "visible";
-
-
-            const online =
-                visible &&
-                showActivity;
-
-
-            await presenceChannel.track({
-
-                user_id:
-                    currentUser.id,
-
-                online:
-                    online,
-
-                show_activity:
-                    showActivity,
-
-                last_seen:
-                    new Date().toISOString()
-
-            });
-
-
-        } catch (error) {
-
-            debugError(
-                "publish:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       PROCESS PRESENCE
-    ===================================================== */
-
-    function processPresence() {
-
-        if (
-            !presenceChannel
-        ) {
-
-            return;
-
-        }
-
-
-        try {
-
-            const state =
-                presenceChannel.presenceState();
-
-
-            window.WFESC_ACTIVITY_STATE =
-                state;
-
-
-            window.dispatchEvent(
-                new CustomEvent(
-                    "wfesc:activity-sync",
-                    {
-                        detail:{
-                            state:
-                                state
-                        }
-                    }
-                )
-            );
-
-
-        } catch (error) {
-
-            debugError(
-                "processPresence:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET USER ACTIVITY
-    ===================================================== */
-
-    function getUserActivity(
-        userId
+    function getStatusText(
+        contact,
+        online
     ) {
 
-        if (
-            !userId ||
-            !presenceChannel
-        ) {
-
-            return {
-                online:false,
-                last_seen:null
-            };
-
-        }
-
-
-        try {
-
-            const state =
-                presenceChannel.presenceState();
-
-
-            const entries =
-                state[userId];
-
-
-            if (
-                !Array.isArray(entries) ||
-                entries.length === 0
-            ) {
-
-                return {
-                    online:false,
-                    last_seen:null
-                };
-
-            }
-
-
-            const latest =
-                entries[
-                    entries.length - 1
-                ];
-
-
-            const lastSeen =
-                latest &&
-                latest.last_seen
-                    ? latest.last_seen
-                    : null;
-
-
-            const timestamp =
-                lastSeen
-                    ? new Date(
-                        lastSeen
-                    ).getTime()
-                    : 0;
-
-
-            const recent =
-                timestamp > 0 &&
-                Date.now() -
-                    timestamp <=
-                    OFFLINE_AFTER;
-
-
-            return {
-
-                online:
-                    latest &&
-                    latest.online === true &&
-                    latest.show_activity !== false &&
-                    recent,
-
-                last_seen:
-                    lastSeen
-
-            };
-
-        } catch {
-
-            return {
-                online:false,
-                last_seen:null
-            };
-
-        }
-
-    }
-
-
-    /* =====================================================
-       ONLINE
-    ===================================================== */
-
-    function isUserOnline(
-        userId
-    ) {
-
-        return getUserActivity(
-            userId
-        ).online;
-
-    }
-
-
-    /* =====================================================
-       LAST SEEN TEXT
-    ===================================================== */
-
-    function getActivityText(
-        userId
-    ) {
-
-        const activity =
-            getUserActivity(
-                userId
-            );
-
-
-        if (
-            activity.online
-        ) {
-
-            return "متصل الآن";
-
+        if (!contact) {
+            return "";
         }
 
 
         if (
-            !activity.last_seen
-        ) {
-
-            return "غير نشط";
-
-        }
-
-
-        const timestamp =
-            new Date(
-                activity.last_seen
-            ).getTime();
-
-
-        if (
-            !Number.isFinite(
-                timestamp
+            !canShowActivity(
+                contact
             )
         ) {
 
@@ -1394,82 +381,9 @@
         }
 
 
-        const difference =
-            Date.now() -
-            timestamp;
+        if (online) {
 
-
-        if (
-            difference < 60000
-        ) {
-
-            return "كان متصلًا الآن";
-
-        }
-
-
-        const minutes =
-            Math.floor(
-                difference / 60000
-            );
-
-
-        if (
-            minutes < 60
-        ) {
-
-            return (
-                "كان متصلًا قبل " +
-                minutes +
-                " دقيقة"
-            );
-
-        }
-
-
-        const hours =
-            Math.floor(
-                minutes / 60
-            );
-
-
-        if (
-            hours < 24
-        ) {
-
-            return (
-                "كان متصلًا قبل " +
-                hours +
-                " ساعة"
-            );
-
-        }
-
-
-        const days =
-            Math.floor(
-                hours / 24
-            );
-
-
-        if (
-            days === 1
-        ) {
-
-            return "كان متصلًا أمس";
-
-        }
-
-
-        if (
-            days < 7
-        ) {
-
-            return (
-                "كان متصلًا قبل " +
-                days +
-                " أيام"
-            );
+            return "نشط الآن";
 
         }
 
@@ -1480,265 +394,599 @@
 
 
     /* =====================================================
-       HEARTBEAT
+       RENDER AVATAR
     ===================================================== */
 
-    function startHeartbeat() {
+    function renderAvatar(
+        contact
+    ) {
 
-        stopHeartbeat();
-
-
-        heartbeatTimer =
-            setInterval(
-                () => {
-
-                    publishPresence();
-
-                },
-                HEARTBEAT_TIME
-            );
-
-    }
-
-
-    function stopHeartbeat() {
-
-        if (
-            heartbeatTimer
-        ) {
-
-            clearInterval(
-                heartbeatTimer
-            );
-
-            heartbeatTimer =
-                null;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       VISIBILITY
-    ===================================================== */
-
-    function setupVisibility() {
-
-        if (
-            visibilityReady
-        ) {
-
+        if (!chatAvatar) {
             return;
-
         }
 
 
-        document.addEventListener(
-            "visibilitychange",
-            () => {
-
-                publishPresence();
-
-            }
-        );
-
-
-        window.addEventListener(
-            "focus",
-            () => {
-
-                publishPresence();
-
-            }
-        );
-
-
-        window.addEventListener(
-            "blur",
-            () => {
-
-                publishPresence();
-
-            }
-        );
-
-
-        visibilityReady =
-            true;
-
-    }
-
-
-    /* =====================================================
-       UI EVENTS
-    ===================================================== */
-
-    function setupUI() {
-
-        if (
-            uiReady
-        ) {
-
-            return;
-
-        }
-
-
-        getElements();
-
-
-        if (
-            activityButton
-        ) {
-
-            activityButton.addEventListener(
-                "click",
-                event => {
-
-                    event.preventDefault();
-
-                    openModal();
-
-                }
+        const url =
+            getAvatarUrl(
+                contact
             );
 
-        }
 
-
-        if (
-            activitySwitch
-        ) {
-
-            activitySwitch.addEventListener(
-                "click",
-                event => {
-
-                    event.preventDefault();
-
-                    toggleActivity();
-
-                }
+        const name =
+            getDisplayName(
+                contact
             );
 
-        }
+
+        chatAvatar.alt =
+            name;
 
 
-        if (
-            closeActivityButton
-        ) {
-
-            closeActivityButton.addEventListener(
-                "click",
-                event => {
-
-                    event.preventDefault();
-
-                    closeModal();
-
-                }
-            );
-
-        }
-
+        /*
+         * لا نغير الصورة إذا كانت نفس الصورة
+         * لتجنب وميض الصورة عند تحديث Presence.
+         */
 
         if (
-            activityModal
+            chatAvatar.src !== url
         ) {
 
-            activityModal.addEventListener(
-                "click",
-                event => {
-
-                    if (
-                        event.target ===
-                        activityModal
-                    ) {
-
-                        closeModal();
-
-                    }
-
-                }
-            );
+            chatAvatar.src =
+                url;
 
         }
 
 
-        document.addEventListener(
-            "keydown",
-            event => {
+        chatAvatar.onerror =
+            function () {
 
                 if (
-                    event.key ===
-                    "Escape" &&
-                    activityModal &&
-                    activityModal.classList.contains(
-                        "show"
-                    )
+                    chatAvatar.src !==
+                    DEFAULT_AVATAR
                 ) {
 
-                    closeModal();
+                    chatAvatar.src =
+                        DEFAULT_AVATAR;
 
                 }
 
-            }
-        );
-
-
-        uiReady =
-            true;
+            };
 
     }
 
 
     /* =====================================================
-       GLOBAL EVENTS
+       RENDER NAME
     ===================================================== */
 
-    function setupGlobalEvents() {
+    function renderName(
+        contact
+    ) {
 
-        window.addEventListener(
-            "wfesc:activity-request",
-            event => {
-
-                const userId =
-                    event &&
-                    event.detail
-                        ? event.detail.userId
-                        : null;
+        if (!chatName) {
+            return;
+        }
 
 
-                if (!userId) {
-                    return;
+        chatName.textContent =
+            getDisplayName(
+                contact
+            );
+
+    }
+
+
+    /* =====================================================
+       RENDER ACTIVITY
+    ===================================================== */
+
+    function renderActivity(
+        contact
+    ) {
+
+        if (!contact) {
+            return;
+        }
+
+
+        const online =
+            getOnlineState(
+                contact
+            );
+
+
+        const status =
+            getStatusText(
+                contact,
+                online
+            );
+
+
+        if (chatStatus) {
+
+            chatStatus.textContent =
+                status;
+
+        }
+
+
+        if (chatOnlineDot) {
+
+            chatOnlineDot.classList.toggle(
+                "active",
+                online
+            );
+
+            /*
+             * aria إضافية حتى نعرف الحالة
+             * بدون التأثير على التصميم.
+             */
+
+            chatOnlineDot.setAttribute(
+                "aria-label",
+                online
+                    ? "نشط الآن"
+                    : "غير نشط"
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RENDER HEADER
+    ===================================================== */
+
+    function renderHeader(
+        contact
+    ) {
+
+        if (!contact) {
+            return;
+        }
+
+
+        currentContact =
+            contact;
+
+
+        lastRenderedUserId =
+            contact.user_id ||
+            null;
+
+
+        renderAvatar(
+            contact
+        );
+
+
+        renderName(
+            contact
+        );
+
+
+        renderActivity(
+            contact
+        );
+
+
+        debug(
+            "Header updated:",
+            contact
+        );
+
+    }
+
+
+    /* =====================================================
+       LOAD PROFILE
+       
+       إذا كان Core أرسل user_id فقط أو كانت
+       صورة المستخدم غير موجودة، نجلب البيانات
+       مباشرة من profiles.
+    ===================================================== */
+
+    async function loadFullProfile(
+        contact
+    ) {
+
+        if (
+            !client ||
+            !contact ||
+            !contact.user_id
+        ) {
+
+            return contact;
+
+        }
+
+
+        /*
+         * إذا البيانات موجودة بالكامل
+         * لا داعي لطلب جديد.
+         */
+
+        if (
+            contact.avatar_url &&
+            (
+                contact.display_name ||
+                contact.username
+            )
+        ) {
+
+            return contact;
+
+        }
+
+
+        if (profileLoading) {
+
+            return contact;
+
+        }
+
+
+        profileLoading =
+            true;
+
+
+        try {
+
+            const result =
+                await client
+                    .from("profiles")
+                    .select(
+                        "id,username,display_name,avatar_url,show_activity"
+                    )
+                    .eq(
+                        "id",
+                        contact.user_id
+                    )
+                    .maybeSingle();
+
+
+            if (
+                result.error
+            ) {
+
+                debugError(
+                    "Profile:",
+                    result.error
+                );
+
+                return contact;
+
+            }
+
+
+            if (
+                result.data
+            ) {
+
+                const merged = {
+
+                    ...contact,
+
+                    ...result.data,
+
+                    user_id:
+                        contact.user_id ||
+                        result.data.id
+
+                };
+
+
+                /*
+                 * إذا profile يحتوي id فقط
+                 */
+
+                if (
+                    !merged.user_id
+                ) {
+
+                    merged.user_id =
+                        result.data.id;
+
                 }
 
 
-                const activity =
-                    getUserActivity(
-                        userId
-                    );
+                currentContact =
+                    merged;
 
+
+                renderHeader(
+                    merged
+                );
+
+
+                return merged;
+
+            }
+
+        } catch (error) {
+
+            debugError(
+                "Load profile:",
+                error
+            );
+
+        } finally {
+
+            profileLoading =
+                false;
+
+        }
+
+
+        return contact;
+
+    }
+
+
+    /* =====================================================
+       READ CORE
+    ===================================================== */
+
+    function readFromCore(
+        detail = null
+    ) {
+
+        /*
+         * الحالة الطبيعية:
+         * Core يرسل contact مباشرة.
+         */
+
+        if (
+            detail &&
+            detail.contact
+        ) {
+
+            currentConversationId =
+                detail.conversationId ||
+                null;
+
+
+            const contact =
+                detail.contact;
+
+
+            renderHeader(
+                contact
+            );
+
+
+            /*
+             * نتأكد من بيانات Profile
+             */
+
+            loadFullProfile(
+                contact
+            );
+
+
+            return;
+
+        }
+
+
+        const core =
+            getCore();
+
+
+        if (
+            !core ||
+            !core.chatHeader
+        ) {
+
+            return;
+
+        }
+
+
+        let contact =
+            null;
+
+
+        if (
+            typeof core.chatHeader.getContact ===
+                "function"
+        ) {
+
+            contact =
+                core.chatHeader.getContact();
+
+        }
+
+
+        if (!contact) {
+            return;
+        }
+
+
+        if (
+            typeof core.chatHeader.getConversationId ===
+                "function"
+        ) {
+
+            currentConversationId =
+                core.chatHeader.getConversationId();
+
+        }
+
+
+        renderHeader(
+            contact
+        );
+
+
+        loadFullProfile(
+            contact
+        );
+
+    }
+
+
+    /* =====================================================
+       REFRESH ACTIVITY
+    ===================================================== */
+
+    function refreshActivity() {
+
+        if (!currentContact) {
+
+            readFromCore();
+
+            return;
+
+        }
+
+
+        renderActivity(
+            currentContact
+        );
+
+    }
+
+
+    /* =====================================================
+       ACTIVITY SYNC
+    ===================================================== */
+
+    window.addEventListener(
+        "wfesc:activity-sync",
+        event => {
+
+            /*
+             * Presence تغير.
+             * نعيد قراءة النشاط فوراً.
+             */
+
+            if (
+                currentContact
+            ) {
+
+                renderActivity(
+                    currentContact
+                );
+
+            }
+
+
+            debug(
+                "Activity sync:",
+                event?.detail
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       ACTIVITY RESPONSE
+    ===================================================== */
+
+    window.addEventListener(
+        "wfesc:activity-response",
+        event => {
+
+            if (!currentContact) {
+                return;
+            }
+
+
+            const detail =
+                event?.detail;
+
+
+            if (
+                !detail
+            ) {
+                return;
+            }
+
+
+            if (
+                detail.userId !==
+                currentContact.user_id
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+             * إذا جاء الرد مباشرة من Activity
+             * نستخدمه لتحديث الواجهة.
+             */
+
+            const online =
+                detail.online === true;
+
+
+            if (chatStatus) {
+
+                chatStatus.textContent =
+                    online
+                        ? "نشط الآن"
+                        : "غير نشط";
+
+            }
+
+
+            if (chatOnlineDot) {
+
+                chatOnlineDot.classList.toggle(
+                    "active",
+                    online
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       CORE HEADER REFRESH
+    ===================================================== */
+
+    window.addEventListener(
+        "wfesc:chat-header-refresh",
+        event => {
+
+            readFromCore(
+                event?.detail || null
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       PROFILE CLICK
+    ===================================================== */
+
+    if (
+        chatPersonButton
+    ) {
+
+        chatPersonButton.addEventListener(
+            "click",
+            () => {
 
                 window.dispatchEvent(
                     new CustomEvent(
-                        "wfesc:activity-response",
+                        "wfesc:chat-profile-click",
                         {
-                            detail:{
+                            detail: {
 
-                                userId:
-                                    userId,
+                                contact:
+                                    currentContact,
 
-                                online:
-                                    activity.online,
-
-                                last_seen:
-                                    activity.last_seen,
-
-                                text:
-                                    getActivityText(
-                                        userId
-                                    )
+                                conversationId:
+                                    currentConversationId
 
                             }
                         }
@@ -1752,116 +1000,97 @@
 
 
     /* =====================================================
+       VISIBILITY
+    ===================================================== */
+
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+
+            if (
+                document.visibilityState ===
+                "visible"
+            ) {
+
+                refreshActivity();
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       WINDOW FOCUS
+    ===================================================== */
+
+    window.addEventListener(
+        "focus",
+        () => {
+
+            refreshActivity();
+
+        }
+    );
+
+
+    /* =====================================================
        PUBLIC API
     ===================================================== */
 
-    window.WFESC_MESSAGES_ACTIVITY = {
-
-        getCurrentUser() {
-
-            return currentUser;
-
-        },
-
-
-        isActivityVisible() {
-
-            return showActivity;
-
-        },
-
-
-        async setActivityVisible(
-            value
-        ) {
-
-            const result =
-                await saveSetting(
-                    Boolean(value)
-                );
-
-            await publishPresence();
-
-            return result;
-
-        },
-
-
-        openActivityModal() {
-
-            openModal();
-
-        },
-
-
-        closeActivityModal() {
-
-            closeModal();
-
-        },
-
-
-        isUserOnline(
-            userId
-        ) {
-
-            return isUserOnline(
-                userId
-            );
-
-        },
-
-
-        getUserActivity(
-            userId
-        ) {
-
-            return getUserActivity(
-                userId
-            );
-
-        },
-
-
-        getActivityText(
-            userId
-        ) {
-
-            return getActivityText(
-                userId
-            );
-
-        },
-
-
-        getPresenceState() {
-
-            if (
-                !presenceChannel
-            ) {
-
-                return {};
-
-            }
-
-
-            try {
-
-                return presenceChannel
-                    .presenceState();
-
-            } catch {
-
-                return {};
-
-            }
-
-        },
-
+    window.WFESC_MESSAGES_CHAT_HEADER = {
 
         refresh() {
 
-            return publishPresence();
+            readFromCore();
+
+        },
+
+
+        refreshActivity() {
+
+            refreshActivity();
+
+        },
+
+
+        getContact() {
+
+            return currentContact;
+
+        },
+
+
+        getConversationId() {
+
+            return currentConversationId;
+
+        },
+
+
+        getDisplayName() {
+
+            return getDisplayName(
+                currentContact
+            );
+
+        },
+
+
+        getAvatarUrl() {
+
+            return getAvatarUrl(
+                currentContact
+            );
+
+        },
+
+
+        isOnline() {
+
+            return getOnlineState(
+                currentContact
+            );
 
         }
 
@@ -1872,89 +1101,43 @@
        INITIALIZE
     ===================================================== */
 
-    async function initialize() {
-
-        if (
-            initialized
-        ) {
-
-            return;
-
-        }
-
-
-        initialized =
-            true;
-
-
-        debug(
-            "تشغيل نظام النشاط..."
-        );
-
-
-        getElements();
-
-
-        /*
-         * نضيف Animation من الملف نفسه
-         * حتى لا نضطر لتعديل CSS الرئيسي.
-         */
-
-        addActivityAnimationStyles();
-
-
-        setupUI();
-
-        setupGlobalEvents();
-
-        setupVisibility();
-
-        updateSwitch();
-
+    function initialize() {
 
         client =
             getClient();
 
 
-        if (!client) {
+        /*
+         * نقرأ Core بعد تحميل جميع الملفات.
+         */
 
-            debugError(
-                "Supabase client غير موجود."
-            );
+        setTimeout(
+            () => {
 
-            return;
+                readFromCore();
 
-        }
-
-
-        await loadUser();
-
-
-        if (!currentUser) {
-
-            debug(
-                "لا يوجد مستخدم مسجل الدخول."
-            );
-
-            return;
-
-        }
+            },
+            100
+        );
 
 
-        await loadSetting();
+        /*
+         * محاولة ثانية بعد إعطاء Presence
+         * فرصة للتجهيز.
+         */
 
+        setTimeout(
+            () => {
 
-        await createPresence();
+                refreshActivity();
 
-
-        startHeartbeat();
-
-
-        await publishPresence();
+            },
+            1000
+        );
 
 
         debug(
-            "تم تشغيل النشاط بنجاح."
+            "messages-chat-header.js loaded"
         );
 
     }
@@ -1982,5 +1165,6 @@
         initialize();
 
     }
+
 
 })();
