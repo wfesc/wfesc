@@ -2241,15 +2241,9 @@
 
 
             /*
-             * FIX:
-             * The original code was missing the closing
-             * parenthesis here:
-             *
-             * if (Array.isArray(conversations) {
-             *
-             * Correct:
-             *
-             * if (Array.isArray(conversations)) {
+             * FIXED:
+             * Array.isArray must be closed before
+             * opening the if block.
              */
 
             if (
