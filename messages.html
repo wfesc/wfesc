@@ -184,7 +184,8 @@ img{
 
 
 /*
- * حقل كتابة الرسالة يبقى طبيعيًا.
+ * حقل كتابة الرسالة يبقى قابلًا للكتابة.
+ * هذا لا يعني أن محتوى الموقع قابل للنسخ.
  */
 #messageInput,
 #messageInput *{
@@ -198,7 +199,7 @@ img{
 
 
 /*
- * حقول البحث تبقى قابلة للكتابة.
+ * البحث يحتاج إلى الكتابة فقط.
  */
 #messageSearch,
 #messageSearch *{
@@ -206,6 +207,8 @@ img{
     -moz-user-select:text !important;
     -ms-user-select:text !important;
     user-select:text !important;
+
+    -webkit-touch-callout:default !important;
 }
 
 
@@ -220,12 +223,6 @@ img{
     -webkit-user-drag:none !important;
     user-drag:none !important;
 }
-
-
-/*
- * لا نضع pointer-events:none على الصور
- * حتى يبقى الضغط على صورة المستخدم يعمل.
- */
 
 
 /* =========================================================
@@ -908,10 +905,6 @@ img{
     isolation:isolate;
 }
 
-
-/*
- * منع أي عنصر داخل الرسائل من دفع الهيدر أو تغطيته.
- */
 .chat-header > *{
     position:relative;
     z-index:101;
@@ -1215,7 +1208,6 @@ img{
         border-color .22s ease;
 }
 
-
 .message-row.mine
 .message-bubble{
 
@@ -1248,7 +1240,6 @@ img{
         );
 }
 
-
 .message-row.theirs
 .message-bubble{
 
@@ -1280,7 +1271,6 @@ img{
             transparent
         );
 }
-
 
 .message-row.mine
 .message-bubble[data-bubble-shape="pill"],
@@ -1317,7 +1307,6 @@ img{
             7px
         );
 }
-
 
 .message-content{
 
@@ -2753,7 +2742,59 @@ img{
 
     transform:none !important;
 
+    transition:
+        transform .12s ease,
+        opacity .12s ease,
+        visibility .12s ease;
 }
+
+
+/*
+ * عند فتح الكيبورد:
+ * ملف messages-keyboard.js هو الذي يضيف
+ * body.wfesc-keyboard-open.
+ *
+ * هنا CSS فقط ينفذ الحالة.
+ * لا يوجد أي JavaScript خاص بالكيبورد داخل HTML.
+ *
+ * شريط التنقل ينزل إلى الأسفل خلف الكيبورد.
+ */
+body.wfesc-keyboard-open
+.wfesc-navigation-keyboard-lock{
+
+    transform:
+        translateY(
+            calc(
+                100% +
+                var(--navigation-height) +
+                env(safe-area-inset-bottom)
+            )
+        ) !important;
+
+    opacity:0 !important;
+
+    visibility:hidden !important;
+
+    pointer-events:none !important;
+}
+
+
+/*
+ * أثناء الكيبورد لا نسمح لشريط التنقل
+ * أن يصبح فوق واجهة المحادثة.
+ */
+body.wfesc-keyboard-open
+.wfesc-navigation-keyboard-lock,
+body.wfesc-keyboard-open
+.wfesc-navigation-keyboard-lock *{
+
+    pointer-events:none !important;
+}
+
+
+/* =========================================================
+   SEARCH / PAGE
+========================================================= */
 
 .search-section,
 .search-results{
@@ -2800,6 +2841,33 @@ body.wfesc-keyboard-open{
 
 }
 
+
+/*
+ * عند فتح الكيبورد لا نغيّر
+ * position أو transform للمحادثة نفسها.
+ *
+ * messages-keyboard.js هو المسؤول
+ * عن تحديث --keyboard-height
+ * و --composer-bottom.
+ */
+
+#chatView{
+
+    min-height:0;
+
+}
+
+#chatView.open{
+
+    min-height:0;
+
+}
+
+
+/* =========================================================
+   VIEWPORT SUPPORT
+========================================================= */
+
 @supports (height:100dvh){
 
     .chat-view{
@@ -2834,12 +2902,6 @@ body.wfesc-keyboard-open{
 /* =========================================================
    FINAL CHAT LAYOUT LOCK
 ========================================================= */
-
-/*
- * الهيدر يبقى ثابتًا.
- * الرسائل وحدها هي التي تتحرك.
- * الـ composer يبقى فوقه.
- */
 
 #chatView{
     display:none;
@@ -2888,6 +2950,9 @@ body.wfesc-keyboard-open{
    FINAL COPY / SELECTION LOCK
 ========================================================= */
 
+/*
+ * كل واجهة الرسائل غير قابلة للتحديد.
+ */
 #messagesPage *,
 #chatView *,
 #contextMenu *,
@@ -2896,23 +2961,61 @@ body.wfesc-keyboard-open{
 #confirmModal *,
 #notificationsPanel *,
 #settingsSuccessOverlay *{
+
     -webkit-user-select:none !important;
+    -moz-user-select:none !important;
+    -ms-user-select:none !important;
     user-select:none !important;
+
     -webkit-touch-callout:none !important;
 }
 
+
+/*
+ * الاستثناء الوحيد للكتابة.
+ */
 #messageInput,
 #messageInput *{
+
     -webkit-user-select:text !important;
+    -moz-user-select:text !important;
+    -ms-user-select:text !important;
     user-select:text !important;
+
     -webkit-touch-callout:default !important;
 }
 
+
+/*
+ * البحث يحتاج إلى الكتابة.
+ */
 #messageSearch,
 #messageSearch *{
+
     -webkit-user-select:text !important;
+    -moz-user-select:text !important;
+    -ms-user-select:text !important;
     user-select:text !important;
+
     -webkit-touch-callout:default !important;
+}
+
+
+/*
+ * منع سحب الصور.
+ */
+#messagesPage img,
+#chatView img,
+#contextMenu img,
+#activityModal img,
+#messageViewSettingsModal img,
+#confirmModal img,
+#notificationsPanel img,
+#settingsSuccessOverlay img{
+
+    -webkit-user-drag:none !important;
+    user-drag:none !important;
+
 }
 
 </style>
@@ -3917,6 +4020,7 @@ body.wfesc-keyboard-open{
 
 <script src="./messages/messages-settings.js"></script>
 
+<!-- المتحكم الوحيد بمنظومة الكيبورد -->
 <script src="./messages/messages-keyboard.js"></script>
 
 <script src="./messages/messages-activity.js"></script>
@@ -3949,8 +4053,13 @@ body.wfesc-keyboard-open{
     "use strict";
 
     /*
-     * منع تحديد النص داخل نظام الرسائل.
-     * نستثني حقول الإدخال والبحث حتى تبقى قابلة للكتابة.
+     * حماية الواجهة من التحديد والنسخ والسحب.
+     *
+     * مهم:
+     * هذا الكود لا يتحكم بالكيبورد نهائيًا.
+     * مسؤولية الكيبورد بالكامل في:
+     *
+     * messages-keyboard.js
      */
 
     function isProtectedArea(target){
@@ -3967,6 +4076,7 @@ body.wfesc-keyboard-open{
             "#notificationsPanel, " +
             "#settingsSuccessOverlay"
         );
+
     }
 
 
@@ -3977,9 +4087,13 @@ body.wfesc-keyboard-open{
         return !!target.closest(
             "#messageInput, #messageSearch"
         );
+
     }
 
 
+    /*
+     * منع تحديد محتوى الواجهة.
+     */
     document.addEventListener(
         "selectstart",
         function(event){
@@ -3988,7 +4102,9 @@ body.wfesc-keyboard-open{
                 isProtectedArea(event.target) &&
                 !isEditable(event.target)
             ){
+
                 event.preventDefault();
+
             }
 
         },
@@ -3996,6 +4112,12 @@ body.wfesc-keyboard-open{
     );
 
 
+    /*
+     * منع نسخ محتوى الواجهة.
+     *
+     * حقول الكتابة مستثناة حتى لا نتدخل
+     * في عملية الكتابة نفسها.
+     */
     document.addEventListener(
         "copy",
         function(event){
@@ -4004,14 +4126,18 @@ body.wfesc-keyboard-open{
                 isProtectedArea(event.target) &&
                 !isEditable(event.target)
             ){
+
                 event.preventDefault();
 
                 if(event.clipboardData){
+
                     event.clipboardData.setData(
                         "text/plain",
                         ""
                     );
+
                 }
+
             }
 
         },
@@ -4019,6 +4145,9 @@ body.wfesc-keyboard-open{
     );
 
 
+    /*
+     * منع القص.
+     */
     document.addEventListener(
         "cut",
         function(event){
@@ -4027,7 +4156,9 @@ body.wfesc-keyboard-open{
                 isProtectedArea(event.target) &&
                 !isEditable(event.target)
             ){
+
                 event.preventDefault();
+
             }
 
         },
@@ -4035,6 +4166,10 @@ body.wfesc-keyboard-open{
     );
 
 
+    /*
+     * منع قائمة الضغط المطول / كليك يمين
+     * على المحتوى المحمي.
+     */
     document.addEventListener(
         "contextmenu",
         function(event){
@@ -4043,7 +4178,9 @@ body.wfesc-keyboard-open{
                 isProtectedArea(event.target) &&
                 !isEditable(event.target)
             ){
+
                 event.preventDefault();
+
             }
 
         },
@@ -4051,6 +4188,9 @@ body.wfesc-keyboard-open{
     );
 
 
+    /*
+     * منع سحب الصور.
+     */
     document.addEventListener(
         "dragstart",
         function(event){
@@ -4062,7 +4202,9 @@ body.wfesc-keyboard-open{
                 target.tagName === "IMG" &&
                 isProtectedArea(target)
             ){
+
                 event.preventDefault();
+
             }
 
         },
@@ -4071,7 +4213,7 @@ body.wfesc-keyboard-open{
 
 
     /*
-     * تنظيف أي تحديد قد يكون بدأ قبل تحميل الحماية.
+     * تنظيف أي تحديد حدث بالخطأ.
      */
     document.addEventListener(
         "selectionchange",
@@ -4096,7 +4238,9 @@ body.wfesc-keyboard-open{
                 isProtectedArea(element) &&
                 !isEditable(element)
             ){
+
                 selection.removeAllRanges();
+
             }
 
         },
