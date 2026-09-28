@@ -2508,9 +2508,6 @@
         /*
          * If selected result belongs to the list,
          * start exactly there.
-         *
-         * Normally this will be index 0 when the
-         * user clicked the newest result.
          */
         let selectedIndex =
             conversationSearchRows.findIndex(
@@ -2722,10 +2719,6 @@
                     }
 
 
-                    /*
-                     * Do not destroy the active
-                     * green frame on every DOM change.
-                     */
                     applyCurrentConversationSearch(
                         currentSearchText,
                         false
@@ -2782,10 +2775,6 @@
         }
 
 
-        /*
-         * If we already have search rows,
-         * build the conversation-specific list.
-         */
         if (searchRows.length) {
 
             const target =
@@ -2839,10 +2828,6 @@
         );
 
 
-        /*
-         * If a specific result was pending,
-         * navigate to it after rendering.
-         */
         if (pendingMessageId) {
 
             setTimeout(
@@ -2961,10 +2946,6 @@
         );
 
 
-        /*
-         * Fallback for layouts that don't use
-         * .message-bubble.
-         */
         if (!matches.length) {
 
             const contents =
@@ -3027,13 +3008,6 @@
             matches;
 
 
-        /*
-         * Do NOT replace the navigation index
-         * with DOM order.
-         *
-         * The authoritative order is searchRows:
-         * newest -> oldest.
-         */
         if (
             conversationSearchRows.length
         ) {
@@ -3390,19 +3364,6 @@
         }
 
 
-        /*
-         * Never wrap around.
-         *
-         * Newest:
-         * 1 / 10
-         *
-         * ↑:
-         * 2 / 10
-         *
-         * ...
-         *
-         * 10 / 10
-         */
         const nextIndex =
             currentMatchIndex +
             direction;
@@ -3538,9 +3499,6 @@
                 : "none";
 
 
-        /*
-         * Disable arrows at boundaries.
-         */
         if (els.matchUp) {
 
             els.matchUp.disabled =
@@ -3572,9 +3530,6 @@
             !conversationSearchRows.length
         ) {
 
-            /*
-             * Fallback for old search sessions.
-             */
             if (
                 pendingMessageId ||
                 pendingMessageContent
@@ -3708,12 +3663,6 @@
         }
 
 
-        /*
-         * Try loading older messages gradually.
-         *
-         * The exact number is intentionally limited
-         * so a bad backend cannot create an infinite loop.
-         */
         const maxAttempts = 40;
 
 
@@ -3778,10 +3727,6 @@
                     getRenderedMessageCount();
 
 
-                /*
-                 * If the loader reports false/null and
-                 * the DOM did not change, stop.
-                 */
                 if (
                     result === false &&
                     afterCount <= beforeCount
@@ -4035,10 +3980,6 @@
         }
 
 
-        /*
-         * Remove old active state from every
-         * previously selected message.
-         */
         const container =
             document.getElementById(
                 "chatMessages"
@@ -4064,9 +4005,6 @@
         }
 
 
-        /*
-         * Force animation restart.
-         */
         target.classList.remove(
             "wfesc-search-current-match"
         );
