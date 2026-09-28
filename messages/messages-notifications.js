@@ -1,14 +1,6 @@
 /* =========================================================
    WFESC MESSAGES NOTIFICATIONS
    File: messages/messages-notifications.js
-
-   الوظائف:
-   - إشعار عند وصول رسالة من مستخدم آخر
-   - يعمل داخل المحادثة وخارجها
-   - لا يصدر صوتًا لرسائل المستخدم نفسه
-   - يحترم كتم المحادثة
-   - الصوت من ملف خارجي
-   - زر 🔔 / 🔕 يعمل لكل محادثة
 ========================================================= */
 
 (function () {
@@ -30,33 +22,30 @@
        STATE
     ===================================================== */
 
-    let currentConversationId = null;
+    let audio = null;
 
     let realtimeChannel = null;
 
     let realtimeStarted = false;
 
-    let audio = null;
-
-    let audioUnlocked = false;
-
-    let initialized = false;
+    let bound = false;
 
 
     /* =====================================================
-       CORE
+       SUPABASE
     ===================================================== */
-
-    function getCore() {
-
-        return window.WFESC_MESSAGES_CORE || null;
-
-    }
-
 
     function getClient() {
 
-        const core = getCore();
+        if (window.WFESCSupabase) {
+
+            return window.WFESCSupabase;
+
+        }
+
+
+        const core =
+            window.WFESC_MESSAGES_CORE;
 
 
         if (
@@ -69,41 +58,26 @@
         }
 
 
-        if (
-            window.WFESCSupabase
-        ) {
-
-            return window.WFESCSupabase;
-
-        }
-
-
         return null;
 
     }
 
 
-    async function getUserId() {
+    /* =====================================================
+       USER
+    ===================================================== */
 
-        const core = getCore();
-
-
-        if (
-            core &&
-            core.currentUser &&
-            core.currentUser.id
-        ) {
-
-            return core.currentUser.id;
-
-        }
-
+    async function getUser() {
 
         const client =
             getClient();
 
 
         if (!client) {
+
+            console.error(
+                "WFESC NOTIFICATIONS: Supabase client not found"
+            );
 
             return null;
 
@@ -122,14 +96,15 @@
                 result.data.user
             ) {
 
-                return result.data.user.id;
+                return result.data.user;
 
             }
+
 
         } catch (error) {
 
             console.error(
-                "WFESC notifications: getUser error",
+                "WFESC NOTIFICATIONS: getUser error",
                 error
             );
 
@@ -141,53 +116,14 @@
     }
 
 
+    /* =====================================================
+       CURRENT CONVERSATION
+    ===================================================== */
+
     function getConversationId() {
 
-        const core = getCore();
-
-
         /*
-         * الطريقة الأولى:
-         * من API الأساسي.
-         */
-
-        if (
-            core &&
-            typeof core.getCurrentConversationId ===
-            "function"
-        ) {
-
-            const id =
-                core.getCurrentConversationId();
-
-
-            if (id) {
-
-                return id;
-
-            }
-
-        }
-
-
-        /*
-         * الطريقة الثانية:
-         * من قيمة الـ API المكشوفة.
-         */
-
-        if (
-            core &&
-            core.currentConversationId
-        ) {
-
-            return core.currentConversationId;
-
-        }
-
-
-        /*
-         * الطريقة الثالثة:
-         * من chat header.
+         * أولاً من Chat Header
          */
 
         const header =
@@ -213,7 +149,44 @@
         }
 
 
-        return currentConversationId || null;
+        /*
+         * ثانيًا من Core
+         */
+
+        const core =
+            window.WFESC_MESSAGES_CORE;
+
+
+        if (
+            core &&
+            typeof core.getCurrentConversationId ===
+            "function"
+        ) {
+
+            const id =
+                core.getCurrentConversationId();
+
+
+            if (id) {
+
+                return id;
+
+            }
+
+        }
+
+
+        if (
+            core &&
+            core.currentConversationId
+        ) {
+
+            return core.currentConversationId;
+
+        }
+
+
+        return null;
 
     }
 
@@ -243,22 +216,17 @@
             NOTIFICATION_VOLUME;
 
 
-        /*
-         * تحميل الملف مسبقًا.
-         */
+        audio.addEventListener(
+            "error",
+            function () {
 
-        try {
+                console.error(
+                    "WFESC NOTIFICATIONS: audio file could not be loaded:",
+                    NOTIFICATION_SOUND
+                );
 
-            audio.load();
-
-        } catch (error) {
-
-            console.warn(
-                "WFESC notifications: audio load warning",
-                error
-            );
-
-        }
+            }
+        );
 
 
         return audio;
@@ -272,19 +240,12 @@
             createAudio();
 
 
-        if (
-            !sound ||
-            audioUnlocked
-        ) {
+        if (!sound) {
 
             return;
 
         }
 
-
-        /*
-         * مجرد تجربة صامتة لفتح صلاحية الصوت.
-         */
 
         try {
 
@@ -293,17 +254,17 @@
             sound.currentTime = 0;
 
 
-            const promise =
+            const playPromise =
                 sound.play();
 
 
             if (
-                promise &&
-                typeof promise.then ===
+                playPromise &&
+                typeof playPromise.then ===
                 "function"
             ) {
 
-                promise
+                playPromise
                     .then(function () {
 
                         sound.pause();
@@ -312,24 +273,12 @@
 
                         sound.muted = false;
 
-                        audioUnlocked = true;
-
                     })
                     .catch(function () {
 
                         sound.muted = false;
 
                     });
-
-            } else {
-
-                sound.pause();
-
-                sound.currentTime = 0;
-
-                sound.muted = false;
-
-                audioUnlocked = true;
 
             }
 
@@ -342,7 +291,7 @@
     }
 
 
-    async function playNotificationSound() {
+    function playSound() {
 
         const sound =
             createAudio();
@@ -367,21 +316,21 @@
             sound.muted = false;
 
 
-            const promise =
+            const playPromise =
                 sound.play();
 
 
             if (
-                promise &&
-                typeof promise.catch ===
+                playPromise &&
+                typeof playPromise.catch ===
                 "function"
             ) {
 
-                await promise.catch(
+                playPromise.catch(
                     function (error) {
 
                         console.warn(
-                            "WFESC notifications: sound blocked",
+                            "WFESC NOTIFICATIONS: browser blocked sound",
                             error
                         );
 
@@ -393,7 +342,7 @@
         } catch (error) {
 
             console.error(
-                "WFESC notifications: sound error",
+                "WFESC NOTIFICATIONS: sound error",
                 error
             );
 
@@ -403,279 +352,22 @@
 
 
     /* =====================================================
-       TOAST
+       MUTE
     ===================================================== */
 
-    function ensureToastStyle() {
-
-        if (
-            document.getElementById(
-                "wfescNotificationStyle"
-            )
-        ) {
-
-            return;
-
-        }
-
-
-        const style =
-            document.createElement(
-                "style"
-            );
-
-
-        style.id =
-            "wfescNotificationStyle";
-
-
-        style.textContent = `
-
-            #wfescMessageNotificationToast {
-
-                position: fixed;
-
-                right: 18px;
-
-                bottom: 18px;
-
-                z-index: 999999;
-
-                width: min(
-                    320px,
-                    calc(100vw - 36px)
-                );
-
-                padding: 14px 16px;
-
-                border-radius: 15px;
-
-                background: #111;
-
-                color: #fff;
-
-                border: 1px solid
-                    rgba(255,255,255,.12);
-
-                box-shadow:
-                    0 12px 35px
-                    rgba(0,0,0,.45);
-
-                direction: rtl;
-
-                font-family:
-                    Arial,
-                    Tahoma,
-                    sans-serif;
-
-                opacity: 0;
-
-                transform:
-                    translateY(15px);
-
-                transition:
-                    opacity .2s ease,
-                    transform .2s ease;
-
-                pointer-events: none;
-
-            }
-
-
-            #wfescMessageNotificationToast.show {
-
-                opacity: 1;
-
-                transform:
-                    translateY(0);
-
-            }
-
-
-            #wfescMessageNotificationToast
-            .wfesc-notification-title {
-
-                font-weight: 700;
-
-                margin-bottom: 5px;
-
-            }
-
-
-            #wfescMessageNotificationToast
-            .wfesc-notification-message {
-
-                opacity: .82;
-
-                overflow: hidden;
-
-                white-space: nowrap;
-
-                text-overflow: ellipsis;
-
-            }
-
-
-            #chatNotificationButton
-            .wfesc-chat-notifications-muted {
-
-                opacity: .75;
-
-            }
-
-
-            #chatNotificationButton
-            .wfesc-notifications-loading {
-
-                opacity: .55;
-
-            }
-
-        `;
-
-
-        document.head.appendChild(
-            style
-        );
-
-    }
-
-
-    function escapeHtml(value) {
-
-        return String(
-            value || ""
-        )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-    }
-
-
-    function showNotification(
-        sender,
-        message
-    ) {
-
-        ensureToastStyle();
-
-
-        let toast =
-            document.getElementById(
-                "wfescMessageNotificationToast"
-            );
-
-
-        if (!toast) {
-
-            toast =
-                document.createElement(
-                    "div"
-                );
-
-
-            toast.id =
-                "wfescMessageNotificationToast";
-
-
-            document.body.appendChild(
-                toast
-            );
-
-        }
-
-
-        toast.innerHTML = `
-
-            <div class="wfesc-notification-title">
-                ${escapeHtml(
-                    sender || "رسالة جديدة"
-                )}
-            </div>
-
-            <div class="wfesc-notification-message">
-                ${escapeHtml(
-                    message || "لديك رسالة جديدة"
-                )}
-            </div>
-
-        `;
-
-
-        toast.classList.remove(
-            "show"
-        );
-
-
-        requestAnimationFrame(
-            function () {
-
-                toast.classList.add(
-                    "show"
-                );
-
-            }
-        );
-
-
-        clearTimeout(
-            toast.__wfescTimer
-        );
-
-
-        toast.__wfescTimer =
-            setTimeout(
-                function () {
-
-                    toast.classList.remove(
-                        "show"
-                    );
-
-                },
-                3500
-            );
-
-    }
-
-
-    /* =====================================================
-       MUTED
-    ===================================================== */
-
-    async function isMuted(
-        conversationId
+    async function getMuted(
+        conversationId,
+        userId
     ) {
 
         const client =
             getClient();
 
 
-        const userId =
-            await getUserId();
-
-
         if (
             !client ||
-            !userId ||
-            !conversationId
+            !conversationId ||
+            !userId
         ) {
 
             return false;
@@ -707,7 +399,7 @@
             if (result.error) {
 
                 console.error(
-                    "WFESC notifications: muted check error",
+                    "WFESC NOTIFICATIONS: mute read error",
                     result.error
                 );
 
@@ -724,7 +416,7 @@
         } catch (error) {
 
             console.error(
-                "WFESC notifications: muted check exception",
+                "WFESC NOTIFICATIONS: mute read exception",
                 error
             );
 
@@ -735,138 +427,20 @@
     }
 
 
-    /* =====================================================
-       BUTTON
-    ===================================================== */
-
-    function getButton() {
-
-        return document.getElementById(
-            "chatNotificationButton"
-        );
-
-    }
-
-
-    function renderButton(
-        muted
-    ) {
-
-        const button =
-            getButton();
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        if (muted) {
-
-            button.textContent =
-                "🔕";
-
-            button.classList.add(
-                "wfesc-chat-notifications-muted"
-            );
-
-            button.setAttribute(
-                "aria-label",
-                "تشغيل إشعارات المحادثة"
-            );
-
-            button.setAttribute(
-                "title",
-                "الإشعارات مكتومة"
-            );
-
-        } else {
-
-            button.textContent =
-                "🔔";
-
-            button.classList.remove(
-                "wfesc-chat-notifications-muted"
-            );
-
-            button.setAttribute(
-                "aria-label",
-                "كتم إشعارات المحادثة"
-            );
-
-            button.setAttribute(
-                "title",
-                "كتم إشعارات المحادثة"
-            );
-
-        }
-
-    }
-
-
-    async function refreshButton() {
-
-        const conversationId =
-            getConversationId();
-
-
-        currentConversationId =
-            conversationId || null;
-
-
-        if (!conversationId) {
-
-            return;
-
-        }
-
-
-        const muted =
-            await isMuted(
-                conversationId
-            );
-
-
-        /*
-         * لا تغيّر الزر إذا المستخدم
-         * انتقل لمحادثة ثانية أثناء الطلب.
-         */
-
-        if (
-            getConversationId() !==
-            conversationId
-        ) {
-
-            return;
-
-        }
-
-
-        renderButton(
-            muted
-        );
-
-    }
-
-
-    /* =====================================================
-       TOGGLE
-    ===================================================== */
-
     async function toggleMute() {
 
         const button =
-            getButton();
+            document.getElementById(
+                "chatNotificationButton"
+            );
 
 
         const client =
             getClient();
 
 
-        const userId =
-            await getUserId();
+        const user =
+            await getUser();
 
 
         const conversationId =
@@ -874,26 +448,62 @@
 
 
         console.log(
-            "WFESC notifications toggle:",
+            "WFESC NOTIFICATIONS TOGGLE",
             {
-                button: !!button,
-                client: !!client,
-                userId: userId,
+                buttonFound:
+                    !!button,
+
+                clientFound:
+                    !!client,
+
+                userId:
+                    user
+                        ? user.id
+                        : null,
+
                 conversationId:
                     conversationId
             }
         );
 
 
-        if (
-            !button ||
-            !client ||
-            !userId ||
-            !conversationId
-        ) {
+        if (!button) {
 
-            console.warn(
-                "WFESC notifications: toggle requirements missing"
+            console.error(
+                "WFESC NOTIFICATIONS: chatNotificationButton not found"
+            );
+
+            return;
+
+        }
+
+
+        if (!client) {
+
+            console.error(
+                "WFESC NOTIFICATIONS: Supabase client not found"
+            );
+
+            return;
+
+        }
+
+
+        if (!user) {
+
+            console.error(
+                "WFESC NOTIFICATIONS: user not found"
+            );
+
+            return;
+
+        }
+
+
+        if (!conversationId) {
+
+            console.error(
+                "WFESC NOTIFICATIONS: current conversation not found"
             );
 
             return;
@@ -918,8 +528,9 @@
         try {
 
             const oldMuted =
-                await isMuted(
-                    conversationId
+                await getMuted(
+                    conversationId,
+                    user.id
                 );
 
 
@@ -942,14 +553,14 @@
                     )
                     .eq(
                         "user_id",
-                        userId
+                        user.id
                     );
 
 
             if (result.error) {
 
                 console.error(
-                    "WFESC notifications: mute update error",
+                    "WFESC NOTIFICATIONS: mute update failed",
                     result.error
                 );
 
@@ -958,13 +569,49 @@
             }
 
 
-            renderButton(
-                newMuted
-            );
+            if (newMuted) {
+
+                button.textContent =
+                    "🔕";
+
+                button.setAttribute(
+                    "aria-label",
+                    "تشغيل إشعارات المحادثة"
+                );
+
+                button.setAttribute(
+                    "title",
+                    "الإشعارات مكتومة"
+                );
+
+                button.classList.add(
+                    "wfesc-muted"
+                );
+
+            } else {
+
+                button.textContent =
+                    "🔔";
+
+                button.setAttribute(
+                    "aria-label",
+                    "كتم إشعارات المحادثة"
+                );
+
+                button.setAttribute(
+                    "title",
+                    "كتم إشعارات المحادثة"
+                );
+
+                button.classList.remove(
+                    "wfesc-muted"
+                );
+
+            }
 
 
             console.log(
-                "WFESC notifications: mute changed",
+                "WFESC NOTIFICATIONS: mute changed to",
                 newMuted
             );
 
@@ -972,7 +619,7 @@
         } catch (error) {
 
             console.error(
-                "WFESC notifications: toggle error",
+                "WFESC NOTIFICATIONS: toggle exception",
                 error
             );
 
@@ -987,34 +634,113 @@
 
 
     /* =====================================================
-       BUTTON EVENT
+       LOAD CURRENT MUTE STATE
+    ===================================================== */
+
+    async function loadMuteState() {
+
+        const button =
+            document.getElementById(
+                "chatNotificationButton"
+            );
+
+
+        if (!button) {
+
+            return;
+
+        }
+
+
+        const user =
+            await getUser();
+
+
+        const conversationId =
+            getConversationId();
+
+
+        if (
+            !user ||
+            !conversationId
+        ) {
+
+            return;
+
+        }
+
+
+        const muted =
+            await getMuted(
+                conversationId,
+                user.id
+            );
+
+
+        if (muted) {
+
+            button.textContent =
+                "🔕";
+
+            button.classList.add(
+                "wfesc-muted"
+            );
+
+            button.setAttribute(
+                "title",
+                "الإشعارات مكتومة"
+            );
+
+        } else {
+
+            button.textContent =
+                "🔔";
+
+            button.classList.remove(
+                "wfesc-muted"
+            );
+
+            button.setAttribute(
+                "title",
+                "كتم إشعارات المحادثة"
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       BUTTON
     ===================================================== */
 
     function bindButton() {
 
         const button =
-            getButton();
+            document.getElementById(
+                "chatNotificationButton"
+            );
 
 
         if (!button) {
+
+            console.warn(
+                "WFESC NOTIFICATIONS: button not found yet"
+            );
 
             return false;
 
         }
 
 
-        if (
-            button.dataset.wfescNotificationsBound ===
-            "true"
-        ) {
+        if (bound) {
 
             return true;
 
         }
 
 
-        button.dataset.wfescNotificationsBound =
-            "true";
+        bound = true;
 
 
         button.addEventListener(
@@ -1028,16 +754,19 @@
 
                 unlockAudio();
 
+
                 toggleMute();
 
-            },
-            false
+            }
         );
 
 
         console.log(
-            "WFESC notifications: 🔔 button connected"
+            "WFESC NOTIFICATIONS: 🔔 BUTTON CONNECTED"
         );
+
+
+        loadMuteState();
 
 
         return true;
@@ -1046,80 +775,10 @@
 
 
     /* =====================================================
-       CORE EVENTS
-    ===================================================== */
-
-    function setupCoreEvents() {
-
-        document.addEventListener(
-            "wfesc:chat-header-refresh",
-            function (event) {
-
-                const detail =
-                    event &&
-                    event.detail
-                        ? event.detail
-                        : {};
-
-
-                currentConversationId =
-                    detail.conversationId ||
-                    null;
-
-
-                setTimeout(
-                    function () {
-
-                        bindButton();
-
-                        refreshButton();
-
-                    },
-                    0
-                );
-
-            }
-        );
-
-
-        document.addEventListener(
-            "visibilitychange",
-            function () {
-
-                if (
-                    document.visibilityState ===
-                    "visible"
-                ) {
-
-                    bindButton();
-
-                    refreshButton();
-
-                }
-
-            }
-        );
-
-
-        window.addEventListener(
-            "focus",
-            function () {
-
-                bindButton();
-
-                refreshButton();
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
        INCOMING MESSAGE
     ===================================================== */
 
-    async function handleIncomingMessage(
+    async function handleMessage(
         payload
     ) {
 
@@ -1138,16 +797,16 @@
 
 
         console.log(
-            "WFESC notifications: new message",
+            "WFESC NOTIFICATIONS: NEW MESSAGE",
             message
         );
 
 
-        const userId =
-            await getUserId();
+        const user =
+            await getUser();
 
 
-        if (!userId) {
+        if (!user) {
 
             return;
 
@@ -1155,7 +814,7 @@
 
 
         /*
-         * رسالة المستخدم نفسه:
+         * الرسالة من نفس المستخدم:
          * لا صوت ولا إشعار.
          */
 
@@ -1164,7 +823,7 @@
                 message.sender_id
             ) ===
             String(
-                userId
+                user.id
             )
         ) {
 
@@ -1173,31 +832,21 @@
         }
 
 
-        const conversationId =
-            message.conversation_id;
-
-
-        if (!conversationId) {
-
-            return;
-
-        }
+        const muted =
+            await getMuted(
+                message.conversation_id,
+                user.id
+            );
 
 
         /*
-         * الكتم خاص بالمستلم.
+         * المحادثة مكتومة.
          */
-
-        const muted =
-            await isMuted(
-                conversationId
-            );
-
 
         if (muted) {
 
             console.log(
-                "WFESC notifications: conversation muted"
+                "WFESC NOTIFICATIONS: MESSAGE MUTED"
             );
 
             return;
@@ -1206,16 +855,14 @@
 
 
         /*
-         * الرسالة من الطرف الآخر:
-         * الصوت يعمل سواء داخل المحادثة
-         * أو خارجها.
+         * الطرف الآخر أرسل.
+         * الصوت يعمل داخل وخارج المحادثة.
          */
 
-        await playNotificationSound();
+        playSound();
 
 
-        showNotification(
-            "رسالة جديدة",
+        showToast(
             message.content ||
             "لديك رسالة جديدة"
         );
@@ -1224,46 +871,114 @@
 
 
     /* =====================================================
-       REALTIME
+       TOAST
     ===================================================== */
 
-    function stopRealtime() {
+    function showToast(
+        message
+    ) {
 
-        const client =
-            getClient();
+        let toast =
+            document.getElementById(
+                "wfescMessageToast"
+            );
 
 
-        if (
-            client &&
-            realtimeChannel
-        ) {
+        if (!toast) {
 
-            try {
-
-                client.removeChannel(
-                    realtimeChannel
+            toast =
+                document.createElement(
+                    "div"
                 );
 
-            } catch (error) {
 
-                console.error(
-                    "WFESC notifications: remove channel error",
-                    error
-                );
+            toast.id =
+                "wfescMessageToast";
 
-            }
+
+            toast.style.position =
+                "fixed";
+
+            toast.style.right =
+                "18px";
+
+            toast.style.bottom =
+                "18px";
+
+            toast.style.zIndex =
+                "999999";
+
+            toast.style.padding =
+                "13px 16px";
+
+            toast.style.borderRadius =
+                "14px";
+
+            toast.style.background =
+                "#111";
+
+            toast.style.color =
+                "#fff";
+
+            toast.style.border =
+                "1px solid rgba(255,255,255,.12)";
+
+            toast.style.direction =
+                "rtl";
+
+            toast.style.maxWidth =
+                "calc(100vw - 36px)";
+
+            toast.style.fontFamily =
+                "Arial,Tahoma,sans-serif";
+
+            toast.style.boxShadow =
+                "0 10px 30px rgba(0,0,0,.4)";
+
+            toast.style.opacity =
+                "0";
+
+            toast.style.transition =
+                "opacity .2s ease";
+
+
+            document.body.appendChild(
+                toast
+            );
 
         }
 
 
-        realtimeChannel =
-            null;
+        toast.textContent =
+            message;
 
-        realtimeStarted =
-            false;
+
+        toast.style.opacity =
+            "1";
+
+
+        clearTimeout(
+            toast.__timer
+        );
+
+
+        toast.__timer =
+            setTimeout(
+                function () {
+
+                    toast.style.opacity =
+                        "0";
+
+                },
+                3000
+            );
 
     }
 
+
+    /* =====================================================
+       REALTIME
+    ===================================================== */
 
     function startRealtime() {
 
@@ -1273,18 +988,18 @@
 
         if (!client) {
 
-            console.warn(
-                "WFESC notifications: Supabase client not ready"
+            console.error(
+                "WFESC NOTIFICATIONS: cannot start realtime, client missing"
             );
 
-            return false;
+            return;
 
         }
 
 
         if (realtimeStarted) {
 
-            return true;
+            return;
 
         }
 
@@ -1294,14 +1009,14 @@
 
 
         console.log(
-            "WFESC notifications: starting realtime..."
+            "WFESC NOTIFICATIONS: starting realtime"
         );
 
 
         realtimeChannel =
             client
                 .channel(
-                    "wfesc-message-notifications-realtime"
+                    "wfesc-notifications-channel"
                 )
                 .on(
                     "postgres_changes",
@@ -1315,7 +1030,7 @@
                     },
                     function (payload) {
 
-                        handleIncomingMessage(
+                        handleMessage(
                             payload
                         );
 
@@ -1325,144 +1040,147 @@
                     function (status) {
 
                         console.log(
-                            "WFESC notifications realtime:",
+                            "WFESC NOTIFICATIONS REALTIME:",
                             status
                         );
 
 
                         if (
                             status ===
-                            "CHANNEL_ERROR"
+                            "SUBSCRIBED"
                         ) {
 
-                            realtimeStarted =
-                                false;
-
-                        }
-
-
-                        if (
-                            status ===
-                            "TIMED_OUT"
-                        ) {
-
-                            realtimeStarted =
-                                false;
+                            console.log(
+                                "WFESC NOTIFICATIONS: REALTIME CONNECTED"
+                            );
 
                         }
 
                     }
                 );
 
-
-        return true;
-
     }
+
+
+    /* =====================================================
+       CHAT CHANGE
+    ===================================================== */
+
+    document.addEventListener(
+        "wfesc:chat-header-refresh",
+        function () {
+
+            setTimeout(
+                function () {
+
+                    bindButton();
+
+                    loadMuteState();
+
+                },
+                50
+            );
+
+        }
+    );
 
 
     /* =====================================================
        AUDIO UNLOCK
     ===================================================== */
 
-    function setupAudioUnlock() {
+    [
+        "click",
+        "touchstart",
+        "pointerdown",
+        "keydown"
+    ]
+    .forEach(
+        function (eventName) {
 
-        const events = [
-            "click",
-            "touchstart",
-            "pointerdown",
-            "keydown"
-        ];
+            document.addEventListener(
+                eventName,
+                unlockAudio,
+                {
+                    capture:
+                        true,
+                    passive:
+                        true
+                }
+            );
+
+        }
+    );
 
 
-        events.forEach(
-            function (eventName) {
+    /* =====================================================
+       BOOT
+    ===================================================== */
 
-                document.addEventListener(
-                    eventName,
-                    unlockAudio,
-                    {
-                        passive:
-                            true,
-                        capture:
-                            true
-                    }
-                );
+    function boot() {
 
-            }
+        createAudio();
+
+        bindButton();
+
+        startRealtime();
+
+
+        setTimeout(
+            function () {
+
+                bindButton();
+
+                loadMuteState();
+
+            },
+            300
+        );
+
+
+        setTimeout(
+            function () {
+
+                bindButton();
+
+                loadMuteState();
+
+            },
+            1000
+        );
+
+
+        setTimeout(
+            function () {
+
+                bindButton();
+
+                loadMuteState();
+
+            },
+            2000
         );
 
     }
 
 
-    /* =====================================================
-       INITIALIZE
-    ===================================================== */
+    if (
+        document.readyState ===
+        "loading"
+    ) {
 
-    function initialize() {
-
-        if (initialized) {
-
-            return;
-
-        }
-
-
-        initialized =
-            true;
-
-
-        console.log(
-            "WFESC notifications: initializing..."
-        );
-
-
-        ensureToastStyle();
-
-        createAudio();
-
-        setupAudioUnlock();
-
-        setupCoreEvents();
-
-        bindButton();
-
-        refreshButton();
-
-        startRealtime();
-
-
-        /*
-         * لأن بعض عناصر المحادثة قد تُنشأ
-         * بعد تحميل الصفحة.
-         */
-
-        const retryTimes = [
-            300,
-            700,
-            1200,
-            2000,
-            3500
-        ];
-
-
-        retryTimes.forEach(
-            function (delay) {
-
-                setTimeout(
-                    function () {
-
-                        bindButton();
-
-                        refreshButton();
-
-                        startRealtime();
-
-                    },
-                    delay
-                );
-
+        document.addEventListener(
+            "DOMContentLoaded",
+            boot,
+            {
+                once:
+                    true
             }
         );
+
+    } else {
+
+        boot();
 
     }
 
@@ -1473,53 +1191,22 @@
 
     window.WFESC_MESSAGES_NOTIFICATIONS = {
 
-        getConversationId:
-            getConversationId,
-
-        isMuted:
-            isMuted,
-
         toggleMute:
             toggleMute,
 
-        refresh:
-            refreshButton,
+        loadMuteState:
+            loadMuteState,
 
         playSound:
-            playNotificationSound,
+            playSound,
 
         startRealtime:
             startRealtime,
 
-        stopRealtime:
-            stopRealtime
+        getConversationId:
+            getConversationId
 
     };
-
-
-    /* =====================================================
-       START
-    ===================================================== */
-
-    if (
-        document.readyState ===
-        "loading"
-    ) {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initialize,
-            {
-                once:
-                    true
-            }
-        );
-
-    } else {
-
-        initialize();
-
-    }
 
 
 })();
