@@ -4,7 +4,7 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       FINAL FIXED VERSION
+       FINAL FIXED VERSION + INFINITE MESSAGE LOADING
 
        - Supabase
        - المستخدم الحالي
@@ -23,6 +23,10 @@
        - منع وميض المحادثة عند فتحها
        - إصلاح بقاء المحادثات الجديدة
        - إصلاح تحديث قائمة المحادثات عند الخروج
+       - تحميل الرسائل القديمة عند السحب للأعلى
+       - يبدأ من آخر الرسائل
+       - لا يوجد حد إجمالي للرسائل المحفوظة
+       - الحفاظ على مكان التمرير أثناء تحميل القديم
     ============================================================
     */
 
@@ -93,6 +97,22 @@
     const TYPING_REMOTE_TIMEOUT =
         2600;
 
+    /*
+     * عدد الرسائل التي نحملها في كل دفعة.
+     *
+     * هذا ليس حد المحادثة.
+     * هو فقط حجم الدفعة التي تظهر في الواجهة.
+     */
+    const MESSAGE_PAGE_SIZE =
+        50;
+
+    /*
+     * عندما يصل المستخدم قريباً جداً من أعلى
+     * نبدأ تحميل الرسائل الأقدم.
+     */
+    const MESSAGE_TOP_THRESHOLD =
+        80;
+
 
     /* =========================================================
        STATE
@@ -126,6 +146,20 @@
     let lastRenderedMessageId = null;
 
     let openingConversation = false;
+
+    /*
+     * =========================================================
+     * INFINITE MESSAGE LOADING STATE
+     * =========================================================
+     */
+
+    let loadingOlderMessages = false;
+
+    let hasOlderMessages = true;
+
+    let messagesScrollListenerAttached = false;
+
+    let olderMessagesLoadToken = 0;
 
 
     /* =========================================================
@@ -413,6 +447,52 @@
             String(senderId) ===
             String(currentUser.id)
         );
+    }
+
+
+    /* =========================================================
+       MESSAGE SORT
+    ========================================================= */
+
+    function sortMessages(messages) {
+
+        messages.sort(
+            (a, b) => {
+
+                const first =
+                    new Date(
+                        getMessageTime(a) || 0
+                    ).getTime();
+
+                const second =
+                    new Date(
+                        getMessageTime(b) || 0
+                    ).getTime();
+
+                if (
+                    first !== second
+                ) {
+
+                    return first - second;
+                }
+
+                const firstId =
+                    String(
+                        getMessageId(a) || ""
+                    );
+
+                const secondId =
+                    String(
+                        getMessageId(b) || ""
+                    );
+
+                return firstId.localeCompare(
+                    secondId
+                );
+            }
+        );
+
+        return messages;
     }
 
 
@@ -2034,10 +2114,6 @@
                 ) || 0
             ).getTime();
 
-        /*
-         * نبحث من الأحدث إلى الأقدم.
-         * هذا مهم إذا أرسل المستخدم نفس النص أكثر من مرة.
-         */
         for (
             let i =
                 currentMessages.length - 1;
@@ -2263,13 +2339,6 @@
                 message
             );
 
-        /*
-         * هذه العلامة مهمة جداً.
-         *
-         * messages-send.js يفحصها حتى لا يعيد
-         * تحويل الرسالة الحقيقية إلى optimistic
-         * عندما يرجع RPC بعد وصول Realtime.
-         */
         element.dataset.confirmed =
             "true";
 
@@ -2355,10 +2424,6 @@
                 message
             );
 
-        /*
-         * إذا الرسالة الحقيقية موجودة بالفعل،
-         * لا نضيف نسخة ثانية.
-         */
         if (
             messageId != null &&
             findMessageInStateById(
@@ -2369,10 +2434,6 @@
             return false;
         }
 
-
-        /*
-         * استبدال النسخة Optimistic.
-         */
         const optimisticMessage =
             findOptimisticMessageInState(
                 message
@@ -2390,43 +2451,20 @@
                 currentMessages[index] =
                     message;
 
-                currentMessages.sort(
-                    (a, b) => {
-
-                        return (
-                            new Date(
-                                getMessageTime(a) || 0
-                            ).getTime()
-                            -
-                            new Date(
-                                getMessageTime(b) || 0
-                            ).getTime()
-                        );
-                    }
+                sortMessages(
+                    currentMessages
                 );
 
                 return true;
             }
         }
 
-
         currentMessages.push(
             message
         );
 
-        currentMessages.sort(
-            (a, b) => {
-
-                return (
-                    new Date(
-                        getMessageTime(a) || 0
-                    ).getTime()
-                    -
-                    new Date(
-                        getMessageTime(b) || 0
-                    ).getTime()
-                );
-            }
+        sortMessages(
+            currentMessages
         );
 
         return true;
@@ -2470,11 +2508,6 @@
             return;
         }
 
-        /*
-         * إذا المحادثة غير موجودة محلياً،
-         * get_my_conversations هو المصدر الصحيح
-         * لجلبها من Supabase.
-         */
         if (
             !conversationExists(
                 conversationId
@@ -2526,12 +2559,6 @@
                     )
             );
 
-        /*
-         * إذا المحادثة غير موجودة،
-         * لا نحاول صنع Conversation وهمية.
-         *
-         * نعيد تحميلها من Supabase.
-         */
         if (index < 0) {
 
             refreshConversationsFromRealtime(
@@ -2589,23 +2616,9 @@
             return;
         }
 
-
         const conversationId =
             message.conversation_id ??
             message.target_conversation_id;
-
-
-        /*
-         * =====================================================
-         * تحديث قائمة المحادثات دائماً.
-         *
-         * إذا كانت موجودة:
-         * تحديث مباشر.
-         *
-         * إذا غير موجودة:
-         * تحميل من Supabase.
-         * =====================================================
-         */
 
         if (
             conversationExists(
@@ -2624,11 +2637,6 @@
             );
         }
 
-
-        /*
-         * إذا ليست المحادثة المفتوحة،
-         * لا نضيف الرسالة إلى chatMessages.
-         */
         if (
             !messageBelongsToCurrentConversation(
                 message
@@ -2637,16 +2645,10 @@
             return;
         }
 
-
         const messageId =
             getMessageId(
                 message
             );
-
-
-        /* =====================================================
-           1. الرسالة الحقيقية موجودة بالـSTATE
-        ===================================================== */
 
         const stateMessage =
             messageId != null
@@ -2694,11 +2696,6 @@
             return;
         }
 
-
-        /* =====================================================
-           2. البحث عن Optimistic داخل STATE
-        ===================================================== */
-
         const optimisticStateMessage =
             findOptimisticMessageInState(
                 message
@@ -2720,7 +2717,6 @@
                 ] =
                     message;
             }
-
 
             let optimisticElement =
                 findDomMessageById(
@@ -2745,7 +2741,6 @@
                 );
             }
 
-
             clearTypingUser(
                 getMessageSenderId(
                     message
@@ -2754,11 +2749,6 @@
 
             return;
         }
-
-
-        /* =====================================================
-           3. البحث عن Optimistic داخل DOM
-        ===================================================== */
 
         let existingElement =
             messageId != null
@@ -2794,11 +2784,6 @@
 
             return;
         }
-
-
-        /* =====================================================
-           4. رسالة جديدة فعلاً
-        ===================================================== */
 
         const wasAtBottom =
             isNearBottom();
@@ -2944,6 +2929,370 @@
 
 
     /* =========================================================
+       INFINITE SCROLL
+    ========================================================= */
+
+    function getOldestLoadedMessage() {
+
+        if (
+            !currentMessages.length
+        ) {
+            return null;
+        }
+
+        sortMessages(
+            currentMessages
+        );
+
+        return (
+            currentMessages[0] ||
+            null
+        );
+    }
+
+
+    function getOldestMessageTime() {
+
+        const oldest =
+            getOldestLoadedMessage();
+
+        if (!oldest) {
+            return null;
+        }
+
+        return getMessageTime(
+            oldest
+        );
+    }
+
+
+    async function loadOlderMessages() {
+
+        if (
+            loadingOlderMessages ||
+            !hasOlderMessages ||
+            !currentConversationId
+        ) {
+            return;
+        }
+
+        const requestedConversationId =
+            currentConversationId;
+
+        const beforeCreatedAt =
+            getOldestMessageTime();
+
+        /*
+         * إذا ماكو رسالة قديمة محملة،
+         * ما عدنا cursor نستخدمه.
+         */
+        if (!beforeCreatedAt) {
+            return;
+        }
+
+        loadingOlderMessages =
+            true;
+
+        const requestToken =
+            ++olderMessagesLoadToken;
+
+        /*
+         * نحفظ مكان المستخدم قبل إضافة الرسائل.
+         */
+        const oldScrollHeight =
+            chatMessages?.scrollHeight ||
+            0;
+
+        const oldScrollTop =
+            chatMessages?.scrollTop ||
+            0;
+
+        try {
+
+            const {
+                data,
+                error
+            } = await client.rpc(
+                "get_conversation_messages",
+                {
+                    target_conversation_id:
+                        requestedConversationId,
+
+                    message_limit:
+                        MESSAGE_PAGE_SIZE,
+
+                    before_created_at:
+                        beforeCreatedAt
+                }
+            );
+
+            /*
+             * إذا تغيرت المحادثة أثناء الطلب،
+             * نتجاهل النتيجة.
+             */
+            if (
+                requestToken !==
+                olderMessagesLoadToken ||
+                requestedConversationId !==
+                currentConversationId
+            ) {
+                return;
+            }
+
+            if (error) {
+
+                console.error(
+                    "WFESC older messages error:",
+                    error
+                );
+
+                return;
+            }
+
+            const olderMessages =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+            /*
+             * إذا رجعت أقل من حجم الدفعة،
+             * وصلنا غالباً لأول الرسائل.
+             */
+            if (
+                olderMessages.length <
+                MESSAGE_PAGE_SIZE
+            ) {
+
+                hasOlderMessages =
+                    false;
+            }
+
+            if (
+                olderMessages.length ===
+                0
+            ) {
+
+                hasOlderMessages =
+                    false;
+
+                return;
+            }
+
+            /*
+             * منع أي تكرار.
+             */
+            const existingIds =
+                new Set(
+                    currentMessages
+                        .map(
+                            message =>
+                                getMessageId(
+                                    message
+                                )
+                        )
+                        .filter(
+                            id =>
+                                id != null
+                        )
+                        .map(
+                            id =>
+                                String(id)
+                        )
+                );
+
+            const uniqueOlderMessages =
+                olderMessages.filter(
+                    message => {
+
+                        const id =
+                            getMessageId(
+                                message
+                            );
+
+                        if (
+                            id == null
+                        ) {
+                            return true;
+                        }
+
+                        const key =
+                            String(id);
+
+                        if (
+                            existingIds.has(
+                                key
+                            )
+                        ) {
+                            return false;
+                        }
+
+                        existingIds.add(
+                            key
+                        );
+
+                        return true;
+                    }
+                );
+
+            if (
+                !uniqueOlderMessages.length
+            ) {
+
+                /*
+                 * إذا ما رجع شيء جديد رغم وجود
+                 * نتائج، نوقف حتى لا ندخل بحلقة.
+                 */
+                hasOlderMessages =
+                    false;
+
+                return;
+            }
+
+            /*
+             * إضافة الرسائل القديمة إلى STATE.
+             */
+            currentMessages =
+                currentMessages.concat(
+                    uniqueOlderMessages
+                );
+
+            sortMessages(
+                currentMessages
+            );
+
+            /*
+             * نضيف فقط الرسائل القديمة إلى بداية DOM.
+             * لا نعيد بناء المحادثة كلها.
+             */
+            if (chatMessages) {
+
+                const fragment =
+                    document.createDocumentFragment();
+
+                uniqueOlderMessages
+                    .sort(
+                        (a, b) => {
+
+                            return (
+                                new Date(
+                                    getMessageTime(a) || 0
+                                ).getTime()
+                                -
+                                new Date(
+                                    getMessageTime(b) || 0
+                                ).getTime()
+                            );
+                        }
+                    )
+                    .forEach(
+                        message => {
+
+                            fragment.appendChild(
+                                createMessageElement(
+                                    message
+                                )
+                            );
+                        }
+                    );
+
+                chatMessages.insertBefore(
+                    fragment,
+                    chatMessages.firstChild
+                );
+
+                /*
+                 * أهم جزء:
+                 *
+                 * بعد إضافة الرسائل فوق،
+                 * نحافظ على نفس المكان الذي كان المستخدم
+                 * واقفاً به.
+                 */
+                const newScrollHeight =
+                    chatMessages.scrollHeight;
+
+                const heightDifference =
+                    newScrollHeight -
+                    oldScrollHeight;
+
+                chatMessages.scrollTop =
+                    oldScrollTop +
+                    heightDifference;
+            }
+
+            scheduleMessageSettingsApply();
+
+        } catch (error) {
+
+            console.error(
+                "WFESC older messages exception:",
+                error
+            );
+
+        } finally {
+
+            if (
+                requestToken ===
+                olderMessagesLoadToken
+            ) {
+
+                loadingOlderMessages =
+                    false;
+            }
+        }
+    }
+
+
+    /* =========================================================
+       SETUP MESSAGE SCROLL
+    ========================================================= */
+
+    function setupMessageScroll() {
+
+        if (
+            !chatMessages ||
+            messagesScrollListenerAttached
+        ) {
+            return;
+        }
+
+        messagesScrollListenerAttached =
+            true;
+
+        chatMessages.addEventListener(
+            "scroll",
+            () => {
+
+                /*
+                 * لا نريد تشغيل التحميل أثناء فتح المحادثة.
+                 */
+                if (
+                    openingConversation
+                ) {
+                    return;
+                }
+
+                /*
+                 * إذا وصلنا قريباً من الأعلى،
+                 * نحمل الرسائل الأقدم.
+                 */
+                if (
+                    chatMessages.scrollTop <=
+                    MESSAGE_TOP_THRESHOLD
+                ) {
+
+                    loadOlderMessages();
+                }
+
+            },
+            {
+                passive:
+                    true
+            }
+        );
+    }
+
+
+    /* =========================================================
        OPEN CONVERSATION
     ========================================================= */
 
@@ -2963,13 +3312,21 @@
         openingConversation =
             true;
 
-
         const loadToken =
             ++conversationLoadToken;
 
+        /*
+         * إلغاء أي طلب تحميل رسائل قديمة سابق.
+         */
+        olderMessagesLoadToken++;
+
+        loadingOlderMessages =
+            false;
+
+        hasOlderMessages =
+            true;
 
         await removeTypingChannel();
-
 
         currentConversationId =
             conversationId;
@@ -2977,15 +3334,9 @@
         currentConversationContact =
             contact;
 
-
         typingUsers.clear();
 
         hideTypingIndicator();
-
-
-        /* =====================================================
-           SUPPORT
-        ===================================================== */
 
         if (
             type === "support"
@@ -2994,11 +3345,6 @@
             currentConversationContact =
                 getSupportContact();
         }
-
-
-        /* =====================================================
-           GET CONTACT
-        ===================================================== */
 
         if (
             !currentConversationContact
@@ -3022,7 +3368,6 @@
             }
         }
 
-
         if (
             !currentConversationContact
         ) {
@@ -3043,13 +3388,7 @@
             };
         }
 
-
         updateChatHeader();
-
-
-        /* =====================================================
-           إخفاء أثناء التحميل
-        ===================================================== */
 
         if (chatView) {
 
@@ -3065,23 +3404,16 @@
                 "hidden";
         }
 
-
         if (chatMessages) {
 
             chatMessages.style.visibility =
                 "hidden";
         }
 
-
-        /* =====================================================
-           LOAD MESSAGES
-        ===================================================== */
-
         const loaded =
             await loadConversationMessages(
                 loadToken
             );
-
 
         if (
             loadToken !==
@@ -3093,7 +3425,6 @@
 
             return;
         }
-
 
         if (!loaded) {
 
@@ -3119,11 +3450,6 @@
             return;
         }
 
-
-        /* =====================================================
-           OPEN HIDDEN CHAT
-        ===================================================== */
-
         if (chatView) {
 
             chatView.classList.add(
@@ -3134,43 +3460,32 @@
                 "hidden";
         }
 
-
         if (chatMessages) {
 
             chatMessages.style.visibility =
                 "hidden";
         }
 
+        prepareChatAtBottom();
 
-        /* =====================================================
-           PREPARE SCROLL
-        ===================================================== */
+        await new Promise(
+            resolve =>
+                requestAnimationFrame(
+                    resolve
+                )
+        );
 
         prepareChatAtBottom();
 
-
         await new Promise(
             resolve =>
                 requestAnimationFrame(
                     resolve
                 )
         );
-
-
-        prepareChatAtBottom();
-
-
-        await new Promise(
-            resolve =>
-                requestAnimationFrame(
-                    resolve
-                )
-        );
-
 
         forceScrollToBottom();
 
-
         await new Promise(
             resolve =>
                 requestAnimationFrame(
@@ -3178,13 +3493,7 @@
                 )
         );
 
-
         forceScrollToBottom();
-
-
-        /* =====================================================
-           SHOW
-        ===================================================== */
 
         if (chatMessages) {
 
@@ -3197,7 +3506,6 @@
             chatView.style.visibility =
                 "visible";
         }
-
 
         if (page) {
 
@@ -3213,13 +3521,7 @@
             );
         }
 
-
         prepareChatAtBottom();
-
-
-        /* =====================================================
-           TYPING + READ
-        ===================================================== */
 
         setupTypingChannel(
             conversationId
@@ -3232,7 +3534,6 @@
 
         });
 
-
         markConversationRead(
             conversationId
         ).catch(error => {
@@ -3244,11 +3545,6 @@
 
         });
 
-
-        /* =====================================================
-           SLIDE UP
-        ===================================================== */
-
         requestAnimationFrame(() => {
 
             forceScrollToBottom();
@@ -3258,7 +3554,6 @@
             updateTypingIndicatorPosition();
 
         });
-
 
         setTimeout(
             () => {
@@ -3271,7 +3566,6 @@
             80
         );
 
-
         setTimeout(
             () => {
 
@@ -3281,14 +3575,13 @@
             250
         );
 
-
         openingConversation =
             false;
     }
 
 
     /* =========================================================
-       LOAD CONVERSATION MESSAGES
+       LOAD INITIAL CONVERSATION MESSAGES
     ========================================================= */
 
     async function loadConversationMessages(
@@ -3303,6 +3596,17 @@
         const requestedConversationId =
             currentConversationId;
 
+        /*
+         * بداية محادثة جديدة:
+         * نرجع حالة الـpagination إلى البداية.
+         */
+        hasOlderMessages =
+            true;
+
+        loadingOlderMessages =
+            false;
+
+        olderMessagesLoadToken++;
 
         if (chatMessages) {
 
@@ -3312,7 +3616,6 @@
             chatMessages.innerHTML =
                 "";
         }
-
 
         try {
 
@@ -3326,10 +3629,9 @@
                         requestedConversationId,
 
                     message_limit:
-                        100
+                        MESSAGE_PAGE_SIZE
                 }
             );
-
 
             if (
                 expectedLoadToken !==
@@ -3340,7 +3642,6 @@
 
                 return false;
             }
-
 
             if (error) {
 
@@ -3373,36 +3674,32 @@
                 return false;
             }
 
-
-            /*
-             * Supabase هو المصدر الأساسي.
-             */
             currentMessages =
                 Array.isArray(data)
                     ? [...data]
                     : [];
 
-
-            currentMessages.sort(
-                (a, b) => {
-
-                    return (
-                        new Date(
-                            getMessageTime(a) || 0
-                        ).getTime()
-                        -
-                        new Date(
-                            getMessageTime(b) || 0
-                        ).getTime()
-                    );
-                }
+            sortMessages(
+                currentMessages
             );
 
-
             /*
-             * إزالة أي Optimistic قديم
-             * بعد إعادة التحميل من Supabase.
+             * إذا رجعت أقل من 50،
+             * فغالباً وصلنا لأول رسالة.
              */
+            if (
+                currentMessages.length <
+                MESSAGE_PAGE_SIZE
+            ) {
+
+                hasOlderMessages =
+                    false;
+            } else {
+
+                hasOlderMessages =
+                    true;
+            }
+
             currentMessages =
                 currentMessages.map(
                     message => {
@@ -3426,12 +3723,10 @@
                     }
                 );
 
-
             renderMessages({
                 initialLoad:
                     true
             });
-
 
             return true;
 
@@ -3491,7 +3786,6 @@
                 options.initialLoad
             );
 
-
         const oldScrollTop =
             chatMessages.scrollTop;
 
@@ -3508,14 +3802,8 @@
                 oldClientHeight
             ) < 150;
 
-
         chatMessages.innerHTML =
             "";
-
-
-        /* =====================================================
-           NO MESSAGES
-        ===================================================== */
 
         if (!currentMessages.length) {
 
@@ -3537,9 +3825,7 @@
                 </div>
             `;
 
-
             scheduleMessageSettingsApply();
-
 
             if (initialLoad) {
 
@@ -3553,10 +3839,8 @@
             return;
         }
 
-
         const fragment =
             document.createDocumentFragment();
-
 
         currentMessages.forEach(
             message => {
@@ -3572,14 +3856,11 @@
             }
         );
 
-
         chatMessages.appendChild(
             fragment
         );
 
-
         scheduleMessageSettingsApply();
-
 
         if (initialLoad) {
 
@@ -3589,14 +3870,11 @@
             chatMessages.style.scrollBehavior =
                 "auto";
 
-
             forceScrollToBottom();
-
 
             requestAnimationFrame(() => {
 
                 forceScrollToBottom();
-
 
                 requestAnimationFrame(() => {
 
@@ -3606,20 +3884,17 @@
 
             });
 
-
             setTimeout(() => {
 
                 forceScrollToBottom();
 
             }, 20);
 
-
             setTimeout(() => {
 
                 forceScrollToBottom();
 
             }, 80);
-
 
             setTimeout(() => {
 
@@ -3630,10 +3905,8 @@
 
             }, 180);
 
-
             return;
         }
-
 
         if (wasNear) {
 
@@ -3689,7 +3962,6 @@
                     : "theirs"
             );
 
-
         if (
             message?.optimistic
         ) {
@@ -3698,7 +3970,6 @@
                 "optimistic"
             );
         }
-
 
         const messageId =
             getMessageId(
@@ -3715,7 +3986,6 @@
                 );
         }
 
-
         row.dataset.senderId =
             String(
                 getMessageSenderId(
@@ -3723,12 +3993,10 @@
                 ) || ""
             );
 
-
         row.dataset.content =
             getMessageContent(
                 message
             );
-
 
         const bubble =
             document.createElement(
@@ -3738,12 +4006,10 @@
         bubble.className =
             "message-bubble";
 
-
         bubble.dataset.side =
             isMine
                 ? "mine"
                 : "theirs";
-
 
         const content =
             document.createElement(
@@ -3753,12 +4019,10 @@
         content.className =
             "message-content";
 
-
         content.textContent =
             getMessageContent(
                 message
             );
-
 
         const time =
             document.createElement(
@@ -3768,14 +4032,12 @@
         time.className =
             "message-time";
 
-
         time.textContent =
             formatTime(
                 getMessageTime(
                     message
                 )
             );
-
 
         bubble.appendChild(
             content
@@ -3788,7 +4050,6 @@
         row.appendChild(
             bubble
         );
-
 
         return row;
     }
@@ -3807,7 +4068,6 @@
             return null;
         }
 
-
         if (
             options.conversationId &&
             String(
@@ -3821,12 +4081,10 @@
             return null;
         }
 
-
         const messageId =
             getMessageId(
                 message
             );
-
 
         if (
             messageId != null &&
@@ -3838,31 +4096,16 @@
             return null;
         }
 
-
         const wasAtBottom =
             isNearBottom();
-
 
         currentMessages.push(
             message
         );
 
-
-        currentMessages.sort(
-            (a, b) => {
-
-                return (
-                    new Date(
-                        getMessageTime(a) || 0
-                    ).getTime()
-                    -
-                    new Date(
-                        getMessageTime(b) || 0
-                    ).getTime()
-                );
-            }
+        sortMessages(
+            currentMessages
         );
-
 
         if (
             options.appendOnly &&
@@ -3879,7 +4122,6 @@
             );
 
             scheduleMessageSettingsApply();
-
 
             if (
                 options.scroll !== false &&
@@ -3900,9 +4142,7 @@
             return element;
         }
 
-
         renderMessages();
-
 
         if (
             options.scroll !== false
@@ -3971,18 +4211,20 @@
 
     async function closeConversation() {
 
-        /*
-         * إلغاء أي تحميل قديم.
-         */
         conversationLoadToken++;
 
+        olderMessagesLoadToken++;
+
+        loadingOlderMessages =
+            false;
+
+        hasOlderMessages =
+            true;
 
         openingConversation =
             false;
 
-
         await removeTypingChannel();
-
 
         currentConversationId =
             null;
@@ -3994,7 +4236,6 @@
             [];
 
         typingUsers.clear();
-
 
         if (chatView) {
 
@@ -4010,7 +4251,6 @@
                 "visible";
         }
 
-
         if (page) {
 
             page.classList.remove(
@@ -4018,14 +4258,12 @@
             );
         }
 
-
         if (searchSection) {
 
             searchSection.classList.remove(
                 "hidden"
             );
         }
-
 
         if (chatMessages) {
 
@@ -4036,16 +4274,6 @@
                 "visible";
         }
 
-
-        /*
-         * =====================================================
-         * الإصلاح المهم:
-         *
-         * عند الخروج من المحادثة، نعيد جلب القائمة من Supabase.
-         *
-         * هذا يمنع اختفاء المحادثة الجديدة من القائمة.
-         * =====================================================
-         */
         if (currentUser) {
 
             await loadConversations();
@@ -4117,7 +4345,6 @@
                 error
             } = await client.auth.getSession();
 
-
             if (error) {
 
                 console.error(
@@ -4128,11 +4355,9 @@
                 return;
             }
 
-
             currentUser =
                 data?.session?.user ||
                 null;
-
 
             if (!currentUser) {
 
@@ -4143,26 +4368,20 @@
                 return;
             }
 
-
             await loadConversations();
-
 
             const supportId =
                 await ensureSupportConversation();
-
 
             if (supportId) {
 
                 await loadConversations();
             }
 
-
             await setupMessageRealtime();
-
 
             initialized =
                 true;
-
 
             console.log(
                 "WFESC Messages Core initialized"
@@ -4192,11 +4411,9 @@
                 session?.user ||
                 null;
 
-
             if (!currentUser) {
 
                 await closeConversation();
-
 
                 conversations =
                     [];
@@ -4204,12 +4421,10 @@
                 currentMessages =
                     [];
 
-
                 renderConversations();
 
                 return;
             }
-
 
             if (
                 event ===
@@ -4220,16 +4435,13 @@
 
                 await loadConversations();
 
-
                 const supportId =
                     await ensureSupportConversation();
-
 
                 if (supportId) {
 
                     await loadConversations();
                 }
-
 
                 await setupMessageRealtime();
             }
@@ -4309,7 +4521,22 @@
 
         hideTypingIndicator,
 
-        updateTypingIndicatorPosition
+        updateTypingIndicatorPosition,
+
+        /*
+         * API إضافي للتحميل اللانهائي
+         */
+        loadOlderMessages() {
+            return loadOlderMessages();
+        },
+
+        hasOlderMessages() {
+            return hasOlderMessages;
+        },
+
+        isLoadingOlderMessages() {
+            return loadingOlderMessages;
+        }
     };
 
 
@@ -4319,8 +4546,12 @@
 
     function start() {
 
-        setupInputEvents();
+        /*
+         * نجهز Scroll Listener مرة واحدة.
+         */
+        setupMessageScroll();
 
+        setupInputEvents();
 
         if (
             document.readyState ===
