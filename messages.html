@@ -1164,7 +1164,6 @@ img{
 .chat-messages{
 
     /*
-     * مهم جدًا:
      * الرسائل هي العنصر الوحيد الذي يتم تمريره.
      */
     flex:
@@ -1178,22 +1177,31 @@ img{
     overflow-x:hidden;
 
     /*
-     * المسافة الأخيرة = مساحة حقل الكتابة
-     * + مساحة التنقل
-     * + مساحة أمان إضافية.
+     * مساحة إضافية أسفل المحادثة:
+     * - التنقل
+     * - حقل الكتابة
+     * - مسافة أمان إضافية
      *
-     * لذلك آخر رسالة لا تدخل خلفهما.
+     * حتى تبقى آخر فقاعة بعيدة عن حقل الكتابة
+     * ولا تدخل خلف التنقل.
      */
     padding:
         16px
         12px
         calc(
             var(--navigation-height) +
-            110px +
+            150px +
             env(safe-area-inset-bottom)
         );
 
     scroll-behavior:smooth;
+
+    scroll-padding-bottom:
+        calc(
+            var(--navigation-height) +
+            150px +
+            env(safe-area-inset-bottom)
+        );
 
     overscroll-behavior:
         contain;
@@ -1219,31 +1227,6 @@ img{
 
     border-radius:20px;
 }
-
-.message-row{
-
-    display:flex;
-
-    width:100%;
-
-    margin-bottom:12px;
-
-    animation:
-        messageIn
-        .25s
-        ease
-        both;
-}
-
-.message-row.mine{
-    justify-content:flex-end;
-}
-
-.message-row.theirs{
-    justify-content:flex-start;
-}
-
-
 /* =========================================================
    REAL MESSAGE BUBBLE
 ========================================================= */
