@@ -34,30 +34,14 @@
 
     let currentSearchText = "";
 
-    /*
-     * Results returned from search_messages().
-     * These are NOT DOM elements.
-     */
     let searchRows = [];
 
-    /*
-     * Results belonging to the currently opened conversation.
-     */
     let conversationSearchRows = [];
 
-    /*
-     * DOM matches currently loaded in chat.
-     */
     let currentResults = [];
 
-    /*
-     * Current result index inside the opened conversation.
-     */
     let currentMatchIndex = -1;
 
-    /*
-     * Index of the result selected from the main search results.
-     */
     let selectedSearchRowIndex = -1;
 
     let searchTimer = null;
@@ -363,7 +347,10 @@
 
     function normalizeId(value) {
 
-        if (value === null || value === undefined) {
+        if (
+            value === null ||
+            value === undefined
+        ) {
 
             return "";
 
@@ -522,10 +509,6 @@
 
         style.textContent = `
 
-            /* ===============================
-               SEARCH HIGHLIGHT
-            =============================== */
-
             .wfesc-search-highlight {
 
                 background:#ffe600 !important;
@@ -538,10 +521,6 @@
 
             }
 
-
-            /* ===============================
-               USER SEARCH
-            =============================== */
 
             .wfesc-user-search-result {
 
@@ -594,36 +573,32 @@
 
             @keyframes wfescSearchBlockedShake {
 
-                0%{
+                0% {
                     transform:translateX(0);
                 }
 
-                20%{
+                20% {
                     transform:translateX(-7px);
                 }
 
-                40%{
+                40% {
                     transform:translateX(7px);
                 }
 
-                60%{
+                60% {
                     transform:translateX(-5px);
                 }
 
-                80%{
+                80% {
                     transform:translateX(5px);
                 }
 
-                100%{
+                100% {
                     transform:translateX(0);
                 }
 
             }
 
-
-            /* ===============================
-               AVATAR
-            =============================== */
 
             .wfesc-search-avatar {
 
@@ -736,10 +711,6 @@
             }
 
 
-            /* ===============================
-               MESSAGE RESULTS
-            =============================== */
-
             .wfesc-search-message-row {
 
                 cursor:pointer;
@@ -777,10 +748,6 @@
             }
 
 
-            /* ===============================
-               EMPTY / ERROR / LOADING
-            =============================== */
-
             .wfesc-search-empty {
 
                 padding:20px;
@@ -814,10 +781,6 @@
             }
 
 
-            /* ===============================
-               CURRENT SEARCH MESSAGE
-            =============================== */
-
             .wfesc-search-current-match {
 
                 outline:
@@ -842,53 +805,35 @@
             @keyframes wfescSearchMessageShake {
 
                 0% {
-
                     transform:translateX(0);
-
                 }
 
                 15% {
-
                     transform:translateX(-5px);
-
                 }
 
                 30% {
-
                     transform:translateX(5px);
-
                 }
 
                 45% {
-
                     transform:translateX(-4px);
-
                 }
 
                 60% {
-
                     transform:translateX(4px);
-
                 }
 
                 75% {
-
                     transform:translateX(-2px);
-
                 }
 
                 100% {
-
                     transform:translateX(0);
-
                 }
 
             }
 
-
-            /* ===============================
-               NAVIGATOR
-            =============================== */
 
             #searchMatchNavigator {
 
@@ -1193,12 +1138,6 @@
     }
 
 
-    /*
-     * Hide only the result list.
-     *
-     * Search state remains available for the opened
-     * conversation navigator.
-     */
     function hideOnlySearchResults() {
 
         hideResultsContainer();
@@ -1840,10 +1779,6 @@
                     : [];
 
 
-            /*
-             * Extra protection:
-             * never show rows explicitly marked deleted.
-             */
             rows =
                 rows.filter(
                     function (row) {
@@ -1857,9 +1792,6 @@
                 );
 
 
-            /*
-             * Newest first.
-             */
             rows.sort(
                 function (a, b) {
 
@@ -1957,9 +1889,6 @@
             "";
 
 
-        /*
-         * Total result count.
-         */
         const count =
             document.createElement("div");
 
@@ -2221,10 +2150,6 @@
         }
 
 
-        /*
-         * Keep the complete search state.
-         * Only hide the result list visually.
-         */
         currentSearchText =
             currentSearchText ||
             String(
@@ -2244,9 +2169,6 @@
             getCurrentConversationId();
 
 
-        /*
-         * Already inside the target conversation.
-         */
         if (
 
             currentConversationId &&
@@ -2318,11 +2240,23 @@
                 [];
 
 
+            /*
+             * FIX:
+             * The original code was missing the closing
+             * parenthesis here:
+             *
+             * if (Array.isArray(conversations) {
+             *
+             * Correct:
+             *
+             * if (Array.isArray(conversations)) {
+             */
+
             if (
                 Array.isArray(
                     conversations
                 )
-            {
+            ) {
 
                 conversation =
                     conversations.find(
@@ -2363,10 +2297,6 @@
                 null;
 
 
-            /*
-             * If the conversation is not currently
-             * in the list, try to obtain its contact.
-             */
             if (
                 !contact &&
                 typeof core.getConversationContact ===
@@ -2404,16 +2334,9 @@
             );
 
 
-            /*
-             * Do not clear the search.
-             */
             hideOnlySearchResults();
 
 
-            /*
-             * The chat-opened event will also call this,
-             * but we explicitly prepare the state here.
-             */
             prepareConversationSearchNavigation(
                 conversationId,
                 result.messageId,
@@ -2421,9 +2344,6 @@
             );
 
 
-            /*
-             * Wait for the chat to render.
-             */
             await waitForChatRender();
 
 
@@ -2462,9 +2382,6 @@
             );
 
 
-        /*
-         * Only results belonging to this conversation.
-         */
         conversationSearchRows =
             searchRows.filter(
                 function (row) {
@@ -2481,9 +2398,6 @@
             );
 
 
-        /*
-         * Already sorted newest -> oldest.
-         */
         conversationSearchRows.sort(
             function (a, b) {
 
@@ -2505,10 +2419,6 @@
         );
 
 
-        /*
-         * If selected result belongs to the list,
-         * start exactly there.
-         */
         let selectedIndex =
             conversationSearchRows.findIndex(
                 function (row) {
@@ -2529,9 +2439,6 @@
             );
 
 
-        /*
-         * Fallback by content + date.
-         */
         if (
             selectedIndex < 0 &&
             selectedContent
@@ -2556,10 +2463,6 @@
         }
 
 
-        /*
-         * If we cannot identify it,
-         * start from newest.
-         */
         if (
             selectedIndex < 0
         ) {
@@ -3319,9 +3222,6 @@
 
                     event.preventDefault();
 
-                    /*
-                     * ↑ = older message
-                     */
                     moveMatch(1);
 
                 }
@@ -3338,9 +3238,6 @@
 
                     event.preventDefault();
 
-                    /*
-                     * ↓ = newer message
-                     */
                     moveMatch(-1);
 
                 }
@@ -3535,11 +3432,25 @@
                 pendingMessageContent
             ) {
 
+                const token =
+                    ++navigationToken;
+
+
                 await ensureMessageVisible(
                     pendingMessageId,
                     pendingMessageContent,
-                    ++navigationToken
+                    token
                 );
+
+
+                if (
+                    token !==
+                    navigationToken
+                ) {
+
+                    return;
+
+                }
 
 
                 const target =
@@ -4043,7 +3954,6 @@
 
     /* =========================================================
        LEGACY SCROLL FUNCTION
-       Kept for compatibility with existing code.
     ========================================================= */
 
     async function scrollToMessage(
