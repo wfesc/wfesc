@@ -29,11 +29,22 @@
     ========================================================= */
 
     function getCore() {
-        return window.WFESC_MESSAGES_CORE || null;
+
+        return (
+            window.WFESC_MESSAGES_CORE ||
+            null
+        );
+
     }
 
+
     function getActivity() {
-        return window.WFESC_MESSAGES_ACTIVITY || null;
+
+        return (
+            window.WFESC_MESSAGES_ACTIVITY ||
+            null
+        );
+
     }
 
 
@@ -42,27 +53,45 @@
     ========================================================= */
 
     const chatPersonButton =
-        document.getElementById("chatPersonButton");
+        document.getElementById(
+            "chatPersonButton"
+        );
+
 
     const chatAvatar =
-        document.getElementById("chatAvatar");
+        document.getElementById(
+            "chatAvatar"
+        );
+
 
     const chatName =
-        document.getElementById("chatName");
+        document.getElementById(
+            "chatName"
+        );
+
 
     const chatStatus =
-        document.getElementById("chatStatus");
+        document.getElementById(
+            "chatStatus"
+        );
+
 
     const chatOnlineDot =
-        document.getElementById("chatOnlineDot");
+        document.getElementById(
+            "chatOnlineDot"
+        );
 
 
     /* =========================================================
        الحالة الداخلية
     ========================================================= */
 
-    let currentContact = null;
-    let currentConversationId = null;
+    let currentContact =
+        null;
+
+
+    let currentConversationId =
+        null;
 
 
     /* =========================================================
@@ -78,6 +107,7 @@
                 height="200"
                 viewBox="0 0 200 200"
             >
+
                 <rect
                     width="200"
                     height="200"
@@ -101,8 +131,122 @@
                     "
                     fill="#777"
                 />
+
             </svg>
         `);
+
+
+    /* =========================================================
+       الحصول على معرف المستخدم من بيانات Contact
+       
+       يدعم:
+       user_id
+       id
+       userId
+       profile.user_id
+       profile.id
+       user.user_id
+       user.id
+       contact.user_id
+       contact.id
+    ========================================================= */
+
+    function getContactUserId(contact) {
+
+        if (!contact) {
+            return null;
+        }
+
+
+        return (
+            contact.user_id ||
+            contact.userId ||
+            contact.id ||
+            contact.profile?.user_id ||
+            contact.profile?.userId ||
+            contact.profile?.id ||
+            contact.user?.user_id ||
+            contact.user?.userId ||
+            contact.user?.id ||
+            contact.contact?.user_id ||
+            contact.contact?.userId ||
+            contact.contact?.id ||
+            null
+        );
+
+    }
+
+
+    /* =========================================================
+       توحيد بيانات Contact
+    ========================================================= */
+
+    function normalizeContact(contact) {
+
+        if (!contact) {
+            return null;
+        }
+
+
+        const nestedProfile =
+            contact.profile ||
+            contact.user ||
+            contact.contact ||
+            null;
+
+
+        const userId =
+            getContactUserId(
+                contact
+            );
+
+
+        return {
+
+            ...(
+                nestedProfile &&
+                typeof nestedProfile === "object"
+                    ? nestedProfile
+                    : {}
+            ),
+
+            ...contact,
+
+
+            user_id:
+                userId || null,
+
+
+            display_name:
+                contact.display_name ||
+                contact.full_name ||
+                contact.name ||
+                nestedProfile?.display_name ||
+                nestedProfile?.full_name ||
+                nestedProfile?.name ||
+                contact.username ||
+                nestedProfile?.username ||
+                "مستخدم",
+
+
+            username:
+                contact.username ||
+                nestedProfile?.username ||
+                null,
+
+
+            avatar_url:
+                contact.avatar_url ||
+                contact.avatar ||
+                contact.photo_url ||
+                nestedProfile?.avatar_url ||
+                nestedProfile?.avatar ||
+                nestedProfile?.photo_url ||
+                DEFAULT_AVATAR
+
+        };
+
+    }
 
 
     /* =========================================================
@@ -115,11 +259,21 @@
             return "مستخدم";
         }
 
+
         return (
+
             contact.display_name ||
+
+            contact.full_name ||
+
+            contact.name ||
+
             contact.username ||
+
             "مستخدم"
+
         );
+
     }
 
 
@@ -133,15 +287,30 @@
             return DEFAULT_AVATAR;
         }
 
+
         return (
+
             contact.avatar_url ||
+
+            contact.avatar ||
+
+            contact.photo_url ||
+
             DEFAULT_AVATAR
+
         );
+
     }
 
 
     /* =========================================================
        الحصول على حالة إظهار النشاط
+       
+       ملاحظة:
+       لا نستخدم هذه القيمة وحدها لتحديد النشاط.
+       
+       Activity Module هو المصدر الأساسي.
+       هذا فقط fallback في حالة عدم وجود Activity.
     ========================================================= */
 
     function isActivityVisible(contact) {
@@ -150,12 +319,202 @@
             return false;
         }
 
-        return contact.show_activity !== false;
+
+        return (
+            contact.show_activity !== false
+        );
+
     }
 
 
     /* =========================================================
        الحصول على حالة النشاط من Activity Module
+    ========================================================= */
+
+    function getActivityState(contact) {
+
+        if (!contact) {
+
+            return {
+
+                online: false,
+
+                disabled: false,
+
+                show_activity: true,
+
+                last_seen: null
+
+            };
+
+        }
+
+
+        const activity =
+            getActivity();
+
+
+        const userId =
+            getContactUserId(
+                contact
+            );
+
+
+        /*
+         * لا يوجد Activity Module بعد
+         */
+
+        if (
+            !activity ||
+            typeof activity.getUserActivity !==
+                "function"
+        ) {
+
+            return {
+
+                online:
+                    Boolean(
+                        contact.is_online
+                    ),
+
+                disabled:
+                    contact.show_activity === false,
+
+                show_activity:
+                    contact.show_activity !== false,
+
+                last_seen:
+                    contact.last_seen ||
+                    null
+
+            };
+
+        }
+
+
+        /*
+         * بدون معرف مستخدم
+         */
+
+        if (!userId) {
+
+            return {
+
+                online: false,
+
+                disabled:
+                    contact.show_activity === false,
+
+                show_activity:
+                    contact.show_activity !== false,
+
+                last_seen:
+                    contact.last_seen ||
+                    null
+
+            };
+
+        }
+
+
+        try {
+
+            const result =
+                activity.getUserActivity(
+                    userId
+                );
+
+
+            if (
+                result &&
+                typeof result === "object"
+            ) {
+
+                return {
+
+                    online:
+                        result.online === true ||
+                        result.isOnline === true ||
+                        result.is_online === true,
+
+                    disabled:
+                        result.disabled === true ||
+                        result.show_activity === false,
+
+                    show_activity:
+                        result.show_activity !== false &&
+                        result.disabled !== true,
+
+                    last_seen:
+                        result.last_seen ||
+                        null
+
+                };
+
+            }
+
+
+            /*
+             * دعم الإصدارات التي ترجع Boolean
+             */
+
+            if (
+                typeof result === "boolean"
+            ) {
+
+                return {
+
+                    online:
+                        result,
+
+                    disabled: false,
+
+                    show_activity: true,
+
+                    last_seen: null
+
+                };
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CHAT HEADER] Activity check failed:",
+                error
+            );
+
+        }
+
+
+        /*
+         * Fallback من بيانات Core
+         */
+
+        return {
+
+            online:
+                Boolean(
+                    contact.is_online
+                ),
+
+            disabled:
+                contact.show_activity === false,
+
+            show_activity:
+                contact.show_activity !== false,
+
+            last_seen:
+                contact.last_seen ||
+                null
+
+        };
+
+    }
+
+
+    /* =========================================================
+       الحصول على حالة النشاط
     ========================================================= */
 
     function getOnlineState(contact) {
@@ -165,94 +524,18 @@
         }
 
 
-        /*
-         * إذا كان المستخدم لا يسمح بإظهار نشاطه،
-         * لا نظهره كنشط.
-         */
-
-        if (!isActivityVisible(contact)) {
-            return false;
-        }
+        const state =
+            getActivityState(
+                contact
+            );
 
 
-        const activity =
-            getActivity();
-
-
-        /*
-         * نترك تحديد النشاط لملف
-         * messages-activity.js
-         */
-
-        if (
-            activity &&
-            typeof activity.getUserActivity === "function"
-        ) {
-
-            try {
-
-                const activityState =
-                    activity.getUserActivity(
-                        contact.user_id
-                    );
-
-
-                if (
-                    activityState &&
-                    typeof activityState === "object"
-                ) {
-
-                    if (
-                        typeof activityState.isOnline === "boolean"
-                    ) {
-                        return activityState.isOnline;
-                    }
-
-                    if (
-                        typeof activityState.online === "boolean"
-                    ) {
-                        return activityState.online;
-                    }
-
-                    if (
-                        typeof activityState.is_online === "boolean"
-                    ) {
-                        return activityState.is_online;
-                    }
-                }
-
-
-                /*
-                 * إذا رجعت الدالة قيمة Boolean مباشرة
-                 */
-
-                if (
-                    typeof activityState === "boolean"
-                ) {
-                    return activityState;
-                }
-
-            } catch (error) {
-
-                console.warn(
-                    "[WFESC CHAT HEADER] Activity check failed:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        /*
-         * احتياط:
-         * نستخدم قيمة Core إذا لم تتوفر
-         * معلومات Activity.
-         */
-
-        return Boolean(
-            contact.is_online
+        return (
+            state.online === true &&
+            state.disabled !== true &&
+            state.show_activity !== false
         );
+
     }
 
 
@@ -270,34 +553,56 @@
         }
 
 
+        const state =
+            getActivityState(
+                contact
+            );
+
+
         /*
-         * إذا كانت حالة النشاط مخفية
+         * المستخدم اختار إخفاء نشاطه
          */
 
-        if (!isActivityVisible(contact)) {
-            return "غير نشط";
+        if (
+            state.disabled === true ||
+            state.show_activity === false
+        ) {
+
+            return "عدم النشاط";
+
         }
 
 
         /*
-         * دعم خاص لحساب WFESC
+         * حساب WFESC
          */
 
         if (
-            contact.is_support &&
-            contact.show_activity !== false
+            contact.is_support
         ) {
 
             if (isOnline) {
                 return "نشط الآن";
             }
 
+            return "غير نشط";
+
         }
 
 
-        return isOnline
-            ? "نشط الآن"
-            : "غير نشط";
+        /*
+         * مستخدم عادي
+         */
+
+        if (isOnline) {
+
+            return "نشط الآن";
+
+        }
+
+
+        return "غير نشط";
+
     }
 
 
@@ -312,14 +617,26 @@
         }
 
 
+        const normalized =
+            normalizeContact(
+                contact
+            );
+
+
         const avatar =
-            getAvatarUrl(contact);
+            getAvatarUrl(
+                normalized
+            );
 
 
-        chatAvatar.src = avatar;
+        chatAvatar.src =
+            avatar;
+
 
         chatAvatar.alt =
-            getDisplayName(contact);
+            getDisplayName(
+                normalized
+            );
 
 
         /*
@@ -327,18 +644,20 @@
          * نستخدم الصورة الافتراضية.
          */
 
-        chatAvatar.onerror = function () {
+        chatAvatar.onerror =
+            function () {
 
-            if (
-                chatAvatar.src !== DEFAULT_AVATAR
-            ) {
+                if (
+                    chatAvatar.src !==
+                    DEFAULT_AVATAR
+                ) {
 
-                chatAvatar.src =
-                    DEFAULT_AVATAR;
+                    chatAvatar.src =
+                        DEFAULT_AVATAR;
 
-            }
+                }
 
-        };
+            };
 
     }
 
@@ -354,8 +673,16 @@
         }
 
 
+        const normalized =
+            normalizeContact(
+                contact
+            );
+
+
         chatName.textContent =
-            getDisplayName(contact);
+            getDisplayName(
+                normalized
+            );
 
     }
 
@@ -371,13 +698,21 @@
         }
 
 
+        const normalized =
+            normalizeContact(
+                contact
+            );
+
+
         const online =
-            getOnlineState(contact);
+            getOnlineState(
+                normalized
+            );
 
 
         const statusText =
             getStatusText(
-                contact,
+                normalized,
                 online
             );
 
@@ -413,22 +748,28 @@
         }
 
 
+        const normalized =
+            normalizeContact(
+                contact
+            );
+
+
         currentContact =
-            contact;
+            normalized;
 
 
         renderAvatar(
-            contact
+            normalized
         );
 
 
         renderName(
-            contact
+            normalized
         );
 
 
         renderActivity(
-            contact
+            normalized
         );
 
     }
@@ -438,7 +779,9 @@
        قراءة بيانات Core
     ========================================================= */
 
-    function refreshFromCore(detail = null) {
+    function refreshFromCore(
+        detail = null
+    ) {
 
         const core =
             getCore();
@@ -454,17 +797,23 @@
         ) {
 
             currentContact =
-                detail.contact;
+                normalizeContact(
+                    detail.contact
+                );
+
 
             currentConversationId =
                 detail.conversationId ||
                 null;
 
+
             renderHeader(
                 currentContact
             );
 
+
             return;
+
         }
 
 
@@ -478,11 +827,13 @@
             core.chatHeader
         ) {
 
-            let contact = null;
+            let contact =
+                null;
 
 
             if (
-                typeof core.chatHeader.getContact ===
+                typeof
+                core.chatHeader.getContact ===
                 "function"
             ) {
 
@@ -495,11 +846,14 @@
             if (contact) {
 
                 currentContact =
-                    contact;
+                    normalizeContact(
+                        contact
+                    );
 
 
                 if (
-                    typeof core.chatHeader.getConversationId ===
+                    typeof
+                    core.chatHeader.getConversationId ===
                     "function"
                 ) {
 
@@ -510,7 +864,7 @@
 
 
                 renderHeader(
-                    contact
+                    currentContact
                 );
 
             }
@@ -526,6 +880,11 @@
 
     function refreshActivityOnly() {
 
+        /*
+         * إذا لم توجد محادثة حالية،
+         * نحاول أخذها من Core.
+         */
+
         if (!currentContact) {
 
             refreshFromCore();
@@ -534,6 +893,20 @@
 
         }
 
+
+        /*
+         * نعيد توحيد البيانات كل مرة.
+         */
+
+        currentContact =
+            normalizeContact(
+                currentContact
+            );
+
+
+        /*
+         * إعادة قراءة النشاط مباشرة.
+         */
 
         renderActivity(
             currentContact
@@ -551,7 +924,8 @@
         function (event) {
 
             const detail =
-                event?.detail || null;
+                event?.detail ||
+                null;
 
 
             refreshFromCore(
@@ -597,9 +971,12 @@
                 "wfesc:activity-request",
                 {
                     detail: {
+
                         userId:
-                            currentContact?.user_id ||
-                            null
+                            getContactUserId(
+                                currentContact
+                            )
+
                     }
                 }
             )
@@ -626,11 +1003,13 @@
                         "wfesc:chat-profile-click",
                         {
                             detail: {
+
                                 contact:
                                     currentContact,
 
                                 conversationId:
                                     currentConversationId
+
                             }
                         }
                     )
@@ -655,6 +1034,8 @@
                 "visible"
             ) {
 
+                refreshFromCore();
+
                 refreshActivityOnly();
 
             }
@@ -678,6 +1059,50 @@
 
 
     /* =========================================================
+       تحديث دوري خفيف لرأس المحادثة
+       
+       لا ينشئ Presence جديد.
+       فقط يقرأ الحالة الحالية.
+    ========================================================= */
+
+    let activityRefreshTimer =
+        null;
+
+
+    function startActivityRefreshTimer() {
+
+        if (
+            activityRefreshTimer
+        ) {
+
+            clearInterval(
+                activityRefreshTimer
+            );
+
+        }
+
+
+        activityRefreshTimer =
+            setInterval(
+                function () {
+
+                    if (
+                        document.visibilityState !==
+                        "hidden"
+                    ) {
+
+                        refreshActivityOnly();
+
+                    }
+
+                },
+                3000
+            );
+
+    }
+
+
+    /* =========================================================
        الواجهة العامة للموديول
     ========================================================= */
 
@@ -689,11 +1114,13 @@
 
         },
 
+
         refreshActivity() {
 
             refreshActivityOnly();
 
         },
+
 
         getContact() {
 
@@ -701,11 +1128,13 @@
 
         },
 
+
         getConversationId() {
 
             return currentConversationId;
 
         },
+
 
         getDisplayName() {
 
@@ -715,6 +1144,7 @@
 
         },
 
+
         getAvatarUrl() {
 
             return getAvatarUrl(
@@ -723,6 +1153,25 @@
 
         },
 
+
+        getUserId() {
+
+            return getContactUserId(
+                currentContact
+            );
+
+        },
+
+
+        getActivityState() {
+
+            return getActivityState(
+                currentContact
+            );
+
+        },
+
+
         isOnline() {
 
             return getOnlineState(
@@ -730,6 +1179,19 @@
             );
 
         },
+
+
+        getStatusText() {
+
+            return getStatusText(
+                currentContact,
+                getOnlineState(
+                    currentContact
+                )
+            );
+
+        },
+
 
         requestActivityRefresh() {
 
@@ -742,12 +1204,26 @@
 
     /* =========================================================
        التشغيل الأول
+       
+       Core قد يكون قد فتح المحادثة قبل تحميل
+       هذا الملف، لذلك نحاول قراءة البيانات
+       مباشرة بعد تشغيل الموديول.
     ========================================================= */
 
+    setTimeout(
+        function () {
+
+            refreshFromCore();
+
+            startActivityRefreshTimer();
+
+        },
+        0
+    );
+
+
     /*
-     * Core قد يكون قد فتح المحادثة قبل تحميل
-     * هذا الملف، لذلك نحاول قراءة البيانات
-     * مباشرة بعد تشغيل الموديول.
+     * محاولة ثانية بعد تحميل باقي الموديولات.
      */
 
     setTimeout(
@@ -755,8 +1231,26 @@
 
             refreshFromCore();
 
+            refreshActivityOnly();
+
         },
-        0
+        250
+    );
+
+
+    /*
+     * محاولة ثالثة للتأكد من اكتمال Core.
+     */
+
+    setTimeout(
+        function () {
+
+            refreshFromCore();
+
+            refreshActivityOnly();
+
+        },
+        1000
     );
 
 
