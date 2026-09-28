@@ -5,23 +5,24 @@
     ============================================================
        WFESC MESSAGES CONVERSATIONS
        ---------------------------------------------------------
-       مسؤول عن قائمة المحادثات الرئيسية فقط
+       قائمة المحادثات الرئيسية
 
-       الوظائف:
+       المسؤوليات:
+       - عرض المحادثات الحقيقية فقط
        - الاسم الحقيقي
        - الصورة الحقيقية
-       - الصورة الافتراضية عند عدم وجود صورة
-       - نقطة النشاط الخضراء
-       - حالة النشاط الحقيقية
+       - الصورة الافتراضية
+       - حالة النشاط
+       - نقطة النشاط
        - جاري الكتابة...
-       - تحديث القائمة بدون إعادة تحميل الصفحة
+       - تحديث القائمة تلقائياً
+       - عدم إنشاء مستخدمين وهميين
        - الاعتماد على Messages Core
        - الاعتماد على Messages Activity
-       - دعم Supabase Realtime
-       - عدم إنشاء مستخدمين وهميين
-       - إخفاء المستخدمين الذين لا توجد معهم محادثة
+       - عدم تغيير messages.html
     ============================================================
     */
+
 
     /* =========================================================
        CONFIG
@@ -29,14 +30,13 @@
 
     const CONFIG = {
 
-        DEBUG:
-            false,
+        DEBUG: false,
 
-        REFRESH_INTERVAL:
-            5000,
+        ACTIVITY_REFRESH:
+            3000,
 
         TYPING_TIMEOUT:
-            3000,
+            3500,
 
         DEFAULT_NAME:
             "مستخدم",
@@ -81,48 +81,39 @@
        STATE
     ========================================================= */
 
-    let core =
-        null;
+    let core = null;
 
-    let activity =
-        null;
+    let activity = null;
 
-    let conversationList =
-        null;
+    let conversationList = null;
 
-    let refreshTimer =
-        null;
+    let initialized = false;
 
-    let initialized =
-        false;
+    let rendering = false;
 
-    let rendering =
-        false;
+    let activityTimer = null;
 
-    let currentTypingConversation =
-        null;
+    let refreshTimer = null;
 
-    let currentTypingUser =
-        null;
+    let eventBound = false;
 
-    let lastRenderedSignature =
-        "";
+    let lastSignature = "";
 
-    let eventBound =
-        false;
+    /*
+     * أكثر من محادثة يمكن أن يكون فيها typing
+     * لذلك نستخدم Map بدلاً من متغير واحد.
+     */
+    const typingUsers =
+        new Map();
 
 
     /* =========================================================
        DEBUG
     ========================================================= */
 
-    function debug(
-        ...args
-    ) {
+    function debug(...args) {
 
-        if (
-            !CONFIG.DEBUG
-        ) {
+        if (!CONFIG.DEBUG) {
             return;
         }
 
@@ -138,33 +129,41 @@
        ESCAPE HTML
     ========================================================= */
 
-    function escapeHTML(
-        value
-    ) {
+    function escapeHTML(value) {
 
         return String(
             value ?? ""
         )
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    /* =========================================================
+       FIRST VALUE
+    ========================================================= */
+
+    function firstValue(...values) {
+
+        for (const value of values) {
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                String(value).trim() !== ""
+            ) {
+
+                return value;
+
+            }
+
+        }
+
+        return null;
 
     }
 
@@ -210,7 +209,7 @@
 
 
     /* =========================================================
-       GET CONVERSATION LIST
+       GET LIST
     ========================================================= */
 
     function getConversationList() {
@@ -237,30 +236,23 @@
 
 
     /* =========================================================
-       GET VALUE
+       GET CONTACT
     ========================================================= */
 
-    function firstValue(
-        ...values
-    ) {
+    function getContact(conversation) {
 
-        for (
-            const value of values
-        ) {
-
-            if (
-                value !== undefined &&
-                value !== null &&
-                String(value).trim() !== ""
-            ) {
-
-                return value;
-
-            }
-
+        if (!conversation) {
+            return null;
         }
 
-        return null;
+        return (
+            conversation.contact ||
+            conversation.profile ||
+            conversation.user ||
+            conversation.other_user ||
+            conversation.otherUser ||
+            null
+        );
 
     }
 
@@ -269,24 +261,16 @@
        GET USER ID
     ========================================================= */
 
-    function getUserId(
-        conversation
-    ) {
+    function getUserId(conversation) {
 
-        if (
-            !conversation
-        ) {
-
+        if (!conversation) {
             return null;
-
         }
 
         const contact =
-            conversation.contact ||
-            conversation.profile ||
-            conversation.user ||
-            null;
-
+            getContact(
+                conversation
+            );
 
         return firstValue(
 
@@ -296,7 +280,17 @@
 
             contact?.profile_id,
 
+            contact?.profileId,
+
             contact?.id,
+
+            conversation.other_user_id,
+
+            conversation.otherUserId,
+
+            conversation.contact_user_id,
+
+            conversation.contactUserId,
 
             conversation.user_id,
 
@@ -304,9 +298,7 @@
 
             conversation.profile_id,
 
-            conversation.contact_user_id,
-
-            conversation.other_user_id
+            conversation.profileId
 
         );
 
@@ -314,38 +306,33 @@
 
 
     /* =========================================================
-       GET CONTACT
+       GET CONVERSATION ID
     ========================================================= */
 
-    function getContact(
-        conversation
-    ) {
+    function getConversationId(conversation) {
 
-        if (
-            !conversation
-        ) {
-
+        if (!conversation) {
             return null;
-
         }
 
-        return (
-            conversation.contact ||
-            conversation.profile ||
-            conversation.user ||
-            conversation
+        return firstValue(
+
+            conversation.id,
+
+            conversation.conversation_id,
+
+            conversation.conversationId
+
         );
 
     }
 
 
     /* =========================================================
-       GET DISPLAY NAME
+       GET NAME
     ========================================================= */
 
-    function getDisplayName(
-        conversation
-    ) {
+    function getDisplayName(conversation) {
 
         const contact =
             getContact(
@@ -357,21 +344,27 @@
 
                 conversation?.display_name,
 
+                conversation?.displayName,
+
                 contact?.display_name,
 
+                contact?.displayName,
+
                 contact?.full_name,
+
+                contact?.fullName,
 
                 contact?.name,
 
                 conversation?.full_name,
 
+                conversation?.fullName,
+
                 conversation?.name
 
             );
 
-        if (
-            name
-        ) {
+        if (name) {
 
             return String(
                 name
@@ -389,9 +382,7 @@
 
             );
 
-        if (
-            username
-        ) {
+        if (username) {
 
             return String(
                 username
@@ -409,9 +400,7 @@
        GET USERNAME
     ========================================================= */
 
-    function getUsername(
-        conversation
-    ) {
+    function getUsername(conversation) {
 
         const contact =
             getContact(
@@ -437,58 +426,41 @@
        GET AVATAR
     ========================================================= */
 
-    function getAvatar(
-        conversation
-    ) {
+    function getAvatar(conversation) {
 
         const contact =
             getContact(
                 conversation
             );
 
-        return firstValue(
+        const avatar =
+            firstValue(
 
-            conversation?.avatar_url,
+                conversation?.avatar_url,
 
-            conversation?.avatar,
+                conversation?.avatarUrl,
 
-            conversation?.photo_url,
+                conversation?.avatar,
 
-            contact?.avatar_url,
+                conversation?.photo_url,
 
-            contact?.avatar,
+                conversation?.photoUrl,
 
-            contact?.photo_url,
+                contact?.avatar_url,
 
+                contact?.avatarUrl,
+
+                contact?.avatar,
+
+                contact?.photo_url,
+
+                contact?.photoUrl
+
+            );
+
+        return (
+            avatar ||
             CONFIG.DEFAULT_AVATAR
-
-        );
-
-    }
-
-
-    /* =========================================================
-       GET CONVERSATION ID
-    ========================================================= */
-
-    function getConversationId(
-        conversation
-    ) {
-
-        if (
-            !conversation
-        ) {
-
-            return null;
-
-        }
-
-        return firstValue(
-
-            conversation.id,
-
-            conversation.conversation_id
-
         );
 
     }
@@ -498,20 +470,26 @@
        GET LAST MESSAGE
     ========================================================= */
 
-    function getLastMessage(
-        conversation
-    ) {
+    function getLastMessage(conversation) {
 
         return String(
             firstValue(
 
                 conversation?.last_message_text,
 
+                conversation?.lastMessageText,
+
+                conversation?.last_message_content,
+
+                conversation?.lastMessageContent,
+
                 conversation?.last_message,
+
+                conversation?.lastMessage,
 
                 conversation?.preview,
 
-                conversation?.last_message_content,
+                conversation?.message,
 
                 ""
 
@@ -525,19 +503,25 @@
        GET LAST MESSAGE TIME
     ========================================================= */
 
-    function getLastMessageTime(
-        conversation
-    ) {
+    function getLastMessageTime(conversation) {
 
         return firstValue(
 
             conversation?.last_message_at,
 
+            conversation?.lastMessageAt,
+
             conversation?.last_message_created_at,
+
+            conversation?.lastMessageCreatedAt,
 
             conversation?.updated_at,
 
-            conversation?.created_at
+            conversation?.updatedAt,
+
+            conversation?.created_at,
+
+            conversation?.createdAt
 
         );
 
@@ -548,22 +532,14 @@
        FORMAT TIME
     ========================================================= */
 
-    function formatTime(
-        value
-    ) {
+    function formatTime(value) {
 
-        if (
-            !value
-        ) {
-
+        if (!value) {
             return "";
-
         }
 
         const date =
-            new Date(
-                value
-            );
+            new Date(value);
 
         if (
             Number.isNaN(
@@ -583,17 +559,13 @@
             now.toDateString();
 
 
-        if (
-            sameDay
-        ) {
+        if (sameDay) {
 
             return date.toLocaleTimeString(
                 "ar-IQ",
                 {
-                    hour:
-                        "2-digit",
-                    minute:
-                        "2-digit"
+                    hour: "2-digit",
+                    minute: "2-digit"
                 }
             );
 
@@ -603,10 +575,8 @@
         return date.toLocaleDateString(
             "ar-IQ",
             {
-                day:
-                    "2-digit",
-                month:
-                    "2-digit"
+                day: "2-digit",
+                month: "2-digit"
             }
         );
 
@@ -614,10 +584,10 @@
 
 
     /* =========================================================
-       GET ACTIVITY STATE
+       SUPPORT
     ========================================================= */
 
-    function getActivityState(
+    function isSupportConversation(
         conversation
     ) {
 
@@ -626,32 +596,71 @@
                 conversation
             );
 
+        return Boolean(
+
+            conversation?.type ===
+                "support" ||
+
+            conversation?.is_support ===
+                true ||
+
+            contact?.is_support ===
+                true
+
+        );
+
+    }
+
+
+    /* =========================================================
+       ACTIVITY
+    ========================================================= */
+
+    function getActivityState(
+        conversation
+    ) {
+
+        if (
+            isSupportConversation(
+                conversation
+            )
+        ) {
+
+            return {
+                online: true,
+                hidden: false,
+                available: true
+            };
+
+        }
+
+
         const userId =
             getUserId(
                 conversation
             );
 
+        const contact =
+            getContact(
+                conversation
+            );
 
-        /*
-         * الدعم حالة خاصة.
-         */
 
         if (
-            contact?.is_support ||
-            conversation?.type ===
-                "support"
+            !userId
         ) {
 
             return {
 
-                available:
-                    true,
-
-                online:
-                    true,
+                online: false,
 
                 hidden:
-                    false
+                    contact?.show_activity ===
+                        false ||
+                    conversation?.show_activity ===
+                        false,
+
+                available: false
 
             };
 
@@ -664,54 +673,55 @@
 
         if (
             activityApi &&
-            userId &&
             typeof activityApi.getUserActivity ===
                 "function"
         ) {
 
             try {
 
-                const state =
+                const result =
                     activityApi.getUserActivity(
                         userId
                     );
 
 
                 if (
-                    state &&
-                    typeof state ===
+                    result &&
+                    typeof result ===
                         "object"
                 ) {
 
-                    const hidden =
-                        state.show_activity ===
-                        false;
+                    /*
+                     * النظام الحالي يعتمد أساساً
+                     * على online.
+                     *
+                     * إذا كان show_activity
+                     * غير موجود لا نعتبره مخفياً.
+                     */
 
+                    const hidden =
+                        result.show_activity ===
+                            false;
 
                     return {
 
-                        available:
-                            true,
-
                         online:
-                            hidden
-                                ? false
-                                : Boolean(
-                                    state.online
-                                ),
+                            !hidden &&
+                            result.online ===
+                                true,
 
-                        hidden
+                        hidden,
+
+                        available: true
 
                     };
 
                 }
 
-            } catch (
-                error
-            ) {
+            } catch (error) {
 
                 debug(
-                    "activity error",
+                    "activity:",
                     error
                 );
 
@@ -721,33 +731,178 @@
 
 
         /*
-         * fallback من بيانات المحادثة
+         * fallback
          */
 
         const hidden =
             contact?.show_activity ===
-            false ||
+                false ||
             conversation?.show_activity ===
-            false;
+                false;
 
 
         return {
 
-            available:
-                false,
-
             online:
-                hidden
-                    ? false
-                    : Boolean(
-                        contact?.is_online ??
-                        conversation?.is_online ??
-                        false
-                    ),
+                !hidden &&
+                Boolean(
+                    contact?.is_online ??
+                    conversation?.is_online ??
+                    false
+                ),
 
-            hidden
+            hidden,
+
+            available: false
 
         };
+
+    }
+
+
+    /* =========================================================
+       TYPING KEY
+    ========================================================= */
+
+    function typingKey(
+        conversationId,
+        userId
+    ) {
+
+        if (
+            !conversationId ||
+            !userId
+        ) {
+
+            return null;
+
+        }
+
+        return (
+            String(conversationId) +
+            "::" +
+            String(userId)
+        );
+
+    }
+
+
+    /* =========================================================
+       CORE TYPING
+    ========================================================= */
+
+    function checkCoreTyping(
+        conversation
+    ) {
+
+        const messagesCore =
+            getCore();
+
+        const conversationId =
+            getConversationId(
+                conversation
+            );
+
+        const userId =
+            getUserId(
+                conversation
+            );
+
+
+        if (
+            !messagesCore ||
+            !conversationId ||
+            !userId
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+         * دعم أكثر من اسم محتمل
+         * بدون كسر النظام الحالي.
+         */
+
+        const functions = [
+
+            "isUserTyping",
+
+            "isTyping",
+
+            "getTypingState"
+
+        ];
+
+
+        for (
+            const functionName
+            of functions
+        ) {
+
+            if (
+                typeof messagesCore[
+                    functionName
+                ] !==
+                    "function"
+            ) {
+
+                continue;
+
+            }
+
+
+            try {
+
+                const result =
+                    messagesCore[
+                        functionName
+                    ](
+                        conversationId,
+                        userId
+                    );
+
+
+                if (
+                    typeof result ===
+                        "boolean"
+                ) {
+
+                    return result;
+
+                }
+
+
+                if (
+                    result &&
+                    typeof result ===
+                        "object"
+                ) {
+
+                    return Boolean(
+
+                        result.typing ??
+                        result.isTyping ??
+                        result.online
+
+                    );
+
+                }
+
+            } catch (error) {
+
+                debug(
+                    "core typing:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        return false;
 
     }
 
@@ -782,49 +937,72 @@
 
 
         /*
-         * إذا كان Core يوفّر حالة typing
-         * نستخدمها مباشرة.
+         * أولاً: Core
          */
 
         if (
-            core &&
-            typeof core.isUserTyping ===
-                "function"
+            checkCoreTyping(
+                conversation
+            )
         ) {
 
-            try {
-
-                return Boolean(
-                    core.isUserTyping(
-                        conversationId,
-                        userId
-                    )
-                );
-
-            } catch (_) {}
+            return true;
 
         }
 
 
         /*
-         * fallback داخلي للأحداث.
+         * ثانياً: Events المحلية
+         */
+
+        const key =
+            typingKey(
+                conversationId,
+                userId
+            );
+
+
+        if (
+            key &&
+            typingUsers.has(
+                key
+            )
+        ) {
+
+            const expiresAt =
+                typingUsers.get(
+                    key
+                );
+
+
+            if (
+                Date.now() <
+                expiresAt
+            ) {
+
+                return true;
+
+            }
+
+
+            typingUsers.delete(
+                key
+            );
+
+        }
+
+
+        /*
+         * ثالثاً: بيانات المحادثة
          */
 
         if (
-            currentTypingConversation &&
-            String(
-                currentTypingConversation
-            ) ===
-            String(
-                conversationId
-            ) &&
-            currentTypingUser &&
-            String(
-                currentTypingUser
-            ) ===
-            String(
-                userId
-            )
+            conversation?.is_typing ===
+                true ||
+            conversation?.isTyping ===
+                true ||
+            conversation?.typing ===
+                true
         ) {
 
             return true;
@@ -838,7 +1016,7 @@
 
 
     /* =========================================================
-       GET PREVIEW
+       PREVIEW
     ========================================================= */
 
     function getPreview(
@@ -856,77 +1034,22 @@
         }
 
 
-        const message =
-            getLastMessage(
-                conversation
-            );
-
-
-        if (
-            message
-        ) {
-
-            return message;
-
-        }
-
-
-        return "";
-
-    }
-
-
-    /* =========================================================
-       SORT CONVERSATIONS
-    ========================================================= */
-
-    function sortConversations(
-        list
-    ) {
-
-        return [
-            ...list
-        ].sort(
-            (
-                a,
-                b
-            ) => {
-
-                const first =
-                    new Date(
-                        getLastMessageTime(
-                            a
-                        ) || 0
-                    ).getTime();
-
-                const second =
-                    new Date(
-                        getLastMessageTime(
-                            b
-                        ) || 0
-                    ).getTime();
-
-                return (
-                    second -
-                    first
-                );
-
-            }
+        return getLastMessage(
+            conversation
         );
 
     }
 
 
     /* =========================================================
-       REMOVE DUPLICATES
+       UNIQUE
     ========================================================= */
 
     function uniqueConversations(
-        list
+        conversations
     ) {
 
-        const result =
-            [];
+        const result = [];
 
         const seen =
             new Set();
@@ -934,7 +1057,7 @@
 
         for (
             const conversation
-            of list
+            of conversations
         ) {
 
             const id =
@@ -942,32 +1065,26 @@
                     conversation
                 );
 
-            if (
-                !id
-            ) {
 
+            if (!id) {
                 continue;
-
             }
+
 
             const key =
-                String(
-                    id
-                );
+                String(id);
+
 
             if (
-                seen.has(
-                    key
-                )
+                seen.has(key)
             ) {
 
                 continue;
 
             }
 
-            seen.add(
-                key
-            );
+
+            seen.add(key);
 
             result.push(
                 conversation
@@ -982,14 +1099,149 @@
 
 
     /* =========================================================
-       BUILD SIGNATURE
+       SORT
+    ========================================================= */
+
+    function sortConversations(
+        conversations
+    ) {
+
+        return [
+            ...conversations
+        ].sort(
+            (a, b) => {
+
+                const aTime =
+                    new Date(
+                        getLastMessageTime(
+                            a
+                        ) || 0
+                    ).getTime();
+
+                const bTime =
+                    new Date(
+                        getLastMessageTime(
+                            b
+                        ) || 0
+                    ).getTime();
+
+
+                return (
+                    bTime -
+                    aTime
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       GET CORE CONVERSATIONS
+    ========================================================= */
+
+    function getCoreConversations() {
+
+        const messagesCore =
+            getCore();
+
+
+        if (
+            !messagesCore
+        ) {
+
+            return [];
+
+        }
+
+
+        if (
+            typeof messagesCore.getConversations !==
+                "function"
+        ) {
+
+            return [];
+
+        }
+
+
+        try {
+
+            const result =
+                messagesCore.getConversations();
+
+
+            if (
+                Array.isArray(
+                    result
+                )
+            ) {
+
+                return result;
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CONVERSATIONS]",
+                "getConversations error:",
+                error
+            );
+
+        }
+
+
+        return [];
+
+    }
+
+
+    /* =========================================================
+       NORMALIZE
+    ========================================================= */
+
+    function getConversations() {
+
+        let list =
+            getCoreConversations();
+
+
+        /*
+         * فقط المحادثات التي لديها
+         * conversation ID حقيقي.
+         */
+
+        list =
+            list.filter(
+                conversation =>
+                    Boolean(
+                        getConversationId(
+                            conversation
+                        )
+                    )
+            );
+
+
+        return sortConversations(
+            uniqueConversations(
+                list
+            )
+        );
+
+    }
+
+
+    /* =========================================================
+       SIGNATURE
     ========================================================= */
 
     function buildSignature(
-        list
+        conversations
     ) {
 
-        return list
+        return conversations
             .map(
                 conversation => {
 
@@ -1046,18 +1298,14 @@
 
 
     /* =========================================================
-       CREATE STYLE
+       CSS
     ========================================================= */
 
     function injectStyles() {
 
-        const styleId =
-            "wfesc-conversations-style";
-
-
         if (
             document.getElementById(
-                styleId
+                "wfesc-conversations-style"
             )
         ) {
 
@@ -1071,8 +1319,9 @@
                 "style"
             );
 
+
         style.id =
-            styleId;
+            "wfesc-conversations-style";
 
 
         style.textContent = `
@@ -1081,6 +1330,13 @@
                 position:relative;
             }
 
+            .wfesc-conversation-main{
+                display:flex;
+                align-items:center;
+                width:100%;
+                min-width:0;
+                gap:11px;
+            }
 
             .wfesc-conversation-avatar-wrap{
                 position:relative;
@@ -1090,64 +1346,60 @@
                 flex:0 0 52px;
             }
 
-
             .wfesc-conversation-avatar{
+                display:block;
                 width:52px;
                 height:52px;
                 border-radius:50%;
                 object-fit:cover;
-                display:block;
                 background:#111;
-                border:1px solid #292929;
+                border:1px solid rgba(255,255,255,.10);
             }
-
 
             .wfesc-conversation-online{
                 position:absolute;
-                right:1px;
+                left:0;
                 bottom:1px;
                 width:13px;
                 height:13px;
                 border-radius:50%;
-                background:#242424;
-                border:2px solid #080808;
+                background:#555;
+                border:2px solid #030303;
                 box-sizing:border-box;
                 transition:
                     background .2s ease,
-                    box-shadow .2s ease;
+                    box-shadow .2s ease,
+                    transform .2s ease;
             }
-
 
             .wfesc-conversation-online.active{
-                background:#20d66b;
+                background:#36e27b;
                 box-shadow:
-                    0 0 0 2px rgba(32,214,107,.12),
-                    0 0 9px rgba(32,214,107,.55);
+                    0 0 0 2px rgba(54,226,123,.10),
+                    0 0 11px rgba(54,226,123,.55);
+                transform:scale(1.02);
             }
-
 
             .wfesc-conversation-info{
                 min-width:0;
                 flex:1;
             }
 
-
             .wfesc-conversation-name{
-                font-weight:700;
                 color:#fff;
                 font-size:15px;
+                font-weight:800;
                 line-height:1.35;
                 white-space:nowrap;
                 overflow:hidden;
                 text-overflow:ellipsis;
             }
 
-
             .wfesc-conversation-preview{
                 margin-top:4px;
-                color:#8e8e8e;
+                color:#929292;
                 font-size:13px;
-                line-height:1.3;
+                line-height:1.35;
                 white-space:nowrap;
                 overflow:hidden;
                 text-overflow:ellipsis;
@@ -1155,61 +1407,40 @@
                     color .2s ease;
             }
 
-
             .wfesc-conversation-preview.typing{
-                color:#20d66b;
-                font-weight:600;
-            }
-
-
-            .wfesc-conversation-time{
-                align-self:flex-start;
-                color:#777;
-                font-size:11px;
-                white-space:nowrap;
-                margin-right:6px;
-            }
-
-
-            .wfesc-conversation-main{
-                display:flex;
-                align-items:center;
-                gap:11px;
-                width:100%;
-                min-width:0;
-            }
-
-
-            .wfesc-conversation-card[data-wfesc-conversation]{
-                cursor:pointer;
-            }
-
-
-            .wfesc-conversation-card[data-wfesc-conversation]:hover
-            .wfesc-conversation-name{
-                color:#fff;
-            }
-
-
-            @keyframes wfescTypingPulse{
-                0%{
-                    opacity:.45;
-                }
-                50%{
-                    opacity:1;
-                }
-                100%{
-                    opacity:.45;
-                }
-            }
-
-
-            .wfesc-conversation-preview.typing{
+                color:#36e27b;
+                font-weight:700;
                 animation:
                     wfescTypingPulse
                     1.1s
                     ease-in-out
                     infinite;
+            }
+
+            .wfesc-conversation-time{
+                align-self:flex-start;
+                color:#777;
+                font-size:10px;
+                white-space:nowrap;
+                margin-right:5px;
+            }
+
+            .wfesc-conversation-card{
+                cursor:pointer;
+            }
+
+            @keyframes wfescTypingPulse{
+                0%{
+                    opacity:.55;
+                }
+
+                50%{
+                    opacity:1;
+                }
+
+                100%{
+                    opacity:.55;
+                }
             }
 
         `;
@@ -1235,6 +1466,7 @@
                 conversation
             );
 
+
         if (
             !conversationId
         ) {
@@ -1252,12 +1484,6 @@
 
         const name =
             getDisplayName(
-                conversation
-            );
-
-
-        const username =
-            getUsername(
                 conversation
             );
 
@@ -1300,18 +1526,8 @@
             );
 
 
-        /*
-         * نستخدم أكثر من class حتى يبقى
-         * متوافقاً مع التصميم الموجود.
-         */
-
         card.className =
-            [
-                "conversation-card",
-                "wfesc-conversation-card"
-            ].join(
-                " "
-            );
+            "conversation-card wfesc-conversation-card";
 
 
         card.dataset.wfescConversation =
@@ -1343,7 +1559,7 @@
                 >
 
                     <img
-                        class="wfesc-conversation-avatar"
+                        class="wfesc-conversation-avatar avatar"
                         src="${escapeHTML(avatar)}"
                         alt="${escapeHTML(name)}"
                         loading="lazy"
@@ -1353,6 +1569,7 @@
                     <span
                         class="
                             wfesc-conversation-online
+                            online-dot
                             ${activityState.online
                                 ? "active"
                                 : ""}
@@ -1364,11 +1581,14 @@
 
 
                 <div
-                    class="wfesc-conversation-info"
+                    class="wfesc-conversation-info conversation-info"
                 >
 
                     <div
-                        class="wfesc-conversation-name"
+                        class="
+                            wfesc-conversation-name
+                            conversation-name
+                        "
                         title="${escapeHTML(name)}"
                     >
                         ${escapeHTML(name)}
@@ -1378,6 +1598,7 @@
                     <div
                         class="
                             wfesc-conversation-preview
+                            conversation-preview
                             ${typing
                                 ? "typing"
                                 : ""}
@@ -1393,7 +1614,10 @@
                     time
                         ? `
                             <div
-                                class="wfesc-conversation-time"
+                                class="
+                                    wfesc-conversation-time
+                                    conversation-time
+                                "
                             >
                                 ${escapeHTML(time)}
                             </div>
@@ -1406,10 +1630,9 @@
         `;
 
 
-        /*
-         * إذا الصورة غير موجودة
-         * نرجع للصورة الافتراضية.
-         */
+        /* =====================================================
+           IMAGE FALLBACK
+        ===================================================== */
 
         const image =
             card.querySelector(
@@ -1417,9 +1640,7 @@
             );
 
 
-        if (
-            image
-        ) {
+        if (image) {
 
             image.addEventListener(
                 "error",
@@ -1427,41 +1648,34 @@
 
                     if (
                         image.dataset.fallbackApplied ===
-                        "true"
+                            "true"
                     ) {
 
                         return;
 
                     }
 
+
                     image.dataset.fallbackApplied =
                         "true";
+
 
                     image.src =
                         CONFIG.DEFAULT_AVATAR;
 
-                },
-                {
-                    once:
-                        true
                 }
             );
 
         }
 
 
-        /*
-         * فتح المحادثة
-         */
+        /* =====================================================
+           OPEN CONVERSATION
+        ===================================================== */
 
         card.addEventListener(
             "click",
             event => {
-
-                /*
-                 * لا نريد فتح المحادثة
-                 * إذا ضغط على رابط داخلي مستقبلاً.
-                 */
 
                 if (
                     event.target.closest(
@@ -1484,23 +1698,30 @@
                         "function"
                 ) {
 
-                    messagesCore.openConversation(
-                        conversationId,
-                        getContact(
-                            conversation
-                        ),
-                        conversation.type ||
-                        null
-                    );
+                    try {
 
-                    return;
+                        messagesCore.openConversation(
+                            conversationId,
+                            getContact(
+                                conversation
+                            ),
+                            conversation.type ||
+                            null
+                        );
+
+                        return;
+
+                    } catch (error) {
+
+                        debug(
+                            "openConversation:",
+                            error
+                        );
+
+                    }
 
                 }
 
-
-                /*
-                 * fallback
-                 */
 
                 if (
                     typeof window.WFESC_MESSAGES_OPEN_CONVERSATION ===
@@ -1547,108 +1768,25 @@
             !listElement
         ) {
 
-            debug(
-                "conversationList غير موجود"
-            );
-
             return;
 
         }
 
 
-        const messagesCore =
-            getCore();
-
-
-        if (
-            !messagesCore ||
-            typeof messagesCore.getConversations !==
-                "function"
-        ) {
-
-            debug(
-                "Messages Core غير جاهز"
-            );
-
-            return;
-
-        }
-
-
-        let conversationsData;
-
-
-        try {
-
-            conversationsData =
-                messagesCore.getConversations();
-
-        } catch (
-            error
-        ) {
-
-            console.warn(
-                "[WFESC CONVERSATIONS] getConversations:",
-                error
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !Array.isArray(
-                conversationsData
-            )
-        ) {
-
-            conversationsData =
-                [];
-
-        }
-
-
-        /*
-         * فقط المحادثات الفعلية.
-         */
-
-        conversationsData =
-            conversationsData.filter(
-                conversation => {
-
-                    return Boolean(
-                        getConversationId(
-                            conversation
-                        )
-                    );
-
-                }
-            );
-
-
-        conversationsData =
-            uniqueConversations(
-                conversationsData
-            );
-
-
-        conversationsData =
-            sortConversations(
-                conversationsData
-            );
+        const conversations =
+            getConversations();
 
 
         const signature =
             buildSignature(
-                conversationsData
+                conversations
             );
 
 
         if (
             !force &&
             signature ===
-                lastRenderedSignature
+                lastSignature
         ) {
 
             return;
@@ -1667,27 +1805,40 @@
 
 
             if (
-                !conversationsData.length
+                conversations.length ===
+                    0
             ) {
 
-                /*
-                 * لا نضيف مستخدمين وهميين.
-                 * نخلي القائمة فارغة حتى Core
-                 * أو الواجهة الأصلية تتعامل معها.
-                 */
+                listElement.innerHTML = `
 
-                listElement.innerHTML =
-                    "";
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            💬
+                        </div>
+
+                        <strong>
+                            لا توجد محادثات
+                        </strong>
+
+                        <p>
+                            ستظهر هنا المحادثات التي تبدأ بها.
+                        </p>
+
+                    </div>
+
+                `;
 
             } else {
 
-                conversationsData.forEach(
+                conversations.forEach(
                     conversation => {
 
                         const card =
                             createConversationCard(
                                 conversation
                             );
+
 
                         if (
                             card
@@ -1706,6 +1857,7 @@
                 listElement.innerHTML =
                     "";
 
+
                 listElement.appendChild(
                     fragment
                 );
@@ -1713,7 +1865,7 @@
             }
 
 
-            lastRenderedSignature =
+            lastSignature =
                 signature;
 
         } finally {
@@ -1727,7 +1879,7 @@
 
 
     /* =========================================================
-       REFRESH ACTIVITY ONLY
+       REFRESH ACTIVITY
     ========================================================= */
 
     function refreshActivity() {
@@ -1745,6 +1897,10 @@
         }
 
 
+        const conversations =
+            getConversations();
+
+
         const cards =
             listElement.querySelectorAll(
                 "[data-wfesc-conversation]"
@@ -1758,27 +1914,8 @@
                     card.dataset.wfescConversation;
 
 
-                const messagesCore =
-                    getCore();
-
-
-                if (
-                    !messagesCore ||
-                    typeof messagesCore.getConversations !==
-                        "function"
-                ) {
-
-                    return;
-
-                }
-
-
-                const conversationsData =
-                    messagesCore.getConversations();
-
-
                 const conversation =
-                    conversationsData.find(
+                    conversations.find(
                         item =>
                             String(
                                 getConversationId(
@@ -1818,9 +1955,8 @@
 
                     dot.classList.toggle(
                         "active",
-                        Boolean(
-                            state.online
-                        )
+                        state.online ===
+                            true
                     );
 
                 }
@@ -1832,24 +1968,20 @@
                     );
 
 
-                const typing =
-                    isConversationTyping(
-                        conversation
-                    );
-
-
                 if (
                     preview
                 ) {
 
-                    const text =
-                        getPreview(
+                    const typing =
+                        isConversationTyping(
                             conversation
                         );
 
 
                     preview.textContent =
-                        text;
+                        getPreview(
+                            conversation
+                        );
 
 
                     preview.classList.toggle(
@@ -1866,7 +1998,7 @@
 
 
     /* =========================================================
-       FULL REFRESH
+       REFRESH
     ========================================================= */
 
     function refresh(
@@ -1878,6 +2010,149 @@
         );
 
         refreshActivity();
+
+    }
+
+
+    /* =========================================================
+       TYPING START
+    ========================================================= */
+
+    function setTyping(
+        conversationId,
+        userId
+    ) {
+
+        if (
+            !conversationId ||
+            !userId
+        ) {
+
+            return;
+
+        }
+
+
+        const key =
+            typingKey(
+                conversationId,
+                userId
+            );
+
+
+        if (!key) {
+            return;
+        }
+
+
+        typingUsers.set(
+            key,
+            Date.now() +
+            CONFIG.TYPING_TIMEOUT
+        );
+
+
+        refresh(
+            true
+        );
+
+
+        setTimeout(
+            () => {
+
+                const expiresAt =
+                    typingUsers.get(
+                        key
+                    );
+
+
+                if (
+                    expiresAt &&
+                    Date.now() >=
+                        expiresAt
+                ) {
+
+                    typingUsers.delete(
+                        key
+                    );
+
+
+                    refresh(
+                        true
+                    );
+
+                }
+
+            },
+            CONFIG.TYPING_TIMEOUT + 100
+        );
+
+    }
+
+
+    /* =========================================================
+       TYPING STOP
+    ========================================================= */
+
+    function clearTyping(
+        conversationId,
+        userId
+    ) {
+
+        if (
+            !conversationId
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            userId
+        ) {
+
+            typingUsers.delete(
+                typingKey(
+                    conversationId,
+                    userId
+                )
+            );
+
+        } else {
+
+            const prefix =
+                String(
+                    conversationId
+                ) +
+                "::";
+
+
+            for (
+                const key
+                of typingUsers.keys()
+            ) {
+
+                if (
+                    key.startsWith(
+                        prefix
+                    )
+                ) {
+
+                    typingUsers.delete(
+                        key
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        refresh(
+            true
+        );
 
     }
 
@@ -1896,47 +2171,47 @@
 
 
         const conversationId =
-            detail.conversationId ||
-            detail.conversation_id ||
-            detail.target_conversation_id ||
-            null;
+            firstValue(
+
+                detail.conversationId,
+
+                detail.conversation_id,
+
+                detail.target_conversation_id,
+
+                detail.targetConversationId
+
+            );
 
 
         const userId =
-            detail.userId ||
-            detail.user_id ||
-            detail.sender_id ||
-            null;
+            firstValue(
+
+                detail.userId,
+
+                detail.user_id,
+
+                detail.sender_id,
+
+                detail.senderId
+
+            );
+
+
+        const typing =
+            detail.typing ??
+            detail.isTyping ??
+            detail.is_typing;
 
 
         if (
-            detail.typing ===
-                false ||
-            detail.isTyping ===
+            typing ===
                 false
         ) {
 
-            if (
-                conversationId &&
-                String(
-                    currentTypingConversation
-                ) ===
-                    String(
-                        conversationId
-                    )
-            ) {
-
-                currentTypingConversation =
-                    null;
-
-                currentTypingUser =
-                    null;
-
-            }
-
-
-            refresh(
-                true
+            clearTyping(
+                conversationId,
+                userId
             );
 
             return;
@@ -1954,57 +2229,16 @@
         }
 
 
-        currentTypingConversation =
-            conversationId;
-
-        currentTypingUser =
-            userId;
-
-
-        refresh(
-            true
-        );
-
-
-        setTimeout(
-            () => {
-
-                if (
-                    String(
-                        currentTypingConversation
-                    ) ===
-                        String(
-                            conversationId
-                        ) &&
-                    String(
-                        currentTypingUser
-                    ) ===
-                        String(
-                            userId
-                        )
-                ) {
-
-                    currentTypingConversation =
-                        null;
-
-                    currentTypingUser =
-                        null;
-
-                    refresh(
-                        true
-                    );
-
-                }
-
-            },
-            CONFIG.TYPING_TIMEOUT
+        setTyping(
+            conversationId,
+            userId
         );
 
     }
 
 
     /* =========================================================
-       REALTIME / CORE EVENTS
+       EVENT BINDING
     ========================================================= */
 
     function bindEvents() {
@@ -2022,43 +2256,42 @@
             true;
 
 
-        /*
-         * النشاط
-         */
+        /* =====================================================
+           ACTIVITY
+        ===================================================== */
 
-        window.addEventListener(
+        const activityEvents = [
+
             "wfesc:activity-sync",
-            () => {
 
-                refreshActivity();
-
-            }
-        );
-
-
-        window.addEventListener(
             "wfesc:activity-response",
-            () => {
 
-                refreshActivity();
+            "wfesc:activity-state-changed",
+
+            "wfesc:chat-header-refresh"
+
+        ];
+
+
+        activityEvents.forEach(
+            eventName => {
+
+                window.addEventListener(
+                    eventName,
+                    () => {
+
+                        refreshActivity();
+
+                    }
+                );
 
             }
         );
 
 
-        window.addEventListener(
-            "wfesc:chat-header-refresh",
-            () => {
-
-                refreshActivity();
-
-            }
-        );
-
-
-        /*
-         * الكتابة
-         */
+        /* =====================================================
+           TYPING
+        ===================================================== */
 
         window.addEventListener(
             "wfesc:typing",
@@ -2073,21 +2306,26 @@
 
 
         window.addEventListener(
+            "wfesc:conversation-typing",
+            handleTypingEvent
+        );
+
+
+        window.addEventListener(
             "wfesc:typing-stop",
             event => {
 
+                const detail =
+                    event?.detail ||
+                    {};
+
+
                 handleTypingEvent(
                     {
-                        detail:
-                            {
-                                ...(
-                                    event?.detail ||
-                                    {}
-                                ),
-
-                                typing:
-                                    false
-                            }
+                        detail: {
+                            ...detail,
+                            typing: false
+                        }
                     }
                 );
 
@@ -2095,58 +2333,35 @@
         );
 
 
-        window.addEventListener(
-            "wfesc:conversation-typing",
-            handleTypingEvent
-        );
+        /* =====================================================
+           CONVERSATIONS
+        ===================================================== */
 
+        const conversationEvents = [
 
-        /*
-         * أي تحديث عام للمحادثات.
-         */
-
-        window.addEventListener(
             "wfesc:conversations-refresh",
-            () => {
 
-                refresh(
-                    true
-                );
-
-            }
-        );
-
-
-        window.addEventListener(
             "wfesc:conversation-updated",
-            () => {
 
-                refresh(
-                    true
-                );
-
-            }
-        );
-
-
-        window.addEventListener(
             "wfesc:message-realtime",
-            () => {
 
-                refresh(
-                    true
-                );
+            "wfesc:messages-refresh"
 
-            }
-        );
+        ];
 
 
-        window.addEventListener(
-            "wfesc:messages-refresh",
-            () => {
+        conversationEvents.forEach(
+            eventName => {
 
-                refresh(
-                    true
+                window.addEventListener(
+                    eventName,
+                    () => {
+
+                        refresh(
+                            true
+                        );
+
+                    }
                 );
 
             }
@@ -2154,16 +2369,29 @@
 
 
         /*
-         * Realtime العام لـ Supabase.
-         * Core نفسه مسؤول عن الاتصال الحقيقي.
-         * نحن فقط نعيد فحص القائمة.
+         * بعض الأنظمة قد ترسل حدثاً
+         * باسم مختلف عند وصول رسالة.
          */
 
         window.addEventListener(
-            "wfesc:activity-state-changed",
+            "wfesc:new-message",
             () => {
 
-                refreshActivity();
+                refresh(
+                    true
+                );
+
+            }
+        );
+
+
+        window.addEventListener(
+            "wfesc:message-sent",
+            () => {
+
+                refresh(
+                    true
+                );
 
             }
         );
@@ -2172,10 +2400,32 @@
 
 
     /* =========================================================
-       PERIODIC ACTIVITY REFRESH
+       START TIMERS
     ========================================================= */
 
-    function startRefreshTimer() {
+    function startTimers() {
+
+        if (
+            activityTimer
+        ) {
+
+            clearInterval(
+                activityTimer
+            );
+
+        }
+
+
+        activityTimer =
+            setInterval(
+                () => {
+
+                    refreshActivity();
+
+                },
+                CONFIG.ACTIVITY_REFRESH
+            );
+
 
         if (
             refreshTimer
@@ -2192,10 +2442,20 @@
             setInterval(
                 () => {
 
+                    /*
+                     * نعيد فحص المحادثات
+                     * بدون إجبار إعادة البناء
+                     * إذا لم يتغير شيء.
+                     */
+
+                    render(
+                        false
+                    );
+
                     refreshActivity();
 
                 },
-                CONFIG.REFRESH_INTERVAL
+                5000
             );
 
     }
@@ -2274,11 +2534,11 @@
             true
         );
 
-        startRefreshTimer();
+        startTimers();
 
 
         debug(
-            "messages-conversations.js initialized"
+            "WFESC conversations initialized"
         );
 
     }
@@ -2308,7 +2568,9 @@
 
         getPreview,
 
-        isConversationTyping
+        isConversationTyping,
+
+        getConversations
 
     };
 
@@ -2326,8 +2588,7 @@
             "DOMContentLoaded",
             waitForCore,
             {
-                once:
-                    true
+                once: true
             }
         );
 
