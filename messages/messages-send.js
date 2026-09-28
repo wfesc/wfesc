@@ -72,10 +72,9 @@
 
     let isSending = false;
 
-
     /*
        يمنع تنفيذ أكثر من عملية إرسال
-       لنفس النص في نفس اللحظة.
+       في نفس اللحظة.
     */
     let sendLock = false;
 
@@ -91,10 +90,6 @@
         }
 
 
-        /*
-           نعيد التركيز فقط إذا كان الحقل
-           ما زال داخل المحادثة الحالية.
-        */
         try {
 
             messageInput.focus({
@@ -111,9 +106,6 @@
         }
 
 
-        /*
-           نطلب من محرك الكيبورد إعادة الحساب.
-        */
         const keyboard =
             window.WFESC_MESSAGES_KEYBOARD;
 
@@ -127,16 +119,21 @@
             setTimeout(
                 () => {
 
-                    keyboard.update();
+                    try {
+                        keyboard.update();
+                    } catch (_) {}
 
                 },
                 30
             );
 
+
             setTimeout(
                 () => {
 
-                    keyboard.update();
+                    try {
+                        keyboard.update();
+                    } catch (_) {}
 
                 },
                 150
@@ -271,6 +268,10 @@
 
         return {
 
+            /*
+               هذا ID مؤقت فقط للواجهة.
+               لا نرسله إلى Supabase.
+            */
             id:
                 `temp-${Date.now()}-${Math.random()
                     .toString(36)
@@ -318,19 +319,70 @@
         }
 
 
-        let row =
-            null;
+        let row = null;
 
 
+        /*
+           إذا كان Core الجديد يوفر
+           addMessageToCurrentConversation
+           نستخدمه حتى تبقى الرسالة المؤقتة
+           داخل حالة المحادثة أيضاً.
+        */
         if (
-            typeof core.createMessageElement ===
+            typeof core.addMessageToCurrentConversation ===
             "function"
         ) {
 
-            row =
-                core.createMessageElement(
-                    message
+            try {
+
+                const result =
+                    core.addMessageToCurrentConversation(
+                        message,
+                        {
+                            appendOnly: true,
+                            optimistic: true,
+                            scroll: false
+                        }
+                    );
+
+
+                /*
+                   بعض نسخ Core قد ترجع العنصر.
+                */
+                if (
+                    result &&
+                    result.nodeType === 1
+                ) {
+
+                    row = result;
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC optimistic core add:",
+                    error
                 );
+            }
+        }
+
+
+        /*
+           إذا لم يرجع Core العنصر،
+           ننشئه بالطريقة القديمة.
+        */
+        if (!row) {
+
+            if (
+                typeof core.createMessageElement ===
+                "function"
+            ) {
+
+                row =
+                    core.createMessageElement(
+                        message
+                    );
+            }
         }
 
 
@@ -344,14 +396,48 @@
         }
 
 
+        /*
+           تأكيد أن الرسالة مؤقتة.
+        */
         row.classList.add(
             "message-new",
             "optimistic"
         );
 
 
+        row.dataset.optimistic =
+            "true";
+
+
         row.dataset.optimisticId =
             String(message.id);
+
+
+        if (
+            message.sender_id != null
+        ) {
+
+            row.dataset.senderId =
+                String(message.sender_id);
+        }
+
+
+        if (
+            message.content != null
+        ) {
+
+            row.dataset.content =
+                String(message.content);
+        }
+
+
+        if (
+            message.created_at
+        ) {
+
+            row.dataset.messageTime =
+                String(message.created_at);
+        }
 
 
         /*
@@ -382,9 +468,18 @@
         } catch (_) {}
 
 
-        chatMessages.appendChild(
-            row
-        );
+        /*
+           إذا لم يكن العنصر موجوداً داخل DOM
+           نضيفه الآن.
+        */
+        if (
+            !row.parentElement
+        ) {
+
+            chatMessages.appendChild(
+                row
+            );
+        }
 
 
         /*
@@ -522,79 +617,129 @@
         }
 
 
-        temporaryRow.classList.remove(
+        /*
+        ========================================================
+           مهم جداً
+
+           لا نحذف optimistic هنا.
+
+           السبب:
+           Supabase Realtime قد يرسل INSERT بعد
+           نجاح RPC مباشرة.
+
+           إذا حذفنا optimistic الآن،
+           Core سيعتبر INSERT رسالة جديدة
+           ويظهر النص مرتين.
+
+           نخليها optimistic إلى أن يقوم
+           messages-core.js بعملية reconciliation
+           عند وصول INSERT الحقيقي.
+        ========================================================
+        */
+
+        temporaryRow.classList.add(
             "optimistic"
         );
 
 
-        temporaryRow.classList.remove(
-            "message-new"
-        );
-
-
-        temporaryRow.dataset.confirmed =
+        temporaryRow.dataset.optimistic =
             "true";
 
 
-        if (!sentMessage) {
-            return;
-        }
-
-
-        const realId =
-            sentMessage.id ??
-            sentMessage.message_id;
-
-
-        if (realId != null) {
-
-            temporaryRow.dataset.messageId =
-                String(realId);
-        }
-
-
         /*
-           تحديث الوقت.
+           إذا رجعت الرسالة الحقيقية من RPC
+           نربط العنصر بالـ ID الحقيقي.
         */
-        const timeElement =
-            temporaryRow.querySelector(
-                ".message-time"
-            );
+        if (sentMessage) {
+
+            const realId =
+                sentMessage.id ??
+                sentMessage.message_id;
 
 
-        const createdAt =
-            sentMessage.created_at ||
-            sentMessage.sent_at;
+            if (realId != null) {
+
+                temporaryRow.dataset.messageId =
+                    String(realId);
+            }
 
 
-        if (
-            timeElement &&
-            createdAt
-        ) {
+            const senderId =
+                sentMessage.sender_id ??
+                sentMessage.user_id;
 
-            const date =
-                new Date(
-                    createdAt
+
+            if (senderId != null) {
+
+                temporaryRow.dataset.senderId =
+                    String(senderId);
+            }
+
+
+            const content =
+                sentMessage.content ??
+                sentMessage.message ??
+                null;
+
+
+            if (content != null) {
+
+                temporaryRow.dataset.content =
+                    String(content);
+            }
+
+
+            const createdAt =
+                sentMessage.created_at ||
+                sentMessage.sent_at;
+
+
+            if (createdAt) {
+
+                temporaryRow.dataset.messageTime =
+                    String(createdAt);
+            }
+
+
+            /*
+               تحديث الوقت فقط.
+               لا نزيل optimistic.
+            */
+            const timeElement =
+                temporaryRow.querySelector(
+                    ".message-time"
                 );
 
 
             if (
-                !Number.isNaN(
-                    date.getTime()
-                )
+                timeElement &&
+                createdAt
             ) {
 
-                timeElement.textContent =
-                    date.toLocaleTimeString(
-                        "ar-IQ",
-                        {
-                            hour:
-                                "2-digit",
-
-                            minute:
-                                "2-digit"
-                        }
+                const date =
+                    new Date(
+                        createdAt
                     );
+
+
+                if (
+                    !Number.isNaN(
+                        date.getTime()
+                    )
+                ) {
+
+                    timeElement.textContent =
+                        date.toLocaleTimeString(
+                            "ar-IQ",
+                            {
+                                hour:
+                                    "2-digit",
+
+                                minute:
+                                    "2-digit"
+                            }
+                        );
+                }
             }
         }
     }
@@ -622,6 +767,85 @@
                 "WFESC stop typing:",
                 error
             );
+        }
+    }
+
+
+    /* =========================================================
+       REMOVE FAILED MESSAGE
+    ========================================================= */
+
+    function removeTemporaryMessage(
+        temporaryRow
+    ) {
+
+        if (!temporaryRow) {
+            return;
+        }
+
+
+        try {
+
+            const animation =
+                temporaryRow.animate(
+                    [
+                        {
+                            opacity: 1,
+                            transform:
+                                "translateX(0)"
+                        },
+                        {
+                            opacity: 0,
+                            transform:
+                                "translateX(8px)"
+                        }
+                    ],
+                    {
+                        duration: 150,
+                        easing:
+                            "ease-in"
+                    }
+                );
+
+
+            if (
+                animation &&
+                animation.finished
+            ) {
+
+                animation.finished
+                    .then(() => {
+
+                        if (
+                            temporaryRow &&
+                            temporaryRow.isConnected
+                        ) {
+
+                            temporaryRow.remove();
+                        }
+
+                    })
+                    .catch(() => {
+
+                        if (
+                            temporaryRow &&
+                            temporaryRow.isConnected
+                        ) {
+
+                            temporaryRow.remove();
+                        }
+                    });
+
+            } else {
+
+                temporaryRow.remove();
+            }
+
+        } catch (_) {
+
+            try {
+                temporaryRow.remove();
+            } catch (_) {}
         }
     }
 
@@ -712,20 +936,16 @@
         );
 
 
-        /*
-        ========================================================
+        /* =====================================================
            1. إيقاف جاري الكتابة
-        ========================================================
-        */
+        ===================================================== */
 
         stopTyping();
 
 
-        /*
-        ========================================================
-           2. إنشاء الرسالة فوراً
-        ========================================================
-        */
+        /* =====================================================
+           2. إنشاء الرسالة المؤقتة
+        ===================================================== */
 
         const optimistic =
             createOptimisticMessage(
@@ -740,11 +960,9 @@
             );
 
 
-        /*
-        ========================================================
+        /* =====================================================
            3. تفريغ الحقل فوراً
-        ========================================================
-        */
+        ===================================================== */
 
         messageInput.value =
             "";
@@ -753,11 +971,9 @@
         resizeTextarea();
 
 
-        /*
-        ========================================================
+        /* =====================================================
            4. إرسال إلى Supabase
-        ========================================================
-        */
+        ===================================================== */
 
         try {
 
@@ -781,11 +997,9 @@
             }
 
 
-            /*
-            ====================================================
+            /* =================================================
                التأكد أن المستخدم ما زال في نفس المحادثة
-            ====================================================
-            */
+            ================================================= */
 
             const currentConversation =
                 core.getCurrentConversation();
@@ -800,15 +1014,20 @@
                 )
             ) {
 
+                /*
+                   لا نعيد رسم المحادثة
+                   إذا المستخدم غادرها أثناء الإرسال.
+
+                   الرسالة أصبحت محفوظة في Supabase
+                   وستظهر عند فتح المحادثة من جديد.
+                */
                 return;
             }
 
 
-            /*
-            ====================================================
+            /* =================================================
                استخراج الرسالة الحقيقية
-            ====================================================
-            */
+            ================================================= */
 
             const sentMessage =
                 extractSentMessage(
@@ -816,12 +1035,12 @@
                 );
 
 
-            /*
-            ====================================================
-               تأكيد الرسالة الموجودة أصلاً
-               لا نعيد رسم المحادثة.
-            ====================================================
-            */
+            /* =================================================
+               تأكيد الرسالة المؤقتة
+
+               لا نحذف optimistic هنا.
+               Realtime هو الذي سيؤكدها نهائياً.
+            ================================================= */
 
             confirmTemporaryMessage(
                 temporaryRow,
@@ -829,32 +1048,9 @@
             );
 
 
-            /*
-            ====================================================
-               تحديث القائمة محلياً إذا كان لدينا
-               آخر وقت/رسالة.
-            ====================================================
-            */
-
-            if (
-                sentMessage &&
-                typeof core.getConversations ===
-                "function"
-            ) {
-
-                /*
-                   Realtime سيحدث قائمة المحادثات
-                   عند وصول INSERT.
-                   لا نحتاج إعادة تحميل كاملة.
-                */
-            }
-
-
-            /*
-            ====================================================
-               التأكد من بقاء الرسالة في الأسفل
-            ====================================================
-            */
+            /* =================================================
+               التمرير
+            ================================================= */
 
             scrollToBottom(
                 "smooth"
@@ -870,51 +1066,11 @@
 
 
             /*
-            ====================================================
-               فشل الإرسال:
-               نحذف النسخة المؤقتة
-            ====================================================
+               حذف الرسالة المؤقتة عند الفشل فقط.
             */
-
-            if (temporaryRow) {
-
-                try {
-
-                    temporaryRow.animate(
-                        [
-                            {
-                                opacity: 1,
-                                transform:
-                                    "translateX(0)"
-                            },
-                            {
-                                opacity: 0,
-                                transform:
-                                    "translateX(8px)"
-                            }
-                        ],
-                        {
-                            duration: 150,
-                            easing:
-                                "ease-in"
-                        }
-                    ).finished
-                    .then(() => {
-
-                        temporaryRow.remove();
-
-                    })
-                    .catch(() => {
-
-                        temporaryRow.remove();
-
-                    });
-
-                } catch (_) {
-
-                    temporaryRow.remove();
-                }
-            }
+            removeTemporaryMessage(
+                temporaryRow
+            );
 
 
             /*
@@ -1000,10 +1156,6 @@
                 );
 
 
-                /*
-                   Android أحياناً يحتاج تأخير إضافي
-                   بعد انتهاء RPC.
-                */
                 setTimeout(
                     () => {
 
@@ -1038,9 +1190,8 @@
             event => {
 
                 /*
-                   مهم جداً:
-                   preventDefault أول شيء حتى لا يقوم
-                   المتصفح بإعادة تحميل الصفحة.
+                   preventDefault أول شيء
+                   حتى لا يعيد المتصفح تحميل الصفحة.
                 */
                 event.preventDefault();
 
@@ -1145,9 +1296,6 @@
             "click",
             event => {
 
-                /*
-                   حماية إذا الزر استُخدم خارج form.
-                */
                 event.preventDefault();
 
 
