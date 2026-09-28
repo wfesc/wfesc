@@ -27,6 +27,8 @@
        - يبدأ من آخر الرسائل
        - لا يوجد حد إجمالي للرسائل المحفوظة
        - الحفاظ على مكان التمرير أثناء تحميل القديم
+       - Cursor pagination:
+         before_created_at + before_message_id
     ============================================================
     */
 
@@ -98,17 +100,17 @@
         2600;
 
     /*
-     * عدد الرسائل التي نحملها في كل دفعة.
+     * عدد الرسائل في كل دفعة.
      *
      * هذا ليس حد المحادثة.
-     * هو فقط حجم الدفعة التي تظهر في الواجهة.
+     * فقط حجم الصفحة التي يتم تحميلها.
      */
     const MESSAGE_PAGE_SIZE =
         50;
 
     /*
-     * عندما يصل المستخدم قريباً جداً من أعلى
-     * نبدأ تحميل الرسائل الأقدم.
+     * عند الوصول إلى هذه المسافة من أعلى
+     * يبدأ تحميل الرسائل الأقدم.
      */
     const MESSAGE_TOP_THRESHOLD =
         80;
@@ -147,11 +149,10 @@
 
     let openingConversation = false;
 
-    /*
-     * =========================================================
-     * INFINITE MESSAGE LOADING STATE
-     * =========================================================
-     */
+
+    /* =========================================================
+       INFINITE MESSAGE LOADING STATE
+    ========================================================= */
 
     let loadingOlderMessages = false;
 
@@ -476,6 +477,11 @@
                     return first - second;
                 }
 
+                /*
+                 * نستخدم مقارنة مباشرة للـUUID
+                 * حتى يكون ترتيب JS متوافقاً قدر الإمكان
+                 * مع cursor الخاص بـPostgreSQL.
+                 */
                 const firstId =
                     String(
                         getMessageId(a) || ""
@@ -486,9 +492,19 @@
                         getMessageId(b) || ""
                     );
 
-                return firstId.localeCompare(
-                    secondId
-                );
+                if (
+                    firstId < secondId
+                ) {
+                    return -1;
+                }
+
+                if (
+                    firstId > secondId
+                ) {
+                    return 1;
+                }
+
+                return 0;
             }
         );
 
@@ -2951,17 +2967,55 @@
     }
 
 
-    function getOldestMessageTime() {
+    /*
+     * نحصل على cursor الكامل.
+     *
+     * لا نعتمد على الوقت وحده لأن أكثر من رسالة
+     * ممكن نظرياً يكون لها نفس created_at.
+     */
+    function getOldestMessageCursor() {
 
         const oldest =
             getOldestLoadedMessage();
 
         if (!oldest) {
-            return null;
+
+            return {
+                beforeCreatedAt:
+                    null,
+
+                beforeMessageId:
+                    null
+            };
         }
 
-        return getMessageTime(
-            oldest
+        return {
+
+            beforeCreatedAt:
+                getMessageTime(
+                    oldest
+                ),
+
+            beforeMessageId:
+                getMessageId(
+                    oldest
+                )
+        };
+    }
+
+
+    /*
+     * أبقي هذه الدالة حتى لا ينكسر أي كود خارجي
+     * كان يعتمد على الاسم القديم.
+     */
+    function getOldestMessageTime() {
+
+        const cursor =
+            getOldestMessageCursor();
+
+        return (
+            cursor.beforeCreatedAt ||
+            null
         );
     }
 
@@ -2971,23 +3025,36 @@
         if (
             loadingOlderMessages ||
             !hasOlderMessages ||
-            !currentConversationId
+            !currentConversationId ||
+            !chatMessages
         ) {
-            return;
+            return false;
         }
 
         const requestedConversationId =
             currentConversationId;
 
+        const cursor =
+            getOldestMessageCursor();
+
         const beforeCreatedAt =
-            getOldestMessageTime();
+            cursor.beforeCreatedAt;
+
+        const beforeMessageId =
+            cursor.beforeMessageId;
 
         /*
-         * إذا ماكو رسالة قديمة محملة،
-         * ما عدنا cursor نستخدمه.
+         * لازم يكون عندنا الاثنين.
          */
-        if (!beforeCreatedAt) {
-            return;
+        if (
+            !beforeCreatedAt ||
+            !beforeMessageId
+        ) {
+
+            hasOlderMessages =
+                false;
+
+            return false;
         }
 
         loadingOlderMessages =
@@ -2997,15 +3064,13 @@
             ++olderMessagesLoadToken;
 
         /*
-         * نحفظ مكان المستخدم قبل إضافة الرسائل.
+         * نحفظ مكان المستخدم قبل إضافة القديم.
          */
         const oldScrollHeight =
-            chatMessages?.scrollHeight ||
-            0;
+            chatMessages.scrollHeight;
 
         const oldScrollTop =
-            chatMessages?.scrollTop ||
-            0;
+            chatMessages.scrollTop;
 
         try {
 
@@ -3022,13 +3087,16 @@
                         MESSAGE_PAGE_SIZE,
 
                     before_created_at:
-                        beforeCreatedAt
+                        beforeCreatedAt,
+
+                    before_message_id:
+                        beforeMessageId
                 }
             );
 
             /*
              * إذا تغيرت المحادثة أثناء الطلب،
-             * نتجاهل النتيجة.
+             * نهمل النتيجة.
              */
             if (
                 requestToken !==
@@ -3036,7 +3104,8 @@
                 requestedConversationId !==
                 currentConversationId
             ) {
-                return;
+
+                return false;
             }
 
             if (error) {
@@ -3046,36 +3115,39 @@
                     error
                 );
 
-                return;
+                return false;
             }
 
-            const olderMessages =
+            const rawOlderMessages =
                 Array.isArray(data)
-                    ? data
+                    ? [...data]
                     : [];
 
             /*
-             * إذا رجعت أقل من حجم الدفعة،
-             * وصلنا غالباً لأول الرسائل.
+             * SQL يرجع الأقدم المطلوب على شكل DESC.
+             *
+             * نقلبه حتى يكون ترتيب الرسائل
+             * داخل الصفحة من الأقدم إلى الأحدث.
              */
+            const olderMessages =
+                rawOlderMessages.reverse();
+
+            /*
+             * إذا رجعت أقل من 50،
+             * فلا توجد صفحة كاملة بعدها.
+             */
+            hasOlderMessages =
+                rawOlderMessages.length ===
+                MESSAGE_PAGE_SIZE;
+
             if (
-                olderMessages.length <
-                MESSAGE_PAGE_SIZE
+                olderMessages.length === 0
             ) {
 
                 hasOlderMessages =
                     false;
-            }
 
-            if (
-                olderMessages.length ===
-                0
-            ) {
-
-                hasOlderMessages =
-                    false;
-
-                return;
+                return false;
             }
 
             /*
@@ -3109,10 +3181,15 @@
                                 message
                             );
 
+                        /*
+                         * الرسالة بدون ID لا نستطيع
+                         * استعمالها كعنصر cursor،
+                         * لكن SQL الطبيعي يرجع ID.
+                         */
                         if (
                             id == null
                         ) {
-                            return true;
+                            return false;
                         }
 
                         const key =
@@ -3123,6 +3200,7 @@
                                 key
                             )
                         ) {
+
                             return false;
                         }
 
@@ -3139,87 +3217,72 @@
             ) {
 
                 /*
-                 * إذا ما رجع شيء جديد رغم وجود
-                 * نتائج، نوقف حتى لا ندخل بحلقة.
+                 * حماية إضافية من loop لا نهائي
+                 * إذا لم تصل أي رسالة جديدة.
                  */
                 hasOlderMessages =
                     false;
 
-                return;
+                return false;
             }
 
             /*
-             * إضافة الرسائل القديمة إلى STATE.
+             * نضيف الرسائل القديمة إلى STATE.
              */
             currentMessages =
-                currentMessages.concat(
-                    uniqueOlderMessages
-                );
+                [
+                    ...uniqueOlderMessages,
+                    ...currentMessages
+                ];
 
+            /*
+             * ترتيب كامل من الأقدم إلى الأحدث.
+             */
             sortMessages(
                 currentMessages
             );
 
             /*
-             * نضيف فقط الرسائل القديمة إلى بداية DOM.
-             * لا نعيد بناء المحادثة كلها.
+             * إضافة القديم فقط إلى بداية DOM.
              */
-            if (chatMessages) {
+            const fragment =
+                document.createDocumentFragment();
 
-                const fragment =
-                    document.createDocumentFragment();
+            uniqueOlderMessages.forEach(
+                message => {
 
-                uniqueOlderMessages
-                    .sort(
-                        (a, b) => {
-
-                            return (
-                                new Date(
-                                    getMessageTime(a) || 0
-                                ).getTime()
-                                -
-                                new Date(
-                                    getMessageTime(b) || 0
-                                ).getTime()
-                            );
-                        }
-                    )
-                    .forEach(
-                        message => {
-
-                            fragment.appendChild(
-                                createMessageElement(
-                                    message
-                                )
-                            );
-                        }
+                    fragment.appendChild(
+                        createMessageElement(
+                            message
+                        )
                     );
+                }
+            );
 
-                chatMessages.insertBefore(
-                    fragment,
-                    chatMessages.firstChild
-                );
+            chatMessages.insertBefore(
+                fragment,
+                chatMessages.firstChild
+            );
 
-                /*
-                 * أهم جزء:
-                 *
-                 * بعد إضافة الرسائل فوق،
-                 * نحافظ على نفس المكان الذي كان المستخدم
-                 * واقفاً به.
-                 */
-                const newScrollHeight =
-                    chatMessages.scrollHeight;
+            /*
+             * حساب الفرق في الارتفاع.
+             *
+             * هذا يمنع القفز المفاجئ للمستخدم.
+             */
+            const newScrollHeight =
+                chatMessages.scrollHeight;
 
-                const heightDifference =
-                    newScrollHeight -
-                    oldScrollHeight;
+            const heightDifference =
+                newScrollHeight -
+                oldScrollHeight;
 
-                chatMessages.scrollTop =
-                    oldScrollTop +
-                    heightDifference;
-            }
+            chatMessages.scrollTop =
+                oldScrollTop +
+                heightDifference;
 
             scheduleMessageSettingsApply();
+
+            return true;
 
         } catch (error) {
 
@@ -3227,6 +3290,8 @@
                 "WFESC older messages exception:",
                 error
             );
+
+            return false;
 
         } finally {
 
@@ -3263,7 +3328,7 @@
             () => {
 
                 /*
-                 * لا نريد تشغيل التحميل أثناء فتح المحادثة.
+                 * لا نريد التحميل أثناء فتح المحادثة.
                  */
                 if (
                     openingConversation
@@ -3272,8 +3337,8 @@
                 }
 
                 /*
-                 * إذا وصلنا قريباً من الأعلى،
-                 * نحمل الرسائل الأقدم.
+                 * إذا وصل المستخدم قريباً من الأعلى،
+                 * نحمل الصفحة السابقة.
                  */
                 if (
                     chatMessages.scrollTop <=
@@ -3281,6 +3346,7 @@
                 ) {
 
                     loadOlderMessages();
+
                 }
 
             },
@@ -3316,7 +3382,7 @@
             ++conversationLoadToken;
 
         /*
-         * إلغاء أي طلب تحميل رسائل قديمة سابق.
+         * إلغاء أي طلب تحميل قديم.
          */
         olderMessagesLoadToken++;
 
@@ -3597,8 +3663,7 @@
             currentConversationId;
 
         /*
-         * بداية محادثة جديدة:
-         * نرجع حالة الـpagination إلى البداية.
+         * بداية محادثة جديدة.
          */
         hasOlderMessages =
             true;
@@ -3619,6 +3684,21 @@
 
         try {
 
+            /*
+             * مهم:
+             *
+             * نرسل المعاملات الأربعة صراحةً.
+             *
+             * هذا يطابق SQL الجديد:
+             *
+             * target_conversation_id
+             * message_limit
+             * before_created_at
+             * before_message_id
+             *
+             * والـnull يعني:
+             * ابدأ من أحدث الرسائل.
+             */
             const {
                 data,
                 error
@@ -3629,7 +3709,13 @@
                         requestedConversationId,
 
                     message_limit:
-                        MESSAGE_PAGE_SIZE
+                        MESSAGE_PAGE_SIZE,
+
+                    before_created_at:
+                        null,
+
+                    before_message_id:
+                        null
                 }
             );
 
@@ -3674,32 +3760,45 @@
                 return false;
             }
 
-            currentMessages =
+            const loadedMessages =
                 Array.isArray(data)
                     ? [...data]
                     : [];
+
+            /*
+             * SQL يرجع:
+             *
+             * الأحدث
+             * ↓
+             * الأقدم
+             *
+             * نقلب الصفحة حتى تكون الحالة:
+             *
+             * الأقدم
+             * ↓
+             * الأحدث
+             *
+             * وهذا هو ترتيب واجهة المحادثة.
+             */
+            currentMessages =
+                loadedMessages.reverse();
 
             sortMessages(
                 currentMessages
             );
 
             /*
-             * إذا رجعت أقل من 50،
-             * فغالباً وصلنا لأول رسالة.
+             * إذا رجعت 50 رسالة كاملة،
+             * فهناك احتمال وجود رسائل أقدم.
              */
-            if (
-                currentMessages.length <
-                MESSAGE_PAGE_SIZE
-            ) {
+            hasOlderMessages =
+                loadedMessages.length ===
+                MESSAGE_PAGE_SIZE;
 
-                hasOlderMessages =
-                    false;
-            } else {
-
-                hasOlderMessages =
-                    true;
-            }
-
+            /*
+             * تنظيف optimistic القديم إذا وجد
+             * بعد إعادة التحميل من Supabase.
+             */
             currentMessages =
                 currentMessages.map(
                     message => {
@@ -4547,7 +4646,7 @@
     function start() {
 
         /*
-         * نجهز Scroll Listener مرة واحدة.
+         * تجهيز Scroll Listener مرة واحدة.
          */
         setupMessageScroll();
 
