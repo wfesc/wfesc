@@ -1161,73 +1161,93 @@ img{
    MESSAGES
 ========================================================= */
 
-.chat-messages{
 
-    /*
-     * الرسائل هي العنصر الوحيد الذي يتم تمريره.
-     */
-    flex:
-        1 1 auto;
+/* =.chat-messages{
 
-    min-height:0;
+/*  
+ * مهم جدًا:  
+ * الرسائل هي العنصر الوحيد الذي يتم تمريره.  
+ */  
+flex:  
+    1 1 auto;  
 
-    height:auto;
+min-height:0;  
 
-    overflow-y:auto;
-    overflow-x:hidden;
+height:auto;  
 
-    /*
-     * مساحة إضافية أسفل المحادثة:
-     * - التنقل
-     * - حقل الكتابة
-     * - مسافة أمان إضافية
-     *
-     * حتى تبقى آخر فقاعة بعيدة عن حقل الكتابة
-     * ولا تدخل خلف التنقل.
-     */
-    padding:
-        16px
-        12px
-        calc(
-            var(--navigation-height) +
-            150px +
-            env(safe-area-inset-bottom)
-        );
+overflow-y:auto;  
+overflow-x:hidden;  
 
-    scroll-behavior:smooth;
+/*  
+ * المسافة الأخيرة = مساحة حقل الكتابة  
+ * + مساحة التنقل  
+ * + مساحة أمان إضافية.  
+ *  
+ * لذلك آخر رسالة لا تدخل خلفهما.  
+ */  
+padding:  
+    16px  
+    12px  
+    calc(  
+        var(--navigation-height) +  
+        110px +  
+        env(safe-area-inset-bottom)  
+    );  
 
-    scroll-padding-bottom:
-        calc(
-            var(--navigation-height) +
-            150px +
-            env(safe-area-inset-bottom)
-        );
+scroll-behavior:smooth;  
 
-    overscroll-behavior:
-        contain;
+overscroll-behavior:  
+    contain;  
 
-    -webkit-overflow-scrolling:touch;
+-webkit-overflow-scrolling:touch;  
 
-    background:
-        radial-gradient(
-            circle at 50% 0%,
-            rgba(255,255,255,.018),
-            transparent 42%
-        );
+background:  
+    radial-gradient(  
+        circle at 50% 0%,  
+        rgba(255,255,255,.018),  
+        transparent 42%  
+    );
+
 }
 
 .chat-messages::-webkit-scrollbar{
-    width:4px;
+width:4px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb{
 
-    background:
-        rgba(255,255,255,.12);
+background:  
+    rgba(255,255,255,.12);  
 
-    border-radius:20px;
+border-radius:20px;
+
 }
-/* =========================================================
+
+.message-row{
+
+display:flex;  
+
+width:100%;  
+
+margin-bottom:12px;  
+
+animation:  
+    messageIn  
+    .25s  
+    ease  
+    both;
+
+}
+
+.message-row.mine{
+justify-content:flex-end;
+}
+
+.message-row.theirs{
+justify-content:flex-start;
+}
+    
+========================================================
    REAL MESSAGE BUBBLE
 ========================================================= */
 
