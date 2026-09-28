@@ -1,12 +1,30 @@
 /* =========================================================
    WFESC MESSAGES SEARCH
    File: messages/messages-search.js
+
+   Features:
+   - Search messages across conversations
+   - Search users
+   - Result count
+   - Newest -> oldest ordering
+   - Open exact message
+   - Search navigation inside conversation
+   - Up = older result
+   - Down = newer result
+   - Green active frame
+   - Shake animation on every navigation
+   - Keeps search state after opening a result
+   - Attempts to load older messages when needed
    ========================================================= */
 
 (function () {
 
     "use strict";
 
+
+    /* =========================================================
+       CORE
+    ========================================================= */
 
     const CORE = () =>
         window.WFESC_MESSAGES_CORE || null;
@@ -16,13 +34,43 @@
 
     let currentSearchText = "";
 
+    /*
+     * Results returned from search_messages().
+     * These are NOT DOM elements.
+     */
+    let searchRows = [];
+
+    /*
+     * Results belonging to the currently opened conversation.
+     */
+    let conversationSearchRows = [];
+
+    /*
+     * DOM matches currently loaded in chat.
+     */
     let currentResults = [];
 
+    /*
+     * Current result index inside the opened conversation.
+     */
     let currentMatchIndex = -1;
+
+    /*
+     * Index of the result selected from the main search results.
+     */
+    let selectedSearchRowIndex = -1;
 
     let searchTimer = null;
 
     let searchRequestToken = 0;
+
+    let navigationToken = 0;
+
+    let pendingMessageId = null;
+
+    let pendingMessageContent = "";
+
+    let observerStarted = false;
 
 
     const els = {
@@ -49,7 +97,6 @@
     /* =========================================================
        BASIC HELPERS
     ========================================================= */
-
 
     function getCore() {
 
@@ -314,10 +361,22 @@
     }
 
 
-    /* =========================================================
-       SEARCH RESULT VISIBILITY
-    ========================================================= */
+    function normalizeId(value) {
 
+        if (value === null || value === undefined) {
+
+            return "";
+
+        }
+
+        return String(value);
+
+    }
+
+
+    /* =========================================================
+       RESULT VISIBILITY
+    ========================================================= */
 
     function showResultsContainer() {
 
@@ -354,7 +413,6 @@
     /* =========================================================
        INITIALIZE
     ========================================================= */
-
 
     function init() {
 
@@ -441,7 +499,6 @@
        STYLES
     ========================================================= */
 
-
     function setupStyles() {
 
         if (
@@ -465,6 +522,10 @@
 
         style.textContent = `
 
+            /* ===============================
+               SEARCH HIGHLIGHT
+            =============================== */
+
             .wfesc-search-highlight {
 
                 background:#ffe600 !important;
@@ -477,6 +538,10 @@
 
             }
 
+
+            /* ===============================
+               USER SEARCH
+            =============================== */
 
             .wfesc-user-search-result {
 
@@ -555,6 +620,10 @@
 
             }
 
+
+            /* ===============================
+               AVATAR
+            =============================== */
 
             .wfesc-search-avatar {
 
@@ -667,6 +736,10 @@
             }
 
 
+            /* ===============================
+               MESSAGE RESULTS
+            =============================== */
+
             .wfesc-search-message-row {
 
                 cursor:pointer;
@@ -677,6 +750,36 @@
 
             }
 
+
+            .wfesc-search-message-count {
+
+                padding:10px 14px;
+
+                color:#aaa;
+
+                font-size:13px;
+
+                text-align:right;
+
+                border-bottom:1px solid rgba(255,255,255,.06);
+
+            }
+
+
+            .wfesc-search-result-preview {
+
+                overflow:hidden;
+
+                text-overflow:ellipsis;
+
+                white-space:nowrap;
+
+            }
+
+
+            /* ===============================
+               EMPTY / ERROR / LOADING
+            =============================== */
 
             .wfesc-search-empty {
 
@@ -711,25 +814,96 @@
             }
 
 
-            .wfesc-search-result-preview {
-
-                overflow:hidden;
-
-                text-overflow:ellipsis;
-
-                white-space:nowrap;
-
-            }
-
+            /* ===============================
+               CURRENT SEARCH MESSAGE
+            =============================== */
 
             .wfesc-search-current-match {
 
                 outline:
-                    2px solid #fff;
+                    2px solid #00ff66 !important;
 
-                outline-offset:3px;
+                outline-offset:3px !important;
 
-                border-radius:10px;
+                border-radius:10px !important;
+
+                box-shadow:
+                    0 0 0 2px rgba(0,255,102,.16),
+                    0 0 18px rgba(0,255,102,.22) !important;
+
+                animation:
+                    wfescSearchMessageShake
+                    .42s
+                    ease;
+
+            }
+
+
+            @keyframes wfescSearchMessageShake {
+
+                0% {
+
+                    transform:translateX(0);
+
+                }
+
+                15% {
+
+                    transform:translateX(-5px);
+
+                }
+
+                30% {
+
+                    transform:translateX(5px);
+
+                }
+
+                45% {
+
+                    transform:translateX(-4px);
+
+                }
+
+                60% {
+
+                    transform:translateX(4px);
+
+                }
+
+                75% {
+
+                    transform:translateX(-2px);
+
+                }
+
+                100% {
+
+                    transform:translateX(0);
+
+                }
+
+            }
+
+
+            /* ===============================
+               NAVIGATOR
+            =============================== */
+
+            #searchMatchNavigator {
+
+                user-select:none !important;
+
+                -webkit-user-select:none !important;
+
+            }
+
+
+            #searchMatchNavigator button {
+
+                user-select:none !important;
+
+                -webkit-user-select:none !important;
 
             }
 
@@ -745,7 +919,6 @@
        MAIN SEARCH
     ========================================================= */
 
-
     function setupMainSearch() {
 
         if (els.messagesButton) {
@@ -760,10 +933,7 @@
                     currentSearchText =
                         "";
 
-                    currentMatchIndex =
-                        -1;
-
-                    clearSearchResults();
+                    resetSearchState();
 
                     updateModeButtons();
 
@@ -795,10 +965,7 @@
                     currentSearchText =
                         "";
 
-                    currentMatchIndex =
-                        -1;
-
-                    clearSearchResults();
+                    resetSearchState();
 
                     updateModeButtons();
 
@@ -839,7 +1006,7 @@
 
                 if (!text) {
 
-                    clearSearchResults();
+                    resetSearchState();
 
                     return;
 
@@ -973,12 +1140,44 @@
     }
 
 
-    function clearSearchResults() {
+    function resetSearchState() {
+
+        searchRows = [];
+
+        conversationSearchRows = [];
 
         currentResults = [];
 
         currentMatchIndex = -1;
 
+        selectedSearchRowIndex = -1;
+
+        pendingMessageId = null;
+
+        pendingMessageContent = "";
+
+        navigationToken++;
+
+        clearSearchResults();
+
+    }
+
+
+    function clearSearchResults() {
+
+        searchRows = [];
+
+        conversationSearchRows = [];
+
+        currentResults = [];
+
+        currentMatchIndex = -1;
+
+        selectedSearchRowIndex = -1;
+
+        pendingMessageId = null;
+
+        pendingMessageContent = "";
 
         if (els.results) {
 
@@ -994,10 +1193,22 @@
     }
 
 
+    /*
+     * Hide only the result list.
+     *
+     * Search state remains available for the opened
+     * conversation navigator.
+     */
+    function hideOnlySearchResults() {
+
+        hideResultsContainer();
+
+    }
+
+
     /* =========================================================
        USER SEARCH
     ========================================================= */
-
 
     async function searchUsers(
         text,
@@ -1237,7 +1448,6 @@
 
                         ${avatarHTML}
 
-
                         <div
                             class="wfesc-search-user-info"
                         >
@@ -1457,7 +1667,7 @@
                 );
 
 
-                clearSearchResults();
+                hideOnlySearchResults();
 
 
                 return;
@@ -1506,8 +1716,7 @@
 
 
         if (
-            typeof data ===
-            "string"
+            typeof data === "string"
         ) {
 
             return data;
@@ -1534,8 +1743,7 @@
 
 
         if (
-            typeof data ===
-            "object"
+            typeof data === "object"
         ) {
 
             return (
@@ -1561,7 +1769,6 @@
     /* =========================================================
        MESSAGE SEARCH
     ========================================================= */
-
 
     async function searchMessages(
         text,
@@ -1625,7 +1832,7 @@
             }
 
 
-            const rows =
+            let rows =
                 Array.isArray(
                     result.data
                 )
@@ -1633,7 +1840,69 @@
                     : [];
 
 
-            currentResults =
+            /*
+             * Extra protection:
+             * never show rows explicitly marked deleted.
+             */
+            rows =
+                rows.filter(
+                    function (row) {
+
+                        return (
+                            !row.deleted_at &&
+                            !row.deletedAt
+                        );
+
+                    }
+                );
+
+
+            /*
+             * Newest first.
+             */
+            rows.sort(
+                function (a, b) {
+
+                    const dateA =
+                        new Date(
+                            a.created_at ||
+                            a.createdAt ||
+                            0
+                        ).getTime();
+
+
+                    const dateB =
+                        new Date(
+                            b.created_at ||
+                            b.createdAt ||
+                            0
+                        ).getTime();
+
+
+                    if (dateA !== dateB) {
+
+                        return dateB - dateA;
+
+                    }
+
+
+                    return (
+                        normalizeId(
+                            b.message_id ||
+                            b.id
+                        ).localeCompare(
+                            normalizeId(
+                                a.message_id ||
+                                a.id
+                            )
+                        )
+                    );
+
+                }
+            );
+
+
+            searchRows =
                 rows;
 
 
@@ -1686,6 +1955,26 @@
 
         els.results.innerHTML =
             "";
+
+
+        /*
+         * Total result count.
+         */
+        const count =
+            document.createElement("div");
+
+
+        count.className =
+            "wfesc-search-message-count";
+
+
+        count.textContent =
+            `وُجدت ${rows.length} رسالة تحتوي على «${text}»`;
+
+
+        els.results.appendChild(
+            count
+        );
 
 
         rows.forEach(
@@ -1756,48 +2045,92 @@
                     "مستخدم";
 
 
+                const avatar =
+                    getAvatar(row);
+
+
+                let avatarHTML =
+                    "";
+
+
+                if (avatar) {
+
+                    avatarHTML = `
+
+                        <img
+                            class="wfesc-search-avatar"
+                            src="${escapeHTML(avatar)}"
+                            alt=""
+                            draggable="false"
+                        >
+
+                    `;
+
+                } else {
+
+                    avatarHTML = `
+
+                        <div
+                            class="wfesc-search-avatar-fallback"
+                        >
+                            ${escapeHTML(
+                                getInitial(senderName)
+                            )}
+                        </div>
+
+                    `;
+
+                }
+
+
                 item.innerHTML = `
 
                     <div
-                        class="result-info"
+                        class="wfesc-search-user-row"
                     >
 
-                        <div
-                            class="result-name"
-                        >
-                            ${escapeHTML(
-                                senderName
-                            )}
-                        </div>
-
+                        ${avatarHTML}
 
                         <div
-                            class="result-preview wfesc-search-result-preview"
+                            class="result-info wfesc-search-user-info"
                         >
-                            ${highlightText(
-                                content,
-                                text
-                            )}
+
+                            <div
+                                class="result-name wfesc-search-user-name"
+                            >
+                                ${escapeHTML(
+                                    senderName
+                                )}
+                            </div>
+
+                            <div
+                                class="result-preview wfesc-search-result-preview"
+                            >
+                                ${highlightText(
+                                    content,
+                                    text
+                                )}
+                            </div>
+
+                            ${
+                                createdAt
+                                    ? `
+
+                                        <div
+                                            class="result-username"
+                                        >
+                                            ${escapeHTML(
+                                                formatDate(
+                                                    createdAt
+                                                )
+                                            )}
+                                        </div>
+
+                                      `
+                                    : ""
+                            }
+
                         </div>
-
-
-                        ${
-                            createdAt
-                                ? `
-
-                                    <div
-                                        class="result-username"
-                                    >
-                                        ${escapeHTML(
-                                            formatDate(
-                                                createdAt
-                                            )
-                                        )}
-                                    </div>
-
-                                  `
-                                : ""
-                        }
 
                     </div>
 
@@ -1808,18 +2141,45 @@
                     String(index);
 
 
+                item.dataset.messageId =
+                    normalizeId(
+                        messageId
+                    );
+
+
+                item.dataset.conversationId =
+                    normalizeId(
+                        conversationId
+                    );
+
+
                 item.addEventListener(
                     "click",
                     function () {
+
+                        selectedSearchRowIndex =
+                            index;
+
 
                         openMessageSearchResult(
                             {
                                 conversationId,
                                 messageId,
                                 content,
-                                row
+                                row,
+                                searchIndex:index
                             }
                         );
+
+                    }
+                );
+
+
+                item.addEventListener(
+                    "dragstart",
+                    function (event) {
+
+                        event.preventDefault();
 
                     }
                 );
@@ -1835,6 +2195,10 @@
     }
 
 
+    /* =========================================================
+       OPEN SEARCH RESULT
+    ========================================================= */
+
     async function openMessageSearchResult(
         result
     ) {
@@ -1846,24 +2210,96 @@
         }
 
 
+        const conversationId =
+            result.conversationId;
+
+
+        if (!conversationId) {
+
+            return;
+
+        }
+
+
+        /*
+         * Keep the complete search state.
+         * Only hide the result list visually.
+         */
+        currentSearchText =
+            currentSearchText ||
+            String(
+                els.input?.value || ""
+            ).trim();
+
+
+        pendingMessageId =
+            result.messageId || null;
+
+
+        pendingMessageContent =
+            result.content || "";
+
+
         const currentConversationId =
             getCurrentConversationId();
 
 
+        /*
+         * Already inside the target conversation.
+         */
         if (
-
-            result.conversationId &&
 
             currentConversationId &&
 
-            result.conversationId ===
+            normalizeId(
+                conversationId
+            ) ===
+            normalizeId(
                 currentConversationId
+            )
 
         ) {
 
-            scrollToMessage(
+            prepareConversationSearchNavigation(
+                conversationId,
                 result.messageId,
                 result.content
+            );
+
+
+            hideOnlySearchResults();
+
+
+            await navigateToSelectedSearchResult();
+
+
+            return;
+
+        }
+
+
+        const core =
+            getCore();
+
+
+        if (
+
+            !core ||
+
+            typeof core.openConversation !==
+                "function"
+
+        ) {
+
+            document.dispatchEvent(
+
+                new CustomEvent(
+                    "wfesc:search-message-open",
+                    {
+                        detail:result
+                    }
+                )
+
             );
 
             return;
@@ -1871,128 +2307,360 @@
         }
 
 
-        if (
+        try {
 
-            result.conversationId &&
-
-            getCore()?.openConversation
-
-        ) {
-
-            try {
-
-                const core =
-                    getCore();
+            let conversation =
+                null;
 
 
-                const conversations =
-                    core.getConversations?.() ||
-                    [];
+            const conversations =
+                core.getConversations?.() ||
+                [];
 
 
-                const conversation =
-                    Array.isArray(
-                        conversations
-                    )
+            if (
+                Array.isArray(
+                    conversations
+                )
+            {
 
-                        ? conversations.find(
-                            function (item) {
+                conversation =
+                    conversations.find(
+                        function (item) {
 
-                                return (
+                            return (
 
-                                    item?.conversation_id ===
-                                        result.conversationId ||
+                                normalizeId(
+                                    item?.conversation_id
+                                ) ===
+                                normalizeId(
+                                    conversationId
+                                ) ||
 
-                                    item?.id ===
-                                        result.conversationId
+                                normalizeId(
+                                    item?.id
+                                ) ===
+                                normalizeId(
+                                    conversationId
+                                )
 
-                                );
+                            );
 
-                            }
-                        )
+                        }
+                    ) || null;
 
-                        : null;
-
-
-                const contact =
-
-                    conversation?.contact ||
-
-                    conversation?.other_user ||
-
-                    conversation?.user ||
-
-                    null;
-
-
-                await core.openConversation(
-
-                    result.conversationId,
-
-                    contact,
-
-                    conversation?.type ||
-                        "direct"
-
-                );
+            }
 
 
-                setTimeout(
-                    function () {
+            let contact =
 
-                        scrollToMessage(
-                            result.messageId,
-                            result.content
+                conversation?.contact ||
+
+                conversation?.other_user ||
+
+                conversation?.user ||
+
+                null;
+
+
+            /*
+             * If the conversation is not currently
+             * in the list, try to obtain its contact.
+             */
+            if (
+                !contact &&
+                typeof core.getConversationContact ===
+                    "function"
+            ) {
+
+                try {
+
+                    contact =
+                        await core.getConversationContact(
+                            conversationId
                         );
 
-                    },
-                    300
-                );
+                } catch (contactError) {
+
+                    console.warn(
+                        "[WFESC SEARCH] contact lookup failed:",
+                        contactError
+                    );
+
+                }
+
+            }
 
 
-                clearSearchResults();
+            await core.openConversation(
+
+                conversationId,
+
+                contact,
+
+                conversation?.type ||
+                    "direct"
+
+            );
 
 
-                return;
+            /*
+             * Do not clear the search.
+             */
+            hideOnlySearchResults();
 
-            } catch (error) {
 
-                console.error(
-                    "[WFESC SEARCH] open message conversation error:",
-                    error
+            /*
+             * The chat-opened event will also call this,
+             * but we explicitly prepare the state here.
+             */
+            prepareConversationSearchNavigation(
+                conversationId,
+                result.messageId,
+                result.content
+            );
+
+
+            /*
+             * Wait for the chat to render.
+             */
+            await waitForChatRender();
+
+
+            await navigateToSelectedSearchResult();
+
+        } catch (error) {
+
+            console.error(
+                "[WFESC SEARCH] open message conversation error:",
+                error
+            );
+
+
+            showSearchError(
+                "تعذر فتح المحادثة للوصول إلى الرسالة."
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       SEARCH NAVIGATION STATE
+    ========================================================= */
+
+    function prepareConversationSearchNavigation(
+        conversationId,
+        selectedMessageId,
+        selectedContent
+    ) {
+
+        const targetConversation =
+            normalizeId(
+                conversationId
+            );
+
+
+        /*
+         * Only results belonging to this conversation.
+         */
+        conversationSearchRows =
+            searchRows.filter(
+                function (row) {
+
+                    return (
+                        normalizeId(
+                            row?.conversation_id ||
+                            row?.conversationId
+                        ) ===
+                        targetConversation
+                    );
+
+                }
+            );
+
+
+        /*
+         * Already sorted newest -> oldest.
+         */
+        conversationSearchRows.sort(
+            function (a, b) {
+
+                return (
+                    new Date(
+                        b.created_at ||
+                        b.createdAt ||
+                        0
+                    ).getTime() -
+
+                    new Date(
+                        a.created_at ||
+                        a.createdAt ||
+                        0
+                    ).getTime()
                 );
 
             }
+        );
+
+
+        /*
+         * If selected result belongs to the list,
+         * start exactly there.
+         *
+         * Normally this will be index 0 when the
+         * user clicked the newest result.
+         */
+        let selectedIndex =
+            conversationSearchRows.findIndex(
+                function (row) {
+
+                    const rowId =
+                        row?.message_id ||
+                        row?.id ||
+                        null;
+
+
+                    return (
+                        selectedMessageId &&
+                        normalizeId(rowId) ===
+                        normalizeId(selectedMessageId)
+                    );
+
+                }
+            );
+
+
+        /*
+         * Fallback by content + date.
+         */
+        if (
+            selectedIndex < 0 &&
+            selectedContent
+        ) {
+
+            selectedIndex =
+                conversationSearchRows.findIndex(
+                    function (row) {
+
+                        return (
+                            String(
+                                row?.content || ""
+                            ).trim() ===
+                            String(
+                                selectedContent || ""
+                            ).trim()
+                        );
+
+                    }
+                );
 
         }
 
 
-        document.dispatchEvent(
+        /*
+         * If we cannot identify it,
+         * start from newest.
+         */
+        if (
+            selectedIndex < 0
+        ) {
 
-            new CustomEvent(
-                "wfesc:search-message-open",
-                {
-                    detail:result
-                }
-            )
+            selectedIndex = 0;
 
+        }
+
+
+        currentMatchIndex =
+            selectedIndex;
+
+
+        currentResults = [];
+
+
+        pendingMessageId =
+            selectedMessageId ||
+            conversationSearchRows[
+                selectedIndex
+            ]?.message_id ||
+            null;
+
+
+        pendingMessageContent =
+            selectedContent ||
+            conversationSearchRows[
+                selectedIndex
+            ]?.content ||
+            "";
+
+
+        updateMatchNavigator();
+
+    }
+
+
+    function getCurrentConversationSearchRow() {
+
+        if (
+            !conversationSearchRows.length
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            currentMatchIndex < 0
+        ) {
+
+            currentMatchIndex = 0;
+
+        }
+
+
+        if (
+            currentMatchIndex >=
+            conversationSearchRows.length
+        ) {
+
+            currentMatchIndex =
+                conversationSearchRows.length - 1;
+
+        }
+
+
+        return (
+            conversationSearchRows[
+                currentMatchIndex
+            ] || null
         );
 
     }
 
 
     /* =========================================================
-       CURRENT CHAT MESSAGE SEARCH
+       CONVERSATION OBSERVER
     ========================================================= */
 
-
     function setupConversationObserver() {
+
+        if (observerStarted) {
+
+            return;
+
+        }
+
+
+        observerStarted = true;
+
 
         document.addEventListener(
             "wfesc:chat-opened",
             function () {
 
-                refreshCurrentConversationMatches();
+                refreshConversationSearchContext();
 
             }
         );
@@ -2002,7 +2670,7 @@
             "wfesc:chat-header-refresh",
             function () {
 
-                refreshCurrentConversationMatches();
+                refreshConversationSearchContext();
 
             }
         );
@@ -2012,7 +2680,7 @@
             "wfesc:messages-rendered",
             function () {
 
-                refreshCurrentConversationMatches();
+                refreshConversationSearchContext();
 
             }
         );
@@ -2054,8 +2722,13 @@
                     }
 
 
+                    /*
+                     * Do not destroy the active
+                     * green frame on every DOM change.
+                     */
                     applyCurrentConversationSearch(
-                        currentSearchText
+                        currentSearchText,
+                        false
                     );
 
                 }
@@ -2073,9 +2746,11 @@
     }
 
 
-    function refreshCurrentConversationMatches() {
+    function refreshConversationSearchContext() {
 
         if (!currentSearchText) {
+
+            updateMatchNavigator();
 
             return;
 
@@ -2087,20 +2762,117 @@
             "messages"
         ) {
 
+            updateMatchNavigator();
+
             return;
 
         }
 
 
+        const conversationId =
+            getCurrentConversationId();
+
+
+        if (!conversationId) {
+
+            updateMatchNavigator();
+
+            return;
+
+        }
+
+
+        /*
+         * If we already have search rows,
+         * build the conversation-specific list.
+         */
+        if (searchRows.length) {
+
+            const target =
+                normalizeId(
+                    conversationId
+                );
+
+
+            conversationSearchRows =
+                searchRows.filter(
+                    function (row) {
+
+                        return (
+                            normalizeId(
+                                row?.conversation_id ||
+                                row?.conversationId
+                            ) ===
+                            target
+                        );
+
+                    }
+                );
+
+
+            conversationSearchRows.sort(
+                function (a, b) {
+
+                    return (
+                        new Date(
+                            b.created_at ||
+                            b.createdAt ||
+                            0
+                        ).getTime() -
+
+                        new Date(
+                            a.created_at ||
+                            a.createdAt ||
+                            0
+                        ).getTime()
+                    );
+
+                }
+            );
+
+        }
+
+
         applyCurrentConversationSearch(
-            currentSearchText
+            currentSearchText,
+            false
         );
+
+
+        /*
+         * If a specific result was pending,
+         * navigate to it after rendering.
+         */
+        if (pendingMessageId) {
+
+            setTimeout(
+                function () {
+
+                    navigateToSelectedSearchResult();
+
+                },
+                80
+            );
+
+        }
 
     }
 
 
+    function refreshCurrentConversationMatches() {
+
+        refreshConversationSearchContext();
+
+    }
+
+
+    /* =========================================================
+       APPLY SEARCH INSIDE CURRENT CHAT
+    ========================================================= */
+
     function applyCurrentConversationSearch(
-        text
+        text,
+        animateCurrent
     ) {
 
         const container =
@@ -2111,12 +2883,204 @@
 
         if (!container) {
 
+            currentResults = [];
+
             updateMatchNavigator();
 
             return;
 
         }
 
+
+        removeSearchMarks(
+            container
+        );
+
+
+        if (!text.trim()) {
+
+            currentResults = [];
+
+            updateMatchNavigator();
+
+            return;
+
+        }
+
+
+        const bubbles =
+            Array.from(
+                container.querySelectorAll(
+                    ".message-bubble"
+                )
+            );
+
+
+        const matches = [];
+
+
+        bubbles.forEach(
+            function (bubble) {
+
+                const content =
+                    bubble.querySelector(
+                        ".message-content"
+                    );
+
+
+                const target =
+                    content ||
+                    bubble;
+
+
+                const rawText =
+                    target.textContent || "";
+
+
+                if (
+                    rawText
+                        .toLocaleLowerCase()
+                        .includes(
+                            text.toLocaleLowerCase()
+                        )
+                ) {
+
+                    highlightElementText(
+                        target,
+                        text
+                    );
+
+
+                    matches.push(
+                        bubble
+                    );
+
+                }
+
+            }
+        );
+
+
+        /*
+         * Fallback for layouts that don't use
+         * .message-bubble.
+         */
+        if (!matches.length) {
+
+            const contents =
+                Array.from(
+                    container.querySelectorAll(
+                        ".message-content"
+                    )
+                );
+
+
+            contents.forEach(
+                function (content) {
+
+                    const rawText =
+                        content.textContent || "";
+
+
+                    if (
+                        rawText
+                            .toLocaleLowerCase()
+                            .includes(
+                                text.toLocaleLowerCase()
+                            )
+                    ) {
+
+                        highlightElementText(
+                            content,
+                            text
+                        );
+
+
+                        const bubble =
+                            content.closest(
+                                ".message-bubble"
+                            ) ||
+                            content;
+
+
+                        if (
+                            !matches.includes(
+                                bubble
+                            )
+                        ) {
+
+                            matches.push(
+                                bubble
+                            );
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        currentResults =
+            matches;
+
+
+        /*
+         * Do NOT replace the navigation index
+         * with DOM order.
+         *
+         * The authoritative order is searchRows:
+         * newest -> oldest.
+         */
+        if (
+            conversationSearchRows.length
+        ) {
+
+            const targetRow =
+                getCurrentConversationSearchRow();
+
+
+            if (targetRow) {
+
+                const targetId =
+                    targetRow.message_id ||
+                    targetRow.id ||
+                    null;
+
+
+                const targetElement =
+                    findMessageElement(
+                        targetId,
+                        targetRow.content
+                    );
+
+
+                if (
+                    targetElement &&
+                    animateCurrent !== false
+                ) {
+
+                    animateSearchTarget(
+                        targetElement
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        updateMatchNavigator();
+
+    }
+
+
+    function removeSearchMarks(
+        container
+    ) {
 
         const oldMarks =
             container.querySelectorAll(
@@ -2153,162 +3117,6 @@
 
             }
         );
-
-
-        if (!text.trim()) {
-
-            currentMatchIndex =
-                -1;
-
-            currentResults =
-                [];
-
-            updateMatchNavigator();
-
-            return;
-
-        }
-
-
-        const bubbles =
-            container.querySelectorAll(
-                ".message-bubble, .message-content"
-            );
-
-
-        const matches = [];
-
-
-        bubbles.forEach(
-            function (bubble) {
-
-                if (
-
-                    bubble.classList.contains(
-                        "message-bubble"
-                    ) &&
-
-                    bubble.querySelector(
-                        ".message-content"
-                    )
-
-                ) {
-
-                    return;
-
-                }
-
-
-                const rawText =
-                    bubble.textContent || "";
-
-
-                if (
-
-                    rawText
-                        .toLocaleLowerCase()
-                        .includes(
-                            text.toLocaleLowerCase()
-                        )
-
-                ) {
-
-                    highlightElementText(
-                        bubble,
-                        text
-                    );
-
-
-                    matches.push(
-                        bubble
-                    );
-
-                }
-
-            }
-        );
-
-
-        const contents =
-            container.querySelectorAll(
-                ".message-content"
-            );
-
-
-        contents.forEach(
-            function (content) {
-
-                const rawText =
-                    content.textContent || "";
-
-
-                if (
-
-                    rawText
-                        .toLocaleLowerCase()
-                        .includes(
-                            text.toLocaleLowerCase()
-                        )
-
-                ) {
-
-                    highlightElementText(
-                        content,
-                        text
-                    );
-
-
-                    const bubble =
-                        content.closest(
-                            ".message-bubble"
-                        ) || content;
-
-
-                    if (
-                        !matches.includes(
-                            bubble
-                        )
-                    ) {
-
-                        matches.push(
-                            bubble
-                        );
-
-                    }
-
-                }
-
-            }
-        );
-
-
-        currentResults =
-            matches;
-
-
-        if (!matches.length) {
-
-            currentMatchIndex =
-                -1;
-
-        } else if (
-
-            currentMatchIndex < 0 ||
-
-            currentMatchIndex >=
-                matches.length
-
-        ) {
-
-            currentMatchIndex =
-                0;
-
-        }
-
-
-        updateMatchNavigator();
-
-        highlightCurrentMatch();
 
     }
 
@@ -2350,13 +3158,10 @@
 
 
                             if (
-
                                 node.parentElement &&
-
                                 node.parentElement.closest(
                                     ".wfesc-search-highlight"
                                 )
-
                             ) {
 
                                 return NodeFilter.FILTER_REJECT;
@@ -2400,13 +3205,11 @@
 
 
                 if (
-
                     !value
                         .toLocaleLowerCase()
                         .includes(
                             lowerQuery
                         )
-
                 ) {
 
                     return;
@@ -2529,9 +3332,8 @@
 
 
     /* =========================================================
-       MATCH NAVIGATOR
+       NAVIGATOR
     ========================================================= */
-
 
     function setupMatchNavigator() {
 
@@ -2543,7 +3345,10 @@
 
                     event.preventDefault();
 
-                    moveMatch(-1);
+                    /*
+                     * ↑ = older message
+                     */
+                    moveMatch(1);
 
                 }
             );
@@ -2559,7 +3364,10 @@
 
                     event.preventDefault();
 
-                    moveMatch(1);
+                    /*
+                     * ↓ = newer message
+                     */
+                    moveMatch(-1);
 
                 }
             );
@@ -2569,14 +3377,12 @@
     }
 
 
-    function moveMatch(
+    async function moveMatch(
         direction
     ) {
 
         if (
-            !Array.isArray(
-                currentResults
-            )
+            !conversationSearchRows.length
         ) {
 
             return;
@@ -2584,53 +3390,78 @@
         }
 
 
-        if (
-            !currentResults.length
-        ) {
-
-            return;
-
-        }
-
-
-        currentMatchIndex +=
+        /*
+         * Never wrap around.
+         *
+         * Newest:
+         * 1 / 10
+         *
+         * ↑:
+         * 2 / 10
+         *
+         * ...
+         *
+         * 10 / 10
+         */
+        const nextIndex =
+            currentMatchIndex +
             direction;
 
 
         if (
-            currentMatchIndex < 0
+            nextIndex < 0 ||
+            nextIndex >=
+                conversationSearchRows.length
         ) {
 
-            currentMatchIndex =
-                currentResults.length - 1;
+            return;
 
         }
 
 
-        if (
+        currentMatchIndex =
+            nextIndex;
 
-            currentMatchIndex >=
-            currentResults.length
 
-        ) {
+        const token =
+            ++navigationToken;
 
-            currentMatchIndex =
-                0;
+
+        const row =
+            getCurrentConversationSearchRow();
+
+
+        if (!row) {
+
+            return;
 
         }
 
 
-        highlightCurrentMatch();
+        pendingMessageId =
+            row.message_id ||
+            row.id ||
+            null;
+
+
+        pendingMessageContent =
+            row.content ||
+            "";
+
 
         updateMatchNavigator();
 
-    }
 
+        await ensureMessageVisible(
+            pendingMessageId,
+            pendingMessageContent,
+            token
+        );
 
-    function highlightCurrentMatch() {
 
         if (
-            !currentResults.length
+            token !==
+            navigationToken
         ) {
 
             return;
@@ -2638,64 +3469,23 @@
         }
 
 
-        currentResults.forEach(
-            function (element) {
-
-                if (
-                    element &&
-                    element.classList
-                ) {
-
-                    element.classList.remove(
-                        "wfesc-search-current-match"
-                    );
-
-                }
-
-            }
-        );
+        const target =
+            findMessageElement(
+                pendingMessageId,
+                pendingMessageContent
+            );
 
 
-        const current =
-            currentResults[
-                currentMatchIndex
-            ];
-
-
-        if (!current) {
+        if (!target) {
 
             return;
 
         }
 
 
-        if (current.classList) {
-
-            current.classList.add(
-                "wfesc-search-current-match"
-            );
-
-        }
-
-
-        try {
-
-            current.scrollIntoView(
-                {
-                    behavior:"smooth",
-                    block:"center"
-                }
-            );
-
-        } catch (error) {
-
-            try {
-
-                current.scrollIntoView();
-
-            } catch (scrollError) {}
-
-        }
+        animateSearchTarget(
+            target
+        );
 
     }
 
@@ -2712,13 +3502,7 @@
 
 
         const total =
-            Array.isArray(
-                currentResults
-            )
-
-                ? currentResults.length
-
-                : 0;
+            conversationSearchRows.length;
 
 
         if (els.matchCount) {
@@ -2730,8 +3514,18 @@
 
             } else {
 
+                const safeIndex =
+                    Math.max(
+                        0,
+                        Math.min(
+                            currentMatchIndex,
+                            total - 1
+                        )
+                    );
+
+
                 els.matchCount.textContent =
-                    `${currentMatchIndex + 1} / ${total}`;
+                    `${safeIndex + 1} / ${total}`;
 
             }
 
@@ -2743,15 +3537,326 @@
                 ? "flex"
                 : "none";
 
+
+        /*
+         * Disable arrows at boundaries.
+         */
+        if (els.matchUp) {
+
+            els.matchUp.disabled =
+                total === 0 ||
+                currentMatchIndex >=
+                    total - 1;
+
+        }
+
+
+        if (els.matchDown) {
+
+            els.matchDown.disabled =
+                total === 0 ||
+                currentMatchIndex <= 0;
+
+        }
+
     }
 
 
     /* =========================================================
-       SCROLL TO MESSAGE
+       NAVIGATION TARGET
     ========================================================= */
 
+    async function navigateToSelectedSearchResult() {
 
-    function scrollToMessage(
+        if (
+            !conversationSearchRows.length
+        ) {
+
+            /*
+             * Fallback for old search sessions.
+             */
+            if (
+                pendingMessageId ||
+                pendingMessageContent
+            ) {
+
+                await ensureMessageVisible(
+                    pendingMessageId,
+                    pendingMessageContent,
+                    ++navigationToken
+                );
+
+
+                const target =
+                    findMessageElement(
+                        pendingMessageId,
+                        pendingMessageContent
+                    );
+
+
+                if (target) {
+
+                    animateSearchTarget(
+                        target
+                    );
+
+                }
+
+            }
+
+            return;
+
+        }
+
+
+        const row =
+            getCurrentConversationSearchRow();
+
+
+        if (!row) {
+
+            return;
+
+        }
+
+
+        pendingMessageId =
+            row.message_id ||
+            row.id ||
+            pendingMessageId;
+
+
+        pendingMessageContent =
+            row.content ||
+            pendingMessageContent;
+
+
+        const token =
+            ++navigationToken;
+
+
+        await ensureMessageVisible(
+            pendingMessageId,
+            pendingMessageContent,
+            token
+        );
+
+
+        if (
+            token !==
+            navigationToken
+        ) {
+
+            return;
+
+        }
+
+
+        const target =
+            findMessageElement(
+                pendingMessageId,
+                pendingMessageContent
+            );
+
+
+        if (target) {
+
+            animateSearchTarget(
+                target
+            );
+
+        }
+
+
+        updateMatchNavigator();
+
+    }
+
+
+    async function ensureMessageVisible(
+        messageId,
+        content,
+        token
+    ) {
+
+        let target =
+            findMessageElement(
+                messageId,
+                content
+            );
+
+
+        if (target) {
+
+            return target;
+
+        }
+
+
+        const core =
+            getCore();
+
+
+        if (
+            !core ||
+            typeof core.loadOlderMessages !==
+                "function"
+        ) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Try loading older messages gradually.
+         *
+         * The exact number is intentionally limited
+         * so a bad backend cannot create an infinite loop.
+         */
+        const maxAttempts = 40;
+
+
+        for (
+            let attempt = 0;
+            attempt < maxAttempts;
+            attempt++
+        ) {
+
+            if (
+                token !==
+                navigationToken
+            ) {
+
+                return null;
+
+            }
+
+
+            target =
+                findMessageElement(
+                    messageId,
+                    content
+                );
+
+
+            if (target) {
+
+                return target;
+
+            }
+
+
+            try {
+
+                const beforeCount =
+                    getRenderedMessageCount();
+
+
+                const result =
+                    await core.loadOlderMessages();
+
+
+                await wait(80);
+
+
+                target =
+                    findMessageElement(
+                        messageId,
+                        content
+                    );
+
+
+                if (target) {
+
+                    return target;
+
+                }
+
+
+                const afterCount =
+                    getRenderedMessageCount();
+
+
+                /*
+                 * If the loader reports false/null and
+                 * the DOM did not change, stop.
+                 */
+                if (
+                    result === false &&
+                    afterCount <= beforeCount
+                ) {
+
+                    break;
+
+                }
+
+
+                if (
+                    afterCount <= beforeCount &&
+                    result == null
+                ) {
+
+                    break;
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "[WFESC SEARCH] older messages load failed:",
+                    error
+                );
+
+                break;
+
+            }
+
+        }
+
+
+        return findMessageElement(
+            messageId,
+            content
+        );
+
+    }
+
+
+    function getRenderedMessageCount() {
+
+        const container =
+            document.getElementById(
+                "chatMessages"
+            );
+
+
+        if (!container) {
+
+            return 0;
+
+        }
+
+
+        const bubbles =
+            container.querySelectorAll(
+                ".message-bubble"
+            );
+
+
+        if (bubbles.length) {
+
+            return bubbles.length;
+
+        }
+
+
+        return container.children.length;
+
+    }
+
+
+    function findMessageElement(
         messageId,
         content
     ) {
@@ -2764,7 +3869,7 @@
 
         if (!container) {
 
-            return;
+            return null;
 
         }
 
@@ -2777,6 +3882,10 @@
 
             const safeId =
                 String(messageId)
+                    .replace(
+                        /\\/g,
+                        "\\\\"
+                    )
                     .replace(
                         /"/g,
                         '\\"'
@@ -2825,16 +3934,16 @@
             content
         ) {
 
-            const bubbles =
-                container.querySelectorAll(
-                    ".message-bubble, .message-content"
-                );
-
-
             const wanted =
                 String(content)
                     .trim()
                     .toLocaleLowerCase();
+
+
+            const bubbles =
+                container.querySelectorAll(
+                    ".message-bubble"
+                );
 
 
             for (
@@ -2852,9 +3961,8 @@
 
 
                 if (
-                    value.includes(
-                        wanted
-                    )
+                    value === wanted ||
+                    value.includes(wanted)
                 ) {
 
                     target =
@@ -2866,8 +3974,59 @@
 
             }
 
+
+            if (!target) {
+
+                const contents =
+                    container.querySelectorAll(
+                        ".message-content"
+                    );
+
+
+                for (
+                    const contentElement
+                    of contents
+                ) {
+
+                    const value =
+                        String(
+                            contentElement.textContent ||
+                            ""
+                        )
+                            .trim()
+                            .toLocaleLowerCase();
+
+
+                    if (
+                        value === wanted ||
+                        value.includes(wanted)
+                    ) {
+
+                        target =
+                            contentElement.closest(
+                                ".message-bubble"
+                            ) ||
+                            contentElement;
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
         }
 
+
+        return target;
+
+    }
+
+
+    function animateSearchTarget(
+        target
+    ) {
 
         if (!target) {
 
@@ -2876,12 +4035,58 @@
         }
 
 
+        /*
+         * Remove old active state from every
+         * previously selected message.
+         */
+        const container =
+            document.getElementById(
+                "chatMessages"
+            );
+
+
+        if (container) {
+
+            container
+                .querySelectorAll(
+                    ".wfesc-search-current-match"
+                )
+                .forEach(
+                    function (element) {
+
+                        element.classList.remove(
+                            "wfesc-search-current-match"
+                        );
+
+                    }
+                );
+
+        }
+
+
+        /*
+         * Force animation restart.
+         */
+        target.classList.remove(
+            "wfesc-search-current-match"
+        );
+
+
+        void target.offsetWidth;
+
+
+        target.classList.add(
+            "wfesc-search-current-match"
+        );
+
+
         try {
 
             target.scrollIntoView(
                 {
                     behavior:"smooth",
-                    block:"center"
+                    block:"center",
+                    inline:"nearest"
                 }
             );
 
@@ -2895,22 +4100,102 @@
 
         }
 
+    }
 
-        target.classList.add(
-            "wfesc-search-current-match"
+
+    /* =========================================================
+       LEGACY SCROLL FUNCTION
+       Kept for compatibility with existing code.
+    ========================================================= */
+
+    async function scrollToMessage(
+        messageId,
+        content
+    ) {
+
+        const token =
+            ++navigationToken;
+
+
+        const target =
+            await ensureMessageVisible(
+                messageId,
+                content,
+                token
+            );
+
+
+        if (!target) {
+
+            return;
+
+        }
+
+
+        animateSearchTarget(
+            target
         );
 
+    }
 
-        setTimeout(
-            function () {
 
-                target.classList.remove(
-                    "wfesc-search-current-match"
+    /* =========================================================
+       WAIT HELPERS
+    ========================================================= */
+
+    function wait(
+        milliseconds
+    ) {
+
+        return new Promise(
+            function (resolve) {
+
+                setTimeout(
+                    resolve,
+                    milliseconds
                 );
 
-            },
-            1800
+            }
         );
+
+    }
+
+
+    async function waitForChatRender() {
+
+        const maxAttempts = 30;
+
+
+        for (
+            let i = 0;
+            i < maxAttempts;
+            i++
+        ) {
+
+            const container =
+                document.getElementById(
+                    "chatMessages"
+                );
+
+
+            if (
+                container &&
+                (
+                    container.children.length ||
+                    container.querySelector(
+                        ".message-bubble"
+                    )
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            await wait(100);
+
+        }
 
     }
 
@@ -2918,7 +4203,6 @@
     /* =========================================================
        ERROR
     ========================================================= */
-
 
     function showSearchError(
         message
@@ -2950,7 +4234,6 @@
     /* =========================================================
        DATE
     ========================================================= */
-
 
     function formatDate(
         value
@@ -3001,7 +4284,6 @@
        PUBLIC API
     ========================================================= */
 
-
     window.WFESC_MESSAGES_SEARCH = {
 
         init,
@@ -3024,7 +4306,23 @@
 
         },
 
-        refreshCurrentConversationMatches
+        refreshCurrentConversationMatches,
+
+        moveMatch,
+
+        scrollToMessage,
+
+        getSearchResults() {
+
+            return searchRows.slice();
+
+        },
+
+        getConversationSearchResults() {
+
+            return conversationSearchRows.slice();
+
+        }
 
     };
 
@@ -3032,7 +4330,6 @@
     /* =========================================================
        START
     ========================================================= */
-
 
     if (
         document.readyState ===
