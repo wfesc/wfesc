@@ -49,15 +49,45 @@
 
     /*
      * هذه القيم لا يتم حسابها من HTML.
-     * messages-keyboard.js هو المسؤول عنها.
+     * messages-keyboard.js هو المسؤول عن
+     * قيم الكيبورد والحقل.
      */
     --keyboard-height:0px;
 
     --composer-bottom:
         var(--navigation-height);
 
+
+    /* =====================================================
+       MESSAGE TEXT
+    ===================================================== */
+
     --message-text-scale:1;
+
+
+    /* =====================================================
+       MESSAGE BUBBLE
+       
+       هذه متغيرات إعدادات فقط.
+       التطبيق والحفظ يكون من:
+       messages-settings.js
+    ===================================================== */
+
+    --message-bubble-width:78%;
+    --message-bubble-vertical-padding:10px;
+    --message-bubble-horizontal-padding:13px;
+    --message-bubble-edge-gap:12px;
+
+
+    /*
+     * إبقاء المتغير القديم للتوافق مع الإعدادات السابقة.
+     */
     --message-bubble-scale:1;
+
+
+    /* =====================================================
+       OWN / OTHER BUBBLE
+    ===================================================== */
 
     --own-bubble-radius:18px;
     --other-bubble-radius:18px;
@@ -227,10 +257,6 @@ img{
 
     position:relative;
 
-    /*
-     * مساحة التنقل فقط.
-     * لا علاقة لها بارتفاع الكيبورد.
-     */
     padding-bottom:
         calc(
             var(--navigation-height) +
@@ -637,16 +663,12 @@ img{
 /* =========================================================
    CONVERSATION LIST
 ========================================================= */
+
 .conversation-list{
 
     position:relative;
     z-index:5;
 
-    /*
-     * تبقى المحادثات أعلى التنقل دائمًا.
-     * المسافة العلوية 20px حتى تكون المحادثات
-     * نازلة بشكل مناسب أسفل حقل البحث.
-     */
     padding:
         20px
         14px
@@ -865,6 +887,8 @@ img{
 
     color:var(--text);
 }
+
+
 /* =========================================================
    CHAT VIEW
 ========================================================= */
@@ -1161,109 +1185,144 @@ img{
    MESSAGES
 ========================================================= */
 
+/*
+ * الرسائل هي العنصر الوحيد الذي يقوم بالتمرير.
+ *
+ * تم إصلاح التعليق القديم الذي كان يمنع CSS
+ * الخاص بالرسائل من العمل.
+ */
 
-/* =.chat-messages{
+.chat-messages{
 
-/*  
- * مهم جدًا:  
- * الرسائل هي العنصر الوحيد الذي يتم تمريره.  
- */  
-flex:  
-    1 1 auto;  
+    flex:
+        1 1 auto;
 
-min-height:0;  
+    min-height:0;
 
-height:auto;  
+    height:auto;
 
-overflow-y:auto;  
-overflow-x:hidden;  
+    overflow-y:auto;
+    overflow-x:hidden;
 
-/*  
- * المسافة الأخيرة = مساحة حقل الكتابة  
- * + مساحة التنقل  
- * + مساحة أمان إضافية.  
- *  
- * لذلك آخر رسالة لا تدخل خلفهما.  
- */  
-padding:  
-    16px  
-    12px  
-    calc(  
-        var(--navigation-height) +  
-        120px +  
-        env(safe-area-inset-bottom)  
-    );  
+    /*
+     * المسافة السفلية محسوبة من:
+     *
+     * composer-bottom
+     * + ارتفاع حقل الكتابة التقريبي
+     * + safe-area
+     *
+     * ولا يوجد هنا تحكم بارتفاع الكيبورد.
+     */
+    padding:
+        16px
+        12px
+        calc(
+            var(--composer-bottom) +
+            68px +
+            env(safe-area-inset-bottom)
+        );
 
-scroll-behavior:smooth;  
+    scroll-padding-bottom:
+        calc(
+            var(--composer-bottom) +
+            68px +
+            env(safe-area-inset-bottom)
+        );
 
-overscroll-behavior:  
-    contain;  
+    scroll-behavior:smooth;
 
--webkit-overflow-scrolling:touch;  
+    overscroll-behavior:
+        contain;
 
-background:  
-    radial-gradient(  
-        circle at 50% 0%,  
-        rgba(255,255,255,.018),  
-        transparent 42%  
-    );
+    -webkit-overflow-scrolling:touch;
 
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(255,255,255,.018),
+            transparent 42%
+        );
 }
 
 .chat-messages::-webkit-scrollbar{
-width:4px;
+
+    width:4px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb{
 
-background:  
-    rgba(255,255,255,.12);  
+    background:
+        rgba(255,255,255,.12);
 
-border-radius:20px;
-
+    border-radius:20px;
 }
+
+
+/* =========================================================
+   MESSAGE ROW
+========================================================= */
 
 .message-row{
 
-display:flex;  
+    display:flex;
 
-width:100%;  
+    width:100%;
 
-margin-bottom:12px;  
+    /*
+     * المسافة عن إطار الهاتف تتحكم بها
+     * messages-settings.js عبر المتغير.
+     */
+    padding-inline:
+        var(--message-bubble-edge-gap);
 
-animation:  
-    messageIn  
-    .25s  
-    ease  
-    both;
+    margin-bottom:12px;
 
+    animation:
+        messageIn
+        .25s
+        ease
+        both;
 }
 
 .message-row.mine{
-justify-content:flex-end;
+    justify-content:flex-end;
 }
 
 .message-row.theirs{
-justify-content:flex-start;
+    justify-content:flex-start;
 }
 
-    
 
 /* =========================================================
-REAL MESSAGE BUBBLE
+   REAL MESSAGE BUBBLE
 ========================================================= */
-    
+
 .message-bubble{
 
-    max-width:
-        min(
-            78vw,
-            560px
-        );
+    /*
+     * عرض الفقاعة لا يتم ضبطه من JavaScript
+     * هنا بشكل مباشر.
+     *
+     * messages-settings.js يغير:
+     * --message-bubble-width
+     */
+    width:
+        var(--message-bubble-width);
 
+    max-width:
+        560px;
+
+    /*
+     * ارتفاع الفقاعة الطبيعي يتحكم به:
+     *
+     * --message-bubble-vertical-padding
+     *
+     * وليس height ثابتًا، حتى تبقى الرسائل
+     * متعددة الأسطر سليمة.
+     */
     padding:
-        10px
-        13px;
+        var(--message-bubble-vertical-padding)
+        var(--message-bubble-horizontal-padding);
 
     border-radius:
         var(
@@ -1284,6 +1343,10 @@ REAL MESSAGE BUBBLE
             rgba(255,255,255,.10)
         );
 
+    /*
+     * المتغير القديم يبقى فقط للتوافق
+     * مع الإعدادات القديمة.
+     */
     transform:
         scale(
             var(--message-bubble-scale)
@@ -1306,12 +1369,19 @@ REAL MESSAGE BUBBLE
         saturate(135%);
 
     transition:
+        width .22s ease,
+        padding .22s ease,
         background .22s ease,
         border-radius .22s ease,
         transform .22s ease,
         box-shadow .22s ease,
         border-color .22s ease;
 }
+
+
+/* =========================================================
+   OWN BUBBLE
+========================================================= */
 
 .message-row.mine
 .message-bubble{
@@ -1345,6 +1415,11 @@ REAL MESSAGE BUBBLE
         );
 }
 
+
+/* =========================================================
+   OTHER BUBBLE
+========================================================= */
+
 .message-row.theirs
 .message-bubble{
 
@@ -1376,6 +1451,11 @@ REAL MESSAGE BUBBLE
             transparent
         );
 }
+
+
+/* =========================================================
+   BUBBLE SHAPES
+========================================================= */
 
 .message-row.mine
 .message-bubble[data-bubble-shape="pill"],
@@ -1412,6 +1492,11 @@ REAL MESSAGE BUBBLE
             7px
         );
 }
+
+
+/* =========================================================
+   MESSAGE CONTENT
+========================================================= */
 
 .message-content{
 
@@ -1682,10 +1767,6 @@ REAL MESSAGE BUBBLE
         rgba(154,167,255,.035);
 }
 
-/*
- * إذا لم يتم تحميل messages-keyboard.js
- * يبقى الحقل غير قابل للاستخدام.
- */
 .message-input[readonly]{
 
     opacity:.72;
@@ -2250,13 +2331,14 @@ REAL MESSAGE BUBBLE
 
 .preview-message{
 
-    width:max-content;
+    width:
+        var(--message-bubble-width);
 
-    max-width:90%;
+    max-width:100%;
 
     padding:
-        10px
-        13px;
+        var(--message-bubble-vertical-padding)
+        var(--message-bubble-horizontal-padding);
 
     border-radius:
         var(
@@ -2288,6 +2370,8 @@ REAL MESSAGE BUBBLE
     line-height:1.5;
 
     transition:
+        width .22s ease,
+        padding .22s ease,
         background .22s ease,
         border-color .22s ease,
         border-radius .22s ease,
@@ -2813,8 +2897,21 @@ REAL MESSAGE BUBBLE
             0 0 auto !important;
     }
 
+    /*
+     * لا نضع هنا max-width للفقاعة.
+     *
+     * إعداد عرض الفقاعة يأتي من
+     * --message-bubble-width
+     * الذي يتحكم به settings.
+     */
+
     .message-bubble{
-        max-width:84vw;
+
+        max-width:
+            calc(
+                100% -
+                0px
+            );
     }
 
     .notifications-panel{
@@ -2861,18 +2958,11 @@ REAL MESSAGE BUBBLE
     }
 
     /*
-     * مساحة إضافية للرسائل على الهاتف.
-     * تمنع آخر رسالة من الاختفاء تحت composer/navigation.
+     * لا نغير padding الرسائل هنا.
+     *
+     * القاعدة الأساسية تستخدم
+     * --composer-bottom.
      */
-    .chat-messages{
-
-        padding-bottom:
-            calc(
-                var(--navigation-height) +
-                115px +
-                env(safe-area-inset-bottom)
-            );
-    }
 
 }
 
@@ -2890,12 +2980,6 @@ REAL MESSAGE BUBBLE
  * bottom:0
  *
  * والكيبورد النظامي هو الذي يغطيه عند ظهوره.
- *
- * لا يوجد:
- * bottom: keyboard-height
- * transform
- * translate
- * visualViewport
  */
 
 .wfesc-navigation-keyboard-lock{
@@ -2958,12 +3042,6 @@ REAL MESSAGE BUBBLE
 }
 
 
-/*
- * أثناء الكيبورد:
- *
- * لا يتحرك التنقل إطلاقًا.
- */
-
 body.wfesc-keyboard-open
 .wfesc-navigation-keyboard-lock{
 
@@ -3008,11 +3086,6 @@ body.wfesc-keyboard-open
 }
 
 
-/*
- * لا نسمح للعناصر الداخلية
- * بتغيير قياسات التنقل.
- */
-
 .wfesc-navigation-keyboard-lock,
 .wfesc-navigation-keyboard-lock *{
 
@@ -3023,16 +3096,6 @@ body.wfesc-keyboard-open
 /* =========================================================
    KEYBOARD SAFETY
 ========================================================= */
-
-/*
- * لا يوجد هنا أي حساب للكيبورد.
- *
- * messages-keyboard.js وحده مسؤول عن:
- *
- * --keyboard-height
- * --composer-bottom
- * wfesc-keyboard-open
- */
 
 body.wfesc-keyboard-open{
 
@@ -3117,7 +3180,7 @@ body.wfesc-keyboard-open{
 
 
 /*
- * الهيدر ثابت.
+ * الهيدر ثابت في أعلى المحادثة.
  *
  * الرسائل وحدها تقوم بالتمرير.
  */
@@ -3135,6 +3198,14 @@ body.wfesc-keyboard-open{
     z-index:500 !important;
 }
 
+
+/*
+ * قاعدة واحدة نهائية للرسائل.
+ *
+ * لا توجد قاعدة لاحقة تغيّر
+ * padding-bottom إلى 110 أو 115 أو 120px.
+ */
+
 #chatView > #chatMessages{
 
     flex:
@@ -3147,16 +3218,26 @@ body.wfesc-keyboard-open{
     overflow-y:auto;
     overflow-x:hidden;
 
-    /*
-     * حماية إضافية حتى لا تصل الرسائل
-     * إلى composer أو navigation.
-     */
-    padding-bottom:
+    padding:
+        16px
+        12px
         calc(
-            var(--navigation-height) +
-            110px +
+            var(--composer-bottom) +
+            68px +
             env(safe-area-inset-bottom)
         );
+
+    scroll-padding-bottom:
+        calc(
+            var(--composer-bottom) +
+            68px +
+            env(safe-area-inset-bottom)
+        );
+
+    overscroll-behavior:
+        contain;
+
+    -webkit-overflow-scrolling:touch;
 }
 
 
@@ -3666,6 +3747,10 @@ body.wfesc-keyboard-open{
         </p>
 
 
+        <!-- =================================================
+             TEXT SIZE
+        ================================================== -->
+
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3696,6 +3781,115 @@ body.wfesc-keyboard-open{
         </div>
 
 
+        <!-- =================================================
+             BUBBLE WIDTH
+        ================================================== -->
+
+        <div class="settings-group">
+
+            <div class="settings-label">
+
+                <span>
+                    عرض الفقاعة
+                </span>
+
+                <span
+                    class="settings-value"
+                    id="messageBubbleWidthValue"
+                >
+                    78%
+                </span>
+
+            </div>
+
+
+            <input
+                type="range"
+                class="settings-range"
+                id="messageBubbleWidthRange"
+                min="45"
+                max="100"
+                value="78"
+                data-setting="message-bubble-width"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             BUBBLE HEIGHT
+        ================================================== -->
+
+        <div class="settings-group">
+
+            <div class="settings-label">
+
+                <span>
+                    ارتفاع الفقاعة
+                </span>
+
+                <span
+                    class="settings-value"
+                    id="messageBubbleHeightValue"
+                >
+                    10px
+                </span>
+
+            </div>
+
+
+            <input
+                type="range"
+                class="settings-range"
+                id="messageBubbleHeightRange"
+                min="4"
+                max="24"
+                value="10"
+                data-setting="message-bubble-vertical-padding"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             FRAME GAP
+        ================================================== -->
+
+        <div class="settings-group">
+
+            <div class="settings-label">
+
+                <span>
+                    المسافة عن إطار الهاتف
+                </span>
+
+                <span
+                    class="settings-value"
+                    id="messageBubbleEdgeValue"
+                >
+                    12px
+                </span>
+
+            </div>
+
+
+            <input
+                type="range"
+                class="settings-range"
+                id="messageBubbleEdgeRange"
+                min="0"
+                max="32"
+                value="12"
+                data-setting="message-bubble-edge-gap"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             OWN COLOR
+        ================================================== -->
+
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3724,6 +3918,10 @@ body.wfesc-keyboard-open{
 
         </div>
 
+
+        <!-- =================================================
+             OWN COLOR INTENSITY
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -3756,6 +3954,10 @@ body.wfesc-keyboard-open{
         </div>
 
 
+        <!-- =================================================
+             OWN TRANSPARENCY
+        ================================================== -->
+
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3786,6 +3988,10 @@ body.wfesc-keyboard-open{
 
         </div>
 
+
+        <!-- =================================================
+             OWN SHAPE
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -3824,6 +4030,10 @@ body.wfesc-keyboard-open{
         </div>
 
 
+        <!-- =================================================
+             OWN RADIUS
+        ================================================== -->
+
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3854,6 +4064,10 @@ body.wfesc-keyboard-open{
 
         </div>
 
+
+        <!-- =================================================
+             OTHER SHAPE
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -3892,6 +4106,10 @@ body.wfesc-keyboard-open{
         </div>
 
 
+        <!-- =================================================
+             OTHER COLOR
+        ================================================== -->
+
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3920,6 +4138,10 @@ body.wfesc-keyboard-open{
 
         </div>
 
+
+        <!-- =================================================
+             OTHER INTENSITY
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -3952,6 +4174,10 @@ body.wfesc-keyboard-open{
         </div>
 
 
+        <!-- =================================================
+             OTHER TRANSPARENCY
+        ================================================== -->
+
         <div class="settings-group">
 
             <div class="settings-label">
@@ -3982,6 +4208,10 @@ body.wfesc-keyboard-open{
 
         </div>
 
+
+        <!-- =================================================
+             OTHER RADIUS
+        ================================================== -->
 
         <div class="settings-group">
 
@@ -4014,6 +4244,10 @@ body.wfesc-keyboard-open{
         </div>
 
 
+        <!-- =================================================
+             PREVIEW
+        ================================================== -->
+
         <div class="settings-preview">
 
             <div class="preview-title">
@@ -4042,6 +4276,10 @@ body.wfesc-keyboard-open{
 
         </div>
 
+
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
 
         <div class="modal-actions">
 
@@ -4259,14 +4497,6 @@ body.wfesc-keyboard-open{
      *
      * فقط نتحقق من وجود ملف
      * messages-keyboard.js.
-     *
-     * إذا كان موجودًا:
-     * يصبح الحقل قابلًا للكتابة.
-     *
-     * إذا كان مفقودًا:
-     * يبقى readonly وبالتالي
-     * لا يستطيع المستخدم تشغيل
-     * لوحة المفاتيح من هذا الحقل.
      */
 
     if(
