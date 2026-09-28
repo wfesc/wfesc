@@ -1,53 +1,135 @@
+(() => {
+"use strict";
+
+/*
+============================================================
+WFESC MESSAGES CHAT ACTIONS
+============================================================
+
+المسؤول عن:
+
+- قائمة الثلاث نقاط داخل المحادثة
+- حذف المحادثة
+- حذف لدي
+- حذف للطرفين
+- تأكيدات الحذف
+- حظر المستخدم
+- إلغاء الحظر
+- منع إرسال الرسائل للمستخدم المحظور
+- إشعار الطرف الآخر عند حذف المحادثة للطرفين
+- إخراج الطرف الآخر من المحادثة عبر Realtime
+- الحفاظ على Messages Core كما هو
+
+لا يتم تعديل:
+messages-core.js
+messages-send.js
+messages-settings.js
+messages-keyboard.js
+messages-activity.js
+
+============================================================
+*/
+
+const CORE =
+    () =>
+        window.WFESC_MESSAGES_CORE || null;
+
+
 /* =========================================================
-   WFESC — Chat Actions
-   File: messages/messages-chat-actions.js
+HELPERS
+========================================================= */
 
-   الوظائف:
-   - قائمة الثلاث نقاط
-   - حذف لدي
-   - حذف للطرفين
-   - تأكيدات الحذف
-   - رسالة نجاح الحذف
-   - إشعار الطرف الآخر عند حذف الطرفين
-   - حظر المستخدم
-   - إلغاء الحظر
-   ========================================================= */
+function getClient() {
 
-(function () {
-    "use strict";
+    const core =
+        CORE();
 
-    const CORE_NAME = "WFESC_MESSAGES_CORE";
+    return core?.client || null;
+}
 
-    let deleteRealtimeChannel = null;
-    let currentDeleteConversationId = null;
-    let currentDeleteOtherUserId = null;
 
-    let initialized = false;
+function getCurrentUser() {
 
-    function core() {
-        return window[CORE_NAME] || null;
+    const core =
+        CORE();
+
+    if (
+        !core ||
+        typeof core.getCurrentUser !==
+        "function"
+    ) {
+        return null;
     }
 
-    function client() {
-        return core()?.client || window.WFESCSupabase || null;
+    return core.getCurrentUser();
+}
+
+
+/* =========================================================
+FIXED CONVERSATION ID
+========================================================= */
+
+/*
+المهم هنا:
+
+messages-core.js يحتوي:
+
+getCurrentConversation() {
+    return currentConversationId;
+}
+
+أي أن الدالة ترجع UUID مباشرة،
+وليس object.
+
+لذلك لا نحاول قراءة:
+conversation.id
+conversation.conversation_id
+
+بل نأخذ القيمة مباشرة.
+*/
+
+function getConversationId() {
+
+    const core =
+        CORE();
+
+    if (
+        !core ||
+        typeof core.getCurrentConversation !==
+        "function"
+    ) {
+        return null;
     }
 
-    function getCurrentUser() {
-        return core()?.getCurrentUser?.() || null;
+    const conversation =
+        core.getCurrentConversation();
+
+    if (
+        conversation == null
+    ) {
+        return null;
     }
 
-    function getCurrentConversation() {
-        return core()?.getCurrentConversation?.() || null;
+    /*
+     * إذا كان ID مباشرًا
+     */
+    if (
+        typeof conversation ===
+        "string"
+    ) {
+
+        return conversation;
     }
 
-    function getCurrentContact() {
-        return core()?.getCurrentContact?.() || null;
-    }
+    /*
+     * احتياط إضافي إذا تغيّر شكل البيانات
+     * مستقبلاً بدون التأثير على النسخة الحالية.
+     */
 
-    function getConversationId() {
-        const conversation = getCurrentConversation();
-
-        if (!conversation) return null;
+    if (
+        typeof conversation ===
+        "object"
+    ) {
 
         return (
             conversation.conversation_id ||
@@ -57,1353 +139,2338 @@
         );
     }
 
-    function getContactUserId() {
-        const contact = getCurrentContact();
+    return null;
+}
 
-        if (!contact) return null;
 
-        return (
-            contact.user_id ||
-            contact.id ||
-            null
+/* =========================================================
+CURRENT CONTACT
+========================================================= */
+
+function getCurrentContact() {
+
+    const core =
+        CORE();
+
+    if (
+        !core ||
+        typeof core.getCurrentContact !==
+        "function"
+    ) {
+        return null;
+    }
+
+    return core.getCurrentContact();
+}
+
+
+/* =========================================================
+ESCAPE
+========================================================= */
+
+function escapeHtml(value) {
+
+    return String(
+        value ?? ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+
+/* =========================================================
+TOAST
+========================================================= */
+
+function showToast(
+    message,
+    duration = 2200
+) {
+
+    let toast =
+        document.getElementById(
+            "wfescChatActionsToast"
+        );
+
+    if (!toast) {
+
+        toast =
+            document.createElement(
+                "div"
+            );
+
+        toast.id =
+            "wfescChatActionsToast";
+
+        toast.dir =
+            "rtl";
+
+        toast.style.cssText = `
+            position:fixed;
+
+            left:50%;
+            bottom:92px;
+
+            transform:
+                translateX(-50%)
+                translateY(15px);
+
+            z-index:9999999;
+
+            max-width:
+                calc(100vw - 32px);
+
+            padding:
+                12px 18px;
+
+            border-radius:
+                14px;
+
+            background:
+                rgba(18,18,18,.96);
+
+            color:#fff;
+
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+
+            box-shadow:
+                0 15px 45px
+                rgba(0,0,0,.55);
+
+            font-size:13px;
+            font-weight:600;
+
+            text-align:center;
+
+            opacity:0;
+
+            pointer-events:none;
+
+            transition:
+                opacity .18s ease,
+                transform .18s ease;
+
+            backdrop-filter:
+                blur(14px);
+
+            -webkit-backdrop-filter:
+                blur(14px);
+        `;
+
+        document.body.appendChild(
+            toast
         );
     }
 
+    toast.textContent =
+        message;
 
-    /* =========================================================
-       أدوات الواجهة
-       ========================================================= */
+    toast.style.opacity =
+        "1";
 
-    function escapeHTML(value) {
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+    toast.style.transform =
+        "translateX(-50%) translateY(0)";
+
+    clearTimeout(
+        toast._wfescTimer
+    );
+
+    toast._wfescTimer =
+        setTimeout(
+            () => {
+
+                toast.style.opacity =
+                    "0";
+
+                toast.style.transform =
+                    "translateX(-50%) translateY(15px)";
+
+            },
+            duration
+        );
+}
+
+
+/* =========================================================
+ACTION MENU
+========================================================= */
+
+let menu =
+    null;
+
+
+function closeMenu() {
+
+    if (!menu) {
+        return;
     }
 
+    menu.remove();
 
-    function ensureStyles() {
-        if (document.getElementById("wfescChatActionsStyles")) {
-            return;
-        }
+    menu =
+        null;
+}
 
-        const style = document.createElement("style");
-        style.id = "wfescChatActionsStyles";
+
+function createMenu() {
+
+    closeMenu();
+
+    menu =
+        document.createElement(
+            "div"
+        );
+
+    menu.id =
+        "wfescChatActionsMenu";
+
+    menu.dir =
+        "rtl";
+
+    menu.style.cssText = `
+        position:fixed;
+
+        z-index:999998;
+
+        top:64px;
+        left:16px;
+
+        width:220px;
+
+        padding:7px;
+
+        background:
+            rgba(15,15,15,.97);
+
+        border:
+            1px solid
+            rgba(255,255,255,.10);
+
+        border-radius:16px;
+
+        box-shadow:
+            0 18px 55px
+            rgba(0,0,0,.65);
+
+        backdrop-filter:
+            blur(18px);
+
+        -webkit-backdrop-filter:
+            blur(18px);
+
+        animation:
+            wfescChatActionsMenuIn
+            .16s ease both;
+    `;
+
+    const styleId =
+        "wfescChatActionsMenuStyle";
+
+    if (
+        !document.getElementById(
+            styleId
+        )
+    ) {
+
+        const style =
+            document.createElement(
+                "style"
+            );
+
+        style.id =
+            styleId;
 
         style.textContent = `
-            #wfescChatActionsMenu {
-                position: fixed;
-                z-index: 5000;
-                min-width: 220px;
-                max-width: calc(100vw - 24px);
-                background: rgba(20,20,20,.98);
-                border: 1px solid rgba(255,255,255,.12);
-                border-radius: 16px;
-                padding: 7px;
-                box-shadow: 0 18px 50px rgba(0,0,0,.45);
-                backdrop-filter: blur(18px);
-                -webkit-backdrop-filter: blur(18px);
-                direction: rtl;
-                display: none;
-            }
 
-            #wfescChatActionsMenu.open {
-                display: block;
-                animation: wfescChatActionsMenuIn .16s ease-out;
-            }
+            @keyframes
+            wfescChatActionsMenuIn {
 
-            @keyframes wfescChatActionsMenuIn {
                 from {
-                    opacity: 0;
-                    transform: translateY(-5px) scale(.98);
+                    opacity:0;
+                    transform:
+                        translateY(-6px)
+                        scale(.97);
                 }
+
                 to {
-                    opacity: 1;
-                    transform: translateY(0) scale(1);
+                    opacity:1;
+                    transform:
+                        translateY(0)
+                        scale(1);
                 }
             }
 
+            #wfescChatActionsMenu
             .wfesc-chat-action-item {
-                width: 100%;
-                min-height: 46px;
-                border: 0;
-                outline: 0;
-                background: transparent;
-                color: #eee;
-                border-radius: 12px;
-                padding: 11px 13px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-family: inherit;
-                font-size: 14px;
-                text-align: right;
-                cursor: pointer;
-            }
 
-            .wfesc-chat-action-item:hover {
-                background: rgba(255,255,255,.07);
-            }
+                width:100%;
 
-            .wfesc-chat-action-item.danger {
-                color: #ff6b6b;
-            }
+                display:flex;
+                align-items:center;
 
-            .wfesc-chat-action-item.warning {
-                color: #ffb84d;
-            }
+                gap:10px;
 
-            .wfesc-chat-action-icon {
-                width: 25px;
-                min-width: 25px;
-                text-align: center;
-                font-size: 18px;
-            }
+                border:0;
 
-            #wfescChatActionsBackdrop {
-                position: fixed;
-                inset: 0;
-                z-index: 4999;
-                background: transparent;
-                display: none;
-            }
+                background:
+                    transparent;
 
-            #wfescChatActionsBackdrop.open {
-                display: block;
-            }
+                color:#fff;
 
-            #wfescChatConfirmOverlay {
-                position: fixed;
-                inset: 0;
-                z-index: 7000;
-                display: none;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                background: rgba(0,0,0,.68);
-                direction: rtl;
-            }
+                padding:
+                    12px 13px;
 
-            #wfescChatConfirmOverlay.open {
-                display: flex;
-                animation: wfescConfirmFade .18s ease-out;
-            }
+                border-radius:11px;
 
-            @keyframes wfescConfirmFade {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
+                font-family:
+                    inherit;
 
-            .wfesc-chat-confirm-box {
-                width: min(430px, 100%);
-                background: #111;
-                border: 1px solid rgba(255,255,255,.12);
-                border-radius: 20px;
-                padding: 21px;
-                box-shadow: 0 25px 80px rgba(0,0,0,.6);
-            }
+                font-size:13px;
 
-            .wfesc-chat-confirm-title {
-                font-size: 18px;
-                font-weight: 700;
-                color: #fff;
-                margin-bottom: 12px;
-            }
+                text-align:right;
 
-            .wfesc-chat-confirm-text {
-                color: #ccc;
-                font-size: 14px;
-                line-height: 1.8;
-                white-space: pre-line;
-            }
+                cursor:pointer;
 
-            .wfesc-chat-confirm-buttons {
-                display: flex;
-                gap: 9px;
-                margin-top: 19px;
-            }
-
-            .wfesc-chat-confirm-buttons button {
-                flex: 1;
-                min-height: 44px;
-                border-radius: 12px;
-                border: 1px solid rgba(255,255,255,.12);
-                font-family: inherit;
-                font-size: 14px;
-                cursor: pointer;
-            }
-
-            .wfesc-chat-confirm-cancel {
-                background: rgba(255,255,255,.06);
-                color: #eee;
-            }
-
-            .wfesc-chat-confirm-ok {
-                background: #fff;
-                color: #111;
-            }
-
-            .wfesc-chat-confirm-danger {
-                background: #c62828;
-                color: #fff;
-                border-color: #c62828 !important;
-            }
-
-            #wfescChatToast {
-                position: fixed;
-                left: 50%;
-                bottom: calc(
-                    var(--navigation-height, 68px)
-                    + env(safe-area-inset-bottom)
-                    + 18px
-                );
-                transform: translateX(-50%) translateY(15px);
-                z-index: 9000;
-                max-width: calc(100vw - 30px);
-                background: rgba(20,20,20,.97);
-                color: #fff;
-                border: 1px solid rgba(255,255,255,.12);
-                border-radius: 14px;
-                padding: 12px 17px;
-                font-size: 14px;
-                text-align: center;
-                opacity: 0;
-                pointer-events: none;
                 transition:
-                    opacity .2s ease,
-                    transform .2s ease;
-                direction: rtl;
-                box-shadow: 0 15px 45px rgba(0,0,0,.4);
+                    background .15s ease;
             }
 
-            #wfescChatToast.show {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
+            #wfescChatActionsMenu
+            .wfesc-chat-action-item:hover {
+
+                background:
+                    rgba(255,255,255,.07);
             }
 
-            #wfescChatToast.success {
-                border-color: rgba(90,210,120,.3);
+            #wfescChatActionsMenu
+            .wfesc-chat-action-item.danger {
+
+                color:#ff6b6b;
             }
 
-            #wfescChatToast.error {
-                border-color: rgba(255,90,90,.3);
-            }
+            #wfescChatActionsMenu
+            .wfesc-chat-action-divider {
 
-            #wfescRemoteDeleteOverlay {
-                position: fixed;
-                inset: 0;
-                z-index: 10000;
-                display: none;
-                align-items: center;
-                justify-content: center;
-                padding: 22px;
-                background: rgba(0,0,0,.92);
-                direction: rtl;
-            }
+                height:1px;
 
-            #wfescRemoteDeleteOverlay.open {
-                display: flex;
-            }
+                margin:
+                    5px 8px;
 
-            .wfesc-remote-delete-box {
-                width: min(430px, 100%);
-                text-align: center;
-                background: #111;
-                border: 1px solid rgba(255,255,255,.12);
-                border-radius: 22px;
-                padding: 28px 20px;
-            }
-
-            .wfesc-remote-delete-icon {
-                font-size: 42px;
-                margin-bottom: 15px;
-            }
-
-            .wfesc-remote-delete-text {
-                color: #fff;
-                font-size: 16px;
-                line-height: 1.8;
-                font-weight: 600;
+                background:
+                    rgba(255,255,255,.07);
             }
         `;
 
-        document.head.appendChild(style);
+        document.head.appendChild(
+            style
+        );
     }
 
+    const deleteButton =
+        document.createElement(
+            "button"
+        );
 
-    function ensureUI() {
-        ensureStyles();
+    deleteButton.type =
+        "button";
 
-        if (!document.getElementById("wfescChatActionsBackdrop")) {
-            const backdrop = document.createElement("div");
-            backdrop.id = "wfescChatActionsBackdrop";
+    deleteButton.className =
+        "wfesc-chat-action-item danger";
 
-            backdrop.addEventListener("click", closeMenu);
+    deleteButton.innerHTML =
+        `
+            <span>🗑️</span>
+            <span>حذف المحادثة</span>
+        `;
 
-            document.body.appendChild(backdrop);
-        }
+    deleteButton.addEventListener(
+        "click",
+        () => {
 
-        if (!document.getElementById("wfescChatActionsMenu")) {
-            const menu = document.createElement("div");
-            menu.id = "wfescChatActionsMenu";
-
-            menu.innerHTML = `
-                <button
-                    type="button"
-                    class="wfesc-chat-action-item danger"
-                    id="wfescDeleteChatAction"
-                >
-                    <span class="wfesc-chat-action-icon">🗑</span>
-                    <span>حذف المحادثة</span>
-                </button>
-
-                <button
-                    type="button"
-                    class="wfesc-chat-action-item warning"
-                    id="wfescBlockChatAction"
-                >
-                    <span class="wfesc-chat-action-icon">🚫</span>
-                    <span id="wfescBlockChatActionText">حظر المستخدم</span>
-                </button>
-            `;
-
-            document.body.appendChild(menu);
-
-            document
-                .getElementById("wfescDeleteChatAction")
-                .addEventListener("click", function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    closeMenu();
-                    openDeleteChoice();
-                });
-
-            document
-                .getElementById("wfescBlockChatAction")
-                .addEventListener("click", async function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    closeMenu();
-                    await handleBlock();
-                });
-        }
-
-        if (!document.getElementById("wfescChatConfirmOverlay")) {
-            const overlay = document.createElement("div");
-            overlay.id = "wfescChatConfirmOverlay";
-
-            document.body.appendChild(overlay);
-        }
-
-        if (!document.getElementById("wfescChatToast")) {
-            const toast = document.createElement("div");
-            toast.id = "wfescChatToast";
-
-            document.body.appendChild(toast);
-        }
-
-        if (!document.getElementById("wfescRemoteDeleteOverlay")) {
-            const remote = document.createElement("div");
-            remote.id = "wfescRemoteDeleteOverlay";
-
-            remote.innerHTML = `
-                <div class="wfesc-remote-delete-box">
-                    <div class="wfesc-remote-delete-icon">🗑</div>
-                    <div class="wfesc-remote-delete-text">
-                        قام الطرف الآخر بحذف الرسائل من كلا الطرفين
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(remote);
-        }
-    }
-
-
-    /* =========================================================
-       القائمة
-       ========================================================= */
-
-    function positionMenu() {
-        const button = document.getElementById("chatMenuButton");
-        const menu = document.getElementById("wfescChatActionsMenu");
-
-        if (!button || !menu) return;
-
-        const rect = button.getBoundingClientRect();
-
-        menu.style.top = `${Math.min(
-            window.innerHeight - menu.offsetHeight - 12,
-            rect.bottom + 8
-        )}px`;
-
-        menu.style.right = `${Math.max(
-            12,
-            window.innerWidth - rect.right
-        )}px`;
-
-        menu.style.left = "auto";
-    }
-
-
-    function openMenu() {
-        ensureUI();
-
-        const conversationId = getConversationId();
-
-        if (!conversationId) {
-            showToast("لا توجد محادثة مفتوحة", "error");
-            return;
-        }
-
-        const menu = document.getElementById("wfescChatActionsMenu");
-        const backdrop = document.getElementById("wfescChatActionsBackdrop");
-
-        if (!menu || !backdrop) return;
-
-        updateBlockButtonText();
-
-        menu.classList.add("open");
-        backdrop.classList.add("open");
-
-        requestAnimationFrame(positionMenu);
-    }
-
-
-    function closeMenu() {
-        const menu = document.getElementById("wfescChatActionsMenu");
-        const backdrop = document.getElementById("wfescChatActionsBackdrop");
-
-        menu?.classList.remove("open");
-        backdrop?.classList.remove("open");
-    }
-
-
-    function toggleMenu() {
-        const menu = document.getElementById("wfescChatActionsMenu");
-
-        if (menu?.classList.contains("open")) {
             closeMenu();
-        } else {
-            openMenu();
+
+            openDeleteChoice();
+
         }
+    );
+
+
+    const divider =
+        document.createElement(
+            "div"
+        );
+
+    divider.className =
+        "wfesc-chat-action-divider";
+
+
+    const blockButton =
+        document.createElement(
+            "button"
+        );
+
+    blockButton.type =
+        "button";
+
+    blockButton.className =
+        "wfesc-chat-action-item";
+
+    blockButton.innerHTML =
+        `
+            <span>🚫</span>
+            <span>حظر المستخدم</span>
+        `;
+
+    blockButton.addEventListener(
+        "click",
+        () => {
+
+            closeMenu();
+
+            openBlockConfirmation();
+
+        }
+    );
+
+
+    menu.appendChild(
+        deleteButton
+    );
+
+    menu.appendChild(
+        divider
+    );
+
+    menu.appendChild(
+        blockButton
+    );
+
+    document.body.appendChild(
+        menu
+    );
+
+
+    setTimeout(
+        () => {
+
+            const outsideClick =
+                event => {
+
+                    if (
+                        menu &&
+                        !menu.contains(
+                            event.target
+                        )
+                    ) {
+
+                        closeMenu();
+
+                        document.removeEventListener(
+                            "pointerdown",
+                            outsideClick,
+                            true
+                        );
+                    }
+                };
+
+            document.addEventListener(
+                "pointerdown",
+                outsideClick,
+                true
+            );
+
+        },
+        0
+    );
+}
+
+
+/* =========================================================
+FIND THREE DOT BUTTON
+========================================================= */
+
+function getChatMenuButton() {
+
+    return (
+        document.getElementById(
+            "chatMenuButton"
+        ) ||
+
+        document.querySelector(
+            '[data-chat-menu-button]'
+        ) ||
+
+        document.querySelector(
+            '.chat-menu-button'
+        )
+    );
+}
+
+
+/* =========================================================
+CONFIRMATION OVERLAY
+========================================================= */
+
+function createOverlay() {
+
+    closeOverlay();
+
+    const overlay =
+        document.createElement(
+            "div"
+        );
+
+    overlay.id =
+        "wfescChatActionsOverlay";
+
+    overlay.dir =
+        "rtl";
+
+    overlay.style.cssText = `
+        position:fixed;
+
+        inset:0;
+
+        z-index:9999998;
+
+        display:flex;
+
+        align-items:center;
+        justify-content:center;
+
+        padding:20px;
+
+        background:
+            rgba(0,0,0,.72);
+
+        backdrop-filter:
+            blur(12px);
+
+        -webkit-backdrop-filter:
+            blur(12px);
+
+        animation:
+            wfescActionsOverlayIn
+            .18s ease both;
+    `;
+
+    const styleId =
+        "wfescActionsOverlayStyle";
+
+    if (
+        !document.getElementById(
+            styleId
+        )
+    ) {
+
+        const style =
+            document.createElement(
+                "style"
+            );
+
+        style.id =
+            styleId;
+
+        style.textContent = `
+
+            @keyframes
+            wfescActionsOverlayIn {
+
+                from {
+                    opacity:0;
+                }
+
+                to {
+                    opacity:1;
+                }
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-card {
+
+                width:
+                    min(430px, 100%);
+
+                padding:22px;
+
+                border-radius:20px;
+
+                background:
+                    rgba(18,18,18,.98);
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.10);
+
+                box-shadow:
+                    0 25px 80px
+                    rgba(0,0,0,.7);
+
+                text-align:center;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-title {
+
+                color:#fff;
+
+                font-size:17px;
+
+                font-weight:800;
+
+                line-height:1.7;
+
+                margin-bottom:10px;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-message {
+
+                color:#aaa;
+
+                font-size:13px;
+
+                line-height:1.8;
+
+                margin-bottom:20px;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-buttons {
+
+                display:flex;
+
+                gap:9px;
+
+                flex-direction:column;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-button {
+
+                width:100%;
+
+                border:0;
+
+                border-radius:12px;
+
+                padding:12px;
+
+                font-family:inherit;
+
+                font-size:13px;
+
+                font-weight:700;
+
+                cursor:pointer;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-confirm {
+
+                background:#fff;
+
+                color:#000;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-danger {
+
+                background:#b82b2b;
+
+                color:#fff;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-cancel {
+
+                background:#222;
+
+                color:#ddd;
+            }
+
+            #wfescChatActionsOverlay
+            .wfesc-actions-choice {
+
+                background:#191919;
+
+                color:#fff;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.08);
+            }
+        `;
+
+        document.head.appendChild(
+            style
+        );
+    }
+
+    return overlay;
+}
+
+
+function closeOverlay() {
+
+    const old =
+        document.getElementById(
+            "wfescChatActionsOverlay"
+        );
+
+    if (old) {
+        old.remove();
+    }
+}
+
+
+/* =========================================================
+DELETE CHOICE
+========================================================= */
+
+function openDeleteChoice() {
+
+    const conversationId =
+        getConversationId();
+
+    if (!conversationId) {
+
+        showToast(
+            "لا توجد محادثة مفتوحة"
+        );
+
+        return;
+    }
+
+    const overlay =
+        createOverlay();
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "wfesc-actions-card";
+
+    card.innerHTML = `
+
+        <div class="wfesc-actions-title">
+            حذف المحادثة
+        </div>
+
+        <div class="wfesc-actions-message">
+            اختر طريقة حذف الرسائل
+        </div>
+
+        <div class="wfesc-actions-buttons">
+
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-choice
+                "
+                data-action="me"
+            >
+                حذف لدي
+            </button>
+
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-danger
+                "
+                data-action="everyone"
+            >
+                حذف للطرفين
+            </button>
+
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-cancel
+                "
+                data-action="cancel"
+            >
+                إلغاء
+            </button>
+
+        </div>
+    `;
+
+    overlay.appendChild(
+        card
+    );
+
+    document.body.appendChild(
+        overlay
+    );
+
+    card
+        .querySelector(
+            '[data-action="me"]'
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                openDeleteConfirmation(
+                    "me"
+                );
+
+            }
+        );
+
+    card
+        .querySelector(
+            '[data-action="everyone"]'
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                openDeleteConfirmation(
+                    "everyone"
+                );
+
+            }
+        );
+
+    card
+        .querySelector(
+            '[data-action="cancel"]'
+        )
+        ?.addEventListener(
+            "click",
+            closeOverlay
+        );
+}
+
+
+/* =========================================================
+DELETE CONFIRMATION
+========================================================= */
+
+function openDeleteConfirmation(
+mode
+) {
+
+    const conversationId =
+        getConversationId();
+
+    if (!conversationId) {
+
+        closeOverlay();
+
+        showToast(
+            "لا توجد محادثة مفتوحة"
+        );
+
+        return;
+    }
+
+    const overlay =
+        createOverlay();
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "wfesc-actions-card";
+
+
+    let title =
+        "هل أنت متأكد؟";
+
+    let message =
+        "";
+
+    if (
+        mode ===
+        "everyone"
+    ) {
+
+        title =
+            "هل أنت متأكد من طلبك بحذف الرسائل؟";
+
+        message =
+            "تحذير سوف تنحذف من كلا الطرفين ولا يمكن استعادتها نهائيا";
+
+    } else {
+
+        title =
+            "هل أنت متأكد من حذف الرسائل لديك؟";
+
+        message =
+            "سيتم حذف الرسائل من حسابك فقط، وسيبقى الطرف الآخر قادراً على رؤيتها.";
+
     }
 
 
-    /* =========================================================
-       نافذة التأكيد
-       ========================================================= */
+    card.innerHTML = `
 
-    function showConfirm({
-        title,
-        text,
-        okText = "تأكيد",
-        cancelText = "إلغاء",
-        danger = false,
-        onConfirm
-    }) {
-        ensureUI();
+        <div class="wfesc-actions-title">
+            ${escapeHtml(title)}
+        </div>
 
-        const overlay = document.getElementById("wfescChatConfirmOverlay");
+        <div class="wfesc-actions-message">
+            ${escapeHtml(message)}
+        </div>
 
-        overlay.innerHTML = `
-            <div class="wfesc-chat-confirm-box">
-                <div class="wfesc-chat-confirm-title">
-                    ${escapeHTML(title)}
-                </div>
+        <div class="wfesc-actions-buttons">
 
-                <div class="wfesc-chat-confirm-text">
-                    ${escapeHTML(text)}
-                </div>
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-danger
+                "
+                data-action="confirm"
+            >
+                متابعة
+            </button>
 
-                <div class="wfesc-chat-confirm-buttons">
-                    <button
-                        type="button"
-                        class="wfesc-chat-confirm-cancel"
-                        id="wfescConfirmCancel"
-                    >
-                        ${escapeHTML(cancelText)}
-                    </button>
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-cancel
+                "
+                data-action="cancel"
+            >
+                إلغاء
+            </button>
 
-                    <button
-                        type="button"
-                        class="${danger
-                            ? "wfesc-chat-confirm-danger"
-                            : "wfesc-chat-confirm-ok"}"
-                        id="wfescConfirmOK"
-                    >
-                        ${escapeHTML(okText)}
-                    </button>
-                </div>
+        </div>
+    `;
+
+    overlay.appendChild(
+        card
+    );
+
+    document.body.appendChild(
+        overlay
+    );
+
+    card
+        .querySelector(
+            '[data-action="confirm"]'
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                openFinalDeleteConfirmation(
+                    mode
+                );
+
+            }
+        );
+
+    card
+        .querySelector(
+            '[data-action="cancel"]'
+        )
+        ?.addEventListener(
+            "click",
+            closeOverlay
+        );
+}
+
+
+/* =========================================================
+FINAL DELETE CONFIRMATION
+========================================================= */
+
+function openFinalDeleteConfirmation(
+mode
+) {
+
+    const conversationId =
+        getConversationId();
+
+    if (!conversationId) {
+
+        closeOverlay();
+
+        showToast(
+            "لا توجد محادثة مفتوحة"
+        );
+
+        return;
+    }
+
+    const overlay =
+        createOverlay();
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "wfesc-actions-card";
+
+
+    let title =
+        "";
+
+    let message =
+        "";
+
+    if (
+        mode ===
+        "everyone"
+    ) {
+
+        title =
+            "أكد طلبك بحذف الرسائل من الطرفين";
+
+        message =
+            "سيتم حذف المحادثة والرسائل نهائياً من الطرفين ولا يمكن استعادتها.";
+
+    } else {
+
+        title =
+            "أكد طلبك بحذف الرسائل لديك";
+
+        message =
+            "ستختفي الرسائل من حسابك فقط.";
+
+    }
+
+
+    card.innerHTML = `
+
+        <div class="wfesc-actions-title">
+            ${escapeHtml(title)}
+        </div>
+
+        <div class="wfesc-actions-message">
+            ${escapeHtml(message)}
+        </div>
+
+        <div class="wfesc-actions-buttons">
+
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-danger
+                "
+                data-action="final"
+            >
+                تأكيد الحذف
+            </button>
+
+            <button
+                type="button"
+                class="
+                    wfesc-actions-button
+                    wfesc-actions-cancel
+                "
+                data-action="cancel"
+            >
+                إلغاء
+            </button>
+
+        </div>
+    `;
+
+    overlay.appendChild(
+        card
+    );
+
+    document.body.appendChild(
+        overlay
+    );
+
+
+    card
+        .querySelector(
+            '[data-action="final"]'
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await executeDelete(
+                    mode,
+                    conversationId
+                );
+
+            }
+        );
+
+
+    card
+        .querySelector(
+            '[data-action="cancel"]'
+        )
+        ?.addEventListener(
+            "click",
+            closeOverlay
+        );
+}
+
+
+/* =========================================================
+DELETE FOR ME
+========================================================= */
+
+async function deleteForMe(
+conversationId
+) {
+
+    const client =
+        getClient();
+
+    const user =
+        getCurrentUser();
+
+    if (
+        !client ||
+        !user ||
+        !conversationId
+    ) {
+
+        throw new Error(
+            "بيانات الحذف غير متوفرة"
+        );
+    }
+
+    const {
+        error
+    } =
+        await client.rpc(
+            "hide_my_conversation",
+            {
+                target_conversation_id:
+                    conversationId
+            }
+        );
+
+    if (error) {
+        throw error;
+    }
+
+    return true;
+}
+
+
+/* =========================================================
+DELETE FOR EVERYONE
+========================================================= */
+
+async function deleteForEveryone(
+conversationId
+) {
+
+    const client =
+        getClient();
+
+    const user =
+        getCurrentUser();
+
+    if (
+        !client ||
+        !user ||
+        !conversationId
+    ) {
+
+        throw new Error(
+            "بيانات الحذف غير متوفرة"
+        );
+    }
+
+    /*
+     * نرسل Broadcast قبل حذف conversation
+     * لأن حذفها من قاعدة البيانات قد ينهي
+     * أي قناة مرتبطة بالمحادثة.
+     */
+
+    await broadcastConversationDeleted(
+        conversationId,
+        user.id
+    );
+
+
+    const {
+        data,
+        error
+    } =
+        await client.rpc(
+            "delete_conversation_for_everyone",
+            {
+                target_conversation_id:
+                    conversationId
+            }
+        );
+
+    if (error) {
+        throw error;
+    }
+
+    if (
+        data === false
+    ) {
+
+        throw new Error(
+            "لم يتم حذف المحادثة"
+        );
+    }
+
+    return true;
+}
+
+
+/* =========================================================
+EXECUTE DELETE
+========================================================= */
+
+async function executeDelete(
+mode,
+conversationId
+) {
+
+    if (!conversationId) {
+
+        closeOverlay();
+
+        showToast(
+            "لا توجد محادثة مفتوحة"
+        );
+
+        return;
+    }
+
+    const button =
+        document.querySelector(
+            "#wfescChatActionsOverlay [data-action='final']"
+        );
+
+    if (button) {
+
+        button.disabled =
+            true;
+
+        button.textContent =
+            "جارٍ الحذف...";
+    }
+
+    try {
+
+        if (
+            mode ===
+            "everyone"
+        ) {
+
+            await deleteForEveryone(
+                conversationId
+            );
+
+        } else {
+
+            await deleteForMe(
+                conversationId
+            );
+        }
+
+        closeOverlay();
+
+        showToast(
+            "تم حذف المحادثة بنجاح",
+            2000
+        );
+
+
+        /*
+         * إغلاق المحادثة مباشرة من Core
+         * حتى تختفي من القائمة الحالية.
+         */
+
+        const core =
+            CORE();
+
+        if (
+            core &&
+            typeof core.closeConversation ===
+            "function"
+        ) {
+
+            await core.closeConversation();
+
+        }
+
+
+        /*
+         * إعادة تحميل القائمة من Supabase
+         */
+
+        if (
+            core &&
+            typeof core.loadConversations ===
+            "function"
+        ) {
+
+            await core.loadConversations();
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "WFESC delete conversation:",
+            error
+        );
+
+        closeOverlay();
+
+        showToast(
+            "تعذر حذف المحادثة"
+        );
+
+        try {
+
+            const core =
+                CORE();
+
+            if (
+                core &&
+                typeof core.debugError ===
+                "function"
+            ) {
+
+                core.debugError(
+                    "فشل حذف المحادثة",
+                    error,
+                    {
+                        conversation_id:
+                            conversationId,
+
+                        mode:
+                            mode
+                    }
+                );
+            }
+
+        } catch (_) {}
+    }
+}
+
+
+/* =========================================================
+REMOTE DELETE CHANNEL
+========================================================= */
+
+const deleteChannels =
+    new Map();
+
+
+async function broadcastConversationDeleted(
+conversationId,
+userId
+) {
+
+    const client =
+        getClient();
+
+    if (
+        !client ||
+        !conversationId
+    ) {
+        return;
+    }
+
+    const channelName =
+        "wfesc-chat-actions-" +
+        String(
+            conversationId
+        );
+
+    let channel =
+        deleteChannels.get(
+            conversationId
+        );
+
+    if (!channel) {
+
+        channel =
+            client.channel(
+                channelName,
+                {
+                    config: {
+                        broadcast: {
+                            self:
+                                false
+                        }
+                    }
+                }
+            );
+
+        deleteChannels.set(
+            conversationId,
+            channel
+        );
+
+        await new Promise(
+            resolve => {
+
+                let finished =
+                    false;
+
+                const finish =
+                    () => {
+
+                        if (finished) {
+                            return;
+                        }
+
+                        finished =
+                            true;
+
+                        resolve();
+                    };
+
+                channel.subscribe(
+                    status => {
+
+                        if (
+                            status ===
+                            "SUBSCRIBED"
+                        ) {
+
+                            finish();
+
+                        } else if (
+                            status ===
+                            "CHANNEL_ERROR" ||
+                            status ===
+                            "TIMED_OUT"
+                        ) {
+
+                            finish();
+                        }
+                    }
+                );
+
+                setTimeout(
+                    finish,
+                    1500
+                );
+            }
+        );
+    }
+
+    try {
+
+        await channel.send({
+
+            type:
+                "broadcast",
+
+            event:
+                "conversation_deleted",
+
+            payload: {
+
+                conversation_id:
+                    conversationId,
+
+                deleted_by:
+                    userId || null
+            }
+
+        });
+
+    } catch (error) {
+
+        console.warn(
+            "WFESC delete broadcast:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+LISTEN FOR REMOTE DELETE
+========================================================= */
+
+function setupRemoteDeleteListener(
+conversationId
+) {
+
+    const client =
+        getClient();
+
+    if (
+        !client ||
+        !conversationId
+    ) {
+        return;
+    }
+
+    if (
+        deleteChannels.has(
+            conversationId
+        )
+    ) {
+        return;
+    }
+
+    const channelName =
+        "wfesc-chat-actions-" +
+        String(
+            conversationId
+        );
+
+    const channel =
+        client.channel(
+            channelName,
+            {
+                config: {
+                    broadcast: {
+                        self:
+                            false
+                    }
+                }
+            }
+        );
+
+    deleteChannels.set(
+        conversationId,
+        channel
+    );
+
+
+    channel.on(
+
+        "broadcast",
+
+        {
+            event:
+                "conversation_deleted"
+        },
+
+        async payload => {
+
+            const data =
+                payload?.payload ||
+                payload ||
+                {};
+
+            const deletedConversationId =
+                data.conversation_id;
+
+            if (
+                !deletedConversationId ||
+                String(
+                    deletedConversationId
+                ) !==
+                String(
+                    conversationId
+                )
+            ) {
+                return;
+            }
+
+
+            /*
+             * لا نعرض الرسالة إذا كان
+             * الشخص الذي حذف هو المستخدم الحالي.
+             */
+
+            const currentUser =
+                getCurrentUser();
+
+            if (
+                currentUser?.id &&
+                data.deleted_by &&
+                String(
+                    currentUser.id
+                ) ===
+                String(
+                    data.deleted_by
+                )
+            ) {
+
+                return;
+            }
+
+
+            showRemoteDeleteOverlay();
+
+        }
+    );
+
+
+    channel.subscribe(
+        status => {
+
+            if (
+                status !==
+                "SUBSCRIBED"
+            ) {
+
+                console.warn(
+                    "WFESC delete channel:",
+                    status
+                );
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+REMOTE DELETE FULL SCREEN
+========================================================= */
+
+function showRemoteDeleteOverlay() {
+
+    closeOverlay();
+
+    const overlay =
+        createOverlay();
+
+    overlay.style.zIndex =
+        "99999999";
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "wfesc-actions-card";
+
+    card.innerHTML = `
+
+        <div
+            style="
+                font-size:38px;
+                margin-bottom:12px;
+            "
+        >
+            🗑️
+        </div>
+
+        <div class="wfesc-actions-title">
+            قام الطرف الآخر بحذف الرسائل من كلا الطرفين
+        </div>
+
+        <div class="wfesc-actions-message">
+            تم حذف هذه المحادثة نهائياً.
+        </div>
+
+    `;
+
+    overlay.appendChild(
+        card
+    );
+
+    document.body.appendChild(
+        overlay
+    );
+
+
+    setTimeout(
+        async () => {
+
+            closeOverlay();
+
+            const core =
+                CORE();
+
+            if (
+                core &&
+                typeof core.closeConversation ===
+                "function"
+            ) {
+
+                try {
+
+                    await core.closeConversation();
+
+                } catch (_) {}
+            }
+
+        },
+        1800
+    );
+}
+
+
+/* =========================================================
+BLOCK
+========================================================= */
+
+function getBlockedUserId() {
+
+    const contact =
+        getCurrentContact();
+
+    if (!contact) {
+        return null;
+    }
+
+    return (
+        contact.user_id ||
+        contact.userId ||
+        contact.profile_id ||
+        contact.id ||
+        null
+    );
+}
+
+
+async function isUserBlocked(
+blockedUserId
+) {
+
+    const client =
+        getClient();
+
+    const user =
+        getCurrentUser();
+
+    if (
+        !client ||
+        !user ||
+        !blockedUserId
+    ) {
+        return false;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await client
+            .from(
+                "user_blocks"
+            )
+            .select(
+                "blocker_id,blocked_id"
+            )
+            .eq(
+                "blocker_id",
+                user.id
+            )
+            .eq(
+                "blocked_id",
+                blockedUserId
+            )
+            .maybeSingle();
+
+    if (error) {
+
+        console.warn(
+            "WFESC check block:",
+            error
+        );
+
+        return false;
+    }
+
+    return Boolean(
+        data
+    );
+}
+
+
+/* =========================================================
+BLOCK CONFIRMATION
+========================================================= */
+
+async function openBlockConfirmation() {
+
+    const userId =
+        getBlockedUserId();
+
+    if (!userId) {
+
+        showToast(
+            "لا يمكن حظر هذا المستخدم"
+        );
+
+        return;
+    }
+
+    const contact =
+        getCurrentContact();
+
+    const name =
+        contact?.display_name ||
+        contact?.full_name ||
+        contact?.name ||
+        "المستخدم";
+
+
+    let alreadyBlocked =
+        false;
+
+    try {
+
+        alreadyBlocked =
+            await isUserBlocked(
+                userId
+            );
+
+    } catch (_) {}
+
+
+    const overlay =
+        createOverlay();
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "wfesc-actions-card";
+
+
+    if (
+        alreadyBlocked
+    ) {
+
+        card.innerHTML = `
+
+            <div class="wfesc-actions-title">
+                إلغاء حظر المستخدم
+            </div>
+
+            <div class="wfesc-actions-message">
+                المستخدم ${escapeHtml(name)}
+                محظور حالياً.
+            </div>
+
+            <div class="wfesc-actions-buttons">
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-actions-button
+                        wfesc-actions-confirm
+                    "
+                    data-action="unblock"
+                >
+                    إلغاء الحظر
+                </button>
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-actions-button
+                        wfesc-actions-cancel
+                    "
+                    data-action="cancel"
+                >
+                    إلغاء
+                </button>
+
             </div>
         `;
 
-        overlay.classList.add("open");
+    } else {
 
-        document
-            .getElementById("wfescConfirmCancel")
-            .onclick = closeConfirm;
+        card.innerHTML = `
 
-        document
-            .getElementById("wfescConfirmOK")
-            .onclick = async function () {
-                closeConfirm();
+            <div class="wfesc-actions-title">
+                حظر المستخدم
+            </div>
 
-                try {
-                    await onConfirm?.();
-                } catch (error) {
-                    console.error(
-                        "[WFESC CHAT ACTIONS] Confirmation action failed:",
-                        error
-                    );
+            <div class="wfesc-actions-message">
+                هل أنت متأكد من حظر ${escapeHtml(name)}؟
+                بعد الحظر لن يتمكن المستخدم من إرسال رسائل جديدة إليك.
+            </div>
 
-                    showToast(
-                        error?.message || "حدث خطأ غير متوقع",
-                        "error"
-                    );
-                }
-            };
+            <div class="wfesc-actions-buttons">
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-actions-button
+                        wfesc-actions-danger
+                    "
+                    data-action="block"
+                >
+                    تأكيد الحظر
+                </button>
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-actions-button
+                        wfesc-actions-cancel
+                    "
+                    data-action="cancel"
+                >
+                    إلغاء
+                </button>
+
+            </div>
+        `;
     }
 
 
-    function closeConfirm() {
-        const overlay = document.getElementById("wfescChatConfirmOverlay");
+    overlay.appendChild(
+        card
+    );
 
-        overlay?.classList.remove("open");
-    }
-
-
-    /* =========================================================
-       اختيار نوع الحذف
-       ========================================================= */
-
-    function openDeleteChoice() {
-        showConfirm({
-            title: "حذف المحادثة",
-            text: "اختر طريقة الحذف:\n\nحذف لدي: تختفي الرسائل من حسابك فقط.\n\nحذف للطرفين: تنحذف الرسائل والمحادثة من الطرفين نهائيًا.",
-            okText: "حذف لدي",
-            cancelText: "إلغاء",
-            danger: false,
-            onConfirm: function () {
-                confirmDeleteForMeStep2();
-            }
-        });
-
-        /*
-         * زر حذف للطرفين يحتاج خيار مستقل.
-         * نضيفه داخل نفس النافذة بعد فتحها.
-         */
-        requestAnimationFrame(() => {
-            const box = document.querySelector(
-                "#wfescChatConfirmOverlay .wfesc-chat-confirm-box"
-            );
-
-            if (!box) return;
-
-            const buttons = box.querySelector(
-                ".wfesc-chat-confirm-buttons"
-            );
-
-            if (!buttons) return;
-
-            const bothButton = document.createElement("button");
-
-            bothButton.type = "button";
-            bothButton.className = "wfesc-chat-confirm-danger";
-            bothButton.textContent = "حذف للطرفين";
-
-            bothButton.style.flex = "1";
-
-            bothButton.onclick = function () {
-                closeConfirm();
-                confirmDeleteForEveryoneStep1();
-            };
-
-            buttons.insertBefore(bothButton, buttons.firstChild);
-        });
-    }
+    document.body.appendChild(
+        overlay
+    );
 
 
-    /* =========================================================
-       حذف لدي
-       ========================================================= */
+    card
+        .querySelector(
+            '[data-action="block"]'
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
 
-    function confirmDeleteForMeStep2() {
-        showConfirm({
-            title: "تأكيد حذف المحادثة",
-            text: "سيتم إخفاء المحادثة والرسائل من حسابك فقط.\n\nالطرف الآخر سيبقى قادرًا على رؤية المحادثة ورسائلها.",
-            okText: "متابعة",
-            cancelText: "إلغاء",
-            danger: false,
-            onConfirm: function () {
-                confirmDeleteForMeStep3();
-            }
-        });
-    }
+                await blockUser(
+                    userId
+                );
 
-
-    function confirmDeleteForMeStep3() {
-        showConfirm({
-            title: "التأكيد الأخير",
-            text: "هل أنت متأكد من حذف المحادثة لديك؟\n\nهذا الإجراء سيزيلها من قائمة محادثاتك.",
-            okText: "حذف لدي",
-            cancelText: "إلغاء",
-            danger: true,
-            onConfirm: deleteForMe
-        });
-    }
-
-
-    async function deleteForMe() {
-        const conversationId = getConversationId();
-
-        if (!conversationId) {
-            throw new Error("لم يتم العثور على المحادثة");
-        }
-
-        const supabase = client();
-
-        if (!supabase) {
-            throw new Error("اتصال قاعدة البيانات غير متوفر");
-        }
-
-        const { error } = await supabase.rpc(
-            "hide_my_conversation",
-            {
-                target_conversation_id: conversationId
             }
         );
+
+
+    card
+        .querySelector(
+            '[data-action="unblock"]'
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await unblockUser(
+                    userId
+                );
+
+            }
+        );
+
+
+    card
+        .querySelector(
+            '[data-action="cancel"]'
+        )
+        ?.addEventListener(
+            "click",
+            closeOverlay
+        );
+}
+
+
+/* =========================================================
+BLOCK USER
+========================================================= */
+
+async function blockUser(
+blockedUserId
+) {
+
+    const client =
+        getClient();
+
+    const user =
+        getCurrentUser();
+
+    if (
+        !client ||
+        !user ||
+        !blockedUserId
+    ) {
+
+        showToast(
+            "تعذر تنفيذ الحظر"
+        );
+
+        return;
+    }
+
+    try {
+
+        const {
+            error
+        } =
+            await client
+                .from(
+                    "user_blocks"
+                )
+                .insert({
+
+                    blocker_id:
+                        user.id,
+
+                    blocked_id:
+                        blockedUserId
+                });
+
+        if (
+            error &&
+            error.code !==
+            "23505"
+        ) {
+
+            throw error;
+        }
+
+
+        closeOverlay();
+
+        showToast(
+            "تم حظر المستخدم"
+        );
+
+
+        /*
+         * إغلاق المحادثة الحالية
+         */
+
+        const core =
+            CORE();
+
+        if (
+            core &&
+            typeof core.closeConversation ===
+            "function"
+        ) {
+
+            await core.closeConversation();
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "WFESC block user:",
+            error
+        );
+
+        closeOverlay();
+
+        showToast(
+            "تعذر حظر المستخدم"
+        );
+    }
+}
+
+
+/* =========================================================
+UNBLOCK USER
+========================================================= */
+
+async function unblockUser(
+blockedUserId
+) {
+
+    const client =
+        getClient();
+
+    const user =
+        getCurrentUser();
+
+    if (
+        !client ||
+        !user ||
+        !blockedUserId
+    ) {
+
+        showToast(
+            "تعذر تنفيذ إلغاء الحظر"
+        );
+
+        return;
+    }
+
+    try {
+
+        const {
+            error
+        } =
+            await client
+                .from(
+                    "user_blocks"
+                )
+                .delete()
+                .eq(
+                    "blocker_id",
+                    user.id
+                )
+                .eq(
+                    "blocked_id",
+                    blockedUserId
+                );
 
         if (error) {
             throw error;
         }
 
-        showToast("تم حذف المحادثة لديك بنجاح", "success");
+        closeOverlay();
 
-        setTimeout(() => {
-            try {
-                core()?.closeConversation?.();
-            } catch (error) {
-                console.error(error);
-            }
-        }, 1200);
+        showToast(
+            "تم إلغاء حظر المستخدم"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "WFESC unblock user:",
+            error
+        );
+
+        closeOverlay();
+
+        showToast(
+            "تعذر إلغاء الحظر"
+        );
+    }
+}
+
+
+/* =========================================================
+SETUP REMOTE LISTENER FOR CURRENT CHAT
+========================================================= */
+
+function setupForCurrentConversation() {
+
+    const conversationId =
+        getConversationId();
+
+    if (!conversationId) {
+        return;
     }
 
+    setupRemoteDeleteListener(
+        conversationId
+    );
+}
 
-    /* =========================================================
-       حذف للطرفين
-       ========================================================= */
 
-    function confirmDeleteForEveryoneStep1() {
-        showConfirm({
-            title: "تحذير",
-            text: "هل أنت متأكد من طلبك بحذف الرسائل؟\n\nتحذير سوف تنحذف من كلا الطرفين ولا يمكن استعادتها نهائيا",
-            okText: "متابعة",
-            cancelText: "إلغاء",
-            danger: true,
-            onConfirm: function () {
-                confirmDeleteForEveryoneStep2();
-            }
-        });
+/* =========================================================
+WATCH CHAT HEADER
+========================================================= */
+
+window.addEventListener(
+    "wfesc:chat-header-refresh",
+    () => {
+
+        setupForCurrentConversation();
+
     }
+);
 
 
-    function confirmDeleteForEveryoneStep2() {
-        showConfirm({
-            title: "أكد طلبك",
-            text: "أكد طلبك بحذف الرسائل من الطرفين",
-            okText: "متابعة",
-            cancelText: "إلغاء",
-            danger: true,
-            onConfirm: function () {
-                confirmDeleteForEveryoneStep3();
-            }
-        });
-    }
+/* =========================================================
+MENU BUTTON
+========================================================= */
 
+function setupMenuButton() {
 
-    function confirmDeleteForEveryoneStep3() {
-        showConfirm({
-            title: "التأكيد الأخير",
-            text: "هذا هو التأكيد الأخير.\n\nسيتم حذف المحادثة والرسائل من الطرفين نهائيًا ولا يمكن استعادتها.",
-            okText: "حذف نهائي",
-            cancelText: "إلغاء",
-            danger: true,
-            onConfirm: deleteForEveryone
-        });
-    }
+    const button =
+        getChatMenuButton();
 
-
-    async function deleteForEveryone() {
-        const conversationId = getConversationId();
-
-        if (!conversationId) {
-            throw new Error("لم يتم العثور على المحادثة");
-        }
-
-        const supabase = client();
-
-        if (!supabase) {
-            throw new Error("اتصال قاعدة البيانات غير متوفر");
-        }
-
-        const user = getCurrentUser();
-
-        const otherUserId = getContactUserId();
+    if (!button) {
 
         /*
-         * نرسل الإشعار قبل الحذف حتى يبقى الطرف الآخر
-         * قادرًا على استقبال الـ Broadcast حتى لو اختفت
-         * عضوية المحادثة بعد الحذف.
+         * الهيدر قد يتم إنشاؤه أو تهيئته
+         * بعد تحميل هذا الملف.
          */
-        await broadcastDeleteEvent(
-            conversationId,
-            user?.id || null
-        );
 
-        const { error } = await supabase.rpc(
-            "delete_conversation_for_everyone",
-            {
-                target_conversation_id: conversationId
-            }
-        );
-
-        if (error) {
-            throw error;
-        }
-
-        currentDeleteConversationId = null;
-        currentDeleteOtherUserId = null;
-
-        showToast("تم حذف المحادثة بنجاح", "success");
-
-        setTimeout(() => {
-            try {
-                core()?.closeConversation?.();
-            } catch (error) {
-                console.error(error);
-            }
-        }, 2000);
+        return false;
     }
 
-
-    /* =========================================================
-       Realtime — إشعار حذف الطرفين
-       ========================================================= */
-
-    async function broadcastDeleteEvent(
-        conversationId,
-        deletedBy
+    if (
+        button.dataset.wfescActionsReady ===
+        "true"
     ) {
-        const supabase = client();
 
-        if (!supabase || !conversationId) {
-            return;
-        }
-
-        try {
-            const channelName =
-                `wfesc-chat-actions-${conversationId}`;
-
-            const channel =
-                supabase.channel(channelName);
-
-            await channel.subscribe();
-
-            await channel.send({
-                type: "broadcast",
-                event: "conversation_deleted",
-                payload: {
-                    conversation_id: conversationId,
-                    deleted_by: deletedBy || null,
-                    deleted_at: new Date().toISOString()
-                }
-            });
-
-            /*
-             * نعطي الـ realtime فرصة لإرسال الحدث.
-             */
-            setTimeout(() => {
-                try {
-                    supabase.removeChannel(channel);
-                } catch (error) {
-                    console.error(error);
-                }
-            }, 1000);
-
-        } catch (error) {
-            /*
-             * فشل الـ Broadcast لا يمنع تنفيذ الحذف.
-             * الحذف نفسه يبقى محميًا من قاعدة البيانات.
-             */
-            console.error(
-                "[WFESC CHAT ACTIONS] Delete broadcast error:",
-                error
-            );
-        }
+        return true;
     }
 
-
-    async function subscribeToDeleteEvents() {
-        const supabase = client();
-
-        const conversationId = getConversationId();
-
-        if (!supabase || !conversationId) {
-            return;
-        }
-
-        if (
-            deleteRealtimeChannel &&
-            deleteRealtimeChannel.__conversationId === conversationId
-        ) {
-            return;
-        }
-
-        await unsubscribeFromDeleteEvents();
-
-        const channelName =
-            `wfesc-chat-actions-${conversationId}`;
-
-        const channel =
-            supabase.channel(channelName);
-
-        channel.on(
-            "broadcast",
-            {
-                event: "conversation_deleted"
-            },
-            function (payload) {
-                handleRemoteDelete(payload);
-            }
-        );
-
-        channel.__conversationId = conversationId;
-
-        deleteRealtimeChannel = channel;
-
-        try {
-            await channel.subscribe();
-        } catch (error) {
-            console.error(
-                "[WFESC CHAT ACTIONS] Subscribe error:",
-                error
-            );
-        }
-    }
+    button.dataset.wfescActionsReady =
+        "true";
 
 
-    async function unsubscribeFromDeleteEvents() {
-        const supabase = client();
+    button.addEventListener(
+        "click",
+        event => {
 
-        if (!deleteRealtimeChannel) {
-            return;
-        }
+            event.preventDefault();
 
-        try {
-            if (supabase) {
-                await supabase.removeChannel(
-                    deleteRealtimeChannel
-                );
-            }
-        } catch (error) {
-            console.error(error);
-        }
+            event.stopPropagation();
 
-        deleteRealtimeChannel = null;
-    }
+            const conversationId =
+                getConversationId();
 
+            if (!conversationId) {
 
-    async function handleRemoteDelete(payload) {
-        const data = payload?.payload || payload || {};
-
-        const conversationId =
-            data.conversation_id || null;
-
-        const currentId = getConversationId();
-
-        if (
-            !conversationId ||
-            !currentId ||
-            conversationId !== currentId
-        ) {
-            return;
-        }
-
-        const currentUser = getCurrentUser();
-
-        if (
-            currentUser?.id &&
-            data.deleted_by === currentUser.id
-        ) {
-            return;
-        }
-
-        showRemoteDeleteOverlay();
-
-        setTimeout(() => {
-            hideRemoteDeleteOverlay();
-
-            try {
-                core()?.closeConversation?.();
-            } catch (error) {
-                console.error(error);
-            }
-        }, 1800);
-    }
-
-
-    function showRemoteDeleteOverlay() {
-        ensureUI();
-
-        const overlay =
-            document.getElementById(
-                "wfescRemoteDeleteOverlay"
-            );
-
-        overlay?.classList.add("open");
-    }
-
-
-    function hideRemoteDeleteOverlay() {
-        const overlay =
-            document.getElementById(
-                "wfescRemoteDeleteOverlay"
-            );
-
-        overlay?.classList.remove("open");
-    }
-
-
-    /* =========================================================
-       الحظر
-       ========================================================= */
-
-    async function isUserBlocked(
-        blockerId,
-        blockedId
-    ) {
-        const supabase = client();
-
-        if (
-            !supabase ||
-            !blockerId ||
-            !blockedId
-        ) {
-            return false;
-        }
-
-        const { data, error } = await supabase
-            .from("user_blocks")
-            .select("blocker_id, blocked_id")
-            .or(
-                `and(blocker_id.eq.${blockerId},blocked_id.eq.${blockedId}),and(blocker_id.eq.${blockedId},blocked_id.eq.${blockerId})`
-            )
-            .limit(1);
-
-        if (error) {
-            console.error(
-                "[WFESC CHAT ACTIONS] Block check error:",
-                error
-            );
-
-            return false;
-        }
-
-        return Array.isArray(data) && data.length > 0;
-    }
-
-
-    async function updateBlockButtonText() {
-        const buttonText =
-            document.getElementById(
-                "wfescBlockChatActionText"
-            );
-
-        if (!buttonText) return;
-
-        const currentUser = getCurrentUser();
-        const otherUserId = getContactUserId();
-
-        if (
-            !currentUser?.id ||
-            !otherUserId
-        ) {
-            buttonText.textContent = "حظر المستخدم";
-            return;
-        }
-
-        try {
-            const blocked =
-                await isUserBlocked(
-                    currentUser.id,
-                    otherUserId
-                );
-
-            buttonText.textContent =
-                blocked
-                    ? "إلغاء حظر المستخدم"
-                    : "حظر المستخدم";
-
-        } catch (error) {
-            buttonText.textContent =
-                "حظر المستخدم";
-        }
-    }
-
-
-    async function handleBlock() {
-        const currentUser = getCurrentUser();
-        const otherUserId = getContactUserId();
-
-        if (
-            !currentUser?.id ||
-            !otherUserId
-        ) {
-            showToast(
-                "تعذر تحديد المستخدم",
-                "error"
-            );
-
-            return;
-        }
-
-        const blocked =
-            await isUserBlocked(
-                currentUser.id,
-                otherUserId
-            );
-
-        if (blocked) {
-            showConfirm({
-                title: "إلغاء الحظر",
-                text: "هل تريد إلغاء حظر هذا المستخدم؟",
-                okText: "إلغاء الحظر",
-                cancelText: "إلغاء",
-                danger: false,
-                onConfirm: function () {
-                    return unblockUser(
-                        currentUser.id,
-                        otherUserId
-                    );
-                }
-            });
-
-            return;
-        }
-
-        showConfirm({
-            title: "حظر المستخدم",
-            text: "بعد الحظر لن تتمكن من إرسال رسائل جديدة إلى هذا المستخدم.\n\nهل تريد متابعة الحظر؟",
-            okText: "حظر",
-            cancelText: "إلغاء",
-            danger: true,
-            onConfirm: function () {
-                return blockUser(
-                    currentUser.id,
-                    otherUserId
-                );
-            }
-        });
-    }
-
-
-    async function blockUser(
-        blockerId,
-        blockedId
-    ) {
-        const supabase = client();
-
-        if (!supabase) {
-            throw new Error(
-                "اتصال قاعدة البيانات غير متوفر"
-            );
-        }
-
-        const { error } = await supabase
-            .from("user_blocks")
-            .insert({
-                blocker_id: blockerId,
-                blocked_id: blockedId
-            });
-
-        if (error) {
-            /*
-             * إذا كان الحظر موجودًا مسبقًا
-             */
-            if (error.code === "23505") {
                 showToast(
-                    "المستخدم محظور بالفعل",
-                    "success"
+                    "لا توجد محادثة مفتوحة"
                 );
 
                 return;
             }
 
-            throw error;
-        }
+            createMenu();
 
-        showToast(
-            "تم حظر المستخدم",
-            "success"
-        );
-
-        /*
-         * لا نحذف المحادثة تلقائيًا.
-         * المستخدم يستطيع استخدام حذف المحادثة
-         * بشكل مستقل.
-         */
-    }
-
-
-    async function unblockUser(
-        blockerId,
-        blockedId
-    ) {
-        const supabase = client();
-
-        if (!supabase) {
-            throw new Error(
-                "اتصال قاعدة البيانات غير متوفر"
-            );
-        }
-
-        const { error } = await supabase
-            .from("user_blocks")
-            .delete()
-            .eq("blocker_id", blockerId)
-            .eq("blocked_id", blockedId);
-
-        if (error) {
-            throw error;
-        }
-
-        showToast(
-            "تم إلغاء حظر المستخدم",
-            "success"
-        );
-    }
-
-
-    /* =========================================================
-       Toast
-       ========================================================= */
-
-    let toastTimer = null;
-
-    function showToast(
-        message,
-        type = "success"
-    ) {
-        ensureUI();
-
-        const toast =
-            document.getElementById(
-                "wfescChatToast"
-            );
-
-        if (!toast) return;
-
-        clearTimeout(toastTimer);
-
-        toast.textContent = message;
-
-        toast.classList.remove(
-            "show",
-            "success",
-            "error"
-        );
-
-        toast.classList.add(type);
-
-        requestAnimationFrame(() => {
-            toast.classList.add("show");
-        });
-
-        toastTimer = setTimeout(() => {
-            toast.classList.remove("show");
-        }, 2800);
-    }
-
-
-    /* =========================================================
-       ربط زر الثلاث نقاط
-       ========================================================= */
-
-    function bindMenuButton() {
-        const button =
-            document.getElementById(
-                "chatMenuButton"
-            );
-
-        if (!button) {
-            return false;
-        }
-
-        /*
-         * Capture حتى نضمن أن هذا الملف هو المسؤول
-         * عن زر الثلاث نقاط ولا يتعارض مع أي handler
-         * آخر موجود في ملفات الهيدر.
-         */
-        if (button.__wfescChatActionsBound) {
-            return true;
-        }
-
-        button.__wfescChatActionsBound = true;
-
-        button.addEventListener(
-            "click",
-            function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                if (typeof event.stopImmediatePropagation === "function") {
-                    event.stopImmediatePropagation();
-                }
-
-                toggleMenu();
-            },
-            true
-        );
-
-        return true;
-    }
-
-
-    /* =========================================================
-       مراقبة فتح المحادثة
-       ========================================================= */
-
-    function watchConversation() {
-        let lastConversationId = null;
-
-        setInterval(async function () {
-            const conversationId =
-                getConversationId();
-
-            if (
-                conversationId &&
-                conversationId !== lastConversationId
-            ) {
-                lastConversationId =
-                    conversationId;
-
-                await subscribeToDeleteEvents();
-            }
-
-            if (
-                !conversationId &&
-                lastConversationId
-            ) {
-                lastConversationId = null;
-
-                await unsubscribeFromDeleteEvents();
-            }
-        }, 600);
-    }
-
-
-    /* =========================================================
-       إغلاق القوائم عند الضغط خارجها
-       ========================================================= */
-
-    document.addEventListener(
-        "keydown",
-        function (event) {
-            if (event.key === "Escape") {
-                closeMenu();
-                closeConfirm();
-            }
         }
     );
 
 
-    window.addEventListener(
-        "resize",
-        function () {
-            const menu =
-                document.getElementById(
-                    "wfescChatActionsMenu"
-                );
-
-            if (
-                menu?.classList.contains("open")
-            ) {
-                positionMenu();
-            }
-        }
-    );
+    return true;
+}
 
 
-    /* =========================================================
-       Init
-       ========================================================= */
+/* =========================================================
+RETRY BUTTON SETUP
+========================================================= */
 
-    function init() {
-        if (initialized) return;
-
-        initialized = true;
-
-        ensureUI();
-
-        /*
-         * زر الهيدر قد يتم إنشاؤه قبل أو بعد هذا الملف،
-         * لذلك نجرب الآن ونراقبه إذا لم يكن موجودًا.
-         */
-        if (!bindMenuButton()) {
-            const observer =
-                new MutationObserver(function () {
-                    if (bindMenuButton()) {
-                        observer.disconnect();
-                    }
-                });
-
-            observer.observe(
-                document.documentElement,
-                {
-                    childList: true,
-                    subtree: true
-                }
-            );
-        }
-
-        watchConversation();
-    }
-
+function watchForMenuButton() {
 
     if (
-        document.readyState === "loading"
+        setupMenuButton()
     ) {
-        document.addEventListener(
-            "DOMContentLoaded",
-            init,
-            { once: true }
-        );
-    } else {
-        init();
+        return;
     }
 
+    let attempts =
+        0;
 
-    /* =========================================================
-       Public API
-       ========================================================= */
+    const timer =
+        setInterval(
+            () => {
 
-    window.WFESC_MESSAGES_CHAT_ACTIONS = {
-        openMenu,
-        closeMenu,
-        toggleMenu,
-        deleteForMe,
-        deleteForEveryone,
-        blockUser,
-        unblockUser,
-        isUserBlocked,
-        showToast,
-        subscribeToDeleteEvents,
-        unsubscribeFromDeleteEvents
-    };
+                attempts++;
+
+                if (
+                    setupMenuButton() ||
+                    attempts >= 60
+                ) {
+
+                    clearInterval(
+                        timer
+                    );
+                }
+
+            },
+            250
+        );
+}
+
+
+/* =========================================================
+PUBLIC API
+========================================================= */
+
+window.WFESC_MESSAGES_CHAT_ACTIONS = {
+
+    getConversationId,
+
+    getCurrentContact,
+
+    openDeleteChoice,
+
+    openBlockConfirmation,
+
+    closeMenu,
+
+    closeOverlay,
+
+    deleteForMe,
+
+    deleteForEveryone,
+
+    blockUser,
+
+    unblockUser,
+
+    setupForCurrentConversation
+
+};
+
+
+/* =========================================================
+START
+========================================================= */
+
+function start() {
+
+    watchForMenuButton();
+
+    /*
+     * إذا كانت المحادثة مفتوحة مسبقاً
+     * قبل تحميل هذا الملف.
+     */
+
+    setTimeout(
+        () => {
+
+            setupForCurrentConversation();
+
+        },
+        0
+    );
+
+}
+
+
+/* =========================================================
+CONVERSATION CHANGE WATCH
+========================================================= */
+
+window.addEventListener(
+    "wfesc:chat-header-refresh",
+    () => {
+
+        setTimeout(
+            () => {
+
+                setupForCurrentConversation();
+
+            },
+            0
+        );
+
+    }
+);
+
+
+start();
 
 })();
