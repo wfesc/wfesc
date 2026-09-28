@@ -1,1038 +1,1733 @@
 /* =========================================================
-   WFESC MESSAGES — ACTIVITY
-   File: messages-activity.js
-   Version: 1.0
-   ========================================================= */
+   WFESC MESSAGES ACTIVITY
+   File:
+   messages/messages-activity.js
 
-(function () {
+   مسؤول فقط عن:
+   - زر النشاط
+   - نافذة حالة النشاط
+   - تشغيل / إيقاف حالة النشاط
+   - حفظ الإعداد في Supabase
+   - تحديث Online Presence
+   - الاستماع لحالة المستخدمين
+   - عدم تعديل messages-core.js
+========================================================= */
+
+(() => {
+
     "use strict";
 
-    /* =========================================================
+
+    /* =====================================================
        CONFIG
-       ========================================================= */
+    ===================================================== */
 
-    const ACTIVITY_CHANNEL_NAME = "wfesc-activity";
+    const ACTIVITY_DEBUG = true;
 
-    const ONLINE_TIMEOUT = 30000;
+    const ACTIVITY_TABLE = "profiles";
 
-    const HEARTBEAT_INTERVAL = 10000;
+    const ACTIVITY_FIELD = "show_activity";
 
-    const ACTIVITY_EVENT = "wfesc:activity:update";
+    const ACTIVITY_PRESENCE_CHANNEL = "wfesc-activity-presence";
 
-    /* =========================================================
+    const ACTIVITY_HEARTBEAT = 30000;
+
+    const ACTIVITY_OFFLINE_AFTER = 70000;
+
+
+    /* =====================================================
        STATE
-       ========================================================= */
+    ===================================================== */
 
     let client = null;
 
     let currentUser = null;
 
-    let activityChannel = null;
+    let showActivity = true;
 
-    let initialized = false;
+    let activityInitialized = false;
 
-    let realtimeStarted = false;
+    let activityModal = null;
+
+    let activitySwitch = null;
+
+    let activityButton = null;
+
+    let closeActivityModal = null;
+
+    let presenceChannel = null;
 
     let heartbeatTimer = null;
 
-    let onlineUsers = new Map();
+    let presenceStarted = false;
 
-    let lastSeenUsers = new Map();
+    let visibilityHandlerAttached = false;
 
-    let currentPresenceState = {};
+    let lastPresenceState = null;
 
-    /* =========================================================
-       HELPERS
-       ========================================================= */
 
-    function log(...args) {
-        console.log("[WFESC Activity]", ...args);
-    }
+    /* =====================================================
+       DOM
+    ===================================================== */
 
-    function warn(...args) {
-        console.warn("[WFESC Activity]", ...args);
-    }
+    function getDOM() {
 
-    function error(...args) {
-        console.error("[WFESC Activity]", ...args);
-    }
-
-    function now() {
-        return Date.now();
-    }
-
-    function normalizeUserId(value) {
-        if (!value) return null;
-
-        return String(value);
-    }
-
-    function getCore() {
-        return window.WFESC_MESSAGES_CORE || null;
-    }
-
-    function getClient() {
-        if (client) {
-            return client;
-        }
-
-        const core = getCore();
-
-        if (core && core.client) {
-            client = core.client;
-        }
-
-        return client;
-    }
-
-    function getCurrentUser() {
-        const core = getCore();
-
-        if (core && typeof core.getCurrentUser === "function") {
-            return core.getCurrentUser();
-        }
-
-        return currentUser;
-    }
-
-    /* =========================================================
-       EVENT SYSTEM
-       ========================================================= */
-
-    function dispatchActivityEvent(detail) {
-        try {
-            window.dispatchEvent(
-                new CustomEvent(ACTIVITY_EVENT, {
-                    detail: detail || {}
-                })
+        activityButton =
+            document.getElementById(
+                "activityButton"
             );
-        } catch (err) {
-            warn("Could not dispatch activity event:", err);
-        }
+
+        activityModal =
+            document.getElementById(
+                "activityModal"
+            );
+
+        activitySwitch =
+            document.getElementById(
+                "activitySwitch"
+            );
+
+        closeActivityModal =
+            document.getElementById(
+                "closeActivityModal"
+            );
+
     }
 
-    /* =========================================================
-       FORMAT LAST SEEN
-       ========================================================= */
 
-    function formatLastSeen(timestamp) {
-        if (!timestamp) {
-            return "غير معروف";
+    /* =====================================================
+       DEBUG
+    ===================================================== */
+
+    function debug(...args) {
+
+        if (!ACTIVITY_DEBUG) {
+            return;
         }
 
-        const time =
-            timestamp instanceof Date
-                ? timestamp.getTime()
-                : new Date(timestamp).getTime();
-
-        if (!Number.isFinite(time)) {
-            return "غير معروف";
-        }
-
-        const difference = Math.max(0, now() - time);
-
-        const seconds = Math.floor(difference / 1000);
-
-        if (seconds < 10) {
-            return "الآن";
-        }
-
-        if (seconds < 60) {
-            return `منذ ${seconds} ثانية`;
-        }
-
-        const minutes = Math.floor(seconds / 60);
-
-        if (minutes === 1) {
-            return "منذ دقيقة";
-        }
-
-        if (minutes < 60) {
-            return `منذ ${minutes} دقيقة`;
-        }
-
-        const hours = Math.floor(minutes / 60);
-
-        if (hours === 1) {
-            return "منذ ساعة";
-        }
-
-        if (hours < 24) {
-            return `منذ ${hours} ساعة`;
-        }
-
-        const days = Math.floor(hours / 24);
-
-        if (days === 1) {
-            return "منذ يوم";
-        }
-
-        if (days < 7) {
-            return `منذ ${days} أيام`;
-        }
-
-        return new Date(time).toLocaleDateString("ar-IQ");
-    }
-
-    /* =========================================================
-       ONLINE STATUS
-       ========================================================= */
-
-    function isUserOnline(userId) {
-        userId = normalizeUserId(userId);
-
-        if (!userId) {
-            return false;
-        }
-
-        const data = onlineUsers.get(userId);
-
-        if (!data) {
-            return false;
-        }
-
-        if (!data.lastHeartbeat) {
-            return true;
-        }
-
-        return now() - data.lastHeartbeat <= ONLINE_TIMEOUT;
-    }
-
-    function getUserActivity(userId) {
-        userId = normalizeUserId(userId);
-
-        if (!userId) {
-            return {
-                userId: null,
-                online: false,
-                lastSeen: null,
-                lastSeenText: "غير معروف"
-            };
-        }
-
-        const online = isUserOnline(userId);
-
-        const onlineData = onlineUsers.get(userId);
-
-        const lastSeen =
-            onlineData?.lastSeen ||
-            lastSeenUsers.get(userId) ||
-            null;
-
-        return {
-            userId,
-            online,
-            lastSeen,
-            lastSeenText: online
-                ? "متصل الآن"
-                : formatLastSeen(lastSeen)
-        };
-    }
-
-    /* =========================================================
-       PRESENCE STATE
-       ========================================================= */
-
-    function extractPresenceUsers(state) {
-        const result = new Map();
-
-        if (!state || typeof state !== "object") {
-            return result;
-        }
-
-        Object.keys(state).forEach((presenceKey) => {
-            const entries = Array.isArray(state[presenceKey])
-                ? state[presenceKey]
-                : [];
-
-            entries.forEach((entry) => {
-                if (!entry) {
-                    return;
-                }
-
-                const userId =
-                    entry.user_id ||
-                    entry.userId ||
-                    entry.uid ||
-                    entry.id;
-
-                if (!userId) {
-                    return;
-                }
-
-                const normalizedId = normalizeUserId(userId);
-
-                const heartbeat =
-                    entry.last_heartbeat ||
-                    entry.lastHeartbeat ||
-                    now();
-
-                const previous = result.get(normalizedId);
-
-                result.set(normalizedId, {
-                    userId: normalizedId,
-                    lastHeartbeat:
-                        previous?.lastHeartbeat || heartbeat,
-                    lastSeen:
-                        previous?.lastSeen || heartbeat,
-                    presenceKey
-                });
-            });
-        });
-
-        return result;
-    }
-
-    /* =========================================================
-       APPLY PRESENCE STATE
-       ========================================================= */
-
-    function applyPresenceState(state) {
-        currentPresenceState = state || {};
-
-        const newOnlineUsers = extractPresenceUsers(
-            currentPresenceState
+        console.log(
+            "[WFESC Activity]",
+            ...args
         );
 
-        const previousOnlineUsers = onlineUsers;
+    }
 
-        newOnlineUsers.forEach((data, userId) => {
-            const oldData = previousOnlineUsers.get(userId);
 
-            onlineUsers.set(userId, {
-                ...data,
-                lastHeartbeat:
-                    data.lastHeartbeat || oldData?.lastHeartbeat || now(),
-                lastSeen:
-                    data.lastSeen || oldData?.lastSeen || now()
-            });
-        });
+    function debugError(...args) {
 
-        previousOnlineUsers.forEach((data, userId) => {
-            if (!newOnlineUsers.has(userId)) {
-                if (data?.lastSeen) {
-                    lastSeenUsers.set(
-                        userId,
-                        data.lastSeen
-                    );
-                } else {
-                    lastSeenUsers.set(
-                        userId,
-                        now()
-                    );
-                }
-
-                onlineUsers.delete(userId);
-            }
-        });
-
-        dispatchActivityEvent({
-            type: "presence",
-            onlineUsers: getOnlineUsers()
-        });
-
-        updateActivityElements();
-
-        log(
-            "Presence updated:",
-            onlineUsers.size,
-            "online users"
+        console.error(
+            "[WFESC Activity]",
+            ...args
         );
+
     }
 
-    /* =========================================================
-       GET ONLINE USERS
-       ========================================================= */
 
-    function getOnlineUsers() {
-        const result = [];
+    /* =====================================================
+       SUPABASE CLIENT
+    ===================================================== */
 
-        onlineUsers.forEach((data, userId) => {
-            if (isUserOnline(userId)) {
-                result.push({
-                    userId,
-                    lastHeartbeat:
-                        data.lastHeartbeat || null
-                });
-            }
-        });
-
-        return result;
-    }
-
-    /* =========================================================
-       START REALTIME
-       ========================================================= */
-
-    async function startRealtime() {
-        if (realtimeStarted) {
-            return true;
-        }
-
-        const supabase = getClient();
-
-        if (!supabase) {
-            warn("Supabase client is not available.");
-
-            return false;
-        }
-
-        currentUser = getCurrentUser();
-
-        if (!currentUser || !currentUser.id) {
-            warn("No authenticated user.");
-
-            return false;
-        }
+    function getSupabaseClient() {
 
         try {
-            activityChannel = supabase.channel(
-                ACTIVITY_CHANNEL_NAME,
-                {
-                    config: {
-                        presence: {
-                            key: String(currentUser.id)
+
+            if (
+                window.WFESCSupabase
+            ) {
+
+                return window.WFESCSupabase;
+
+            }
+
+
+            if (
+                window.supabase &&
+                typeof window.supabase.createClient === "function"
+            ) {
+
+                const url =
+                    "https://mcgbzfgbaxwmutniorlw.supabase.co";
+
+                const key =
+                    "sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
+
+                return window.supabase.createClient(
+                    url,
+                    key
+                );
+
+            }
+
+        } catch (error) {
+
+            debugError(
+                "تعذر إنشاء Supabase client:",
+                error
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    /* =====================================================
+       CURRENT USER
+    ===================================================== */
+
+    async function loadCurrentUser() {
+
+        if (!client) {
+            return null;
+        }
+
+
+        try {
+
+            const result =
+                await client.auth.getUser();
+
+
+            if (
+                result &&
+                result.data &&
+                result.data.user
+            ) {
+
+                currentUser =
+                    result.data.user;
+
+                return currentUser;
+
+            }
+
+
+        } catch (error) {
+
+            debugError(
+                "خطأ في جلب المستخدم:",
+                error
+            );
+
+        }
+
+
+        return null;
+
+    }
+
+
+    /* =====================================================
+       LOCAL STORAGE
+    ===================================================== */
+
+    function getLocalActivityPreference() {
+
+        if (!currentUser) {
+            return null;
+        }
+
+
+        try {
+
+            const key =
+                "wfesc_activity_" +
+                currentUser.id;
+
+            const value =
+                localStorage.getItem(
+                    key
+                );
+
+
+            if (value === null) {
+                return null;
+            }
+
+
+            return value === "true";
+
+        } catch (error) {
+
+            debugError(
+                "خطأ LocalStorage:",
+                error
+            );
+
+            return null;
+
+        }
+
+    }
+
+
+    function saveLocalActivityPreference(
+        value
+    ) {
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        try {
+
+            const key =
+                "wfesc_activity_" +
+                currentUser.id;
+
+            localStorage.setItem(
+                key,
+                value ? "true" : "false"
+            );
+
+        } catch (error) {
+
+            debugError(
+                "تعذر حفظ الإعداد محليًا:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LOAD ACTIVITY SETTING
+    ===================================================== */
+
+    async function loadActivitySetting() {
+
+        if (!client || !currentUser) {
+            return;
+        }
+
+
+        /*
+         * أولاً نحاول قراءة الإعداد من profiles.
+         */
+
+        try {
+
+            const result =
+                await client
+                    .from(ACTIVITY_TABLE)
+                    .select(
+                        ACTIVITY_FIELD
+                    )
+                    .eq(
+                        "id",
+                        currentUser.id
+                    )
+                    .maybeSingle();
+
+
+            if (
+                !result.error &&
+                result.data &&
+                typeof result.data[
+                    ACTIVITY_FIELD
+                ] === "boolean"
+            ) {
+
+                showActivity =
+                    result.data[
+                        ACTIVITY_FIELD
+                    ];
+
+                saveLocalActivityPreference(
+                    showActivity
+                );
+
+                updateActivityUI();
+
+                return;
+
+            }
+
+
+            if (result.error) {
+
+                debug(
+                    "لم يتم العثور على show_activity في profiles:",
+                    result.error.message
+                );
+
+            }
+
+        } catch (error) {
+
+            debugError(
+                "خطأ أثناء قراءة إعداد النشاط:",
+                error
+            );
+
+        }
+
+
+        /*
+         * إذا لم يوجد العمود أو لم تتم القراءة،
+         * نستخدم القيمة المحلية إن وجدت.
+         */
+
+        const localValue =
+            getLocalActivityPreference();
+
+
+        if (
+            typeof localValue === "boolean"
+        ) {
+
+            showActivity =
+                localValue;
+
+        }
+
+
+        updateActivityUI();
+
+    }
+
+
+    /* =====================================================
+       SAVE ACTIVITY SETTING
+    ===================================================== */
+
+    async function saveActivitySetting(
+        value
+    ) {
+
+        value =
+            Boolean(value);
+
+
+        showActivity =
+            value;
+
+
+        saveLocalActivityPreference(
+            value
+        );
+
+
+        updateActivityUI();
+
+
+        if (!client || !currentUser) {
+
+            return false;
+
+        }
+
+
+        try {
+
+            const result =
+                await client
+                    .from(ACTIVITY_TABLE)
+                    .update({
+
+                        [ACTIVITY_FIELD]:
+                            value
+
+                    })
+                    .eq(
+                        "id",
+                        currentUser.id
+                    );
+
+
+            if (result.error) {
+
+                /*
+                 * لا نكسر النشاط إذا كان العمود
+                 * غير موجود بعد.
+                 */
+
+                debug(
+                    "تعذر حفظ show_activity في Supabase:",
+                    result.error.message
+                );
+
+                return false;
+
+            }
+
+
+            debug(
+                "تم حفظ حالة النشاط:",
+                value
+            );
+
+
+            return true;
+
+        } catch (error) {
+
+            debugError(
+                "خطأ أثناء حفظ حالة النشاط:",
+                error
+            );
+
+            return false;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       UI
+    ===================================================== */
+
+    function updateActivityUI() {
+
+        if (!activitySwitch) {
+            return;
+        }
+
+
+        if (showActivity) {
+
+            activitySwitch.classList.add(
+                "active"
+            );
+
+            activitySwitch.setAttribute(
+                "aria-pressed",
+                "true"
+            );
+
+        } else {
+
+            activitySwitch.classList.remove(
+                "active"
+            );
+
+            activitySwitch.setAttribute(
+                "aria-pressed",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    function openActivityModal() {
+
+        if (!activityModal) {
+            return;
+        }
+
+
+        updateActivityUI();
+
+
+        activityModal.classList.add(
+            "show"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+    function closeActivityModalNow() {
+
+        if (!activityModal) {
+            return;
+        }
+
+
+        activityModal.classList.remove(
+            "show"
+        );
+
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+    /* =====================================================
+       ACTIVITY TOGGLE
+    ===================================================== */
+
+    async function toggleActivity() {
+
+        const newValue =
+            !showActivity;
+
+
+        /*
+         * تحديث فوري للواجهة.
+         */
+
+        showActivity =
+            newValue;
+
+        updateActivityUI();
+
+
+        /*
+         * حفظ.
+         */
+
+        await saveActivitySetting(
+            newValue
+        );
+
+
+        /*
+         * إعادة بث الحالة.
+         */
+
+        await publishPresence();
+
+    }
+
+
+    /* =====================================================
+       PRESENCE
+    ===================================================== */
+
+    async function createPresenceChannel() {
+
+        if (!client || !currentUser) {
+            return null;
+        }
+
+
+        if (presenceChannel) {
+
+            return presenceChannel;
+
+        }
+
+
+        try {
+
+            presenceChannel =
+                client.channel(
+                    ACTIVITY_PRESENCE_CHANNEL,
+                    {
+                        config: {
+
+                            presence: {
+                                key:
+                                    currentUser.id
+                            }
+
                         }
-                    }
-                }
-            );
 
-            activityChannel
+                    }
+                );
+
+
+            presenceChannel
                 .on(
                     "presence",
                     {
                         event: "sync"
                     },
                     () => {
-                        try {
-                            const state =
-                                activityChannel.presenceState();
 
-                            applyPresenceState(state);
-                        } catch (err) {
-                            error(
-                                "Presence sync error:",
-                                err
-                            );
-                        }
+                        debug(
+                            "Presence sync"
+                        );
+
+                        processPresenceState();
+
                     }
-                )
+                );
+
+
+            presenceChannel
                 .on(
                     "presence",
                     {
                         event: "join"
                     },
-                    ({ key, newPresences }) => {
-                        log(
-                            "User joined:",
-                            key,
-                            newPresences
+                    payload => {
+
+                        debug(
+                            "Presence join:",
+                            payload
                         );
 
-                        try {
-                            const state =
-                                activityChannel.presenceState();
+                        processPresenceState();
 
-                            applyPresenceState(state);
-                        } catch (err) {
-                            error(
-                                "Presence join error:",
-                                err
-                            );
-                        }
                     }
-                )
+                );
+
+
+            presenceChannel
                 .on(
                     "presence",
                     {
                         event: "leave"
                     },
-                    ({ key, leftPresences }) => {
-                        log(
-                            "User left:",
-                            key,
-                            leftPresences
+                    payload => {
+
+                        debug(
+                            "Presence leave:",
+                            payload
                         );
 
-                        try {
-                            const state =
-                                activityChannel.presenceState();
+                        processPresenceState();
 
-                            applyPresenceState(state);
-                        } catch (err) {
-                            error(
-                                "Presence leave error:",
-                                err
-                            );
-                        }
                     }
                 );
 
-            const status =
-                await activityChannel.subscribe(
-                    async (subscriptionStatus) => {
-                        log(
-                            "Activity channel:",
-                            subscriptionStatus
+
+            const result =
+                await presenceChannel.subscribe(
+                    status => {
+
+                        debug(
+                            "Presence status:",
+                            status
                         );
+
 
                         if (
-                            subscriptionStatus ===
+                            status ===
                             "SUBSCRIBED"
                         ) {
-                            realtimeStarted = true;
 
-                            await trackCurrentUser();
+                            presenceStarted =
+                                true;
 
-                            startHeartbeat();
+                            publishPresence();
 
-                            dispatchActivityEvent({
-                                type: "connected"
-                            });
                         }
+
                     }
                 );
 
-            if (status !== "SUBSCRIBED") {
-                log(
-                    "Activity channel status:",
-                    status
-                );
-            }
 
-            return true;
-        } catch (err) {
-            error(
-                "Could not start activity realtime:",
-                err
+            return presenceChannel;
+
+        } catch (error) {
+
+            debugError(
+                "فشل إنشاء Presence:",
+                error
             );
 
-            activityChannel = null;
-            realtimeStarted = false;
+            presenceChannel =
+                null;
 
-            return false;
-        }
-    }
+            return null;
 
-    /* =========================================================
-       TRACK CURRENT USER
-       ========================================================= */
-
-    async function trackCurrentUser() {
-        if (!activityChannel) {
-            return false;
         }
 
-        currentUser = getCurrentUser();
-
-        if (!currentUser || !currentUser.id) {
-            return false;
-        }
-
-        const timestamp =
-            new Date().toISOString();
-
-        const presenceData = {
-            user_id: String(currentUser.id),
-
-            last_heartbeat: timestamp,
-
-            last_seen: timestamp
-        };
-
-        try {
-            await activityChannel.track(
-                presenceData
-            );
-
-            onlineUsers.set(
-                String(currentUser.id),
-                {
-                    userId: String(currentUser.id),
-
-                    lastHeartbeat: now(),
-
-                    lastSeen: now()
-                }
-            );
-
-            dispatchActivityEvent({
-                type: "online",
-                userId: String(currentUser.id)
-            });
-
-            updateActivityElements();
-
-            return true;
-        } catch (err) {
-            error(
-                "Could not track current user:",
-                err
-            );
-
-            return false;
-        }
     }
 
-    /* =========================================================
-       HEARTBEAT
-       ========================================================= */
 
-    function startHeartbeat() {
-        stopHeartbeat();
+    /* =====================================================
+       PUBLISH PRESENCE
+    ===================================================== */
 
-        heartbeatTimer = setInterval(
-            async () => {
-                if (!activityChannel) {
-                    return;
-                }
-
-                if (!currentUser) {
-                    currentUser = getCurrentUser();
-                }
-
-                if (!currentUser?.id) {
-                    return;
-                }
-
-                await trackCurrentUser();
-            },
-            HEARTBEAT_INTERVAL
-        );
-    }
-
-    function stopHeartbeat() {
-        if (heartbeatTimer) {
-            clearInterval(heartbeatTimer);
-
-            heartbeatTimer = null;
-        }
-    }
-
-    /* =========================================================
-       PAGE VISIBILITY
-       ========================================================= */
-
-    function setupVisibilityTracking() {
-        document.addEventListener(
-            "visibilitychange",
-            async () => {
-                if (document.visibilityState === "visible") {
-                    await trackCurrentUser();
-
-                    return;
-                }
-
-                if (
-                    currentUser?.id
-                ) {
-                    const id =
-                        String(currentUser.id);
-
-                    const timestamp = now();
-
-                    lastSeenUsers.set(
-                        id,
-                        timestamp
-                    );
-
-                    const existing =
-                        onlineUsers.get(id);
-
-                    if (existing) {
-                        existing.lastSeen =
-                            timestamp;
-                    }
-                }
-
-                updateActivityElements();
-            }
-        );
-
-        window.addEventListener(
-            "beforeunload",
-            () => {
-                if (
-                    currentUser?.id
-                ) {
-                    lastSeenUsers.set(
-                        String(currentUser.id),
-                        now()
-                    );
-                }
-
-                stopHeartbeat();
-            }
-        );
-    }
-
-    /* =========================================================
-       DOM ACTIVITY ELEMENTS
-       ========================================================= */
-
-    function updateActivityElements() {
-        const elements =
-            document.querySelectorAll(
-                "[data-wfesc-user-id]"
-            );
-
-        elements.forEach((element) => {
-            const userId =
-                element.getAttribute(
-                    "data-wfesc-user-id"
-                );
-
-            if (!userId) {
-                return;
-            }
-
-            const activity =
-                getUserActivity(userId);
-
-            element.classList.toggle(
-                "wfesc-user-online",
-                activity.online
-            );
-
-            element.classList.toggle(
-                "wfesc-user-offline",
-                !activity.online
-            );
-
-            element.setAttribute(
-                "data-online",
-                activity.online
-                    ? "true"
-                    : "false"
-            );
-
-            element.setAttribute(
-                "data-last-seen",
-                activity.lastSeenText
-            );
-        });
-    }
-
-    /* =========================================================
-       ACTIVITY STATUS TEXT
-       ========================================================= */
-
-    function getStatusText(userId) {
-        const activity =
-            getUserActivity(userId);
-
-        return activity.online
-            ? "متصل الآن"
-            : activity.lastSeenText;
-    }
-
-    /* =========================================================
-       UPDATE SINGLE ELEMENT
-       ========================================================= */
-
-    function updateUserElement(
-        element,
-        userId
-    ) {
-        if (!element) {
-            return;
-        }
-
-        userId = normalizeUserId(userId);
-
-        if (!userId) {
-            return;
-        }
-
-        const activity =
-            getUserActivity(userId);
-
-        element.setAttribute(
-            "data-wfesc-user-id",
-            userId
-        );
-
-        element.setAttribute(
-            "data-online",
-            activity.online
-                ? "true"
-                : "false"
-        );
-
-        element.setAttribute(
-            "data-last-seen",
-            activity.lastSeenText
-        );
-
-        element.classList.toggle(
-            "wfesc-user-online",
-            activity.online
-        );
-
-        element.classList.toggle(
-            "wfesc-user-offline",
-            !activity.online
-        );
-    }
-
-    /* =========================================================
-       CREATE STATUS DOT
-       ========================================================= */
-
-    function createStatusDot(userId) {
-        const dot =
-            document.createElement("span");
-
-        dot.className =
-            "wfesc-activity-dot";
-
-        updateUserElement(
-            dot,
-            userId
-        );
-
-        return dot;
-    }
-
-    /* =========================================================
-       CREATE STATUS TEXT
-       ========================================================= */
-
-    function createStatusElement(userId) {
-        const status =
-            document.createElement("span");
-
-        status.className =
-            "wfesc-activity-status";
-
-        updateUserElement(
-            status,
-            userId
-        );
-
-        status.textContent =
-            getStatusText(userId);
-
-        return status;
-    }
-
-    /* =========================================================
-       PERIODIC DOM REFRESH
-       ========================================================= */
-
-    let domRefreshTimer = null;
-
-    function startDOMRefresh() {
-        stopDOMRefresh();
-
-        domRefreshTimer =
-            setInterval(
-                () => {
-                    updateActivityElements();
-
-                    document
-                        .querySelectorAll(
-                            ".wfesc-activity-status"
-                        )
-                        .forEach((element) => {
-                            const userId =
-                                element.getAttribute(
-                                    "data-wfesc-user-id"
-                                );
-
-                            if (!userId) {
-                                return;
-                            }
-
-                            element.textContent =
-                                getStatusText(
-                                    userId
-                                );
-                        });
-                },
-                5000
-            );
-    }
-
-    function stopDOMRefresh() {
-        if (domRefreshTimer) {
-            clearInterval(
-                domRefreshTimer
-            );
-
-            domRefreshTimer = null;
-        }
-    }
-
-    /* =========================================================
-       INITIALIZE
-       ========================================================= */
-
-    async function initialize() {
-        if (initialized) {
-            return true;
-        }
-
-        client = getClient();
-
-        if (!client) {
-            warn(
-                "WFESC Messages Core / Supabase client not found."
-            );
-
-            return false;
-        }
-
-        currentUser = getCurrentUser();
-
-        if (!currentUser?.id) {
-            log(
-                "Waiting for authenticated user..."
-            );
-
-            return false;
-        }
-
-        setupVisibilityTracking();
-
-        startDOMRefresh();
-
-        const started =
-            await startRealtime();
-
-        initialized = started;
-
-        if (started) {
-            log(
-                "messages-activity.js initialized."
-            );
-        }
-
-        return started;
-    }
-
-    /* =========================================================
-       RETRY AFTER AUTH
-       ========================================================= */
-
-    let retryTimer = null;
-
-    function startAuthRetry() {
-        if (retryTimer) {
-            return;
-        }
-
-        retryTimer =
-            setInterval(
-                async () => {
-                    if (initialized) {
-                        clearInterval(
-                            retryTimer
-                        );
-
-                        retryTimer = null;
-
-                        return;
-                    }
-
-                    const user =
-                        getCurrentUser();
-
-                    if (!user?.id) {
-                        return;
-                    }
-
-                    const success =
-                        await initialize();
-
-                    if (success) {
-                        clearInterval(
-                            retryTimer
-                        );
-
-                        retryTimer = null;
-                    }
-                },
-                3000
-            );
-    }
-
-    /* =========================================================
-       PUBLIC API
-       ========================================================= */
-
-    window.WFESC_MESSAGES_ACTIVITY = {
-        initialize,
-
-        startRealtime,
-
-        trackCurrentUser,
-
-        isUserOnline,
-
-        getUserActivity,
-
-        getStatusText,
-
-        getOnlineUsers,
-
-        createStatusDot,
-
-        createStatusElement,
-
-        updateUserElement,
-
-        updateActivityElements,
-
-        formatLastSeen,
-
-        getCurrentUser() {
-            return currentUser;
-        },
-
-        getChannel() {
-            return activityChannel;
-        },
-
-        isInitialized() {
-            return initialized;
-        },
-
-        isRealtimeStarted() {
-            return realtimeStarted;
-        }
-    };
-
-    /* =========================================================
-       AUTO START
-       ========================================================= */
-
-    function boot() {
-        const start = async () => {
-            const success =
-                await initialize();
-
-            if (!success) {
-                startAuthRetry();
-            }
-        };
+    async function publishPresence() {
 
         if (
-            document.readyState ===
-            "loading"
+            !presenceChannel ||
+            !currentUser
         ) {
-            document.addEventListener(
-                "DOMContentLoaded",
-                start,
-                {
-                    once: true
-                }
-            );
-        } else {
-            start();
+
+            return;
+
         }
+
+
+        if (
+            !presenceStarted
+        ) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const online =
+                document.visibilityState ===
+                    "visible" &&
+                showActivity;
+
+
+            const payload = {
+
+                user_id:
+                    currentUser.id,
+
+                online:
+                    online,
+
+                show_activity:
+                    showActivity,
+
+                last_seen:
+                    new Date().toISOString()
+
+            };
+
+
+            lastPresenceState =
+                payload;
+
+
+            await presenceChannel.track(
+                payload
+            );
+
+
+            debug(
+                "Presence published:",
+                payload
+            );
+
+        } catch (error) {
+
+            debugError(
+                "فشل نشر Presence:",
+                error
+            );
+
+        }
+
     }
 
-    boot();
+
+    /* =====================================================
+       PRESENCE PROCESSING
+    ===================================================== */
+
+    function processPresenceState() {
+
+        if (
+            !presenceChannel
+        ) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const state =
+                presenceChannel.presenceState();
+
+
+            window.WFESC_ACTIVITY_STATE =
+                state;
+
+
+            /*
+             * نرسل حدث عام لباقي ملفات WFESC.
+             *
+             * هذا يسمح لـ messages-core.js
+             * أو أي ملف مستقبلي باستخدام النشاط
+             * بدون تعديل هذا الملف.
+             */
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:activity-sync",
+                    {
+                        detail: {
+                            state:
+                                state
+                        }
+                    }
+                )
+            );
+
+
+            debug(
+                "Activity state updated:",
+                state
+            );
+
+        } catch (error) {
+
+            debugError(
+                "خطأ معالجة Presence state:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CHECK USER ONLINE
+    ===================================================== */
+
+    function isUserOnline(
+        userId
+    ) {
+
+        if (
+            !userId ||
+            !presenceChannel
+        ) {
+
+            return false;
+
+        }
+
+
+        try {
+
+            const state =
+                presenceChannel.presenceState();
+
+
+            const entries =
+                state[userId];
+
+
+            if (
+                !Array.isArray(entries) ||
+                entries.length === 0
+            ) {
+
+                return false;
+
+            }
+
+
+            const latest =
+                entries[
+                    entries.length - 1
+                ];
+
+
+            if (
+                !latest
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                latest.online !== true
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                latest.show_activity ===
+                false
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                latest.last_seen
+            ) {
+
+                const lastSeen =
+                    new Date(
+                        latest.last_seen
+                    ).getTime();
+
+
+                const now =
+                    Date.now();
+
+
+                if (
+                    Number.isFinite(
+                        lastSeen
+                    ) &&
+                    now - lastSeen >
+                        ACTIVITY_OFFLINE_AFTER
+                ) {
+
+                    return false;
+
+                }
+
+            }
+
+
+            return true;
+
+        } catch (error) {
+
+            debugError(
+                "خطأ فحص Online:",
+                error
+            );
+
+            return false;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       GET USER ACTIVITY
+    ===================================================== */
+
+    function getUserActivity(
+        userId
+    ) {
+
+        if (
+            !userId ||
+            !presenceChannel
+        ) {
+
+            return {
+                online:false,
+                last_seen:null
+            };
+
+        }
+
+
+        try {
+
+            const state =
+                presenceChannel.presenceState();
+
+
+            const entries =
+                state[userId];
+
+
+            if (
+                !Array.isArray(entries) ||
+                entries.length === 0
+            ) {
+
+                return {
+                    online:false,
+                    last_seen:null
+                };
+
+            }
+
+
+            const latest =
+                entries[
+                    entries.length - 1
+                ];
+
+
+            return {
+
+                online:
+                    isUserOnline(
+                        userId
+                    ),
+
+                last_seen:
+                    latest &&
+                    latest.last_seen
+                        ? latest.last_seen
+                        : null
+
+            };
+
+        } catch (error) {
+
+            debugError(
+                "خطأ قراءة نشاط المستخدم:",
+                error
+            );
+
+            return {
+                online:false,
+                last_seen:null
+            };
+
+        }
+
+    }
+
+
+    /* =====================================================
+       ACTIVITY TEXT
+    ===================================================== */
+
+    function getActivityText(
+        userId
+    ) {
+
+        const activity =
+            getUserActivity(
+                userId
+            );
+
+
+        if (
+            activity.online
+        ) {
+
+            return "متصل الآن";
+
+        }
+
+
+        if (
+            activity.last_seen
+        ) {
+
+            return formatLastSeen(
+                activity.last_seen
+            );
+
+        }
+
+
+        return "غير نشط";
+
+    }
+
+
+    function formatLastSeen(
+        value
+    ) {
+
+        const timestamp =
+            new Date(
+                value
+            ).getTime();
+
+
+        if (
+            !Number.isFinite(
+                timestamp
+            )
+        ) {
+
+            return "غير نشط";
+
+        }
+
+
+        const diff =
+            Date.now() -
+            timestamp;
+
+
+        if (
+            diff < 60000
+        ) {
+
+            return "كان متصلًا الآن";
+
+        }
+
+
+        const minutes =
+            Math.floor(
+                diff / 60000
+            );
+
+
+        if (
+            minutes < 60
+        ) {
+
+            return (
+                "كان متصلًا قبل " +
+                minutes +
+                " دقيقة"
+            );
+
+        }
+
+
+        const hours =
+            Math.floor(
+                minutes / 60
+            );
+
+
+        if (
+            hours < 24
+        ) {
+
+            return (
+                "كان متصلًا قبل " +
+                hours +
+                " ساعة"
+            );
+
+        }
+
+
+        const days =
+            Math.floor(
+                hours / 24
+            );
+
+
+        if (
+            days === 1
+        ) {
+
+            return "كان متصلًا أمس";
+
+        }
+
+
+        if (
+            days < 7
+        ) {
+
+            return (
+                "كان متصلًا قبل " +
+                days +
+                " أيام"
+            );
+
+        }
+
+
+        return "غير نشط";
+
+    }
+
+
+    /* =====================================================
+       HEARTBEAT
+    ===================================================== */
+
+    function startHeartbeat() {
+
+        stopHeartbeat();
+
+
+        heartbeatTimer =
+            setInterval(
+                () => {
+
+                    publishPresence();
+
+                },
+                ACTIVITY_HEARTBEAT
+            );
+
+    }
+
+
+    function stopHeartbeat() {
+
+        if (
+            heartbeatTimer
+        ) {
+
+            clearInterval(
+                heartbeatTimer
+            );
+
+            heartbeatTimer =
+                null;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       VISIBILITY
+    ===================================================== */
+
+    function setupVisibility() {
+
+        if (
+            visibilityHandlerAttached
+        ) {
+
+            return;
+
+        }
+
+
+        document.addEventListener(
+            "visibilitychange",
+            () => {
+
+                publishPresence();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "focus",
+            () => {
+
+                publishPresence();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "blur",
+            () => {
+
+                publishPresence();
+
+            }
+        );
+
+
+        visibilityHandlerAttached =
+            true;
+
+    }
+
+
+    /* =====================================================
+       UI EVENTS
+    ===================================================== */
+
+    function setupUI() {
+
+        getDOM();
+
+
+        if (
+            activityButton
+        ) {
+
+            activityButton.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    openActivityModal();
+
+                }
+            );
+
+        }
+
+
+        if (
+            activitySwitch
+        ) {
+
+            activitySwitch.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    toggleActivity();
+
+                }
+            );
+
+        }
+
+
+        if (
+            closeActivityModal
+        ) {
+
+            closeActivityModal.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    closeActivityModalNow();
+
+                }
+            );
+
+        }
+
+
+        if (
+            activityModal
+        ) {
+
+            activityModal.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target ===
+                        activityModal
+                    ) {
+
+                        closeActivityModalNow();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key ===
+                    "Escape"
+                ) {
+
+                    closeActivityModalNow();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       GLOBAL ACTIVITY EVENTS
+    ===================================================== */
+
+    function setupGlobalEvents() {
+
+        /*
+         * عندما يتغير نشاط مستخدم:
+         * نرسل حدث يمكن لباقي ملفات الرسائل
+         * الاستماع إليه.
+         */
+
+        window.addEventListener(
+            "wfesc:activity-request",
+            event => {
+
+                const userId =
+                    event &&
+                    event.detail
+                        ? event.detail.userId
+                        : null;
+
+
+                if (!userId) {
+                    return;
+                }
+
+
+                const activity =
+                    getUserActivity(
+                        userId
+                    );
+
+
+                window.dispatchEvent(
+                    new CustomEvent(
+                        "wfesc:activity-response",
+                        {
+                            detail: {
+
+                                userId:
+                                    userId,
+
+                                online:
+                                    activity.online,
+
+                                last_seen:
+                                    activity.last_seen,
+
+                                text:
+                                    getActivityText(
+                                        userId
+                                    )
+
+                            }
+                        }
+                    )
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       PUBLIC API
+    ===================================================== */
+
+    function exposeAPI() {
+
+        window.WFESC_MESSAGES_ACTIVITY = {
+
+            getCurrentUser() {
+
+                return currentUser;
+
+            },
+
+
+            isActivityVisible() {
+
+                return showActivity;
+
+            },
+
+
+            setActivityVisible(
+                value
+            ) {
+
+                return saveActivitySetting(
+                    Boolean(value)
+                );
+
+            },
+
+
+            openActivityModal() {
+
+                openActivityModal();
+
+            },
+
+
+            closeActivityModal() {
+
+                closeActivityModalNow();
+
+            },
+
+
+            isUserOnline(
+                userId
+            ) {
+
+                return isUserOnline(
+                    userId
+                );
+
+            },
+
+
+            getUserActivity(
+                userId
+            ) {
+
+                return getUserActivity(
+                    userId
+                );
+
+            },
+
+
+            getActivityText(
+                userId
+            ) {
+
+                return getActivityText(
+                    userId
+                );
+
+            },
+
+
+            getPresenceState() {
+
+                if (
+                    !presenceChannel
+                ) {
+
+                    return {};
+
+                }
+
+
+                try {
+
+                    return presenceChannel
+                        .presenceState();
+
+                } catch {
+
+                    return {};
+
+                }
+
+            },
+
+
+            refresh() {
+
+                publishPresence();
+
+            }
+
+        };
+
+    }
+
+
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
+
+    async function initialize() {
+
+        if (
+            activityInitialized
+        ) {
+
+            return;
+
+        }
+
+
+        activityInitialized =
+            true;
+
+
+        debug(
+            "بدء messages-activity.js"
+        );
+
+
+        getDOM();
+
+
+        /*
+         * تجهيز الواجهة حتى لو لم يكن المستخدم
+         * مسجل الدخول.
+         */
+
+        updateActivityUI();
+
+        setupUI();
+
+        setupGlobalEvents();
+
+        setupVisibility();
+
+        exposeAPI();
+
+
+        /*
+         * جلب Supabase.
+         */
+
+        client =
+            getSupabaseClient();
+
+
+        if (!client) {
+
+            debugError(
+                "Supabase client غير موجود."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * المستخدم الحالي.
+         */
+
+        await loadCurrentUser();
+
+
+        if (!currentUser) {
+
+            debug(
+                "لا يوجد مستخدم مسجل دخول."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * قراءة إعداد النشاط.
+         */
+
+        await loadActivitySetting();
+
+
+        /*
+         * إنشاء Presence.
+         */
+
+        await createPresenceChannel();
+
+
+        /*
+         * Heartbeat.
+         */
+
+        startHeartbeat();
+
+
+        /*
+         * أول بث.
+         */
+
+        await publishPresence();
+
+
+        debug(
+            "تم تشغيل نظام النشاط بنجاح."
+        );
+
+    }
+
+
+    /* =====================================================
+       START AFTER DOM
+    ===================================================== */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once:true
+            }
+        );
+
+    } else {
+
+        initialize();
+
+    }
+
 
 })();
