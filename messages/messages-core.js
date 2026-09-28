@@ -32,6 +32,9 @@
        - Cursor pagination:
          before_created_at + before_message_id
        - Diagnostic panel
+
+       - Chat Header Interface
+         الواجهة الخارجية لرأس المحادثة
     ============================================================
     */
 
@@ -160,6 +163,9 @@
 
     /* =========================================================
        DOM
+       ملاحظة:
+       عناصر رأس المحادثة لم تعد هنا.
+       أصبحت مسؤولية messages-chat-header.js
     ========================================================= */
 
     const page =
@@ -190,26 +196,6 @@
     const backChatButton =
         document.getElementById(
             "backChatButton"
-        );
-
-    const chatAvatar =
-        document.getElementById(
-            "chatAvatar"
-        );
-
-    const chatName =
-        document.getElementById(
-            "chatName"
-        );
-
-    const chatStatus =
-        document.getElementById(
-            "chatStatus"
-        );
-
-    const chatOnlineDot =
-        document.getElementById(
-            "chatOnlineDot"
         );
 
     const messageInput =
@@ -1641,54 +1627,93 @@ ${extraText}`
 
 
     /* =========================================================
-       CHAT HEADER
+       CHAT HEADER INTERFACE
+       
+       هذا الجزء يبقى داخل Core فقط لتعريف البيانات
+       والتواصل مع ملف واجهة رأس المحادثة الخارجي.
+
+       لا يقوم Core بالتعامل مع:
+       chatAvatar
+       chatName
+       chatStatus
+       chatOnlineDot
+
+       تلك مسؤولية:
+       messages-chat-header.js
     ========================================================= */
 
-    function updateChatHeader() {
+    const chatHeaderInterface = {
 
-        if (!currentConversationContact) {
-            return;
-        }
+        getContact() {
 
-        const contact =
-            currentConversationContact;
+            return currentConversationContact;
+        },
 
-        if (chatAvatar) {
 
-            chatAvatar.src =
-                avatarUrl(contact);
+        getConversationId() {
 
-            chatAvatar.alt =
-                getDisplayName(contact);
-        }
+            return currentConversationId;
+        },
 
-        if (chatName) {
 
-            chatName.textContent =
-                getDisplayName(contact);
-        }
+        getDisplayName(
+            contact = currentConversationContact
+        ) {
 
-        const online =
-            Boolean(
-                contact.is_online
+            return getDisplayName(
+                contact
             );
+        },
 
-        if (chatStatus) {
 
-            chatStatus.textContent =
-                online
-                    ? "نشط الآن"
-                    : "غير نشط";
-        }
+        getAvatarUrl(
+            contact = currentConversationContact
+        ) {
 
-        if (chatOnlineDot) {
+            return avatarUrl(
+                contact
+            );
+        },
 
-            chatOnlineDot.classList.toggle(
-                "active",
-                online
+
+        getActivityState(
+            contact = currentConversationContact
+        ) {
+
+            return {
+
+                isOnline:
+                    Boolean(
+                        contact?.is_online
+                    ),
+
+                showActivity:
+                    contact?.show_activity !== false
+
+            };
+        },
+
+
+        refresh() {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:chat-header-refresh",
+                    {
+                        detail: {
+
+                            contact:
+                                currentConversationContact,
+
+                            conversationId:
+                                currentConversationId
+
+                        }
+                    }
+                )
             );
         }
-    }
+    };
 
 
     /* =========================================================
@@ -3944,7 +3969,11 @@ ${extraText}`
             };
         }
 
-        updateChatHeader();
+        /*
+         * Core لا يتعامل مع عناصر رأس المحادثة.
+         * فقط يخبر واجهة الرأس أن البيانات تغيرت.
+         */
+        chatHeaderInterface.refresh();
 
         if (chatView) {
 
@@ -4837,6 +4866,11 @@ ${extraText}`
 
         typingUsers.clear();
 
+        /*
+         * إخبار واجهة رأس المحادثة بأن المحادثة أُغلقت.
+         */
+        chatHeaderInterface.refresh();
+
         if (chatView) {
 
             chatView.classList.remove(
@@ -5089,6 +5123,14 @@ ${extraText}`
 
         client,
 
+        /*
+         * واجهة رأس المحادثة
+         * سيتم استخدامها من:
+         * messages-chat-header.js
+         */
+        chatHeader:
+            chatHeaderInterface,
+
         getCurrentUser() {
             return currentUser;
         },
@@ -5171,13 +5213,19 @@ ${extraText}`
          * تشخيص يدوي من أي ملف آخر
          */
         debug(title, details) {
+
             wfescDebugShow(
                 title,
                 details
             );
         },
 
-        debugError(title, error, extra) {
+        debugError(
+            title,
+            error,
+            extra
+        ) {
+
             wfescDebugError(
                 title,
                 error,
