@@ -4481,6 +4481,8 @@ body.wfesc-keyboard-open{
 
 <script src="./messages/messages-settings.js"></script>
 
+<script src="./messages/messages-search.js"></script>
+
 
 <!-- =========================================================
      KEYBOARD
@@ -4495,9 +4497,23 @@ body.wfesc-keyboard-open{
 ></script>
 
 
+<!-- =========================================================
+     ACTIVITY
+========================================================= -->
+
 <script src="./messages/messages-activity.js"></script>
 
+
+<!-- =========================================================
+     CHAT HEADER
+========================================================= -->
+
 <script src="./messages/messages-chat-header.js"></script>
+
+
+<!-- =========================================================
+     CONVERSATIONS
+========================================================= -->
 
 <script src="./messages/messages-conversations.js"></script>
 
@@ -4512,14 +4528,19 @@ body.wfesc-keyboard-open{
 
     "use strict";
 
+
     const input =
         document.getElementById(
             "messageInput"
         );
 
+
     if(!input){
+
         return;
+
     }
+
 
     /*
      * لا نتحكم بالكيبورد هنا.
@@ -4536,8 +4557,10 @@ body.wfesc-keyboard-open{
             "readonly"
         );
 
+
         input.dataset.keyboardReady =
             "true";
+
 
     }else{
 
@@ -4546,10 +4569,12 @@ body.wfesc-keyboard-open{
             "readonly"
         );
 
+
         input.dataset.keyboardReady =
             "false";
 
     }
+
 
 })();
 
@@ -4561,10 +4586,13 @@ body.wfesc-keyboard-open{
 ========================================================= -->
 
 <!--
+
 <script src="./messages/messages-realtime.js"></script>
-<script src="./messages/messages-search.js"></script>
+
 <script src="./messages/messages-notifications.js"></script>
+
 <script src="./messages/messages-ui.js"></script>
+
 -->
 
 
@@ -4582,10 +4610,14 @@ body.wfesc-keyboard-open{
     function blockEvent(event){
 
         if(!event){
+
             return;
+
         }
 
+
         event.preventDefault();
+
 
         if(event.clipboardData){
 
@@ -4666,9 +4698,13 @@ body.wfesc-keyboard-open{
             const selection =
                 window.getSelection();
 
+
             if(!selection){
+
                 return;
+
             }
+
 
             if(!selection.isCollapsed){
 
