@@ -35,6 +35,10 @@
 
        - Chat Header Interface
          الواجهة الخارجية لرأس المحادثة
+
+       - Activity Contact Normalization
+         توحيد user_id / id / userId
+         وضمان وصول هوية المستخدم لرأس المحادثة
     ============================================================
     */
 
@@ -163,9 +167,6 @@
 
     /* =========================================================
        DOM
-       ملاحظة:
-       عناصر رأس المحادثة لم تعد هنا.
-       أصبحت مسؤولية messages-chat-header.js
     ========================================================= */
 
     const page =
@@ -206,7 +207,6 @@
 
     /* =========================================================
        DIAGNOSTIC PANEL
-       يظهر فقط عند حدوث خطأ
     ========================================================= */
 
     function wfescDebugShow(
@@ -571,10 +571,6 @@ ${extraText}`
         "error",
         event => {
 
-            /*
-             * لا نظهر أخطاء عادية غير مرتبطة
-             * إلا إذا كانت موجودة فعلاً.
-             */
             if (!event) {
                 return;
             }
@@ -803,6 +799,8 @@ ${extraText}`
 
         return (
             contact.display_name ||
+            contact.full_name ||
+            contact.name ||
             contact.username ||
             "مستخدم"
         );
@@ -813,6 +811,8 @@ ${extraText}`
 
         return (
             contact?.avatar_url ||
+            contact?.avatar ||
+            contact?.photo_url ||
             DEFAULT_AVATAR
         );
     }
@@ -879,6 +879,275 @@ ${extraText}`
             String(currentUser.id)
         );
     }
+
+
+    /* =========================================================
+       CONTACT NORMALIZATION
+       مهم جداً لحالة النشاط
+    ========================================================= */
+
+    function normalizeContact(
+        contact,
+        fallback = null
+    ) {
+
+        const source =
+            contact ||
+            fallback ||
+            {};
+
+        const fallbackSource =
+            fallback ||
+            {};
+
+        const userId =
+            source.user_id ??
+            source.userId ??
+            source.profile_id ??
+            source.id ??
+            fallbackSource.user_id ??
+            fallbackSource.userId ??
+            fallbackSource.profile_id ??
+            fallbackSource.id ??
+            null;
+
+        const displayName =
+            source.display_name ??
+            source.full_name ??
+            source.name ??
+            fallbackSource.display_name ??
+            fallbackSource.full_name ??
+            fallbackSource.name ??
+            source.username ??
+            fallbackSource.username ??
+            null;
+
+        const username =
+            source.username ??
+            fallbackSource.username ??
+            null;
+
+        const avatar =
+            source.avatar_url ??
+            source.avatar ??
+            source.photo_url ??
+            fallbackSource.avatar_url ??
+            fallbackSource.avatar ??
+            fallbackSource.photo_url ??
+            null;
+
+        const showActivity =
+            source.show_activity ??
+            fallbackSource.show_activity;
+
+        const isOnline =
+            source.is_online ??
+            source.online ??
+            fallbackSource.is_online ??
+            fallbackSource.online ??
+            false;
+
+        return {
+            ...fallbackSource,
+            ...source,
+
+            user_id:
+                userId,
+
+            display_name:
+                displayName,
+
+            username:
+                username,
+
+            avatar_url:
+                avatar ||
+                DEFAULT_AVATAR,
+
+            show_activity:
+                showActivity !== false,
+
+            is_online:
+                Boolean(
+                    isOnline
+                )
+        };
+    }
+
+
+    /* =========================================================
+       APPLY ACTIVITY STATE TO CONTACT
+    ========================================================= */
+
+    function applyActivityStateToContact(
+        contact
+    ) {
+
+        if (!contact) {
+            return contact;
+        }
+
+        const normalized =
+            normalizeContact(
+                contact
+            );
+
+        const userId =
+            normalized.user_id;
+
+        if (!userId) {
+            return normalized;
+        }
+
+        try {
+
+            const activity =
+                window.WFESC_MESSAGES_ACTIVITY;
+
+            if (
+                activity &&
+                typeof activity.getUserActivity ===
+                "function"
+            ) {
+
+                const state =
+                    activity.getUserActivity(
+                        userId
+                    );
+
+                if (
+                    state &&
+                    typeof state === "object"
+                ) {
+
+                    normalized.is_online =
+                        Boolean(
+                            state.online
+                        );
+
+                    if (
+                        state.show_activity !==
+                        undefined
+                    ) {
+
+                        normalized.show_activity =
+                            state.show_activity !== false;
+                    }
+                }
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC apply activity state:",
+                error
+            );
+        }
+
+        return normalized;
+    }
+
+
+    /* =========================================================
+       REFRESH CURRENT CONTACT ACTIVITY
+    ========================================================= */
+
+    function refreshCurrentContactActivity() {
+
+        if (
+            !currentConversationContact
+        ) {
+            return;
+        }
+
+        const before =
+            currentConversationContact;
+
+        const updated =
+            applyActivityStateToContact(
+                before
+            );
+
+        currentConversationContact =
+            updated;
+
+        chatHeaderInterface.refresh();
+    }
+
+
+    /* =========================================================
+       ACTIVITY EVENTS
+    ========================================================= */
+
+    window.addEventListener(
+        "wfesc:activity-sync",
+        () => {
+
+            refreshCurrentContactActivity();
+
+            /*
+             * تحديث نقاط النشاط في قائمة المحادثات
+             * بدون إعادة تحميل الرسائل.
+             */
+            conversations.forEach(
+                conversation => {
+
+                    const contact =
+                        conversation.contact ||
+                        conversation.profile ||
+                        conversation.user ||
+                        conversation;
+
+                    const normalized =
+                        normalizeContact(
+                            contact,
+                            conversation
+                        );
+
+                    if (
+                        normalized.user_id
+                    ) {
+
+                        try {
+
+                            const activity =
+                                window.WFESC_MESSAGES_ACTIVITY;
+
+                            if (
+                                activity &&
+                                typeof activity.getUserActivity ===
+                                "function"
+                            ) {
+
+                                const state =
+                                    activity.getUserActivity(
+                                        normalized.user_id
+                                    );
+
+                                conversation.is_online =
+                                    Boolean(
+                                        state?.online
+                                    );
+                            }
+
+                        } catch (_) {}
+                    }
+                }
+            );
+
+            renderConversations();
+        }
+    );
+
+
+    window.addEventListener(
+        "wfesc:activity-response",
+        () => {
+
+            refreshCurrentContactActivity();
+
+        }
+    );
 
 
     /* =========================================================
@@ -1272,11 +1541,18 @@ ${extraText}`
                 return null;
             }
 
-            if (Array.isArray(data)) {
-                return data[0] || null;
+            const rawContact =
+                Array.isArray(data)
+                    ? data[0]
+                    : data;
+
+            if (!rawContact) {
+                return null;
             }
 
-            return data;
+            return normalizeContact(
+                rawContact
+            );
 
         } catch (error) {
 
@@ -1404,6 +1680,58 @@ ${extraText}`
                     ? [...data]
                     : [];
 
+            conversations =
+                conversations.map(
+                    conversation => {
+
+                        const contact =
+                            conversation.contact ||
+                            conversation.profile ||
+                            conversation.user ||
+                            conversation;
+
+                        const normalized =
+                            normalizeContact(
+                                contact,
+                                conversation
+                            );
+
+                        conversation.contact =
+                            normalized;
+
+                        if (
+                            normalized.user_id
+                        ) {
+
+                            try {
+
+                                const activity =
+                                    window.WFESC_MESSAGES_ACTIVITY;
+
+                                if (
+                                    activity &&
+                                    typeof activity.getUserActivity ===
+                                    "function"
+                                ) {
+
+                                    const state =
+                                        activity.getUserActivity(
+                                            normalized.user_id
+                                        );
+
+                                    conversation.is_online =
+                                        Boolean(
+                                            state?.online
+                                        );
+                                }
+
+                            } catch (_) {}
+                        }
+
+                        return conversation;
+                    }
+                );
+
             conversations.sort(
                 (a, b) => {
 
@@ -1519,16 +1847,22 @@ ${extraText}`
             conversation.user ||
             null;
 
+        const normalizedContact =
+            normalizeContact(
+                contact,
+                conversation
+            );
+
         const name =
             conversation.display_name ||
-            contact?.display_name ||
+            normalizedContact.display_name ||
             conversation.username ||
-            contact?.username ||
+            normalizedContact.username ||
             "مستخدم";
 
         const avatar =
             conversation.avatar_url ||
-            contact?.avatar_url ||
+            normalizedContact.avatar_url ||
             (
                 conversation.type === "support"
                     ? SUPPORT_AVATAR
@@ -1614,8 +1948,7 @@ ${extraText}`
                 openConversation(
                     conversation.id ||
                     conversation.conversation_id,
-                    contact ||
-                    conversation,
+                    normalizedContact,
                     conversation.type
                 );
 
@@ -1628,18 +1961,6 @@ ${extraText}`
 
     /* =========================================================
        CHAT HEADER INTERFACE
-       
-       هذا الجزء يبقى داخل Core فقط لتعريف البيانات
-       والتواصل مع ملف واجهة رأس المحادثة الخارجي.
-
-       لا يقوم Core بالتعامل مع:
-       chatAvatar
-       chatName
-       chatStatus
-       chatOnlineDot
-
-       تلك مسؤولية:
-       messages-chat-header.js
     ========================================================= */
 
     const chatHeaderInterface = {
@@ -1680,15 +2001,23 @@ ${extraText}`
             contact = currentConversationContact
         ) {
 
+            const normalized =
+                normalizeContact(
+                    contact
+                );
+
             return {
 
                 isOnline:
                     Boolean(
-                        contact?.is_online
+                        normalized.is_online
                     ),
 
                 showActivity:
-                    contact?.show_activity !== false
+                    normalized.show_activity !== false,
+
+                userId:
+                    normalized.user_id || null
 
             };
         },
@@ -3912,8 +4241,19 @@ ${extraText}`
         currentConversationId =
             conversationId;
 
+        /*
+         * لا نعتمد على contact القادم من قائمة المحادثات
+         * وحده، لأنه قد يكون ناقصاً user_id.
+         */
+        let passedContact =
+            contact
+                ? normalizeContact(
+                    contact
+                )
+                : null;
+
         currentConversationContact =
-            contact;
+            passedContact;
 
         typingUsers.clear();
 
@@ -3925,13 +4265,15 @@ ${extraText}`
 
             currentConversationContact =
                 getSupportContact();
-        }
 
-        if (
-            !currentConversationContact
-        ) {
+        } else {
 
-            currentConversationContact =
+            /*
+             * دائماً نحاول جلب contact الكامل.
+             * هذا مهم جداً للنشاط لأن user_id قد لا يكون
+             * موجوداً داخل conversation card.
+             */
+            const fetchedContact =
                 await getConversationContact(
                     conversationId,
                     type
@@ -3947,27 +4289,53 @@ ${extraText}`
 
                 return;
             }
+
+            if (fetchedContact) {
+
+                currentConversationContact =
+                    normalizeContact(
+                        fetchedContact,
+                        passedContact
+                    );
+
+            } else if (passedContact) {
+
+                currentConversationContact =
+                    passedContact;
+
+            } else {
+
+                currentConversationContact = {
+
+                    user_id:
+                        null,
+
+                    display_name:
+                        "مستخدم",
+
+                    username:
+                        "user",
+
+                    avatar_url:
+                        DEFAULT_AVATAR,
+
+                    is_online:
+                        false,
+
+                    show_activity:
+                        true
+                };
+            }
         }
 
-        if (
-            !currentConversationContact
-        ) {
-
-            currentConversationContact = {
-
-                display_name:
-                    "مستخدم",
-
-                username:
-                    "user",
-
-                avatar_url:
-                    DEFAULT_AVATAR,
-
-                is_online:
-                    false
-            };
-        }
+        /*
+         * تطبيق حالة النشاط الحالية مباشرة إذا كانت
+         * messages-activity.js قد بدأ بالفعل.
+         */
+        currentConversationContact =
+            applyActivityStateToContact(
+                currentConversationContact
+            );
 
         /*
          * Core لا يتعامل مع عناصر رأس المحادثة.
@@ -4204,10 +4572,6 @@ ${extraText}`
 
         try {
 
-            /*
-             * نرسل الأربع معاملات صراحةً
-             * حتى يتم استدعاء نسخة الـRPC الجديدة.
-             */
             const {
                 data,
                 error
@@ -4866,9 +5230,6 @@ ${extraText}`
 
         typingUsers.clear();
 
-        /*
-         * إخبار واجهة رأس المحادثة بأن المحادثة أُغلقت.
-         */
         chatHeaderInterface.refresh();
 
         if (chatView) {
@@ -5123,11 +5484,6 @@ ${extraText}`
 
         client,
 
-        /*
-         * واجهة رأس المحادثة
-         * سيتم استخدامها من:
-         * messages-chat-header.js
-         */
         chatHeader:
             chatHeaderInterface,
 
@@ -5209,10 +5565,14 @@ ${extraText}`
             return loadingOlderMessages;
         },
 
-        /*
-         * تشخيص يدوي من أي ملف آخر
-         */
-        debug(title, details) {
+        normalizeContact,
+
+        refreshCurrentContactActivity,
+
+        debug(
+            title,
+            details
+        ) {
 
             wfescDebugShow(
                 title,
