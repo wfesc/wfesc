@@ -4,7 +4,9 @@
     /*
     ============================================================
        WFESC MESSAGES CORE
-       FINAL FIXED VERSION + INFINITE MESSAGE LOADING
+       FINAL VERSION + INFINITE MESSAGE LOADING
+       + CURSOR PAGINATION
+       + INTERNAL DIAGNOSTIC PANEL
 
        - Supabase
        - المستخدم الحالي
@@ -29,6 +31,7 @@
        - الحفاظ على مكان التمرير أثناء تحميل القديم
        - Cursor pagination:
          before_created_at + before_message_id
+       - Diagnostic panel
     ============================================================
     */
 
@@ -51,9 +54,11 @@
         );
 
     if (!client) {
+
         console.error(
             "WFESC: Supabase client لم يتم تحميله."
         );
+
         return;
     }
 
@@ -99,19 +104,9 @@
     const TYPING_REMOTE_TIMEOUT =
         2600;
 
-    /*
-     * عدد الرسائل في كل دفعة.
-     *
-     * هذا ليس حد المحادثة.
-     * فقط حجم الصفحة التي يتم تحميلها.
-     */
     const MESSAGE_PAGE_SIZE =
         50;
 
-    /*
-     * عند الوصول إلى هذه المسافة من أعلى
-     * يبدأ تحميل الرسائل الأقدم.
-     */
     const MESSAGE_TOP_THRESHOLD =
         80;
 
@@ -224,6 +219,438 @@
 
 
     /* =========================================================
+       DIAGNOSTIC PANEL
+       يظهر فقط عند حدوث خطأ
+    ========================================================= */
+
+    function wfescDebugShow(
+        title,
+        details = ""
+    ) {
+
+        try {
+
+            let panel =
+                document.getElementById(
+                    "wfescDebugPanel"
+                );
+
+            if (!panel) {
+
+                panel =
+                    document.createElement(
+                        "div"
+                    );
+
+                panel.id =
+                    "wfescDebugPanel";
+
+                panel.dir =
+                    "rtl";
+
+                panel.style.cssText = `
+                    position:fixed;
+                    left:10px;
+                    right:10px;
+                    bottom:10px;
+                    z-index:999999;
+
+                    background:#080808;
+                    color:#fff;
+
+                    border:1px solid #ff4444;
+                    border-radius:14px;
+
+                    padding:14px;
+
+                    box-shadow:
+                        0 10px 40px rgba(0,0,0,.8);
+
+                    font-family:
+                        Arial,
+                        Tahoma,
+                        sans-serif;
+
+                    max-height:70vh;
+                    overflow:auto;
+
+                    direction:rtl;
+                `;
+
+                document.body.appendChild(
+                    panel
+                );
+            }
+
+            const safeTitle =
+                String(
+                    title ?? ""
+                )
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+
+            const safeDetails =
+                String(
+                    details ?? ""
+                )
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+
+            panel.innerHTML = `
+
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:10px;
+                    margin-bottom:10px;
+                ">
+
+                    <strong style="
+                        color:#ff5555;
+                        font-size:15px;
+                    ">
+                        ⚠️ WFESC تشخيص الخطأ
+                    </strong>
+
+                    <button
+                        id="wfescDebugClose"
+                        type="button"
+                        style="
+                            border:0;
+                            background:#222;
+                            color:#fff;
+                            border-radius:8px;
+                            padding:7px 12px;
+                            cursor:pointer;
+                        "
+                    >
+                        إغلاق
+                    </button>
+
+                </div>
+
+                <div style="
+                    font-weight:bold;
+                    margin-bottom:8px;
+                    color:#fff;
+                ">
+                    ${safeTitle}
+                </div>
+
+                <pre
+                    id="wfescDebugText"
+                    style="
+                        white-space:pre-wrap;
+                        word-break:break-word;
+
+                        direction:ltr;
+                        text-align:left;
+
+                        background:#111;
+                        color:#ddd;
+
+                        border:1px solid #292929;
+                        border-radius:10px;
+
+                        padding:10px;
+
+                        font-size:12px;
+                        line-height:1.6;
+
+                        max-height:40vh;
+                        overflow:auto;
+
+                        margin:0;
+                    "
+                >${safeDetails}</pre>
+
+                <button
+                    id="wfescDebugCopy"
+                    type="button"
+                    style="
+                        width:100%;
+                        margin-top:10px;
+
+                        border:0;
+                        border-radius:10px;
+
+                        padding:10px;
+
+                        background:#fff;
+                        color:#000;
+
+                        font-weight:bold;
+                        cursor:pointer;
+                    "
+                >
+                    نسخ الخطأ
+                </button>
+
+            `;
+
+            const closeButton =
+                document.getElementById(
+                    "wfescDebugClose"
+                );
+
+            if (closeButton) {
+
+                closeButton.onclick =
+                    () => {
+
+                        panel.remove();
+
+                    };
+            }
+
+            const copyButton =
+                document.getElementById(
+                    "wfescDebugCopy"
+                );
+
+            if (copyButton) {
+
+                copyButton.onclick =
+                    async () => {
+
+                        try {
+
+                            await navigator.clipboard.writeText(
+                                `${title}\n\n${details}`
+                            );
+
+                            copyButton.textContent =
+                                "تم النسخ ✓";
+
+                            setTimeout(
+                                () => {
+
+                                    if (
+                                        copyButton
+                                    ) {
+
+                                        copyButton.textContent =
+                                            "نسخ الخطأ";
+                                    }
+
+                                },
+                                1500
+                            );
+
+                        } catch (error) {
+
+                            copyButton.textContent =
+                                "تعذر النسخ";
+
+                        }
+
+                    };
+            }
+
+            console.error(
+                "WFESC DEBUG:",
+                title,
+                details
+            );
+
+        } catch (panelError) {
+
+            console.error(
+                "WFESC diagnostic panel error:",
+                panelError
+            );
+        }
+    }
+
+
+    function wfescDebugError(
+        title,
+        error,
+        extra = {}
+    ) {
+
+        let errorText = "";
+
+        try {
+
+            if (
+                error instanceof Error
+            ) {
+
+                errorText =
+                    error.stack ||
+                    error.message ||
+                    String(error);
+
+            } else if (
+                typeof error === "object" &&
+                error !== null
+            ) {
+
+                errorText =
+                    JSON.stringify(
+                        error,
+                        null,
+                        2
+                    );
+
+            } else {
+
+                errorText =
+                    String(
+                        error ?? ""
+                    );
+            }
+
+        } catch (_) {
+
+            errorText =
+                String(
+                    error ?? ""
+                );
+        }
+
+        let extraText = "";
+
+        try {
+
+            extraText =
+                JSON.stringify(
+                    extra,
+                    null,
+                    2
+                );
+
+        } catch (_) {
+
+            extraText =
+                String(
+                    extra
+                );
+        }
+
+        wfescDebugShow(
+            title,
+            `${errorText}
+
+-------------------------
+
+${extraText}`
+        );
+    }
+
+
+    /* =========================================================
+       GLOBAL ERROR DIAGNOSTICS
+    ========================================================= */
+
+    window.addEventListener(
+        "error",
+        event => {
+
+            /*
+             * لا نظهر أخطاء عادية غير مرتبطة
+             * إلا إذا كانت موجودة فعلاً.
+             */
+            if (!event) {
+                return;
+            }
+
+            const message =
+                event.message ||
+                "Unknown JavaScript error";
+
+            const file =
+                event.filename ||
+                "";
+
+            const line =
+                event.lineno ||
+                "";
+
+            const column =
+                event.colno ||
+                "";
+
+            wfescDebugShow(
+                "JavaScript Error",
+                JSON.stringify(
+                    {
+                        message,
+                        file,
+                        line,
+                        column
+                    },
+                    null,
+                    2
+                )
+            );
+        }
+    );
+
+
+    window.addEventListener(
+        "unhandledrejection",
+        event => {
+
+            const reason =
+                event?.reason;
+
+            wfescDebugError(
+                "Unhandled Promise Rejection",
+                reason,
+                {
+                    current_user:
+                        currentUser?.id ||
+                        null,
+
+                    current_conversation:
+                        currentConversationId ||
+                        null
+                }
+            );
+        }
+    );
+
+
+    /* =========================================================
        OPEN ANIMATION
     ========================================================= */
 
@@ -329,12 +756,29 @@
 
     function escapeHtml(value) {
 
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return String(
+            value ?? ""
+        )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
     }
 
 
@@ -477,11 +921,6 @@
                     return first - second;
                 }
 
-                /*
-                 * نستخدم مقارنة مباشرة للـUUID
-                 * حتى يكون ترتيب JS متوافقاً قدر الإمكان
-                 * مع cursor الخاص بـPostgreSQL.
-                 */
                 const firstId =
                     String(
                         getMessageId(a) || ""
@@ -828,9 +1267,16 @@
 
             if (error) {
 
-                console.error(
-                    "WFESC contact error:",
-                    error
+                wfescDebugError(
+                    "فشل جلب بيانات جهة الاتصال",
+                    error,
+                    {
+                        rpc:
+                            "get_conversation_contacts",
+
+                        conversation_id:
+                            conversationId
+                    }
                 );
 
                 return null;
@@ -848,9 +1294,16 @@
 
         } catch (error) {
 
-            console.error(
-                "WFESC contact exception:",
-                error
+            wfescDebugError(
+                "استثناء أثناء جلب جهة الاتصال",
+                error,
+                {
+                    rpc:
+                        "get_conversation_contacts",
+
+                    conversation_id:
+                        conversationId
+                }
             );
 
             return null;
@@ -875,9 +1328,13 @@
 
             if (error) {
 
-                console.error(
-                    "WFESC support error:",
-                    error
+                wfescDebugError(
+                    "فشل إنشاء محادثة الدعم",
+                    error,
+                    {
+                        rpc:
+                            "get_or_create_support_conversation"
+                    }
                 );
 
                 return null;
@@ -905,9 +1362,13 @@
 
         } catch (error) {
 
-            console.error(
-                "WFESC support exception:",
-                error
+            wfescDebugError(
+                "استثناء محادثة الدعم",
+                error,
+                {
+                    rpc:
+                        "get_or_create_support_conversation"
+                }
             );
 
             return null;
@@ -936,9 +1397,17 @@
 
             if (error) {
 
-                console.error(
-                    "WFESC conversations error:",
-                    error
+                wfescDebugError(
+                    "فشل تحميل المحادثات",
+                    error,
+                    {
+                        rpc:
+                            "get_my_conversations",
+
+                        user_id:
+                            currentUser?.id ||
+                            null
+                    }
                 );
 
                 return [];
@@ -976,9 +1445,13 @@
 
         } catch (error) {
 
-            console.error(
-                "WFESC load conversations:",
-                error
+            wfescDebugError(
+                "استثناء أثناء تحميل المحادثات",
+                error,
+                {
+                    rpc:
+                        "get_my_conversations"
+                }
             );
 
             return [];
@@ -2967,12 +3440,6 @@
     }
 
 
-    /*
-     * نحصل على cursor الكامل.
-     *
-     * لا نعتمد على الوقت وحده لأن أكثر من رسالة
-     * ممكن نظرياً يكون لها نفس created_at.
-     */
     function getOldestMessageCursor() {
 
         const oldest =
@@ -3004,10 +3471,6 @@
     }
 
 
-    /*
-     * أبقي هذه الدالة حتى لا ينكسر أي كود خارجي
-     * كان يعتمد على الاسم القديم.
-     */
     function getOldestMessageTime() {
 
         const cursor =
@@ -3043,9 +3506,6 @@
         const beforeMessageId =
             cursor.beforeMessageId;
 
-        /*
-         * لازم يكون عندنا الاثنين.
-         */
         if (
             !beforeCreatedAt ||
             !beforeMessageId
@@ -3063,9 +3523,6 @@
         const requestToken =
             ++olderMessagesLoadToken;
 
-        /*
-         * نحفظ مكان المستخدم قبل إضافة القديم.
-         */
         const oldScrollHeight =
             chatMessages.scrollHeight;
 
@@ -3094,10 +3551,6 @@
                 }
             );
 
-            /*
-             * إذا تغيرت المحادثة أثناء الطلب،
-             * نهمل النتيجة.
-             */
             if (
                 requestToken !==
                 olderMessagesLoadToken ||
@@ -3110,9 +3563,25 @@
 
             if (error) {
 
-                console.error(
-                    "WFESC older messages error:",
-                    error
+                wfescDebugError(
+                    "فشل تحميل الرسائل القديمة",
+                    error,
+                    {
+                        rpc:
+                            "get_conversation_messages",
+
+                        conversation_id:
+                            requestedConversationId,
+
+                        message_limit:
+                            MESSAGE_PAGE_SIZE,
+
+                        before_created_at:
+                            beforeCreatedAt,
+
+                        before_message_id:
+                            beforeMessageId
+                    }
                 );
 
                 return false;
@@ -3123,19 +3592,9 @@
                     ? [...data]
                     : [];
 
-            /*
-             * SQL يرجع الأقدم المطلوب على شكل DESC.
-             *
-             * نقلبه حتى يكون ترتيب الرسائل
-             * داخل الصفحة من الأقدم إلى الأحدث.
-             */
             const olderMessages =
                 rawOlderMessages.reverse();
 
-            /*
-             * إذا رجعت أقل من 50،
-             * فلا توجد صفحة كاملة بعدها.
-             */
             hasOlderMessages =
                 rawOlderMessages.length ===
                 MESSAGE_PAGE_SIZE;
@@ -3150,9 +3609,6 @@
                 return false;
             }
 
-            /*
-             * منع أي تكرار.
-             */
             const existingIds =
                 new Set(
                     currentMessages
@@ -3181,11 +3637,6 @@
                                 message
                             );
 
-                        /*
-                         * الرسالة بدون ID لا نستطيع
-                         * استعمالها كعنصر cursor،
-                         * لكن SQL الطبيعي يرجع ID.
-                         */
                         if (
                             id == null
                         ) {
@@ -3216,35 +3667,22 @@
                 !uniqueOlderMessages.length
             ) {
 
-                /*
-                 * حماية إضافية من loop لا نهائي
-                 * إذا لم تصل أي رسالة جديدة.
-                 */
                 hasOlderMessages =
                     false;
 
                 return false;
             }
 
-            /*
-             * نضيف الرسائل القديمة إلى STATE.
-             */
             currentMessages =
                 [
                     ...uniqueOlderMessages,
                     ...currentMessages
                 ];
 
-            /*
-             * ترتيب كامل من الأقدم إلى الأحدث.
-             */
             sortMessages(
                 currentMessages
             );
 
-            /*
-             * إضافة القديم فقط إلى بداية DOM.
-             */
             const fragment =
                 document.createDocumentFragment();
 
@@ -3264,11 +3702,6 @@
                 chatMessages.firstChild
             );
 
-            /*
-             * حساب الفرق في الارتفاع.
-             *
-             * هذا يمنع القفز المفاجئ للمستخدم.
-             */
             const newScrollHeight =
                 chatMessages.scrollHeight;
 
@@ -3286,9 +3719,22 @@
 
         } catch (error) {
 
-            console.error(
-                "WFESC older messages exception:",
-                error
+            wfescDebugError(
+                "استثناء أثناء تحميل الرسائل القديمة",
+                error,
+                {
+                    rpc:
+                        "get_conversation_messages",
+
+                    conversation_id:
+                        requestedConversationId,
+
+                    before_created_at:
+                        beforeCreatedAt,
+
+                    before_message_id:
+                        beforeMessageId
+                }
             );
 
             return false;
@@ -3327,19 +3773,12 @@
             "scroll",
             () => {
 
-                /*
-                 * لا نريد التحميل أثناء فتح المحادثة.
-                 */
                 if (
                     openingConversation
                 ) {
                     return;
                 }
 
-                /*
-                 * إذا وصل المستخدم قريباً من الأعلى،
-                 * نحمل الصفحة السابقة.
-                 */
                 if (
                     chatMessages.scrollTop <=
                     MESSAGE_TOP_THRESHOLD
@@ -3368,6 +3807,60 @@
         type = null
     ) {
 
+        try {
+
+            await openConversationInternal(
+                conversationId,
+                contact,
+                type
+            );
+
+        } catch (error) {
+
+            wfescDebugError(
+                "خطأ غير متوقع أثناء فتح المحادثة",
+                error,
+                {
+                    conversation_id:
+                        conversationId,
+
+                    type:
+                        type,
+
+                    current_user:
+                        currentUser?.id ||
+                        null,
+
+                    current_conversation:
+                        currentConversationId ||
+                        null
+                }
+            );
+
+            openingConversation =
+                false;
+
+            if (chatView) {
+
+                chatView.style.visibility =
+                    "visible";
+            }
+
+            if (chatMessages) {
+
+                chatMessages.style.visibility =
+                    "visible";
+            }
+        }
+    }
+
+
+    async function openConversationInternal(
+        conversationId,
+        contact = null,
+        type = null
+    ) {
+
         if (
             !conversationId ||
             openingConversation
@@ -3381,9 +3874,6 @@
         const loadToken =
             ++conversationLoadToken;
 
-        /*
-         * إلغاء أي طلب تحميل قديم.
-         */
         olderMessagesLoadToken++;
 
         loadingOlderMessages =
@@ -3593,9 +4083,13 @@
             conversationId
         ).catch(error => {
 
-            console.warn(
-                "WFESC typing setup:",
-                error
+            wfescDebugError(
+                "فشل تشغيل Typing Channel",
+                error,
+                {
+                    conversation_id:
+                        conversationId
+                }
             );
 
         });
@@ -3662,9 +4156,6 @@
         const requestedConversationId =
             currentConversationId;
 
-        /*
-         * بداية محادثة جديدة.
-         */
         hasOlderMessages =
             true;
 
@@ -3685,19 +4176,8 @@
         try {
 
             /*
-             * مهم:
-             *
-             * نرسل المعاملات الأربعة صراحةً.
-             *
-             * هذا يطابق SQL الجديد:
-             *
-             * target_conversation_id
-             * message_limit
-             * before_created_at
-             * before_message_id
-             *
-             * والـnull يعني:
-             * ابدأ من أحدث الرسائل.
+             * نرسل الأربع معاملات صراحةً
+             * حتى يتم استدعاء نسخة الـRPC الجديدة.
              */
             const {
                 data,
@@ -3731,6 +4211,31 @@
 
             if (error) {
 
+                wfescDebugError(
+                    "فشل فتح الرسائل — RPC get_conversation_messages",
+                    error,
+                    {
+                        rpc:
+                            "get_conversation_messages",
+
+                        conversation_id:
+                            requestedConversationId,
+
+                        message_limit:
+                            MESSAGE_PAGE_SIZE,
+
+                        before_created_at:
+                            null,
+
+                        before_message_id:
+                            null,
+
+                        current_user:
+                            currentUser?.id ||
+                            null
+                    }
+                );
+
                 console.error(
                     "WFESC messages error:",
                     error
@@ -3750,7 +4255,7 @@
                             </strong>
 
                             <p>
-                                حاول مرة أخرى
+                                افتح لوحة التشخيص أسفل الشاشة لمعرفة السبب
                             </p>
 
                         </div>
@@ -3765,21 +4270,6 @@
                     ? [...data]
                     : [];
 
-            /*
-             * SQL يرجع:
-             *
-             * الأحدث
-             * ↓
-             * الأقدم
-             *
-             * نقلب الصفحة حتى تكون الحالة:
-             *
-             * الأقدم
-             * ↓
-             * الأحدث
-             *
-             * وهذا هو ترتيب واجهة المحادثة.
-             */
             currentMessages =
                 loadedMessages.reverse();
 
@@ -3787,18 +4277,10 @@
                 currentMessages
             );
 
-            /*
-             * إذا رجعت 50 رسالة كاملة،
-             * فهناك احتمال وجود رسائل أقدم.
-             */
             hasOlderMessages =
                 loadedMessages.length ===
                 MESSAGE_PAGE_SIZE;
 
-            /*
-             * تنظيف optimistic القديم إذا وجد
-             * بعد إعادة التحميل من Supabase.
-             */
             currentMessages =
                 currentMessages.map(
                     message => {
@@ -3831,6 +4313,25 @@
 
         } catch (error) {
 
+            wfescDebugError(
+                "استثناء أثناء فتح الرسائل",
+                error,
+                {
+                    rpc:
+                        "get_conversation_messages",
+
+                    conversation_id:
+                        requestedConversationId,
+
+                    current_user:
+                        currentUser?.id ||
+                        null,
+
+                    message_limit:
+                        MESSAGE_PAGE_SIZE
+                }
+            );
+
             console.error(
                 "WFESC load messages exception:",
                 error
@@ -3856,7 +4357,7 @@
                         </strong>
 
                         <p>
-                            حاول مرة أخرى
+                            افتح لوحة التشخيص أسفل الشاشة لمعرفة السبب
                         </p>
 
                     </div>
@@ -4446,9 +4947,13 @@
 
             if (error) {
 
-                console.error(
-                    "WFESC auth error:",
-                    error
+                wfescDebugError(
+                    "فشل Supabase Auth",
+                    error,
+                    {
+                        action:
+                            "auth.getSession"
+                    }
                 );
 
                 return;
@@ -4488,6 +4993,16 @@
 
         } catch (error) {
 
+            wfescDebugError(
+                "فشل تشغيل Messages Core",
+                error,
+                {
+                    user_id:
+                        currentUser?.id ||
+                        null
+                }
+            );
+
             console.error(
                 "WFESC initialize error:",
                 error
@@ -4506,43 +5021,61 @@
             session
         ) => {
 
-            currentUser =
-                session?.user ||
-                null;
+            try {
 
-            if (!currentUser) {
+                currentUser =
+                    session?.user ||
+                    null;
 
-                await closeConversation();
+                if (!currentUser) {
 
-                conversations =
-                    [];
+                    await closeConversation();
 
-                currentMessages =
-                    [];
+                    conversations =
+                        [];
 
-                renderConversations();
+                    currentMessages =
+                        [];
 
-                return;
-            }
+                    renderConversations();
 
-            if (
-                event ===
-                "SIGNED_IN" ||
-                event ===
-                "INITIAL_SESSION"
-            ) {
-
-                await loadConversations();
-
-                const supportId =
-                    await ensureSupportConversation();
-
-                if (supportId) {
-
-                    await loadConversations();
+                    return;
                 }
 
-                await setupMessageRealtime();
+                if (
+                    event ===
+                    "SIGNED_IN" ||
+                    event ===
+                    "INITIAL_SESSION"
+                ) {
+
+                    await loadConversations();
+
+                    const supportId =
+                        await ensureSupportConversation();
+
+                    if (supportId) {
+
+                        await loadConversations();
+                    }
+
+                    await setupMessageRealtime();
+                }
+
+            } catch (error) {
+
+                wfescDebugError(
+                    "خطأ داخل Auth State Change",
+                    error,
+                    {
+                        event:
+                            event,
+
+                        user_id:
+                            currentUser?.id ||
+                            null
+                    }
+                );
             }
         }
     );
@@ -4622,9 +5155,6 @@
 
         updateTypingIndicatorPosition,
 
-        /*
-         * API إضافي للتحميل اللانهائي
-         */
         loadOlderMessages() {
             return loadOlderMessages();
         },
@@ -4635,6 +5165,24 @@
 
         isLoadingOlderMessages() {
             return loadingOlderMessages;
+        },
+
+        /*
+         * تشخيص يدوي من أي ملف آخر
+         */
+        debug(title, details) {
+            wfescDebugShow(
+                title,
+                details
+            );
+        },
+
+        debugError(title, error, extra) {
+            wfescDebugError(
+                title,
+                error,
+                extra
+            );
         }
     };
 
@@ -4645,9 +5193,6 @@
 
     function start() {
 
-        /*
-         * تجهيز Scroll Listener مرة واحدة.
-         */
         setupMessageScroll();
 
         setupInputEvents();
