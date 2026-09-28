@@ -80,7 +80,7 @@ const SUPABASE_URL =
 "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
 const SUPABASE_KEY =
-"sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
+"sb_publishable_V9Ha2JDWmhox-XMzj1SK_w_6p5pAK5L";
 
 const client =
 window.WFESCSupabase ||
@@ -1876,14 +1876,6 @@ RENDER CONVERSATIONS
 
 function renderConversations() {
 
-/*
- * إذا كان ملف messages-conversations.js موجوداً،
- * فهو المسؤول عن رسم القائمة الخارجية.
- *
- * هذا يمنع core من إعادة رسم القائمة فوق
- * النشاط والصورة والاسم وTyping.
- */
-
 const conversationsUI =
     window.WFESC_MESSAGES_CONVERSATIONS;
 
@@ -1927,11 +1919,6 @@ if (conversationsUI) {
     }
 }
 
-/*
- * حدث احتياطي حتى تستطيع الإضافات الخارجية
- * معرفة أن قائمة المحادثات تغيرت.
- */
-
 try {
 
     window.dispatchEvent(
@@ -1947,13 +1934,6 @@ try {
     );
 
 } catch (_) {}
-
-
-/*
- * Fallback:
- * إذا لم يكن ملف messages-conversations.js
- * جاهزاً لأي سبب، تبقى القائمة الأصلية تعمل.
- */
 
 if (!conversationList) {
     return;
@@ -2029,12 +2009,6 @@ const normalizedContact =
         contact,
         conversation
     );
-
-/*
- * الاسم المعروض هنا يكون الاسم الحقيقي فقط.
- * إذا لم يوجد اسم حقيقي يظهر "مستخدم".
- * لا نستخدم username كاسم ظاهر.
- */
 
 const name =
     conversation.display_name ||
@@ -3451,6 +3425,23 @@ if (contentElement) {
         getMessageDisplayContent(
             message
         );
+
+    if (
+        isMessageDeleted(
+            message
+        )
+    ) {
+
+        contentElement.classList.add(
+            "message-deleted-content"
+        );
+
+    } else {
+
+        contentElement.classList.remove(
+            "message-deleted-content"
+        );
+    }
 }
 
 const timeElement =
@@ -3616,6 +3607,41 @@ if (!conversationId) {
     return;
 }
 
+
+/*
+ * SOFT DELETE
+ *
+ * إذا تغيرت deleted_at فلا نعرض
+ * محتوى الرسالة ولا نضع عبارة
+ * "تم حذف هذه الرسالة" كـ preview.
+ *
+ * السبب:
+ * get_my_conversations() في Supabase
+ * يستبعد الرسائل التي deleted_at IS NOT NULL
+ * لذلك يجب إعادة جلب القائمة من المصدر
+ * بدل إبقاء preview قديم أو اصطناعي.
+ */
+
+if (
+    isMessageDeleted(
+        message
+    )
+) {
+
+    loadConversations()
+        .catch(error => {
+
+            console.warn(
+                "WFESC refresh conversations after soft delete:",
+                error
+            );
+
+        });
+
+    return;
+}
+
+
 const index =
     conversations.findIndex(
         conversation =>
@@ -3640,49 +3666,20 @@ if (index < 0) {
 const conversation =
     conversations[index];
 
-
-/*
- * الرسالة التي أصبحت soft-deleted
- * لا يتم عرض محتواها كآخر رسالة.
- *
- * تبقى محفوظة في قاعدة البيانات،
- * لكن لا يتم استخدامها كـ preview.
- */
-
-if (
-    isMessageDeleted(
+conversation.last_message =
+    getMessageContent(
         message
-    )
-) {
+    );
 
-    conversation.last_message =
-        "تم حذف هذه الرسالة";
+conversation.last_message_text =
+    getMessageContent(
+        message
+    );
 
-    conversation.last_message_text =
-        "تم حذف هذه الرسالة";
-
-    conversation.last_message_at =
-        getMessageTime(
-            message
-        );
-
-} else {
-
-    conversation.last_message =
-        getMessageContent(
-            message
-        );
-
-    conversation.last_message_text =
-        getMessageContent(
-            message
-        );
-
-    conversation.last_message_at =
-        getMessageTime(
-            message
-        );
-}
+conversation.last_message_at =
+    getMessageTime(
+        message
+    );
 
 conversations.splice(
     index,
@@ -3995,10 +3992,10 @@ messageChannel =
                 }
 
                 /*
-                 * UPDATE هنا مهم جداً للـ soft delete.
+                 * UPDATE مهم جداً للـ soft delete.
                  *
-                 * الرسالة لا تُحذف من قاعدة البيانات،
-                 * وإنما يتغير deleted_at فقط.
+                 * الرسالة لا تُحذف من قاعدة البيانات.
+                 * الذي يتغير هو deleted_at فقط.
                  */
 
                 updateConversationPreview(
@@ -4058,9 +4055,7 @@ messageChannel =
                     ) {
 
                         /*
-                         * إذا جاء UPDATE لرسالة غير موجودة
-                         * حالياً بالواجهة، نتركها محفوظة
-                         * بدون إنشاء رسالة جديدة تلقائياً.
+                         * لا ننشئ رسالة جديدة من UPDATE.
                          */
 
                     }
@@ -5131,7 +5126,6 @@ if (!currentMessages.length) {
             <p>
                 ابدأ المحادثة الآن
             </p>
-
         </div>
     `;
 
