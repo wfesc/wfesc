@@ -2,41 +2,41 @@
     "use strict";
 
     /*
-    ============================================================
-       WFESC MESSAGES CONVERSATIONS
-       ---------------------------------------------------------
-       قائمة المحادثات الرئيسية
-
-       المسؤوليات:
-       - عرض المحادثات الحقيقية فقط
-       - الاسم الحقيقي
-       - الصورة الحقيقية
-       - الصورة الافتراضية
-       - حالة النشاط
-       - نقطة النشاط
-       - جاري الكتابة...
-       - تحديث القائمة تلقائياً
-       - عدم إنشاء مستخدمين وهميين
-       - الاعتماد على Messages Core
-       - الاعتماد على Messages Activity
-       - عدم تغيير messages.html
-    ============================================================
-    */
-
-
-    /* =========================================================
-       CONFIG
-    ========================================================= */
+     * =========================================================
+     * WFESC MESSAGES CONVERSATIONS
+     * =========================================================
+     *
+     * مسؤول عن:
+     *
+     * 1. عرض المحادثات الموجودة فعلياً فقط
+     * 2. الاسم الحقيقي
+     * 3. الصورة الحقيقية
+     * 4. النشاط Online / Offline
+     * 5. جاري الكتابة...
+     * 6. الاتصال بقنوات Supabase Typing الحقيقية
+     * 7. تحديث آخر رسالة
+     * 8. فتح المحادثة
+     *
+     * لا يعدل messages-core.js
+     * ولا يعدل messages-activity.js
+     * =========================================================
+     */
 
     const CONFIG = {
 
         DEBUG: false,
 
-        ACTIVITY_REFRESH:
-            3000,
+        REFRESH_INTERVAL:
+            5000,
+
+        ACTIVITY_REFRESH_INTERVAL:
+            30000,
 
         TYPING_TIMEOUT:
-            3500,
+            3000,
+
+        CONTACT_CACHE_TIME:
+            60000,
 
         DEFAULT_NAME:
             "مستخدم",
@@ -59,27 +59,24 @@
                         rx="100"
                         fill="#111"
                     />
-
                     <circle
                         cx="100"
                         cy="75"
                         r="34"
                         fill="#777"
                     />
-
                     <path
                         d="M42 174c8-35 30-53 58-53s50 18 58 53"
                         fill="#777"
                     />
                 </svg>
             `)
-
     };
 
 
     /* =========================================================
        STATE
-    ========================================================= */
+       ========================================================= */
 
     let core = null;
 
@@ -87,29 +84,46 @@
 
     let conversationList = null;
 
+    let refreshTimer = null;
+
+    let activityTimer = null;
+
     let initialized = false;
 
     let rendering = false;
 
-    let activityTimer = null;
-
-    let refreshTimer = null;
-
     let eventBound = false;
 
-    let lastSignature = "";
+    let lastRenderedSignature = "";
 
     /*
-     * أكثر من محادثة يمكن أن يكون فيها typing
-     * لذلك نستخدم Map بدلاً من متغير واحد.
+     * conversationId -> Supabase channel
      */
-    const typingUsers =
+    const typingChannels =
+        new Map();
+
+    /*
+     * conversationId -> {
+     *     userId,
+     *     timer
+     * }
+     */
+    const typingStates =
+        new Map();
+
+    /*
+     * conversationId -> {
+     *     contact,
+     *     timestamp
+     * }
+     */
+    const contactCache =
         new Map();
 
 
     /* =========================================================
        DEBUG
-    ========================================================= */
+       ========================================================= */
 
     function debug(...args) {
 
@@ -121,56 +135,44 @@
             "[WFESC CONVERSATIONS]",
             ...args
         );
-
     }
 
 
     /* =========================================================
        ESCAPE HTML
-    ========================================================= */
+       ========================================================= */
 
     function escapeHTML(value) {
 
         return String(
             value ?? ""
         )
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
     }
 
 
     /* =========================================================
-       FIRST VALUE
-    ========================================================= */
-
-    function firstValue(...values) {
-
-        for (const value of values) {
-
-            if (
-                value !== undefined &&
-                value !== null &&
-                String(value).trim() !== ""
-            ) {
-
-                return value;
-
-            }
-
-        }
-
-        return null;
-
-    }
-
-
-    /* =========================================================
-       GET CORE
-    ========================================================= */
+       CORE
+       ========================================================= */
 
     function getCore() {
 
@@ -180,17 +182,15 @@
 
             core =
                 window.WFESC_MESSAGES_CORE;
-
         }
 
         return core;
-
     }
 
 
     /* =========================================================
-       GET ACTIVITY
-    ========================================================= */
+       ACTIVITY
+       ========================================================= */
 
     function getActivity() {
 
@@ -200,17 +200,15 @@
 
             activity =
                 window.WFESC_MESSAGES_ACTIVITY;
-
         }
 
         return activity;
-
     }
 
 
     /* =========================================================
-       GET LIST
-    ========================================================= */
+       LIST
+       ========================================================= */
 
     function getConversationList() {
 
@@ -222,7 +220,6 @@
         ) {
 
             return conversationList;
-
         }
 
         conversationList =
@@ -231,46 +228,50 @@
             );
 
         return conversationList;
-
     }
 
 
     /* =========================================================
-       GET CONTACT
-    ========================================================= */
+       FIRST VALUE
+       ========================================================= */
 
-    function getContact(conversation) {
+    function firstValue(...values) {
 
-        if (!conversation) {
-            return null;
+        for (
+            const value of values
+        ) {
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                String(value).trim() !== ""
+            ) {
+
+                return value;
+            }
         }
 
-        return (
-            conversation.contact ||
-            conversation.profile ||
-            conversation.user ||
-            conversation.other_user ||
-            conversation.otherUser ||
-            null
-        );
-
+        return null;
     }
 
 
     /* =========================================================
-       GET USER ID
-    ========================================================= */
+       USER ID
+       ========================================================= */
 
-    function getUserId(conversation) {
+    function getUserId(
+        conversation
+    ) {
 
         if (!conversation) {
             return null;
         }
 
         const contact =
-            getContact(
-                conversation
-            );
+            conversation.contact ||
+            conversation.profile ||
+            conversation.user ||
+            null;
 
         return firstValue(
 
@@ -280,17 +281,7 @@
 
             contact?.profile_id,
 
-            contact?.profileId,
-
             contact?.id,
-
-            conversation.other_user_id,
-
-            conversation.otherUserId,
-
-            conversation.contact_user_id,
-
-            conversation.contactUserId,
 
             conversation.user_id,
 
@@ -298,18 +289,42 @@
 
             conversation.profile_id,
 
-            conversation.profileId
+            conversation.contact_user_id,
+
+            conversation.other_user_id
 
         );
-
     }
 
 
     /* =========================================================
-       GET CONVERSATION ID
-    ========================================================= */
+       CONTACT
+       ========================================================= */
 
-    function getConversationId(conversation) {
+    function getContact(
+        conversation
+    ) {
+
+        if (!conversation) {
+            return null;
+        }
+
+        return (
+            conversation.contact ||
+            conversation.profile ||
+            conversation.user ||
+            null
+        );
+    }
+
+
+    /* =========================================================
+       CONVERSATION ID
+       ========================================================= */
+
+    function getConversationId(
+        conversation
+    ) {
 
         if (!conversation) {
             return null;
@@ -319,20 +334,339 @@
 
             conversation.id,
 
-            conversation.conversation_id,
-
-            conversation.conversationId
+            conversation.conversation_id
 
         );
-
     }
 
 
     /* =========================================================
-       GET NAME
-    ========================================================= */
+       SUPPORT
+       ========================================================= */
 
-    function getDisplayName(conversation) {
+    function isSupportConversation(
+        conversation
+    ) {
+
+        return Boolean(
+
+            conversation?.type ===
+                "support" ||
+
+            getContact(
+                conversation
+            )?.is_support
+
+        );
+    }
+
+
+    /* =========================================================
+       NORMALIZE CONTACT
+       ========================================================= */
+
+    function normalizeContact(
+        contact,
+        fallback = null
+    ) {
+
+        const source =
+            contact ||
+            fallback ||
+            {};
+
+        return {
+
+            ...source,
+
+            user_id:
+                firstValue(
+
+                    source.user_id,
+
+                    source.userId,
+
+                    source.profile_id,
+
+                    source.id,
+
+                    fallback?.user_id,
+
+                    fallback?.userId,
+
+                    fallback?.profile_id,
+
+                    fallback?.id
+
+                ),
+
+            display_name:
+                firstValue(
+
+                    source.display_name,
+
+                    source.full_name,
+
+                    source.name,
+
+                    fallback?.display_name,
+
+                    fallback?.full_name,
+
+                    fallback?.name
+
+                ),
+
+            username:
+                firstValue(
+
+                    source.username,
+
+                    fallback?.username
+
+                ),
+
+            avatar_url:
+                firstValue(
+
+                    source.avatar_url,
+
+                    source.avatar,
+
+                    source.photo_url,
+
+                    fallback?.avatar_url,
+
+                    fallback?.avatar,
+
+                    fallback?.photo_url
+
+                ),
+
+            is_online:
+                source.is_online ??
+                fallback?.is_online ??
+                false,
+
+            show_activity:
+                source.show_activity ??
+                fallback?.show_activity ??
+                true
+
+        };
+    }
+
+
+    /* =========================================================
+       CONTACT FROM CACHE
+       ========================================================= */
+
+    function getCachedContact(
+        conversationId
+    ) {
+
+        const cached =
+            contactCache.get(
+                String(
+                    conversationId
+                )
+            );
+
+        if (!cached) {
+            return null;
+        }
+
+        if (
+            Date.now() -
+            cached.timestamp >
+            CONFIG.CONTACT_CACHE_TIME
+        ) {
+
+            contactCache.delete(
+                String(
+                    conversationId
+                )
+            );
+
+            return null;
+        }
+
+        return cached.contact;
+    }
+
+
+    /* =========================================================
+       LOAD REAL CONTACT
+       ========================================================= */
+
+    async function resolveContact(
+        conversation
+    ) {
+
+        if (!conversation) {
+            return null;
+        }
+
+        const conversationId =
+            getConversationId(
+                conversation
+            );
+
+        if (!conversationId) {
+            return null;
+        }
+
+        const existing =
+            getContact(
+                conversation
+            );
+
+        const existingId =
+            getUserId(
+                conversation
+            );
+
+        /*
+         * إذا عندنا contact كامل بالفعل
+         */
+        if (
+            existing &&
+            existingId
+        ) {
+
+            const normalized =
+                normalizeContact(
+                    existing,
+                    conversation
+                );
+
+            contactCache.set(
+                String(
+                    conversationId
+                ),
+                {
+                    contact:
+                        normalized,
+
+                    timestamp:
+                        Date.now()
+                }
+            );
+
+            return normalized;
+        }
+
+        const cached =
+            getCachedContact(
+                conversationId
+            );
+
+        if (cached) {
+            return cached;
+        }
+
+        /*
+         * Support
+         */
+        if (
+            isSupportConversation(
+                conversation
+            )
+        ) {
+
+            const supportContact =
+                normalizeContact(
+                    existing ||
+                    conversation
+                );
+
+            contactCache.set(
+                String(
+                    conversationId
+                ),
+                {
+                    contact:
+                        supportContact,
+
+                    timestamp:
+                        Date.now()
+                }
+            );
+
+            return supportContact;
+        }
+
+        const messagesCore =
+            getCore();
+
+        if (
+            !messagesCore ||
+            typeof
+                messagesCore.getConversationContact !==
+                "function"
+        ) {
+
+            return normalizeContact(
+                existing ||
+                conversation
+            );
+        }
+
+        try {
+
+            const contact =
+                await messagesCore.getConversationContact(
+                    conversationId,
+                    conversation.type ||
+                        null
+                );
+
+            if (contact) {
+
+                const normalized =
+                    normalizeContact(
+                        contact,
+                        conversation
+                    );
+
+                contactCache.set(
+                    String(
+                        conversationId
+                    ),
+                    {
+                        contact:
+                            normalized,
+
+                        timestamp:
+                            Date.now()
+                    }
+                );
+
+                return normalized;
+            }
+
+        } catch (error) {
+
+            debug(
+                "getConversationContact error:",
+                error
+            );
+        }
+
+        return normalizeContact(
+            existing ||
+            conversation
+        );
+    }
+
+
+    /* =========================================================
+       DISPLAY NAME
+       ========================================================= */
+
+    function getDisplayName(
+        conversation
+    ) {
 
         const contact =
             getContact(
@@ -344,34 +678,21 @@
 
                 conversation?.display_name,
 
-                conversation?.displayName,
-
                 contact?.display_name,
 
-                contact?.displayName,
-
                 contact?.full_name,
-
-                contact?.fullName,
 
                 contact?.name,
 
                 conversation?.full_name,
-
-                conversation?.fullName,
 
                 conversation?.name
 
             );
 
         if (name) {
-
-            return String(
-                name
-            );
-
+            return String(name);
         }
-
 
         const username =
             firstValue(
@@ -383,24 +704,20 @@
             );
 
         if (username) {
-
-            return String(
-                username
-            );
-
+            return String(username);
         }
 
-
         return CONFIG.DEFAULT_NAME;
-
     }
 
 
     /* =========================================================
-       GET USERNAME
-    ========================================================= */
+       USERNAME
+       ========================================================= */
 
-    function getUsername(conversation) {
+    function getUsername(
+        conversation
+    ) {
 
         const contact =
             getContact(
@@ -418,121 +735,99 @@
 
             )
         );
-
     }
 
 
     /* =========================================================
-       GET AVATAR
-    ========================================================= */
+       AVATAR
+       ========================================================= */
 
-    function getAvatar(conversation) {
+    function getAvatar(
+        conversation
+    ) {
 
         const contact =
             getContact(
                 conversation
             );
 
-        const avatar =
-            firstValue(
+        return firstValue(
 
-                conversation?.avatar_url,
+            conversation?.avatar_url,
 
-                conversation?.avatarUrl,
+            conversation?.avatar,
 
-                conversation?.avatar,
+            conversation?.photo_url,
 
-                conversation?.photo_url,
+            contact?.avatar_url,
 
-                conversation?.photoUrl,
+            contact?.avatar,
 
-                contact?.avatar_url,
+            contact?.photo_url,
 
-                contact?.avatarUrl,
-
-                contact?.avatar,
-
-                contact?.photo_url,
-
-                contact?.photoUrl
-
-            );
-
-        return (
-            avatar ||
             CONFIG.DEFAULT_AVATAR
-        );
 
+        );
     }
 
 
     /* =========================================================
-       GET LAST MESSAGE
-    ========================================================= */
+       LAST MESSAGE
+       ========================================================= */
 
-    function getLastMessage(conversation) {
+    function getLastMessage(
+        conversation
+    ) {
 
         return String(
+
             firstValue(
 
                 conversation?.last_message_text,
 
-                conversation?.lastMessageText,
-
-                conversation?.last_message_content,
-
-                conversation?.lastMessageContent,
-
                 conversation?.last_message,
-
-                conversation?.lastMessage,
 
                 conversation?.preview,
 
-                conversation?.message,
+                conversation?.last_message_content,
 
                 ""
 
             ) || ""
-        );
 
+        );
     }
 
 
     /* =========================================================
-       GET LAST MESSAGE TIME
-    ========================================================= */
+       LAST MESSAGE TIME
+       ========================================================= */
 
-    function getLastMessageTime(conversation) {
+    function getLastMessageTime(
+        conversation
+    ) {
 
         return firstValue(
 
             conversation?.last_message_at,
 
-            conversation?.lastMessageAt,
-
             conversation?.last_message_created_at,
-
-            conversation?.lastMessageCreatedAt,
 
             conversation?.updated_at,
 
-            conversation?.updatedAt,
-
-            conversation?.created_at,
-
-            conversation?.createdAt
+            conversation?.created_at
 
         );
-
     }
 
 
     /* =========================================================
        FORMAT TIME
-    ========================================================= */
+       ========================================================= */
 
-    function formatTime(value) {
+    function formatTime(
+        value
+    ) {
 
         if (!value) {
             return "";
@@ -548,7 +843,6 @@
         ) {
 
             return "";
-
         }
 
         const now =
@@ -558,36 +852,38 @@
             date.toDateString() ===
             now.toDateString();
 
-
         if (sameDay) {
 
             return date.toLocaleTimeString(
                 "ar-IQ",
                 {
-                    hour: "2-digit",
-                    minute: "2-digit"
+                    hour:
+                        "2-digit",
+
+                    minute:
+                        "2-digit"
                 }
             );
-
         }
-
 
         return date.toLocaleDateString(
             "ar-IQ",
             {
-                day: "2-digit",
-                month: "2-digit"
+                day:
+                    "2-digit",
+
+                month:
+                    "2-digit"
             }
         );
-
     }
 
 
     /* =========================================================
-       SUPPORT
-    ========================================================= */
+       ACTIVITY STATE
+       ========================================================= */
 
-    function isSupportConversation(
+    function getActivityState(
         conversation
     ) {
 
@@ -596,29 +892,10 @@
                 conversation
             );
 
-        return Boolean(
-
-            conversation?.type ===
-                "support" ||
-
-            conversation?.is_support ===
-                true ||
-
-            contact?.is_support ===
-                true
-
-        );
-
-    }
-
-
-    /* =========================================================
-       ACTIVITY
-    ========================================================= */
-
-    function getActivityState(
-        conversation
-    ) {
+        const userId =
+            getUserId(
+                conversation
+            );
 
         if (
             isSupportConversation(
@@ -627,112 +904,83 @@
         ) {
 
             return {
-                online: true,
-                hidden: false,
-                available: true
-            };
 
-        }
+                available:
+                    true,
 
-
-        const userId =
-            getUserId(
-                conversation
-            );
-
-        const contact =
-            getContact(
-                conversation
-            );
-
-
-        if (
-            !userId
-        ) {
-
-            return {
-
-                online: false,
+                online:
+                    true,
 
                 hidden:
-                    contact?.show_activity ===
-                        false ||
-                    conversation?.show_activity ===
-                        false,
-
-                available: false
+                    false
 
             };
-
         }
-
 
         const activityApi =
             getActivity();
 
-
         if (
             activityApi &&
-            typeof activityApi.getUserActivity ===
+            userId &&
+            typeof
+                activityApi.getUserActivity ===
                 "function"
         ) {
 
             try {
 
-                const result =
+                const state =
                     activityApi.getUserActivity(
                         userId
                     );
 
-
                 if (
-                    result &&
-                    typeof result ===
+                    state &&
+                    typeof state ===
                         "object"
                 ) {
 
                     /*
-                     * النظام الحالي يعتمد أساساً
-                     * على online.
-                     *
-                     * إذا كان show_activity
-                     * غير موجود لا نعتبره مخفياً.
+                     * messages-activity.js
+                     * قد لا يعيد show_activity
+                     * في كل الحالات، لذلك لا نعتمد
+                     * عليه وحده.
                      */
 
                     const hidden =
-                        result.show_activity ===
+                        state.show_activity ===
+                            false ||
+                        contact?.show_activity ===
+                            false ||
+                        conversation?.show_activity ===
                             false;
 
                     return {
 
+                        available:
+                            true,
+
                         online:
-                            !hidden &&
-                            result.online ===
-                                true,
+                            hidden
+                                ? false
+                                : Boolean(
+                                    state.online
+                                ),
 
-                        hidden,
-
-                        available: true
+                        hidden
 
                     };
-
                 }
 
             } catch (error) {
 
                 debug(
-                    "activity:",
+                    "activity error:",
                     error
                 );
-
             }
-
         }
-
-
-        /*
-         * fallback
-         */
 
         const hidden =
             contact?.show_activity ===
@@ -740,176 +988,58 @@
             conversation?.show_activity ===
                 false;
 
-
         return {
 
+            available:
+                false,
+
             online:
-                !hidden &&
-                Boolean(
-                    contact?.is_online ??
-                    conversation?.is_online ??
-                    false
-                ),
+                hidden
+                    ? false
+                    : Boolean(
 
-            hidden,
+                        contact?.is_online ??
+                        conversation?.is_online ??
+                        false
 
-            available: false
+                    ),
+
+            hidden
 
         };
-
     }
 
 
     /* =========================================================
-       TYPING KEY
-    ========================================================= */
+       TYPING STATE
+       ========================================================= */
 
-    function typingKey(
-        conversationId,
-        userId
+    function getTypingState(
+        conversationId
     ) {
 
-        if (
-            !conversationId ||
-            !userId
-        ) {
-
+        if (!conversationId) {
             return null;
-
         }
 
-        return (
-            String(conversationId) +
-            "::" +
-            String(userId)
-        );
-
-    }
-
-
-    /* =========================================================
-       CORE TYPING
-    ========================================================= */
-
-    function checkCoreTyping(
-        conversation
-    ) {
-
-        const messagesCore =
-            getCore();
-
-        const conversationId =
-            getConversationId(
-                conversation
+        const state =
+            typingStates.get(
+                String(
+                    conversationId
+                )
             );
 
-        const userId =
-            getUserId(
-                conversation
-            );
-
-
-        if (
-            !messagesCore ||
-            !conversationId ||
-            !userId
-        ) {
-
-            return false;
-
+        if (!state) {
+            return null;
         }
 
-
-        /*
-         * دعم أكثر من اسم محتمل
-         * بدون كسر النظام الحالي.
-         */
-
-        const functions = [
-
-            "isUserTyping",
-
-            "isTyping",
-
-            "getTypingState"
-
-        ];
-
-
-        for (
-            const functionName
-            of functions
-        ) {
-
-            if (
-                typeof messagesCore[
-                    functionName
-                ] !==
-                    "function"
-            ) {
-
-                continue;
-
-            }
-
-
-            try {
-
-                const result =
-                    messagesCore[
-                        functionName
-                    ](
-                        conversationId,
-                        userId
-                    );
-
-
-                if (
-                    typeof result ===
-                        "boolean"
-                ) {
-
-                    return result;
-
-                }
-
-
-                if (
-                    result &&
-                    typeof result ===
-                        "object"
-                ) {
-
-                    return Boolean(
-
-                        result.typing ??
-                        result.isTyping ??
-                        result.online
-
-                    );
-
-                }
-
-            } catch (error) {
-
-                debug(
-                    "core typing:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        return false;
-
+        return state;
     }
 
 
     /* =========================================================
        IS TYPING
-    ========================================================= */
+       ========================================================= */
 
     function isConversationTyping(
         conversation
@@ -920,104 +1050,21 @@
                 conversation
             );
 
-        const userId =
-            getUserId(
-                conversation
-            );
-
-
-        if (
-            !conversationId ||
-            !userId
-        ) {
-
+        if (!conversationId) {
             return false;
-
         }
 
-
-        /*
-         * أولاً: Core
-         */
-
-        if (
-            checkCoreTyping(
-                conversation
+        return Boolean(
+            getTypingState(
+                conversationId
             )
-        ) {
-
-            return true;
-
-        }
-
-
-        /*
-         * ثانياً: Events المحلية
-         */
-
-        const key =
-            typingKey(
-                conversationId,
-                userId
-            );
-
-
-        if (
-            key &&
-            typingUsers.has(
-                key
-            )
-        ) {
-
-            const expiresAt =
-                typingUsers.get(
-                    key
-                );
-
-
-            if (
-                Date.now() <
-                expiresAt
-            ) {
-
-                return true;
-
-            }
-
-
-            typingUsers.delete(
-                key
-            );
-
-        }
-
-
-        /*
-         * ثالثاً: بيانات المحادثة
-         */
-
-        if (
-            conversation?.is_typing ===
-                true ||
-            conversation?.isTyping ===
-                true ||
-            conversation?.typing ===
-                true
-        ) {
-
-            return true;
-
-        }
-
-
-        return false;
-
+        );
     }
 
 
     /* =========================================================
-       PREVIEW
-    ========================================================= */
+       TYPING PREVIEW
+       ========================================================= */
 
     function getPreview(
         conversation
@@ -1030,34 +1077,65 @@
         ) {
 
             return "جاري الكتابة...";
-
         }
-
 
         return getLastMessage(
             conversation
         );
+    }
 
+
+    /* =========================================================
+       SORT
+       ========================================================= */
+
+    function sortConversations(
+        list
+    ) {
+
+        return [...list].sort(
+            (
+                a,
+                b
+            ) => {
+
+                const first =
+                    new Date(
+                        getLastMessageTime(
+                            a
+                        ) || 0
+                    ).getTime();
+
+                const second =
+                    new Date(
+                        getLastMessageTime(
+                            b
+                        ) || 0
+                    ).getTime();
+
+                return second - first;
+            }
+        );
     }
 
 
     /* =========================================================
        UNIQUE
-    ========================================================= */
+       ========================================================= */
 
     function uniqueConversations(
-        conversations
+        list
     ) {
 
-        const result = [];
+        const result =
+            [];
 
         const seen =
             new Set();
 
-
         for (
             const conversation
-            of conversations
+            of list
         ) {
 
             const id =
@@ -1065,277 +1143,125 @@
                     conversation
                 );
 
-
             if (!id) {
                 continue;
             }
 
-
             const key =
                 String(id);
 
-
             if (
-                seen.has(key)
+                seen.has(
+                    key
+                )
             ) {
 
                 continue;
-
             }
 
-
-            seen.add(key);
+            seen.add(
+                key
+            );
 
             result.push(
                 conversation
             );
-
         }
-
 
         return result;
-
-    }
-
-
-    /* =========================================================
-       SORT
-    ========================================================= */
-
-    function sortConversations(
-        conversations
-    ) {
-
-        return [
-            ...conversations
-        ].sort(
-            (a, b) => {
-
-                const aTime =
-                    new Date(
-                        getLastMessageTime(
-                            a
-                        ) || 0
-                    ).getTime();
-
-                const bTime =
-                    new Date(
-                        getLastMessageTime(
-                            b
-                        ) || 0
-                    ).getTime();
-
-
-                return (
-                    bTime -
-                    aTime
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       GET CORE CONVERSATIONS
-    ========================================================= */
-
-    function getCoreConversations() {
-
-        const messagesCore =
-            getCore();
-
-
-        if (
-            !messagesCore
-        ) {
-
-            return [];
-
-        }
-
-
-        if (
-            typeof messagesCore.getConversations !==
-                "function"
-        ) {
-
-            return [];
-
-        }
-
-
-        try {
-
-            const result =
-                messagesCore.getConversations();
-
-
-            if (
-                Array.isArray(
-                    result
-                )
-            ) {
-
-                return result;
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "[WFESC CONVERSATIONS]",
-                "getConversations error:",
-                error
-            );
-
-        }
-
-
-        return [];
-
-    }
-
-
-    /* =========================================================
-       NORMALIZE
-    ========================================================= */
-
-    function getConversations() {
-
-        let list =
-            getCoreConversations();
-
-
-        /*
-         * فقط المحادثات التي لديها
-         * conversation ID حقيقي.
-         */
-
-        list =
-            list.filter(
-                conversation =>
-                    Boolean(
-                        getConversationId(
-                            conversation
-                        )
-                    )
-            );
-
-
-        return sortConversations(
-            uniqueConversations(
-                list
-            )
-        );
-
     }
 
 
     /* =========================================================
        SIGNATURE
-    ========================================================= */
+       ========================================================= */
 
     function buildSignature(
-        conversations
+        list
     ) {
 
-        return conversations
-            .map(
-                conversation => {
+        return list.map(
+            conversation => {
 
-                    const activityState =
-                        getActivityState(
-                            conversation
-                        );
-
-                    return [
-
-                        getConversationId(
-                            conversation
-                        ),
-
-                        getUserId(
-                            conversation
-                        ),
-
-                        getDisplayName(
-                            conversation
-                        ),
-
-                        getAvatar(
-                            conversation
-                        ),
-
-                        getLastMessage(
-                            conversation
-                        ),
-
-                        getLastMessageTime(
-                            conversation
-                        ),
-
-                        activityState.online,
-
-                        activityState.hidden,
-
-                        isConversationTyping(
-                            conversation
-                        )
-
-                    ].join(
-                        "::"
+                const activityState =
+                    getActivityState(
+                        conversation
                     );
 
-                }
-            )
-            .join(
-                "||"
-            );
+                const conversationId =
+                    getConversationId(
+                        conversation
+                    );
 
+                return [
+
+                    conversationId,
+
+                    getUserId(
+                        conversation
+                    ),
+
+                    getDisplayName(
+                        conversation
+                    ),
+
+                    getAvatar(
+                        conversation
+                    ),
+
+                    getLastMessage(
+                        conversation
+                    ),
+
+                    getLastMessageTime(
+                        conversation
+                    ),
+
+                    activityState.online,
+
+                    activityState.hidden,
+
+                    isConversationTyping(
+                        conversation
+                    )
+
+                ].join("::");
+
+            }
+        ).join("||");
     }
 
 
     /* =========================================================
-       CSS
-    ========================================================= */
+       STYLES
+       ========================================================= */
 
     function injectStyles() {
 
+        const styleId =
+            "wfesc-conversations-style";
+
         if (
             document.getElementById(
-                "wfesc-conversations-style"
+                styleId
             )
         ) {
 
             return;
-
         }
-
 
         const style =
             document.createElement(
                 "style"
             );
 
-
         style.id =
-            "wfesc-conversations-style";
-
+            styleId;
 
         style.textContent = `
 
             .wfesc-conversation-card{
                 position:relative;
-            }
-
-            .wfesc-conversation-main{
-                display:flex;
-                align-items:center;
-                width:100%;
-                min-width:0;
-                gap:11px;
             }
 
             .wfesc-conversation-avatar-wrap{
@@ -1347,37 +1273,45 @@
             }
 
             .wfesc-conversation-avatar{
-                display:block;
                 width:52px;
                 height:52px;
                 border-radius:50%;
                 object-fit:cover;
+                display:block;
                 background:#111;
-                border:1px solid rgba(255,255,255,.10);
+                border:1px solid #292929;
             }
 
             .wfesc-conversation-online{
                 position:absolute;
-                left:0;
+                right:1px;
                 bottom:1px;
                 width:13px;
                 height:13px;
                 border-radius:50%;
-                background:#555;
-                border:2px solid #030303;
+                background:#242424;
+                border:2px solid #080808;
                 box-sizing:border-box;
                 transition:
                     background .2s ease,
-                    box-shadow .2s ease,
-                    transform .2s ease;
+                    box-shadow .2s ease;
             }
 
             .wfesc-conversation-online.active{
-                background:#36e27b;
+                background:#20d66b;
                 box-shadow:
-                    0 0 0 2px rgba(54,226,123,.10),
-                    0 0 11px rgba(54,226,123,.55);
-                transform:scale(1.02);
+                    0 0 0 2px rgba(
+                        32,
+                        214,
+                        107,
+                        .12
+                    ),
+                    0 0 9px rgba(
+                        32,
+                        214,
+                        107,
+                        .55
+                    );
             }
 
             .wfesc-conversation-info{
@@ -1386,9 +1320,9 @@
             }
 
             .wfesc-conversation-name{
+                font-weight:700;
                 color:#fff;
                 font-size:15px;
-                font-weight:800;
                 line-height:1.35;
                 white-space:nowrap;
                 overflow:hidden;
@@ -1397,9 +1331,9 @@
 
             .wfesc-conversation-preview{
                 margin-top:4px;
-                color:#929292;
+                color:#8e8e8e;
                 font-size:13px;
-                line-height:1.35;
+                line-height:1.3;
                 white-space:nowrap;
                 overflow:hidden;
                 text-overflow:ellipsis;
@@ -1408,8 +1342,8 @@
             }
 
             .wfesc-conversation-preview.typing{
-                color:#36e27b;
-                font-weight:700;
+                color:#20d66b;
+                font-weight:600;
                 animation:
                     wfescTypingPulse
                     1.1s
@@ -1420,18 +1354,29 @@
             .wfesc-conversation-time{
                 align-self:flex-start;
                 color:#777;
-                font-size:10px;
+                font-size:11px;
                 white-space:nowrap;
-                margin-right:5px;
+                margin-right:6px;
             }
 
-            .wfesc-conversation-card{
+            .wfesc-conversation-main{
+                display:flex;
+                align-items:center;
+                gap:11px;
+                width:100%;
+                min-width:0;
+            }
+
+            .wfesc-conversation-card[
+                data-wfesc-conversation
+            ]{
                 cursor:pointer;
             }
 
             @keyframes wfescTypingPulse{
+
                 0%{
-                    opacity:.55;
+                    opacity:.45;
                 }
 
                 50%{
@@ -1439,23 +1384,22 @@
                 }
 
                 100%{
-                    opacity:.55;
+                    opacity:.45;
                 }
+
             }
 
         `;
 
-
         document.head.appendChild(
             style
         );
-
     }
 
 
     /* =========================================================
        CREATE CARD
-    ========================================================= */
+       ========================================================= */
 
     function createConversationCard(
         conversation
@@ -1466,51 +1410,44 @@
                 conversation
             );
 
-
-        if (
-            !conversationId
-        ) {
-
+        if (!conversationId) {
             return null;
-
         }
-
 
         const userId =
             getUserId(
                 conversation
             );
 
-
         const name =
             getDisplayName(
                 conversation
             );
 
+        const username =
+            getUsername(
+                conversation
+            );
 
         const avatar =
             getAvatar(
                 conversation
             );
 
-
         const activityState =
             getActivityState(
                 conversation
             );
-
 
         const typing =
             isConversationTyping(
                 conversation
             );
 
-
         const preview =
             getPreview(
                 conversation
             );
-
 
         const time =
             formatTime(
@@ -1519,49 +1456,44 @@
                 )
             );
 
-
         const card =
             document.createElement(
                 "div"
             );
 
-
         card.className =
             "conversation-card wfesc-conversation-card";
-
 
         card.dataset.wfescConversation =
             String(
                 conversationId
             );
 
-
-        if (
-            userId
-        ) {
+        if (userId) {
 
             card.dataset.wfescUserId =
                 String(
                     userId
                 );
-
         }
-
 
         card.innerHTML = `
 
-            <div
-                class="wfesc-conversation-main"
-            >
+            <div class="wfesc-conversation-main">
 
-                <div
-                    class="wfesc-conversation-avatar-wrap"
-                >
+                <div class="wfesc-conversation-avatar-wrap">
 
                     <img
-                        class="wfesc-conversation-avatar avatar"
-                        src="${escapeHTML(avatar)}"
-                        alt="${escapeHTML(name)}"
+                        class="wfesc-conversation-avatar"
+                        src="${escapeHTML(
+                            avatar
+                        )}"
+                        alt="${escapeHTML(
+                            name
+                        )}"
+                        title="${escapeHTML(
+                            username
+                        )}"
                         loading="lazy"
                         referrerpolicy="no-referrer"
                     >
@@ -1569,7 +1501,6 @@
                     <span
                         class="
                             wfesc-conversation-online
-                            online-dot
                             ${activityState.online
                                 ? "active"
                                 : ""}
@@ -1579,36 +1510,33 @@
 
                 </div>
 
-
-                <div
-                    class="wfesc-conversation-info conversation-info"
-                >
+                <div class="wfesc-conversation-info">
 
                     <div
-                        class="
-                            wfesc-conversation-name
-                            conversation-name
-                        "
-                        title="${escapeHTML(name)}"
+                        class="wfesc-conversation-name"
+                        title="${escapeHTML(
+                            name
+                        )}"
                     >
-                        ${escapeHTML(name)}
+                        ${escapeHTML(
+                            name
+                        )}
                     </div>
-
 
                     <div
                         class="
                             wfesc-conversation-preview
-                            conversation-preview
                             ${typing
                                 ? "typing"
                                 : ""}
                         "
                     >
-                        ${escapeHTML(preview)}
+                        ${escapeHTML(
+                            preview
+                        )}
                     </div>
 
                 </div>
-
 
                 ${
                     time
@@ -1616,29 +1544,23 @@
                             <div
                                 class="
                                     wfesc-conversation-time
-                                    conversation-time
                                 "
                             >
-                                ${escapeHTML(time)}
+                                ${escapeHTML(
+                                    time
+                                )}
                             </div>
                         `
                         : ""
                 }
 
             </div>
-
         `;
-
-
-        /* =====================================================
-           IMAGE FALLBACK
-        ===================================================== */
 
         const image =
             card.querySelector(
                 ".wfesc-conversation-avatar"
             );
-
 
         if (image) {
 
@@ -1647,31 +1569,33 @@
                 () => {
 
                     if (
-                        image.dataset.fallbackApplied ===
-                            "true"
+                        image.dataset
+                            .fallbackApplied ===
+                        "true"
                     ) {
 
                         return;
-
                     }
 
-
-                    image.dataset.fallbackApplied =
+                    image.dataset
+                        .fallbackApplied =
                         "true";
-
 
                     image.src =
                         CONFIG.DEFAULT_AVATAR;
 
+                },
+                {
+                    once:
+                        true
                 }
             );
-
         }
 
 
         /* =====================================================
            OPEN CONVERSATION
-        ===================================================== */
+           ===================================================== */
 
         card.addEventListener(
             "click",
@@ -1684,150 +1608,353 @@
                 ) {
 
                     return;
-
                 }
-
 
                 const messagesCore =
                     getCore();
 
-
                 if (
                     messagesCore &&
-                    typeof messagesCore.openConversation ===
+                    typeof
+                        messagesCore.openConversation ===
                         "function"
                 ) {
 
-                    try {
+                    messagesCore.openConversation(
 
-                        messagesCore.openConversation(
-                            conversationId,
-                            getContact(
-                                conversation
-                            ),
-                            conversation.type ||
+                        conversationId,
+
+                        getContact(
+                            conversation
+                        ),
+
+                        conversation.type ||
                             null
-                        );
 
-                        return;
+                    );
 
-                    } catch (error) {
-
-                        debug(
-                            "openConversation:",
-                            error
-                        );
-
-                    }
-
+                    return;
                 }
 
-
                 if (
-                    typeof window.WFESC_MESSAGES_OPEN_CONVERSATION ===
+                    typeof
+                        window.WFESC_MESSAGES_OPEN_CONVERSATION ===
                         "function"
                 ) {
 
                     window.WFESC_MESSAGES_OPEN_CONVERSATION(
                         conversationId
                     );
-
                 }
 
             }
         );
 
-
         return card;
+    }
 
+
+    /* =========================================================
+       GET CURRENT CONVERSATIONS
+       ========================================================= */
+
+    function getCurrentConversations() {
+
+        const messagesCore =
+            getCore();
+
+        if (
+            !messagesCore ||
+            typeof
+                messagesCore.getConversations !==
+                "function"
+        ) {
+
+            return [];
+        }
+
+        let data;
+
+        try {
+
+            data =
+                messagesCore.getConversations();
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CONVERSATIONS] getConversations:",
+                error
+            );
+
+            return [];
+        }
+
+        if (
+            !Array.isArray(data)
+        ) {
+
+            return [];
+        }
+
+        return sortConversations(
+            uniqueConversations(
+                data.filter(
+                    conversation =>
+                        Boolean(
+                            getConversationId(
+                                conversation
+                            )
+                        )
+                )
+            )
+        );
+    }
+
+
+    /* =========================================================
+       RESOLVE CONTACTS
+       ========================================================= */
+
+    async function resolveConversationContacts(
+        conversations
+    ) {
+
+        if (
+            !Array.isArray(
+                conversations
+            ) ||
+            !conversations.length
+        ) {
+
+            return;
+        }
+
+        /*
+         * نجلب فقط المحادثات التي تحتاج
+         * معلومات إضافية.
+         */
+        await Promise.all(
+
+            conversations.map(
+                async conversation => {
+
+                    const contact =
+                        getContact(
+                            conversation
+                        );
+
+                    const userId =
+                        getUserId(
+                            conversation
+                        );
+
+                    /*
+                     * إذا الاسم والصورة و user_id
+                     * موجودة بالفعل، لا نحتاج RPC.
+                     */
+                    const hasName =
+                        Boolean(
+                            firstValue(
+
+                                conversation?.display_name,
+
+                                contact?.display_name,
+
+                                contact?.full_name,
+
+                                contact?.name,
+
+                                conversation?.username,
+
+                                contact?.username
+
+                            )
+                        );
+
+                    const hasAvatar =
+                        Boolean(
+                            firstValue(
+
+                                conversation?.avatar_url,
+
+                                conversation?.avatar,
+
+                                contact?.avatar_url,
+
+                                contact?.avatar
+
+                            )
+                        );
+
+                    if (
+                        userId &&
+                        hasName &&
+                        hasAvatar
+                    ) {
+
+                        return;
+                    }
+
+                    await resolveContact(
+                        conversation
+                    );
+
+                }
+            )
+
+        );
+    }
+
+
+    /* =========================================================
+       MERGE CONTACT INTO CONVERSATION
+       ========================================================= */
+
+    function mergeCachedContacts(
+        conversations
+    ) {
+
+        return conversations.map(
+            conversation => {
+
+                const conversationId =
+                    getConversationId(
+                        conversation
+                    );
+
+                const cached =
+                    conversationId
+                        ? getCachedContact(
+                            conversationId
+                        )
+                        : null;
+
+                if (!cached) {
+                    return conversation;
+                }
+
+                return {
+
+                    ...conversation,
+
+                    contact:
+                        cached,
+
+                    user_id:
+                        firstValue(
+
+                            conversation.user_id,
+
+                            cached.user_id
+
+                        ),
+
+                    display_name:
+                        firstValue(
+
+                            conversation.display_name,
+
+                            cached.display_name
+
+                        ),
+
+                    username:
+                        firstValue(
+
+                            conversation.username,
+
+                            cached.username
+
+                        ),
+
+                    avatar_url:
+                        firstValue(
+
+                            conversation.avatar_url,
+
+                            cached.avatar_url
+
+                        ),
+
+                    is_online:
+                        conversation.is_online ??
+                        cached.is_online,
+
+                    show_activity:
+                        conversation.show_activity ??
+                        cached.show_activity
+
+                };
+
+            }
+        );
     }
 
 
     /* =========================================================
        RENDER
-    ========================================================= */
+       ========================================================= */
 
-    function render(
+    async function render(
         force = false
     ) {
 
-        if (
-            rendering
-        ) {
-
+        if (rendering) {
             return;
-
         }
-
 
         const listElement =
             getConversationList();
 
-
-        if (
-            !listElement
-        ) {
-
+        if (!listElement) {
             return;
-
         }
 
+        let conversations =
+            getCurrentConversations();
 
-        const conversations =
-            getConversations();
+        /*
+         * اجلب معلومات الأشخاص الحقيقية
+         * قبل إنشاء البطاقات.
+         */
+        await resolveConversationContacts(
+            conversations
+        );
 
+        conversations =
+            mergeCachedContacts(
+                getCurrentConversations()
+            );
 
         const signature =
             buildSignature(
                 conversations
             );
 
-
         if (
             !force &&
             signature ===
-                lastSignature
+                lastRenderedSignature
         ) {
 
             return;
-
         }
-
 
         rendering =
             true;
-
 
         try {
 
             const fragment =
                 document.createDocumentFragment();
 
-
             if (
-                conversations.length ===
-                    0
+                !conversations.length
             ) {
 
-                listElement.innerHTML = `
-
-                    <div class="empty-state">
-
-                        <div class="empty-icon">
-                            💬
-                        </div>
-
-                        <strong>
-                            لا توجد محادثات
-                        </strong>
-
-                        <p>
-                            ستظهر هنا المحادثات التي تبدأ بها.
-                        </p>
-
-                    </div>
-
-                `;
+                listElement.innerHTML =
+                    "";
 
             } else {
 
@@ -1839,80 +1966,77 @@
                                 conversation
                             );
 
-
-                        if (
-                            card
-                        ) {
+                        if (card) {
 
                             fragment.appendChild(
                                 card
                             );
-
                         }
 
                     }
                 );
 
-
                 listElement.innerHTML =
                     "";
-
 
                 listElement.appendChild(
                     fragment
                 );
-
             }
 
-
-            lastSignature =
-                signature;
+            lastRenderedSignature =
+                buildSignature(
+                    conversations
+                );
 
         } finally {
 
             rendering =
                 false;
-
         }
-
     }
 
 
     /* =========================================================
        REFRESH ACTIVITY
-    ========================================================= */
+       ========================================================= */
 
     function refreshActivity() {
 
         const listElement =
             getConversationList();
 
+        if (!listElement) {
+            return;
+        }
+
+        const messagesCore =
+            getCore();
 
         if (
-            !listElement
+            !messagesCore ||
+            typeof
+                messagesCore.getConversations !==
+                "function"
         ) {
 
             return;
-
         }
 
-
         const conversations =
-            getConversations();
-
+            getCurrentConversations();
 
         const cards =
             listElement.querySelectorAll(
                 "[data-wfesc-conversation]"
             );
 
-
         cards.forEach(
             card => {
 
                 const conversationId =
-                    card.dataset.wfescConversation;
-
+                    card.dataset
+                        .wfescConversation;
 
                 const conversation =
                     conversations.find(
@@ -1927,387 +2051,773 @@
                             )
                     );
 
-
-                if (
-                    !conversation
-                ) {
-
+                if (!conversation) {
                     return;
-
                 }
-
 
                 const state =
                     getActivityState(
                         conversation
                     );
 
-
                 const dot =
                     card.querySelector(
                         ".wfesc-conversation-online"
                     );
 
-
-                if (
-                    dot
-                ) {
+                if (dot) {
 
                     dot.classList.toggle(
                         "active",
-                        state.online ===
-                            true
+                        Boolean(
+                            state.online
+                        )
                     );
-
                 }
-
 
                 const preview =
                     card.querySelector(
                         ".wfesc-conversation-preview"
                     );
 
-
-                if (
-                    preview
-                ) {
+                if (preview) {
 
                     const typing =
                         isConversationTyping(
                             conversation
                         );
 
-
                     preview.textContent =
                         getPreview(
                             conversation
                         );
 
-
                     preview.classList.toggle(
                         "typing",
                         typing
                     );
+                }
 
+            }
+        );
+    }
+
+
+    /* =========================================================
+       UPDATE ONE TYPING CARD
+       ========================================================= */
+
+    function updateTypingCard(
+        conversationId
+    ) {
+
+        const listElement =
+            getConversationList();
+
+        if (!listElement) {
+            return;
+        }
+
+        const card =
+            listElement.querySelector(
+                `[data-wfesc-conversation="${CSS.escape(
+                    String(
+                        conversationId
+                    )
+                )}"]`
+            );
+
+        if (!card) {
+            return;
+        }
+
+        const conversations =
+            getCurrentConversations();
+
+        const conversation =
+            conversations.find(
+                item =>
+                    String(
+                        getConversationId(
+                            item
+                        )
+                    ) ===
+                    String(
+                        conversationId
+                    )
+            );
+
+        if (!conversation) {
+            return;
+        }
+
+        const preview =
+            card.querySelector(
+                ".wfesc-conversation-preview"
+            );
+
+        if (!preview) {
+            return;
+        }
+
+        const typing =
+            isConversationTyping(
+                conversation
+            );
+
+        preview.textContent =
+            getPreview(
+                conversation
+            );
+
+        preview.classList.toggle(
+            "typing",
+            typing
+        );
+    }
+
+
+    /* =========================================================
+       CLEAR TYPING
+       ========================================================= */
+
+    function clearTypingState(
+        conversationId,
+        userId = null
+    ) {
+
+        const key =
+            String(
+                conversationId
+            );
+
+        const current =
+            typingStates.get(
+                key
+            );
+
+        if (!current) {
+            return;
+        }
+
+        if (
+            userId &&
+            String(
+                current.userId
+            ) !==
+            String(
+                userId
+            )
+        ) {
+
+            return;
+        }
+
+        if (
+            current.timer
+        ) {
+
+            clearTimeout(
+                current.timer
+            );
+        }
+
+        typingStates.delete(
+            key
+        );
+
+        updateTypingCard(
+            conversationId
+        );
+    }
+
+
+    /* =========================================================
+       REGISTER TYPING
+       ========================================================= */
+
+    function registerTypingState(
+        conversationId,
+        userId
+    ) {
+
+        if (
+            !conversationId ||
+            !userId
+        ) {
+
+            return;
+        }
+
+        const key =
+            String(
+                conversationId
+            );
+
+        const existing =
+            typingStates.get(
+                key
+            );
+
+        if (
+            existing?.timer
+        ) {
+
+            clearTimeout(
+                existing.timer
+            );
+        }
+
+        const timer =
+            setTimeout(
+                () => {
+
+                    clearTypingState(
+                        conversationId,
+                        userId
+                    );
+
+                },
+                CONFIG.TYPING_TIMEOUT
+            );
+
+        typingStates.set(
+            key,
+            {
+
+                userId:
+                    userId,
+
+                timer:
+                    timer
+
+            }
+        );
+
+        updateTypingCard(
+            conversationId
+        );
+    }
+
+
+    /* =========================================================
+       HANDLE TYPING PAYLOAD
+       ========================================================= */
+
+    function handleTypingPayload(
+        conversationId,
+        payload
+    ) {
+
+        const data =
+            payload?.payload ||
+            payload ||
+            {};
+
+        const userId =
+            data.user_id ||
+            data.userId ||
+            null;
+
+        if (
+            !userId
+        ) {
+
+            return;
+        }
+
+        const messagesCore =
+            getCore();
+
+        const currentUser =
+            messagesCore &&
+            typeof
+                messagesCore.getCurrentUser ===
+                "function"
+                ? messagesCore.getCurrentUser()
+                : null;
+
+        /*
+         * لا نظهر كتابة المستخدم نفسه.
+         */
+        if (
+            currentUser?.id &&
+            String(
+                currentUser.id
+            ) ===
+            String(
+                userId
+            )
+        ) {
+
+            return;
+        }
+
+        if (
+            data.typing ===
+            true
+        ) {
+
+            registerTypingState(
+                conversationId,
+                userId
+            );
+
+        } else {
+
+            clearTypingState(
+                conversationId,
+                userId
+            );
+        }
+    }
+
+
+    /* =========================================================
+       SUBSCRIBE TYPING CHANNEL
+       ========================================================= */
+
+    async function subscribeTypingChannel(
+        conversation
+    ) {
+
+        const conversationId =
+            getConversationId(
+                conversation
+            );
+
+        if (!conversationId) {
+            return;
+        }
+
+        /*
+         * الدعم لا يحتاج Typing channel
+         * إذا كان النظام الحالي يعتبره خاصاً.
+         */
+        if (
+            isSupportConversation(
+                conversation
+            )
+        ) {
+
+            return;
+        }
+
+        const key =
+            String(
+                conversationId
+            );
+
+        if (
+            typingChannels.has(
+                key
+            )
+        ) {
+
+            return;
+        }
+
+        const messagesCore =
+            getCore();
+
+        const supabaseClient =
+            messagesCore?.client ||
+            window.WFESCSupabase ||
+            null;
+
+        if (
+            !supabaseClient ||
+            typeof
+                supabaseClient.channel !==
+                "function"
+        ) {
+
+            debug(
+                "Supabase client غير جاهز للـ typing"
+            );
+
+            return;
+        }
+
+        const channelName =
+            "wfesc-typing-" +
+            key;
+
+        try {
+
+            const channel =
+                supabaseClient.channel(
+                    channelName,
+                    {
+
+                        config: {
+
+                            broadcast: {
+
+                                self:
+                                    false
+
+                            }
+
+                        }
+
+                    }
+                );
+
+            channel.on(
+
+                "broadcast",
+
+                {
+                    event:
+                        "typing"
+                },
+
+                payload => {
+
+                    handleTypingPayload(
+                        conversationId,
+                        payload
+                    );
+
+                }
+
+            );
+
+            typingChannels.set(
+                key,
+                channel
+            );
+
+            channel.subscribe(
+                status => {
+
+                    if (
+                        status !==
+                        "SUBSCRIBED"
+                    ) {
+
+                        debug(
+                            "Typing channel:",
+                            key,
+                            status
+                        );
+                    }
+
+                }
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CONVERSATIONS] typing channel:",
+                error
+            );
+        }
+    }
+
+
+    /* =========================================================
+       SYNC TYPING CHANNELS
+       ========================================================= */
+
+    async function syncTypingChannels(
+        conversations
+    ) {
+
+        const wanted =
+            new Set();
+
+        conversations.forEach(
+            conversation => {
+
+                const id =
+                    getConversationId(
+                        conversation
+                    );
+
+                if (
+                    id &&
+                    !isSupportConversation(
+                        conversation
+                    )
+                ) {
+
+                    wanted.add(
+                        String(id)
+                    );
                 }
 
             }
         );
 
+        /*
+         * أغلق القنوات الخاصة بالمحادثات
+         * التي لم تعد موجودة.
+         */
+        for (
+            const [
+                key,
+                channel
+            ]
+            of typingChannels
+        ) {
+
+            if (
+                wanted.has(
+                    key
+                )
+            ) {
+
+                continue;
+            }
+
+            try {
+
+                const messagesCore =
+                    getCore();
+
+                const supabaseClient =
+                    messagesCore?.client ||
+                    window.WFESCSupabase ||
+                    null;
+
+                if (
+                    supabaseClient &&
+                    typeof
+                        supabaseClient.removeChannel ===
+                        "function"
+                ) {
+
+                    await supabaseClient.removeChannel(
+                        channel
+                    );
+                }
+
+            } catch (_) {}
+
+            typingChannels.delete(
+                key
+            );
+
+            clearTypingState(
+                key
+            );
+        }
+
+        /*
+         * افتح قنوات المحادثات الموجودة فعلياً.
+         */
+        for (
+            const conversation
+            of conversations
+        ) {
+
+            await subscribeTypingChannel(
+                conversation
+            );
+
+        }
     }
 
 
     /* =========================================================
        REFRESH
-    ========================================================= */
+       ========================================================= */
 
-    function refresh(
+    async function refresh(
         force = true
     ) {
 
-        render(
+        const conversations =
+            getCurrentConversations();
+
+        await resolveConversationContacts(
+            conversations
+        );
+
+        const merged =
+            mergeCachedContacts(
+                getCurrentConversations()
+            );
+
+        await syncTypingChannels(
+            merged
+        );
+
+        await render(
             force
         );
 
         refreshActivity();
-
     }
 
 
     /* =========================================================
-       TYPING START
-    ========================================================= */
-
-    function setTyping(
-        conversationId,
-        userId
-    ) {
-
-        if (
-            !conversationId ||
-            !userId
-        ) {
-
-            return;
-
-        }
-
-
-        const key =
-            typingKey(
-                conversationId,
-                userId
-            );
-
-
-        if (!key) {
-            return;
-        }
-
-
-        typingUsers.set(
-            key,
-            Date.now() +
-            CONFIG.TYPING_TIMEOUT
-        );
-
-
-        refresh(
-            true
-        );
-
-
-        setTimeout(
-            () => {
-
-                const expiresAt =
-                    typingUsers.get(
-                        key
-                    );
-
-
-                if (
-                    expiresAt &&
-                    Date.now() >=
-                        expiresAt
-                ) {
-
-                    typingUsers.delete(
-                        key
-                    );
-
-
-                    refresh(
-                        true
-                    );
-
-                }
-
-            },
-            CONFIG.TYPING_TIMEOUT + 100
-        );
-
-    }
-
-
-    /* =========================================================
-       TYPING STOP
-    ========================================================= */
-
-    function clearTyping(
-        conversationId,
-        userId
-    ) {
-
-        if (
-            !conversationId
-        ) {
-
-            return;
-
-        }
-
-
-        if (
-            userId
-        ) {
-
-            typingUsers.delete(
-                typingKey(
-                    conversationId,
-                    userId
-                )
-            );
-
-        } else {
-
-            const prefix =
-                String(
-                    conversationId
-                ) +
-                "::";
-
-
-            for (
-                const key
-                of typingUsers.keys()
-            ) {
-
-                if (
-                    key.startsWith(
-                        prefix
-                    )
-                ) {
-
-                    typingUsers.delete(
-                        key
-                    );
-
-                }
-
-            }
-
-        }
-
-
-        refresh(
-            true
-        );
-
-    }
-
-
-    /* =========================================================
-       TYPING EVENT
-    ========================================================= */
-
-    function handleTypingEvent(
-        event
-    ) {
-
-        const detail =
-            event?.detail ||
-            {};
-
-
-        const conversationId =
-            firstValue(
-
-                detail.conversationId,
-
-                detail.conversation_id,
-
-                detail.target_conversation_id,
-
-                detail.targetConversationId
-
-            );
-
-
-        const userId =
-            firstValue(
-
-                detail.userId,
-
-                detail.user_id,
-
-                detail.sender_id,
-
-                detail.senderId
-
-            );
-
-
-        const typing =
-            detail.typing ??
-            detail.isTyping ??
-            detail.is_typing;
-
-
-        if (
-            typing ===
-                false
-        ) {
-
-            clearTyping(
-                conversationId,
-                userId
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !conversationId ||
-            !userId
-        ) {
-
-            return;
-
-        }
-
-
-        setTyping(
-            conversationId,
-            userId
-        );
-
-    }
-
-
-    /* =========================================================
-       EVENT BINDING
-    ========================================================= */
+       EVENTS
+       ========================================================= */
 
     function bindEvents() {
 
-        if (
-            eventBound
-        ) {
-
+        if (eventBound) {
             return;
-
         }
-
 
         eventBound =
             true;
 
 
-        /* =====================================================
-           ACTIVITY
-        ===================================================== */
-
-        const activityEvents = [
-
+        /*
+         * النشاط تغير
+         */
+        window.addEventListener(
             "wfesc:activity-sync",
+            () => {
 
+                refreshActivity();
+
+            }
+        );
+
+
+        window.addEventListener(
             "wfesc:activity-response",
+            () => {
 
+                refreshActivity();
+
+            }
+        );
+
+
+        window.addEventListener(
             "wfesc:activity-state-changed",
+            () => {
 
-            "wfesc:chat-header-refresh"
+                refreshActivity();
 
-        ];
+            }
+        );
 
 
-        activityEvents.forEach(
-            eventName => {
+        window.addEventListener(
+            "wfesc:chat-header-refresh",
+            () => {
 
-                window.addEventListener(
-                    eventName,
-                    () => {
+                refreshActivity();
 
-                        refreshActivity();
+            }
+        );
 
-                    }
+
+        /*
+         * أي تحديث للمحادثات
+         */
+        window.addEventListener(
+            "wfesc:conversations-refresh",
+            () => {
+
+                refresh(
+                    true
                 );
 
             }
         );
 
 
-        /* =====================================================
-           TYPING
-        ===================================================== */
+        window.addEventListener(
+            "wfesc:conversation-updated",
+            () => {
+
+                refresh(
+                    true
+                );
+
+            }
+        );
+
 
         window.addEventListener(
+            "wfesc:message-realtime",
+            () => {
+
+                refresh(
+                    true
+                );
+
+            }
+        );
+
+
+        window.addEventListener(
+            "wfesc:messages-refresh",
+            () => {
+
+                refresh(
+                    true
+                );
+
+            }
+        );
+
+
+        /*
+         * هذه الأحداث مفيدة إذا أرسلها core
+         * مستقبلاً، لكن لا نعتمد عليها للـ Typing.
+         */
+        window.addEventListener(
             "wfesc:typing",
-            handleTypingEvent
+            event => {
+
+                const detail =
+                    event?.detail ||
+                    {};
+
+                const conversationId =
+                    detail.conversationId ||
+                    detail.conversation_id;
+
+                if (
+                    conversationId
+                ) {
+
+                    handleTypingPayload(
+                        conversationId,
+                        detail
+                    );
+                }
+
+            }
         );
 
 
         window.addEventListener(
             "wfesc:typing-start",
-            handleTypingEvent
-        );
+            event => {
 
+                const detail =
+                    event?.detail ||
+                    {};
 
-        window.addEventListener(
-            "wfesc:conversation-typing",
-            handleTypingEvent
+                const conversationId =
+                    detail.conversationId ||
+                    detail.conversation_id;
+
+                if (
+                    conversationId
+                ) {
+
+                    handleTypingPayload(
+                        conversationId,
+                        {
+                            ...detail,
+                            typing:
+                                true
+                        }
+                    );
+                }
+
+            }
         );
 
 
@@ -2319,79 +2829,23 @@
                     event?.detail ||
                     {};
 
+                const conversationId =
+                    detail.conversationId ||
+                    detail.conversation_id;
 
-                handleTypingEvent(
-                    {
-                        detail: {
+                if (
+                    conversationId
+                ) {
+
+                    handleTypingPayload(
+                        conversationId,
+                        {
                             ...detail,
-                            typing: false
+                            typing:
+                                false
                         }
-                    }
-                );
-
-            }
-        );
-
-
-        /* =====================================================
-           CONVERSATIONS
-        ===================================================== */
-
-        const conversationEvents = [
-
-            "wfesc:conversations-refresh",
-
-            "wfesc:conversation-updated",
-
-            "wfesc:message-realtime",
-
-            "wfesc:messages-refresh"
-
-        ];
-
-
-        conversationEvents.forEach(
-            eventName => {
-
-                window.addEventListener(
-                    eventName,
-                    () => {
-
-                        refresh(
-                            true
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-        /*
-         * بعض الأنظمة قد ترسل حدثاً
-         * باسم مختلف عند وصول رسالة.
-         */
-
-        window.addEventListener(
-            "wfesc:new-message",
-            () => {
-
-                refresh(
-                    true
-                );
-
-            }
-        );
-
-
-        window.addEventListener(
-            "wfesc:message-sent",
-            () => {
-
-                refresh(
-                    true
-                );
+                    );
+                }
 
             }
         );
@@ -2400,32 +2854,10 @@
 
 
     /* =========================================================
-       START TIMERS
-    ========================================================= */
+       REFRESH TIMER
+       ========================================================= */
 
-    function startTimers() {
-
-        if (
-            activityTimer
-        ) {
-
-            clearInterval(
-                activityTimer
-            );
-
-        }
-
-
-        activityTimer =
-            setInterval(
-                () => {
-
-                    refreshActivity();
-
-                },
-                CONFIG.ACTIVITY_REFRESH
-            );
-
+    function startRefreshTimer() {
 
         if (
             refreshTimer
@@ -2434,36 +2866,45 @@
             clearInterval(
                 refreshTimer
             );
-
         }
-
 
         refreshTimer =
             setInterval(
                 () => {
 
-                    /*
-                     * نعيد فحص المحادثات
-                     * بدون إجبار إعادة البناء
-                     * إذا لم يتغير شيء.
-                     */
-
-                    render(
+                    refresh(
                         false
                     );
+
+                },
+                CONFIG.REFRESH_INTERVAL
+            );
+
+
+        if (
+            activityTimer
+        ) {
+
+            clearInterval(
+                activityTimer
+            );
+        }
+
+        activityTimer =
+            setInterval(
+                () => {
 
                     refreshActivity();
 
                 },
-                5000
+                CONFIG.ACTIVITY_REFRESH_INTERVAL
             );
-
     }
 
 
     /* =========================================================
        WAIT FOR CORE
-    ========================================================= */
+       ========================================================= */
 
     function waitForCore() {
 
@@ -2473,10 +2914,8 @@
                 const messagesCore =
                     getCore();
 
-
                 const list =
                     getConversationList();
-
 
                 if (
                     messagesCore &&
@@ -2486,9 +2925,7 @@
                     initialize();
 
                     return;
-
                 }
-
 
                 setTimeout(
                     attempt,
@@ -2497,56 +2934,48 @@
 
             };
 
-
         attempt();
-
     }
 
 
     /* =========================================================
        INITIALIZE
-    ========================================================= */
+       ========================================================= */
 
-    function initialize() {
+    async function initialize() {
 
         if (
             initialized
         ) {
 
             return;
-
         }
-
 
         initialized =
             true;
 
-
         conversationList =
             getConversationList();
-
 
         injectStyles();
 
         bindEvents();
 
-        render(
+        await refresh(
             true
         );
 
-        startTimers();
-
+        startRefreshTimer();
 
         debug(
-            "WFESC conversations initialized"
+            "messages-conversations.js initialized"
         );
-
     }
 
 
     /* =========================================================
        PUBLIC API
-    ========================================================= */
+       ========================================================= */
 
     window.WFESC_MESSAGES_CONVERSATIONS = {
 
@@ -2570,25 +2999,30 @@
 
         isConversationTyping,
 
-        getConversations
+        subscribeTypingChannel,
+
+        syncTypingChannels,
+
+        resolveContact
 
     };
 
 
     /* =========================================================
        START
-    ========================================================= */
+       ========================================================= */
 
     if (
         document.readyState ===
-            "loading"
+        "loading"
     ) {
 
         document.addEventListener(
             "DOMContentLoaded",
             waitForCore,
             {
-                once: true
+                once:
+                    true
             }
         );
 
