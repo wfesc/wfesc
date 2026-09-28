@@ -21,6 +21,8 @@
        - حفظ حالة الرسائل وإعادة تحميلها من Supabase
        - منع ظهور الرسالة مرتين عند الإرسال
        - منع وميض المحادثة عند فتحها
+       - إصلاح بقاء المحادثات الجديدة
+       - إصلاح تحديث قائمة المحادثات عند الخروج
     ============================================================
     */
 
@@ -1006,13 +1008,11 @@
                     loading="lazy"
                 >
 
-                <span
-                    class="online-dot ${
-                        conversation.is_online
-                            ? "active"
-                            : ""
-                    }"
-                ></span>
+                <span class="online-dot ${
+                    conversation.is_online
+                        ? "active"
+                        : ""
+                }"></span>
 
             </div>
 
@@ -2087,10 +2087,6 @@
                     ) || 0
                 ).getTime();
 
-            /*
-             * إذا عندنا وقت للرسالتين،
-             * لا نطابق رسائل قديمة متشابهة.
-             */
             if (
                 incomingTime &&
                 existingTime &&
@@ -2181,11 +2177,6 @@
                 ".message-row.optimistic"
             );
 
-        /*
-         * نبحث من آخر عنصر للأول.
-         * حتى لو أرسل المستخدم نفس الرسالة مرتين،
-         * نطابق الأقرب زمنياً/الأحدث.
-         */
         for (
             let i =
                 rows.length - 1;
@@ -2240,11 +2231,6 @@
         message
     ) {
 
-        /*
-         * مهم:
-         * لا نبحث عن كل الرسائل بنفس المحتوى.
-         * فقط Optimistic.
-         */
         return findOptimisticMessageElement(
             message
         );
@@ -2277,6 +2263,16 @@
                 message
             );
 
+        /*
+         * هذه العلامة مهمة جداً.
+         *
+         * messages-send.js يفحصها حتى لا يعيد
+         * تحويل الرسالة الحقيقية إلى optimistic
+         * عندما يرجع RPC بعد وصول Realtime.
+         */
+        element.dataset.confirmed =
+            "true";
+
         element.classList.remove(
             "optimistic"
         );
@@ -2284,9 +2280,6 @@
         element.classList.remove(
             "message-new"
         );
-
-        element.dataset.confirmed =
-            "true";
 
         if (
             messageId != null
@@ -2378,10 +2371,7 @@
 
 
         /*
-         * أهم إصلاح:
-         *
-         * إذا عندنا Optimistic من نفس الرسالة،
-         * نستبدلها بالنسخة الحقيقية.
+         * استبدال النسخة Optimistic.
          */
         const optimisticMessage =
             findOptimisticMessageInState(
@@ -2420,10 +2410,6 @@
         }
 
 
-        /*
-         * إذا لا توجد نسخة Optimistic،
-         * نضيف الرسالة الجديدة.
-         */
         currentMessages.push(
             message
         );
@@ -2444,6 +2430,67 @@
         );
 
         return true;
+    }
+
+
+    /* =========================================================
+       CONVERSATION EXISTS
+    ========================================================= */
+
+    function conversationExists(
+        conversationId
+    ) {
+
+        if (!conversationId) {
+            return false;
+        }
+
+        return conversations.some(
+            conversation =>
+                String(
+                    conversation.id ??
+                    conversation.conversation_id
+                ) ===
+                String(
+                    conversationId
+                )
+        );
+    }
+
+
+    /* =========================================================
+       REFRESH CONVERSATIONS
+    ========================================================= */
+
+    function refreshConversationsFromRealtime(
+        conversationId
+    ) {
+
+        if (!conversationId) {
+            return;
+        }
+
+        /*
+         * إذا المحادثة غير موجودة محلياً،
+         * get_my_conversations هو المصدر الصحيح
+         * لجلبها من Supabase.
+         */
+        if (
+            !conversationExists(
+                conversationId
+            )
+        ) {
+
+            loadConversations()
+                .catch(error => {
+
+                    console.warn(
+                        "WFESC refresh conversations:",
+                        error
+                    );
+
+                });
+        }
     }
 
 
@@ -2479,7 +2526,18 @@
                     )
             );
 
+        /*
+         * إذا المحادثة غير موجودة،
+         * لا نحاول صنع Conversation وهمية.
+         *
+         * نعيد تحميلها من Supabase.
+         */
         if (index < 0) {
+
+            refreshConversationsFromRealtime(
+                conversationId
+            );
+
             return;
         }
 
@@ -2532,17 +2590,44 @@
         }
 
 
+        const conversationId =
+            message.conversation_id ??
+            message.target_conversation_id;
+
+
         /*
-         * تحديث معاينة المحادثة دائماً.
+         * =====================================================
+         * تحديث قائمة المحادثات دائماً.
+         *
+         * إذا كانت موجودة:
+         * تحديث مباشر.
+         *
+         * إذا غير موجودة:
+         * تحميل من Supabase.
+         * =====================================================
          */
-        updateConversationPreview(
-            message
-        );
+
+        if (
+            conversationExists(
+                conversationId
+            )
+        ) {
+
+            updateConversationPreview(
+                message
+            );
+
+        } else {
+
+            refreshConversationsFromRealtime(
+                conversationId
+            );
+        }
 
 
         /*
-         * إذا الرسالة ليست للمحادثة المفتوحة،
-         * لا نضيفها داخل chatMessages.
+         * إذا ليست المحادثة المفتوحة،
+         * لا نضيف الرسالة إلى chatMessages.
          */
         if (
             !messageBelongsToCurrentConversation(
@@ -2637,9 +2722,6 @@
             }
 
 
-            /*
-             * البحث عن العنصر المؤقت في DOM.
-             */
             let optimisticElement =
                 findDomMessageById(
                     getMessageId(
@@ -2882,16 +2964,10 @@
             true;
 
 
-        /*
-         * كل فتح جديد يأخذ Token جديد.
-         */
         const loadToken =
             ++conversationLoadToken;
 
 
-        /*
-         * إيقاف Typing للمحادثة السابقة.
-         */
         await removeTypingChannel();
 
 
@@ -2972,9 +3048,7 @@
 
 
         /* =====================================================
-           مهم جداً:
-           نخفي chatView بالكامل أثناء التحميل.
-           لا نخلي المستخدم يشوف تغيير scroll.
+           إخفاء أثناء التحميل
         ===================================================== */
 
         if (chatView) {
@@ -3009,10 +3083,6 @@
             );
 
 
-        /*
-         * إذا صار فتح آخر أثناء التحميل،
-         * نتجاهل النتيجة القديمة.
-         */
         if (
             loadToken !==
             conversationLoadToken
@@ -3060,9 +3130,6 @@
                 "open"
             );
 
-            /*
-             * يبقى hidden حتى ينتهي ضبط الـscroll.
-             */
             chatView.style.visibility =
                 "hidden";
         }
@@ -3116,7 +3183,7 @@
 
 
         /* =====================================================
-           الآن كل شيء جاهز
+           SHOW
         ===================================================== */
 
         if (chatMessages) {
@@ -3131,10 +3198,6 @@
                 "visible";
         }
 
-
-        /* =====================================================
-           إظهار الصفحة الرئيسية للمحادثة
-        ===================================================== */
 
         if (page) {
 
@@ -3151,16 +3214,11 @@
         }
 
 
-        /*
-         * تأكيد آخر Scroll قبل الأنيميشن.
-         */
         prepareChatAtBottom();
 
 
         /* =====================================================
-           TYPING + MARK READ
-           
-           لا ننتظرهم حتى تظهر المحادثة.
+           TYPING + READ
         ===================================================== */
 
         setupTypingChannel(
@@ -3246,10 +3304,6 @@
             currentConversationId;
 
 
-        /* =====================================================
-           تنظيف القديم بدون عرضه
-        ===================================================== */
-
         if (chatMessages) {
 
             chatMessages.style.visibility =
@@ -3277,10 +3331,6 @@
             );
 
 
-            /*
-             * إذا تغيرت المحادثة أثناء الطلب،
-             * لا نلمس الواجهة الجديدة.
-             */
             if (
                 expectedLoadToken !==
                 conversationLoadToken ||
@@ -3325,20 +3375,13 @@
 
 
             /*
-             * المصدر الأساسي للرسائل هو Supabase.
-             *
-             * لا نعتمد على الذاكرة القديمة.
+             * Supabase هو المصدر الأساسي.
              */
             currentMessages =
                 Array.isArray(data)
                     ? [...data]
                     : [];
 
-
-            /* =================================================
-               الأقدم أولاً
-               الأحدث أخيراً
-            ================================================= */
 
             currentMessages.sort(
                 (a, b) => {
@@ -3357,8 +3400,8 @@
 
 
             /*
-             * بعد تحميل الرسائل من قاعدة البيانات،
-             * لا نريد أن تبقى أي نسخة Optimistic قديمة.
+             * إزالة أي Optimistic قديم
+             * بعد إعادة التحميل من Supabase.
              */
             currentMessages =
                 currentMessages.map(
@@ -3384,9 +3427,6 @@
                 );
 
 
-            /*
-             * الرسم يتم وهو مخفي.
-             */
             renderMessages({
                 initialLoad:
                     true
@@ -3514,10 +3554,6 @@
         }
 
 
-        /* =====================================================
-           CREATE MESSAGES
-        ===================================================== */
-
         const fragment =
             document.createDocumentFragment();
 
@@ -3544,10 +3580,6 @@
 
         scheduleMessageSettingsApply();
 
-
-        /* =====================================================
-           INITIAL LOAD
-        ===================================================== */
 
         if (initialLoad) {
 
@@ -3602,10 +3634,6 @@
             return;
         }
 
-
-        /* =====================================================
-           NORMAL RENDER
-        ===================================================== */
 
         if (wasNear) {
 
@@ -3662,10 +3690,6 @@
             );
 
 
-        /*
-         * Optimistic message تحصل على class خاص.
-         * Realtime يحذف هذا class عند التأكيد.
-         */
         if (
             message?.optimistic
         ) {
@@ -3804,10 +3828,6 @@
             );
 
 
-        /*
-         * لا تضف الرسالة إذا كانت موجودة
-         * فعلياً بنفس ID.
-         */
         if (
             messageId != null &&
             findMessageInStateById(
@@ -3843,10 +3863,6 @@
             }
         );
 
-
-        /* =====================================================
-           APPEND ONLY
-        ===================================================== */
 
         if (
             options.appendOnly &&
@@ -3884,10 +3900,6 @@
             return element;
         }
 
-
-        /* =====================================================
-           NORMAL RENDER
-        ===================================================== */
 
         renderMessages();
 
@@ -3960,7 +3972,7 @@
     async function closeConversation() {
 
         /*
-         * إلغاء أي تحميل سابق فوراً.
+         * إلغاء أي تحميل قديم.
          */
         conversationLoadToken++;
 
@@ -3994,10 +4006,6 @@
                 "open"
             );
 
-            /*
-             * مهم:
-             * بعد الإغلاق يجب ألا يبقى hidden.
-             */
             chatView.style.visibility =
                 "visible";
         }
@@ -4026,6 +4034,21 @@
 
             chatMessages.style.visibility =
                 "visible";
+        }
+
+
+        /*
+         * =====================================================
+         * الإصلاح المهم:
+         *
+         * عند الخروج من المحادثة، نعيد جلب القائمة من Supabase.
+         *
+         * هذا يمنع اختفاء المحادثة الجديدة من القائمة.
+         * =====================================================
+         */
+        if (currentUser) {
+
+            await loadConversations();
         }
     }
 
