@@ -1,25 +1,13 @@
 /* =========================================================
-   WFESC MESSAGES — NOTIFICATIONS
-   الملف: messages/messages-notifications.js
+   WFESC MESSAGES NOTIFICATIONS
+   File: messages/messages-notifications.js
 
-   المسؤوليات:
-   - إشعارات المحادثات
-   - كتم / إلغاء كتم المحادثة الحالية
-   - زر 🔔 / 🔕 في رأس المحادثة
-   - حفظ حالة الكتم في conversation_members.muted
-   - استقبال الرسائل الجديدة عبر Supabase Realtime
-   - تشغيل صوت عند وصول رسالة جديدة
-   - عدم التنبيه داخل المحادثة المفتوحة نفسها
-   - عدم التنبيه للمحادثات المكتومة
-   - مزامنة حالة زر الإشعارات مع المحادثة الحالية
-
-   لا يعدل:
-   - messages-core.js
-   - messages-chat-actions.js
-   - messages-chat-header.js
-   - messages-send.js
-   - messages-settings.js
-
+   الوظائف:
+   - إشعار عند وصول رسالة جديدة من مستخدم آخر
+   - يعمل سواء كنت داخل المحادثة أو خارجها
+   - لا يصدر إشعاراً عند إرسال المستخدم لرسالته بنفسه
+   - يحترم كتم المحادثة
+   - الصوت من ملف خارجي قابل للتغيير
 ========================================================= */
 
 (function () {
@@ -27,513 +15,348 @@
     "use strict";
 
 
-    /* =========================================================
-       CORE
-    ========================================================= */
+    /* =====================================================
+       CONFIG
+    ===================================================== */
+
+    /*
+     * غيّر اسم الملف فقط إذا أردت تغيير الصوت.
+     *
+     * مثال:
+     * ./messages/sounds/message.mp3
+     *
+     * أو:
+     * ./messages/sounds/notification.wav
+     */
+
+    const NOTIFICATION_SOUND =
+        "./messages/sounds/message.mp3";
+
+
+    /*
+     * مستوى الصوت:
+     *
+     * 0.0 = صامت
+     * 0.5 = نصف الصوت
+     * 1.0 = أعلى مستوى
+     */
+
+    const NOTIFICATION_VOLUME = 1.0;
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    let currentConversationId = null;
+
+    let realtimeChannel = null;
+
+    let realtimeStarted = false;
+
+    let audio = null;
+
+    let audioUnlocked = false;
+
+
+    /* =====================================================
+       HELPERS
+    ===================================================== */
 
     function getCore() {
 
-        return (
-            window.WFESC_MESSAGES_CORE ||
-            null
-        );
+        return window.WFESC_MESSAGES_CORE || null;
 
     }
 
 
     function getClient() {
 
-        const core =
-            getCore();
+        const core = getCore();
 
-        return (
-            core?.client ||
-            null
-        );
+        if (
+            core &&
+            core.client
+        ) {
+
+            return core.client;
+
+        }
+
+        if (
+            window.WFESCSupabase
+        ) {
+
+            return window.WFESCSupabase;
+
+        }
+
+        return window.supabase || null;
 
     }
 
 
-    function getCurrentUser() {
+    function getCurrentUserId() {
 
-        const core =
-            getCore();
-
-        if (
-            !core ||
-            typeof core.getCurrentUser !==
-            "function"
-        ) {
-
-            return null;
-
-        }
-
-        return core.getCurrentUser();
-
-    }
-
-
-    function getConversationId() {
-
-        const core =
-            getCore();
+        const core = getCore();
 
         if (
-            !core ||
-            typeof core.getCurrentConversation !==
-            "function"
+            core &&
+            core.currentUser &&
+            core.currentUser.id
         ) {
 
-            return null;
+            return core.currentUser.id;
 
         }
-
-        const conversation =
-            core.getCurrentConversation();
-
-
-        if (
-            conversation == null
-        ) {
-
-            return null;
-
-        }
-
-
-        if (
-            typeof conversation ===
-            "string"
-        ) {
-
-            return conversation;
-
-        }
-
-
-        if (
-            typeof conversation ===
-            "object"
-        ) {
-
-            return (
-                conversation.conversation_id ||
-                conversation.id ||
-                conversation.currentConversationId ||
-                null
-            );
-
-        }
-
 
         return null;
 
     }
 
 
-    /* =========================================================
-       CHAT NOTIFICATION BUTTON
-    ========================================================= */
+    function getCurrentConversationId() {
 
-    function getNotificationButton() {
+        const core = getCore();
 
-        return (
-            document.getElementById(
-                "chatNotificationButton"
-            ) ||
+        if (
+            core &&
+            typeof core.getCurrentConversationId === "function"
+        ) {
 
-            document.querySelector(
-                '[data-chat-notification-button]'
-            )
-        );
+            return core.getCurrentConversationId();
+
+        }
+
+        if (
+            core &&
+            core.currentConversationId
+        ) {
+
+            return core.currentConversationId;
+
+        }
+
+        return currentConversationId;
 
     }
 
 
-    /* =========================================================
-       STATE
-    ========================================================= */
+    /* =====================================================
+       AUDIO
+    ===================================================== */
 
-    let currentConversationId =
-        null;
+    function prepareAudio() {
 
+        if (audio) {
 
-    let currentMuted =
-        false;
+            return audio;
 
-
-    let realtimeChannel =
-        null;
+        }
 
 
-    let realtimeStarted =
-        false;
+        audio =
+            new Audio(
+                NOTIFICATION_SOUND
+            );
 
 
-    let buttonReady =
-        false;
+        audio.preload = "auto";
+
+        audio.volume =
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    NOTIFICATION_VOLUME
+                )
+            );
 
 
-    let loadingMutedState =
-        false;
+        return audio;
+
+    }
 
 
-    let changingMutedState =
-        false;
+    /*
+     * فتح صلاحية تشغيل الصوت بعد تفاعل المستخدم
+     * مع الصفحة.
+     */
+
+    function unlockAudio() {
+
+        const sound =
+            prepareAudio();
 
 
-    /* =========================================================
-       SOUND
-    ========================================================= */
+        if (!sound) {
 
-    let audioContext =
-        null;
+            return;
+
+        }
 
 
-    function createNotificationSound() {
+        if (audioUnlocked) {
+
+            return;
+
+        }
+
 
         try {
 
-            const AudioContextClass =
-                window.AudioContext ||
-                window.webkitAudioContext;
+            sound.muted = true;
+
+            sound.currentTime = 0;
+
+            const promise =
+                sound.play();
 
 
             if (
-                !AudioContextClass
+                promise &&
+                typeof promise.then === "function"
             ) {
 
-                return null;
+                promise
+                    .then(function () {
+
+                        sound.pause();
+
+                        sound.currentTime = 0;
+
+                        sound.muted = false;
+
+                        audioUnlocked = true;
+
+                    })
+                    .catch(function () {
+
+                        sound.muted = false;
+
+                    });
+
+            } else {
+
+                sound.pause();
+
+                sound.currentTime = 0;
+
+                sound.muted = false;
+
+                audioUnlocked = true;
 
             }
-
-
-            if (!audioContext) {
-
-                audioContext =
-                    new AudioContextClass();
-
-            }
-
-
-            if (
-                audioContext.state ===
-                "suspended"
-            ) {
-
-                audioContext.resume()
-                    .catch(() => {});
-
-            }
-
-
-            return audioContext;
 
         } catch (error) {
 
-            console.warn(
-                "[WFESC NOTIFICATIONS] Audio unavailable:",
-                error
-            );
-
-            return null;
+            sound.muted = false;
 
         }
 
     }
 
+
+    /*
+     * تشغيل صوت الإشعار.
+     */
 
     function playNotificationSound() {
 
-        const context =
-            createNotificationSound();
+        const sound =
+            prepareAudio();
 
 
-        if (!context) {
+        if (!sound) {
+
             return;
+
         }
 
 
         try {
 
-            const oscillator =
-                context.createOscillator();
+            sound.pause();
 
+            sound.currentTime = 0;
 
-            const gain =
-                context.createGain();
-
-
-            oscillator.type =
-                "sine";
-
-
-            oscillator.frequency.setValueAtTime(
-                880,
-                context.currentTime
-            );
-
-
-            oscillator.frequency.setValueAtTime(
-                660,
-                context.currentTime + 0.10
-            );
-
-
-            gain.gain.setValueAtTime(
-                0.0001,
-                context.currentTime
-            );
-
-
-            gain.gain.exponentialRampToValueAtTime(
-                0.12,
-                context.currentTime + 0.015
-            );
-
-
-            gain.gain.exponentialRampToValueAtTime(
-                0.0001,
-                context.currentTime + 0.20
-            );
-
-
-            oscillator.connect(
-                gain
-            );
-
-
-            gain.connect(
-                context.destination
-            );
-
-
-            oscillator.start(
-                context.currentTime
-            );
-
-
-            oscillator.stop(
-                context.currentTime + 0.22
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "[WFESC NOTIFICATIONS] Sound failed:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =========================================================
-       TOAST
-    ========================================================= */
-
-    function showNotificationToast(
-        message
-    ) {
-
-        let toast =
-            document.getElementById(
-                "wfescMessageNotificationToast"
-            );
-
-
-        if (!toast) {
-
-            toast =
-                document.createElement(
-                    "div"
+            sound.volume =
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        NOTIFICATION_VOLUME
+                    )
                 );
 
 
-            toast.id =
-                "wfescMessageNotificationToast";
+            const promise =
+                sound.play();
 
 
-            toast.dir =
-                "rtl";
+            if (
+                promise &&
+                typeof promise.catch === "function"
+            ) {
 
+                promise.catch(function () {
 
-            toast.style.cssText = `
-                position:fixed;
+                    /*
+                     * المتصفح قد يمنع الصوت
+                     * إذا لم يحصل تفاعل مسبق.
+                     */
 
-                left:50%;
-                top:78px;
+                });
 
-                transform:
-                    translateX(-50%)
-                    translateY(-10px);
+            }
 
-                z-index:99999999;
-
-                width:
-                    max-content;
-
-                max-width:
-                    calc(100vw - 30px);
-
-                padding:
-                    10px 15px;
-
-                border-radius:
-                    14px;
-
-                background:
-                    rgba(20,20,20,.96);
-
-                color:#fff;
-
-                border:
-                    1px solid
-                    rgba(255,255,255,.10);
-
-                box-shadow:
-                    0 12px 40px
-                    rgba(0,0,0,.50);
-
-                font-family:
-                    inherit;
-
-                font-size:13px;
-
-                font-weight:700;
-
-                text-align:center;
-
-                opacity:0;
-
-                pointer-events:none;
-
-                transition:
-                    opacity .18s ease,
-                    transform .18s ease;
-
-                backdrop-filter:
-                    blur(14px);
-
-                -webkit-backdrop-filter:
-                    blur(14px);
-            `;
-
-
-            document.body.appendChild(
-                toast
-            );
+        } catch (error) {
 
         }
-
-
-        toast.textContent =
-            message;
-
-
-        toast.style.opacity =
-            "1";
-
-
-        toast.style.transform =
-            "translateX(-50%) translateY(0)";
-
-
-        clearTimeout(
-            toast._wfescTimer
-        );
-
-
-        toast._wfescTimer =
-            setTimeout(
-                () => {
-
-                    toast.style.opacity =
-                        "0";
-
-
-                    toast.style.transform =
-                        "translateX(-50%) translateY(-10px)";
-
-                },
-                2200
-            );
 
     }
 
 
-    /* =========================================================
-       UPDATE BUTTON UI
-    ========================================================= */
+    /*
+     * أي تفاعل من المستخدم يفتح إمكانية الصوت.
+     */
 
-    function updateButtonUI(
-        muted
-    ) {
+    function setupAudioUnlock() {
 
-        const button =
-            getNotificationButton();
-
-
-        if (!button) {
-            return;
-        }
+        const events = [
+            "click",
+            "touchstart",
+            "pointerdown",
+            "keydown"
+        ];
 
 
-        const isMuted =
-            muted === true;
+        events.forEach(function (eventName) {
 
+            document.addEventListener(
+                eventName,
+                unlockAudio,
+                {
+                    passive: true,
+                    once: false,
+                    capture: true
+                }
+            );
 
-        button.textContent =
-            isMuted
-                ? "🔕"
-                : "🔔";
-
-
-        button.setAttribute(
-            "aria-label",
-            isMuted
-                ? "إلغاء كتم إشعارات المحادثة"
-                : "كتم إشعارات المحادثة"
-        );
-
-
-        button.setAttribute(
-            "title",
-            isMuted
-                ? "إلغاء كتم إشعارات المحادثة"
-                : "كتم إشعارات المحادثة"
-        );
-
-
-        button.dataset.muted =
-            isMuted
-                ? "true"
-                : "false";
-
-
-        button.classList.toggle(
-            "wfesc-chat-notifications-muted",
-            isMuted
-        );
+        });
 
     }
 
 
-    /* =========================================================
-       OPTIONAL BUTTON STYLE
-    ========================================================= */
+    /* =====================================================
+       TOAST
+    ===================================================== */
 
-    function installButtonStyle() {
-
-        const styleId =
-            "wfescChatNotificationsStyle";
-
+    function ensureToastStyle() {
 
         if (
             document.getElementById(
-                styleId
+                "wfescMessageNotificationStyle"
             )
         ) {
 
@@ -549,42 +372,344 @@
 
 
         style.id =
-            styleId;
+            "wfescMessageNotificationStyle";
 
 
         style.textContent = `
 
-            #chatNotificationButton {
-                transition:
-                    transform .15s ease,
-                    opacity .15s ease;
-            }
+            .wfesc-message-notification-toast {
 
-            #chatNotificationButton:active {
+                position: fixed;
+
+                right: 18px;
+
+                bottom: 18px;
+
+                z-index: 999999;
+
+                min-width: 250px;
+
+                max-width: calc(100vw - 36px);
+
+                padding: 13px 16px;
+
+                border-radius: 14px;
+
+                background: #111;
+
+                color: #fff;
+
+                border: 1px solid rgba(
+                    255,
+                    255,
+                    255,
+                    .12
+                );
+
+                box-shadow:
+                    0 10px 35px rgba(
+                        0,
+                        0,
+                        0,
+                        .45
+                    );
+
+                font-family:
+                    Arial,
+                    Tahoma,
+                    sans-serif;
+
+                font-size: 14px;
+
+                direction: rtl;
+
+                opacity: 0;
+
                 transform:
-                    scale(.90);
+                    translateY(12px);
+
+                transition:
+                    opacity .2s ease,
+                    transform .2s ease;
+
+                pointer-events: none;
+
             }
 
-            #chatNotificationButton
-            .wfesc-chat-notifications-muted {
-                opacity:.82;
+
+            .wfesc-message-notification-toast.show {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+
+            }
+
+
+            .wfesc-message-notification-toast-title {
+
+                font-weight: 700;
+
+                margin-bottom: 5px;
+
+            }
+
+
+            .wfesc-message-notification-toast-text {
+
+                opacity: .82;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+
+            }
+
+
+            #chatNotificationButton.wfesc-chat-notifications-muted {
+
+                opacity: .75;
+
             }
 
         `;
 
 
-        document.head.appendChild(
-            style
-        );
+        document.head.appendChild(style);
 
     }
 
 
-    /* =========================================================
-       READ MUTED STATE
-    ========================================================= */
+    function showNotificationToast(
+        senderName,
+        messageText
+    ) {
 
-    async function loadMutedState(
+        ensureToastStyle();
+
+
+        let toast =
+            document.getElementById(
+                "wfescMessageNotificationToast"
+            );
+
+
+        if (!toast) {
+
+            toast =
+                document.createElement(
+                    "div"
+                );
+
+            toast.id =
+                "wfescMessageNotificationToast";
+
+            toast.className =
+                "wfesc-message-notification-toast";
+
+
+            document.body.appendChild(
+                toast
+            );
+
+        }
+
+
+        const safeSender =
+            String(
+                senderName ||
+                "رسالة جديدة"
+            );
+
+
+        const safeMessage =
+            String(
+                messageText ||
+                "لديك رسالة جديدة"
+            );
+
+
+        toast.innerHTML = `
+
+            <div class="
+                wfesc-message-notification-toast-title
+            ">
+                ${escapeHtml(safeSender)}
+            </div>
+
+            <div class="
+                wfesc-message-notification-toast-text
+            ">
+                ${escapeHtml(safeMessage)}
+            </div>
+
+        `;
+
+
+        toast.classList.remove(
+            "show"
+        );
+
+
+        requestAnimationFrame(function () {
+
+            toast.classList.add(
+                "show"
+            );
+
+        });
+
+
+        clearTimeout(
+            toast.__wfescTimer
+        );
+
+
+        toast.__wfescTimer =
+            setTimeout(
+                function () {
+
+                    toast.classList.remove(
+                        "show"
+                    );
+
+                },
+                3500
+            );
+
+    }
+
+
+    function escapeHtml(value) {
+
+        return String(value || "")
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+    /* =====================================================
+       SENDER NAME
+    ===================================================== */
+
+    function getSenderName(message) {
+
+        if (!message) {
+
+            return "رسالة جديدة";
+
+        }
+
+
+        if (
+            message.sender &&
+            message.sender.display_name
+        ) {
+
+            return message.sender.display_name;
+
+        }
+
+
+        if (
+            message.sender &&
+            message.sender.full_name
+        ) {
+
+            return message.sender.full_name;
+
+        }
+
+
+        if (
+            message.profile &&
+            message.profile.display_name
+        ) {
+
+            return message.profile.display_name;
+
+        }
+
+
+        if (
+            message.profile &&
+            message.profile.full_name
+        ) {
+
+            return message.profile.full_name;
+
+        }
+
+
+        if (
+            message.sender_name
+        ) {
+
+            return message.sender_name;
+
+        }
+
+
+        return "رسالة جديدة";
+
+    }
+
+
+    /* =====================================================
+       MESSAGE TEXT
+    ===================================================== */
+
+    function getMessageText(message) {
+
+        if (!message) {
+
+            return "لديك رسالة جديدة";
+
+        }
+
+
+        if (
+            typeof message.content === "string" &&
+            message.content.trim()
+        ) {
+
+            return message.content;
+
+        }
+
+
+        return "لديك رسالة جديدة";
+
+    }
+
+
+    /* =====================================================
+       MUTED STATE
+    ===================================================== */
+
+    async function isConversationMuted(
         conversationId
     ) {
 
@@ -592,47 +717,24 @@
             getClient();
 
 
-        const user =
-            getCurrentUser();
+        const userId =
+            getCurrentUserId();
 
 
         if (
             !client ||
-            !user ||
+            !userId ||
             !conversationId
         ) {
-
-            currentMuted =
-                false;
-
-            updateButtonUI(
-                false
-            );
 
             return false;
 
         }
 
 
-        if (
-            loadingMutedState
-        ) {
-
-            return currentMuted;
-
-        }
-
-
-        loadingMutedState =
-            true;
-
-
         try {
 
-            const {
-                data,
-                error
-            } =
+            const result =
                 await client
                     .from(
                         "conversation_members"
@@ -646,136 +748,356 @@
                     )
                     .eq(
                         "user_id",
-                        user.id
+                        userId
                     )
                     .maybeSingle();
 
 
-            if (error) {
-                throw error;
+            if (result.error) {
+
+                return false;
+
             }
 
 
-            currentMuted =
-                data?.muted === true;
-
-
-            updateButtonUI(
-                currentMuted
-            );
-
-
-            return currentMuted;
+            return result.data?.muted === true;
 
         } catch (error) {
 
-            console.error(
-                "[WFESC NOTIFICATIONS] Failed to load muted state:",
-                error
-            );
-
-
-            currentMuted =
-                false;
-
-
-            updateButtonUI(
-                false
-            );
-
-
             return false;
-
-        } finally {
-
-            loadingMutedState =
-                false;
 
         }
 
     }
 
 
-    /* =========================================================
-       SAVE MUTED STATE
-    ========================================================= */
+    /* =====================================================
+       UPDATE BUTTON
+    ===================================================== */
 
-    async function setMuted(
-        conversationId,
+    function getNotificationButton() {
+
+        return document.getElementById(
+            "chatNotificationButton"
+        );
+
+    }
+
+
+    function renderMuteButton(
         muted
     ) {
+
+        const button =
+            getNotificationButton();
+
+
+        if (!button) {
+
+            return;
+
+        }
+
+
+        if (muted) {
+
+            button.textContent =
+                "🔕";
+
+            button.classList.add(
+                "wfesc-chat-notifications-muted"
+            );
+
+            button.setAttribute(
+                "aria-label",
+                "تشغيل إشعارات المحادثة"
+            );
+
+            button.setAttribute(
+                "title",
+                "الإشعارات مكتومة"
+            );
+
+        } else {
+
+            button.textContent =
+                "🔔";
+
+            button.classList.remove(
+                "wfesc-chat-notifications-muted"
+            );
+
+            button.setAttribute(
+                "aria-label",
+                "كتم إشعارات المحادثة"
+            );
+
+            button.setAttribute(
+                "title",
+                "الإشعارات مفعلة"
+            );
+
+        }
+
+    }
+
+
+    async function loadMuteState() {
+
+        const conversationId =
+            getCurrentConversationId();
+
+
+        currentConversationId =
+            conversationId || null;
+
+
+        if (!conversationId) {
+
+            renderMuteButton(
+                false
+            );
+
+            return;
+
+        }
+
+
+        const muted =
+            await isConversationMuted(
+                conversationId
+            );
+
+
+        /*
+         * تأكد أن المستخدم لم ينتقل
+         * إلى محادثة ثانية أثناء الطلب.
+         */
+
+        if (
+            getCurrentConversationId() !==
+            conversationId
+        ) {
+
+            return;
+
+        }
+
+
+        renderMuteButton(
+            muted
+        );
+
+    }
+
+
+    /* =====================================================
+       TOGGLE MUTE
+    ===================================================== */
+
+    async function toggleMute() {
+
+        const button =
+            getNotificationButton();
+
 
         const client =
             getClient();
 
 
-        const user =
-            getCurrentUser();
+        const userId =
+            getCurrentUserId();
+
+
+        const conversationId =
+            getCurrentConversationId();
 
 
         if (
+            !button ||
             !client ||
-            !user ||
+            !userId ||
             !conversationId
         ) {
 
-            throw new Error(
-                "بيانات كتم الإشعارات غير متوفرة"
-            );
+            return;
 
         }
 
 
-        const {
-            error
-        } =
-            await client
-                .from(
-                    "conversation_members"
-                )
-                .update({
+        if (
+            button.dataset.busy === "true"
+        ) {
 
-                    muted:
-                        muted === true
+            return;
 
-                })
-                .eq(
-                    "conversation_id",
+        }
+
+
+        button.dataset.busy =
+            "true";
+
+
+        try {
+
+            const currentMuted =
+                await isConversationMuted(
                     conversationId
-                )
-                .eq(
-                    "user_id",
-                    user.id
                 );
 
 
-        if (error) {
-            throw error;
+            const newMuted =
+                !currentMuted;
+
+
+            const result =
+                await client
+                    .from(
+                        "conversation_members"
+                    )
+                    .update({
+                        muted: newMuted
+                    })
+                    .eq(
+                        "conversation_id",
+                        conversationId
+                    )
+                    .eq(
+                        "user_id",
+                        userId
+                    );
+
+
+            if (result.error) {
+
+                console.error(
+                    "WFESC notifications mute error:",
+                    result.error
+                );
+
+                return;
+
+            }
+
+
+            renderMuteButton(
+                newMuted
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "WFESC notifications toggle error:",
+                error
+            );
+
+        } finally {
+
+            button.dataset.busy =
+                "false";
+
         }
-
-
-        currentMuted =
-            muted === true;
-
-
-        updateButtonUI(
-            currentMuted
-        );
-
-
-        return currentMuted;
 
     }
 
 
-    /* =========================================================
-       TOGGLE MUTE
-    ========================================================= */
+    /* =====================================================
+       CURRENT CONVERSATION SYNC
+    ===================================================== */
 
-    async function toggleMute() {
+    function setupConversationSync() {
+
+        document.addEventListener(
+            "wfesc:chat-header-refresh",
+            function (event) {
+
+                const detail =
+                    event?.detail || {};
+
+
+                currentConversationId =
+                    detail.conversationId ||
+                    null;
+
+
+                loadMuteState();
+
+            }
+        );
+
+
+        document.addEventListener(
+            "visibilitychange",
+            function () {
+
+                if (
+                    document.visibilityState ===
+                    "visible"
+                ) {
+
+                    loadMuteState();
+
+                }
+
+            }
+        );
+
+
+        window.addEventListener(
+            "focus",
+            function () {
+
+                loadMuteState();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       NOTIFICATION FILTER
+    ===================================================== */
+
+    async function handleIncomingMessage(
+        payload
+    ) {
+
+        const message =
+            payload?.new;
+
+
+        if (!message) {
+
+            return;
+
+        }
+
+
+        const userId =
+            getCurrentUserId();
+
+
+        /*
+         * لا يوجد مستخدم مسجل.
+         */
+
+        if (!userId) {
+
+            return;
+
+        }
+
+
+        /*
+         * إذا الرسالة من نفس المستخدم:
+         * لا صوت ولا إشعار.
+         */
 
         if (
-            changingMutedState
+            message.sender_id ===
+            userId
         ) {
 
             return;
@@ -784,105 +1106,153 @@
 
 
         const conversationId =
-            getConversationId();
+            message.conversation_id;
 
 
         if (!conversationId) {
-
-            showNotificationToast(
-                "لا توجد محادثة مفتوحة"
-            );
 
             return;
 
         }
 
 
-        const nextMuted =
-            !currentMuted;
+        /*
+         * إذا المحادثة مكتومة:
+         * لا صوت ولا إشعار.
+         */
 
-
-        changingMutedState =
-            true;
-
-
-        const button =
-            getNotificationButton();
-
-
-        if (button) {
-
-            button.disabled =
-                true;
-
-        }
-
-
-        try {
-
-            await setMuted(
-                conversationId,
-                nextMuted
-            );
-
-
-            if (nextMuted) {
-
-                showNotificationToast(
-                    "تم كتم إشعارات هذه المحادثة"
-                );
-
-            } else {
-
-                showNotificationToast(
-                    "تم إلغاء كتم إشعارات هذه المحادثة"
-                );
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "[WFESC NOTIFICATIONS] Toggle mute failed:",
-                error
-            );
-
-
-            showNotificationToast(
-                "تعذر تغيير إعدادات الإشعارات"
-            );
-
-
-            /*
-             * إعادة القراءة من قاعدة البيانات
-             * حتى لا تبقى الواجهة بحالة خاطئة.
-             */
-
-            await loadMutedState(
+        const muted =
+            await isConversationMuted(
                 conversationId
             );
 
-        } finally {
 
-            changingMutedState =
-                false;
+        if (muted) {
 
-
-            if (button) {
-
-                button.disabled =
-                    false;
-
-            }
+            return;
 
         }
+
+
+        /*
+         * مهم:
+         *
+         * حتى إذا المستخدم داخل المحادثة
+         * سيتم إصدار الصوت لأن الرسالة
+         * جاءت من الطرف الآخر.
+         */
+
+        playNotificationSound();
+
+
+        showNotificationToast(
+            getSenderName(message),
+            getMessageText(message)
+        );
 
     }
 
 
-    /* =========================================================
-       BUTTON SETUP
-    ========================================================= */
+    /* =====================================================
+       REALTIME
+    ===================================================== */
+
+    function stopRealtime() {
+
+        const client =
+            getClient();
+
+
+        if (
+            client &&
+            realtimeChannel
+        ) {
+
+            try {
+
+                client.removeChannel(
+                    realtimeChannel
+                );
+
+            } catch (error) {
+
+            }
+
+        }
+
+
+        realtimeChannel =
+            null;
+
+        realtimeStarted =
+            false;
+
+    }
+
+
+    function startRealtime() {
+
+        const client =
+            getClient();
+
+
+        if (
+            !client ||
+            realtimeStarted
+        ) {
+
+            return;
+
+        }
+
+
+        realtimeStarted =
+            true;
+
+
+        realtimeChannel =
+            client
+                .channel(
+                    "wfesc-message-notifications-realtime"
+                )
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "INSERT",
+                        schema: "public",
+                        table: "messages"
+                    },
+                    function (payload) {
+
+                        handleIncomingMessage(
+                            payload
+                        );
+
+                    }
+                )
+                .subscribe(
+                    function (status) {
+
+                        if (
+                            status ===
+                            "SUBSCRIBED"
+                        ) {
+
+                            console.log(
+                                "WFESC message notifications realtime: connected"
+                            );
+
+                        }
+
+                    }
+                );
+
+    }
+
+
+    /* =====================================================
+       BUTTON
+    ===================================================== */
 
     function setupButton() {
 
@@ -902,9 +1272,6 @@
             "true"
         ) {
 
-            buttonReady =
-                true;
-
             return true;
 
         }
@@ -914,554 +1281,13 @@
             "true";
 
 
-        buttonReady =
-            true;
-
-
         button.addEventListener(
             "click",
-            async event => {
+            function () {
 
-                event.preventDefault();
+                unlockAudio();
 
-                event.stopPropagation();
-
-                await toggleMute();
-
-            }
-        );
-
-
-        installButtonStyle();
-
-
-        updateButtonUI(
-            currentMuted
-        );
-
-
-        return true;
-
-    }
-
-
-    /* =========================================================
-       WAIT FOR BUTTON
-    ========================================================= */
-
-    function watchForButton() {
-
-        if (
-            setupButton()
-        ) {
-
-            return;
-
-        }
-
-
-        let attempts =
-            0;
-
-
-        const timer =
-            setInterval(
-                () => {
-
-                    attempts++;
-
-
-                    if (
-                        setupButton() ||
-                        attempts >= 60
-                    ) {
-
-                        clearInterval(
-                            timer
-                        );
-
-                    }
-
-                },
-                250
-            );
-
-    }
-
-
-    /* =========================================================
-       MESSAGE HELPERS
-    ========================================================= */
-
-    function getMessageConversationId(
-        message
-    ) {
-
-        return (
-            message?.conversation_id ||
-            message?.conversationId ||
-            message?.conversation?.id ||
-            null
-        );
-
-    }
-
-
-    function getMessageSenderId(
-        message
-    ) {
-
-        return (
-            message?.sender_id ||
-            message?.senderId ||
-            message?.user_id ||
-            message?.userId ||
-            message?.sender?.id ||
-            null
-        );
-
-    }
-
-
-    function getMessageContent(
-        message
-    ) {
-
-        return (
-            message?.content ||
-            message?.message ||
-            ""
-        );
-
-    }
-
-
-    /* =========================================================
-       CHECK CURRENT CHAT
-    ========================================================= */
-
-    function isInsideSameConversation(
-        conversationId
-    ) {
-
-        const currentId =
-            getConversationId();
-
-
-        if (
-            !currentId ||
-            !conversationId
-        ) {
-
-            return false;
-
-        }
-
-
-        return (
-            String(currentId) ===
-            String(conversationId)
-        );
-
-    }
-
-
-    /* =========================================================
-       CHECK MESSAGE FROM CURRENT USER
-    ========================================================= */
-
-    function isOwnMessage(
-        message
-    ) {
-
-        const user =
-            getCurrentUser();
-
-
-        const senderId =
-            getMessageSenderId(
-                message
-            );
-
-
-        if (
-            !user?.id ||
-            !senderId
-        ) {
-
-            return false;
-
-        }
-
-
-        return (
-            String(user.id) ===
-            String(senderId)
-        );
-
-    }
-
-
-    /* =========================================================
-       READ MUTED STATE FOR ANY CONVERSATION
-    ========================================================= */
-
-    async function isConversationMuted(
-        conversationId,
-        userId
-    ) {
-
-        const client =
-            getClient();
-
-
-        if (
-            !client ||
-            !conversationId ||
-            !userId
-        ) {
-
-            return false;
-
-        }
-
-
-        try {
-
-            const {
-                data,
-                error
-            } =
-                await client
-                    .from(
-                        "conversation_members"
-                    )
-                    .select(
-                        "muted"
-                    )
-                    .eq(
-                        "conversation_id",
-                        conversationId
-                    )
-                    .eq(
-                        "user_id",
-                        userId
-                    )
-                    .maybeSingle();
-
-
-            if (error) {
-
-                console.warn(
-                    "[WFESC NOTIFICATIONS] Muted check failed:",
-                    error
-                );
-
-
-                return false;
-
-            }
-
-
-            return (
-                data?.muted === true
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "[WFESC NOTIFICATIONS] Muted check exception:",
-                error
-            );
-
-
-            return false;
-
-        }
-
-    }
-
-
-    /* =========================================================
-       GET SENDER NAME
-    ========================================================= */
-
-    function getSenderName(
-        message
-    ) {
-
-        const contact =
-            message?.sender ||
-            message?.profile ||
-            message?.user ||
-            null;
-
-
-        return (
-            contact?.display_name ||
-            contact?.full_name ||
-            contact?.name ||
-            contact?.username ||
-            "رسالة جديدة"
-        );
-
-    }
-
-
-    /* =========================================================
-       SHOW NEW MESSAGE NOTIFICATION
-    ========================================================= */
-
-    function notifyNewMessage(
-        message
-    ) {
-
-        const conversationId =
-            getMessageConversationId(
-                message
-            );
-
-
-        if (!conversationId) {
-            return;
-        }
-
-
-        if (
-            isOwnMessage(
-                message
-            )
-        ) {
-
-            return;
-        }
-
-
-        /*
-         * إذا كان المستخدم داخل نفس المحادثة
-         * لا نريد صوت أو إشعار إضافي.
-         */
-
-        if (
-            isInsideSameConversation(
-                conversationId
-            )
-        ) {
-
-            return;
-        }
-
-
-        /*
-         * لا نتحقق من currentMuted هنا
-         * لأن الرسالة قد تكون في محادثة ثانية.
-         * يتم فحص muted لتلك المحادثة تحديداً.
-         */
-
-        const user =
-            getCurrentUser();
-
-
-        if (!user?.id) {
-            return;
-        }
-
-
-        isConversationMuted(
-            conversationId,
-            user.id
-        )
-        .then(
-            muted => {
-
-                if (muted) {
-                    return;
-                }
-
-
-                /*
-                 * قد يكون المستخدم دخل المحادثة
-                 * أثناء انتظار استعلام muted.
-                 */
-
-                if (
-                    isInsideSameConversation(
-                        conversationId
-                    )
-                ) {
-
-                    return;
-                }
-
-
-                playNotificationSound();
-
-
-                const senderName =
-                    getSenderName(
-                        message
-                    );
-
-
-                const content =
-                    getMessageContent(
-                        message
-                    );
-
-
-                if (
-                    document.visibilityState ===
-                    "hidden"
-                ) {
-
-                    showNotificationToast(
-                        "رسالة جديدة من " +
-                        senderName
-                    );
-
-                } else {
-
-                    showNotificationToast(
-                        "رسالة جديدة من " +
-                        senderName +
-                        (
-                            content
-                                ? ": " +
-                                  String(
-                                      content
-                                  ).slice(
-                                      0,
-                                      55
-                                  )
-                                : ""
-                        )
-                    );
-
-                }
-
-            }
-        )
-        .catch(
-            error => {
-
-                console.warn(
-                    "[WFESC NOTIFICATIONS] Notification check failed:",
-                    error
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       REALTIME MESSAGE CHANNEL
-    ========================================================= */
-
-    async function setupRealtime() {
-
-        const client =
-            getClient();
-
-
-        if (!client) {
-
-            return false;
-
-        }
-
-
-        if (
-            realtimeStarted &&
-            realtimeChannel
-        ) {
-
-            return true;
-
-        }
-
-
-        if (
-            realtimeChannel
-        ) {
-
-            try {
-
-                await client.removeChannel(
-                    realtimeChannel
-                );
-
-            } catch (_) {}
-
-            realtimeChannel =
-                null;
-
-        }
-
-
-        realtimeChannel =
-            client
-                .channel(
-                    "wfesc-message-notifications-realtime"
-                )
-                .on(
-                    "postgres_changes",
-                    {
-                        event:
-                            "INSERT",
-
-                        schema:
-                            "public",
-
-                        table:
-                            "messages"
-                    },
-                    payload => {
-
-                        const message =
-                            payload?.new ||
-                            payload?.record ||
-                            null;
-
-
-                        if (!message) {
-                            return;
-                        }
-
-
-                        notifyNewMessage(
-                            message
-                        );
-
-                    }
-                );
-
-
-        realtimeChannel.subscribe(
-            status => {
-
-                if (
-                    status ===
-                    "SUBSCRIBED"
-                ) {
-
-                    realtimeStarted =
-                        true;
-
-
-                    console.log(
-                        "[WFESC] Message notifications Realtime connected"
-                    );
-
-                } else {
-
-                    console.warn(
-                        "[WFESC NOTIFICATIONS] Realtime:",
-                        status
-                    );
-
-                }
+                toggleMute();
 
             }
         );
@@ -1472,254 +1298,132 @@
     }
 
 
-    /* =========================================================
-       CONVERSATION CHANGE
-    ========================================================= */
+    /* =====================================================
+       INITIALIZATION
+    ===================================================== */
 
-    async function refreshForCurrentConversation() {
+    function initialize() {
 
-        const conversationId =
-            getConversationId();
+        ensureToastStyle();
 
+        prepareAudio();
 
-        currentConversationId =
-            conversationId ||
-            null;
+        setupAudioUnlock();
 
+        setupButton();
 
-        if (!conversationId) {
+        setupConversationSync();
 
-            currentMuted =
-                false;
+        loadMuteState();
 
-
-            updateButtonUI(
-                false
-            );
-
-
-            return;
-
-        }
-
-
-        await loadMutedState(
-            conversationId
-        );
+        startRealtime();
 
     }
 
 
-    /* =========================================================
-       CORE HEADER EVENT
-    ========================================================= */
+    /* =====================================================
+       RETRY DOM
+    ===================================================== */
 
-    window.addEventListener(
-        "wfesc:chat-header-refresh",
-        () => {
+    function boot() {
 
-            refreshForCurrentConversation();
+        initialize();
 
-        }
-    );
-
-
-    /* =========================================================
-       PAGE VISIBILITY
-    ========================================================= */
-
-    document.addEventListener(
-        "visibilitychange",
-        () => {
-
-            if (
-                document.visibilityState ===
-                "visible"
-            ) {
-
-                refreshForCurrentConversation();
-
-            }
-
-        }
-    );
-
-
-    /* =========================================================
-       WINDOW FOCUS
-    ========================================================= */
-
-    window.addEventListener(
-        "focus",
-        () => {
-
-            refreshForCurrentConversation();
-
-        }
-    );
-
-
-    /* =========================================================
-       AUTH CHANGE SUPPORT
-    ========================================================= */
-
-    window.addEventListener(
-        "wfesc:auth-ready",
-        () => {
-
-            setupRealtime();
-
-            refreshForCurrentConversation();
-
-        }
-    );
-
-
-    /* =========================================================
-       PUBLIC API
-    ========================================================= */
-
-    window.WFESC_MESSAGES_NOTIFICATIONS = {
-
-        getConversationId,
-
-        isMuted() {
-
-            return currentMuted;
-
-        },
-
-        async loadMutedState(
-            conversationId
-        ) {
-
-            return await loadMutedState(
-                conversationId ||
-                getConversationId()
-            );
-
-        },
-
-        async setMuted(
-            muted
-        ) {
-
-            const conversationId =
-                getConversationId();
-
-
-            if (!conversationId) {
-
-                throw new Error(
-                    "لا توجد محادثة مفتوحة"
-                );
-
-            }
-
-
-            return await setMuted(
-                conversationId,
-                muted
-            );
-
-        },
-
-        async toggleMute() {
-
-            return await toggleMute();
-
-        },
-
-        async refresh() {
-
-            return await refreshForCurrentConversation();
-
-        },
-
-        playSound() {
-
-            playNotificationSound();
-
-        },
-
-        notifyNewMessage,
-
-        setupRealtime
-
-    };
-
-
-    /* =========================================================
-       START
-    ========================================================= */
-
-    function start() {
-
-        watchForButton();
-
-        installButtonStyle();
-
-
-        /*
-         * محاولة مباشرة إذا كان Core جاهزاً.
-         */
 
         setTimeout(
-            () => {
-
-                setupRealtime();
-
-                refreshForCurrentConversation();
-
-            },
-            0
-        );
-
-
-        /*
-         * محاولة ثانية بعد اكتمال بقية الموديولات.
-         */
-
-        setTimeout(
-            () => {
+            function () {
 
                 setupButton();
 
-                setupRealtime();
-
-                refreshForCurrentConversation();
+                loadMuteState();
 
             },
             300
         );
 
 
-        /*
-         * محاولة ثالثة للتأكد من الجاهزية.
-         */
-
         setTimeout(
-            () => {
+            function () {
 
                 setupButton();
 
-                setupRealtime();
-
-                refreshForCurrentConversation();
+                loadMuteState();
 
             },
             1000
         );
 
+
+        setTimeout(
+            function () {
+
+                setupButton();
+
+                loadMuteState();
+
+            },
+            2000
+        );
+
     }
 
 
-    start();
+    /* =====================================================
+       PUBLIC API
+    ===================================================== */
+
+    window.WFESC_MESSAGES_NOTIFICATIONS = {
+
+        getCurrentConversationId:
+            function () {
+
+                return currentConversationId;
+
+            },
+
+        isMuted:
+            isConversationMuted,
+
+        toggleMute:
+            toggleMute,
+
+        playSound:
+            playNotificationSound,
+
+        loadMuteState:
+            loadMuteState,
+
+        startRealtime:
+            startRealtime,
+
+        stopRealtime:
+            stopRealtime
+
+    };
 
 
-    console.log(
-        "[WFESC] messages-notifications.js loaded"
-    );
+    /* =====================================================
+       START
+    ===================================================== */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            boot,
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        boot();
+
+    }
 
 
 })();
