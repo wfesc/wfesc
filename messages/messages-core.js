@@ -18,6 +18,9 @@
        - Optimistic + Realtime reconciliation
        - Message Settings
        - حماية من الشاشة السوداء أثناء التحميل
+       - حفظ حالة الرسائل وإعادة تحميلها من Supabase
+       - منع ظهور الرسالة مرتين عند الإرسال
+       - منع وميض المحادثة عند فتحها
     ============================================================
     */
 
@@ -477,11 +480,9 @@
     }
 
 
-    /*
-    ============================================================
-       تجهيز المحادثة على آخر رسالة بدون أي حركة مرئية
-    ============================================================
-    */
+    /* =========================================================
+       PREPARE CHAT AT BOTTOM
+    ========================================================= */
 
     function prepareChatAtBottom() {
 
@@ -533,7 +534,7 @@
 
 
     /* =========================================================
-       OPEN ANIMATION
+       PLAY OPEN ANIMATION
     ========================================================= */
 
     function playChatOpenAnimation() {
@@ -1996,6 +1997,119 @@
 
 
     /* =========================================================
+       FIND OPTIMISTIC MESSAGE IN STATE
+    ========================================================= */
+
+    function findOptimisticMessageInState(
+        message
+    ) {
+
+        if (!message) {
+            return null;
+        }
+
+        const senderId =
+            getMessageSenderId(
+                message
+            );
+
+        const content =
+            String(
+                getMessageContent(
+                    message
+                )
+            ).trim();
+
+        if (
+            !senderId ||
+            !content
+        ) {
+            return null;
+        }
+
+        const incomingTime =
+            new Date(
+                getMessageTime(
+                    message
+                ) || 0
+            ).getTime();
+
+        /*
+         * نبحث من الأحدث إلى الأقدم.
+         * هذا مهم إذا أرسل المستخدم نفس النص أكثر من مرة.
+         */
+        for (
+            let i =
+                currentMessages.length - 1;
+            i >= 0;
+            i--
+        ) {
+
+            const existing =
+                currentMessages[i];
+
+            if (
+                !existing?.optimistic
+            ) {
+                continue;
+            }
+
+            const existingSenderId =
+                getMessageSenderId(
+                    existing
+                );
+
+            if (
+                String(existingSenderId) !==
+                String(senderId)
+            ) {
+                continue;
+            }
+
+            const existingContent =
+                String(
+                    getMessageContent(
+                        existing
+                    )
+                ).trim();
+
+            if (
+                existingContent !==
+                content
+            ) {
+                continue;
+            }
+
+            const existingTime =
+                new Date(
+                    getMessageTime(
+                        existing
+                    ) || 0
+                ).getTime();
+
+            /*
+             * إذا عندنا وقت للرسالتين،
+             * لا نطابق رسائل قديمة متشابهة.
+             */
+            if (
+                incomingTime &&
+                existingTime &&
+                Math.abs(
+                    incomingTime -
+                    existingTime
+                ) > 15000
+            ) {
+                continue;
+            }
+
+            return existing;
+        }
+
+        return null;
+    }
+
+
+    /* =========================================================
        FIND DOM BY ID
     ========================================================= */
 
@@ -2036,7 +2150,7 @@
 
 
     /* =========================================================
-       FIND OPTIMISTIC
+       FIND OPTIMISTIC DOM MESSAGE
     ========================================================= */
 
     function findOptimisticMessageElement(
@@ -2067,10 +2181,20 @@
                 ".message-row.optimistic"
             );
 
+        /*
+         * نبحث من آخر عنصر للأول.
+         * حتى لو أرسل المستخدم نفس الرسالة مرتين،
+         * نطابق الأقرب زمنياً/الأحدث.
+         */
         for (
-            const row
-            of rows
+            let i =
+                rows.length - 1;
+            i >= 0;
+            i--
         ) {
+
+            const row =
+                rows[i];
 
             const rowSenderId =
                 row.dataset.senderId ||
@@ -2088,14 +2212,20 @@
                 ).trim();
 
             if (
-                String(rowSenderId) ===
-                String(senderId) &&
-                rowContent ===
+                String(rowSenderId) !==
+                String(senderId)
+            ) {
+                continue;
+            }
+
+            if (
+                rowContent !==
                 content
             ) {
-
-                return row;
+                continue;
             }
+
+            return row;
         }
 
         return null;
@@ -2110,6 +2240,11 @@
         message
     ) {
 
+        /*
+         * مهم:
+         * لا نبحث عن كل الرسائل بنفس المحتوى.
+         * فقط Optimistic.
+         */
         return findOptimisticMessageElement(
             message
         );
@@ -2173,6 +2308,11 @@
                 );
         }
 
+        element.dataset.content =
+            getMessageContent(
+                message
+            );
+
         const contentElement =
             element.querySelector(
                 ".message-content"
@@ -2222,6 +2362,10 @@
                 message
             );
 
+        /*
+         * إذا الرسالة الحقيقية موجودة بالفعل،
+         * لا نضيف نسخة ثانية.
+         */
         if (
             messageId != null &&
             findMessageInStateById(
@@ -2232,6 +2376,54 @@
             return false;
         }
 
+
+        /*
+         * أهم إصلاح:
+         *
+         * إذا عندنا Optimistic من نفس الرسالة،
+         * نستبدلها بالنسخة الحقيقية.
+         */
+        const optimisticMessage =
+            findOptimisticMessageInState(
+                message
+            );
+
+        if (optimisticMessage) {
+
+            const index =
+                currentMessages.indexOf(
+                    optimisticMessage
+                );
+
+            if (index >= 0) {
+
+                currentMessages[index] =
+                    message;
+
+                currentMessages.sort(
+                    (a, b) => {
+
+                        return (
+                            new Date(
+                                getMessageTime(a) || 0
+                            ).getTime()
+                            -
+                            new Date(
+                                getMessageTime(b) || 0
+                            ).getTime()
+                        );
+                    }
+                );
+
+                return true;
+            }
+        }
+
+
+        /*
+         * إذا لا توجد نسخة Optimistic،
+         * نضيف الرسالة الجديدة.
+         */
         currentMessages.push(
             message
         );
@@ -2323,7 +2515,7 @@
 
 
     /* =========================================================
-       HANDLE REALTIME
+       HANDLE REALTIME MESSAGE
     ========================================================= */
 
     function handleRealtimeMessage(
@@ -2339,10 +2531,19 @@
             return;
         }
 
+
+        /*
+         * تحديث معاينة المحادثة دائماً.
+         */
         updateConversationPreview(
             message
         );
 
+
+        /*
+         * إذا الرسالة ليست للمحادثة المفتوحة،
+         * لا نضيفها داخل chatMessages.
+         */
         if (
             !messageBelongsToCurrentConversation(
                 message
@@ -2351,10 +2552,16 @@
             return;
         }
 
+
         const messageId =
             getMessageId(
                 message
             );
+
+
+        /* =====================================================
+           1. الرسالة الحقيقية موجودة بالـSTATE
+        ===================================================== */
 
         const stateMessage =
             messageId != null
@@ -2402,6 +2609,75 @@
             return;
         }
 
+
+        /* =====================================================
+           2. البحث عن Optimistic داخل STATE
+        ===================================================== */
+
+        const optimisticStateMessage =
+            findOptimisticMessageInState(
+                message
+            );
+
+        if (optimisticStateMessage) {
+
+            const stateIndex =
+                currentMessages.indexOf(
+                    optimisticStateMessage
+                );
+
+            if (
+                stateIndex >= 0
+            ) {
+
+                currentMessages[
+                    stateIndex
+                ] =
+                    message;
+            }
+
+
+            /*
+             * البحث عن العنصر المؤقت في DOM.
+             */
+            let optimisticElement =
+                findDomMessageById(
+                    getMessageId(
+                        optimisticStateMessage
+                    )
+                );
+
+            if (!optimisticElement) {
+
+                optimisticElement =
+                    findOptimisticMessageElement(
+                        message
+                    );
+            }
+
+            if (optimisticElement) {
+
+                reconcileExistingMessage(
+                    optimisticElement,
+                    message
+                );
+            }
+
+
+            clearTypingUser(
+                getMessageSenderId(
+                    message
+                )
+            );
+
+            return;
+        }
+
+
+        /* =====================================================
+           3. البحث عن Optimistic داخل DOM
+        ===================================================== */
+
         let existingElement =
             messageId != null
                 ? findDomMessageById(
@@ -2436,6 +2712,11 @@
 
             return;
         }
+
+
+        /* =====================================================
+           4. رسالة جديدة فعلاً
+        ===================================================== */
 
         const wasAtBottom =
             isNearBottom();
@@ -2549,6 +2830,7 @@
                         updateConversationPreview(
                             message
                         );
+
                     }
                 );
 
@@ -2599,10 +2881,19 @@
         openingConversation =
             true;
 
+
+        /*
+         * كل فتح جديد يأخذ Token جديد.
+         */
         const loadToken =
             ++conversationLoadToken;
 
+
+        /*
+         * إيقاف Typing للمحادثة السابقة.
+         */
         await removeTypingChannel();
+
 
         currentConversationId =
             conversationId;
@@ -2610,13 +2901,14 @@
         currentConversationContact =
             contact;
 
+
         typingUsers.clear();
 
         hideTypingIndicator();
 
 
         /* =====================================================
-           إذا كانت محادثة الدعم
+           SUPPORT
         ===================================================== */
 
         if (
@@ -2629,7 +2921,7 @@
 
 
         /* =====================================================
-           جلب بيانات الشخص
+           GET CONTACT
         ===================================================== */
 
         if (
@@ -2679,16 +2971,11 @@
         updateChatHeader();
 
 
-        /*
-        ========================================================
-           IMPORTANT FIX
-
-           هنا لا نفتح chatView.
-
-           نخلي الصفحة الأصلية ظاهرة أثناء تحميل البيانات.
-           هذا يمنع الشاشة السوداء.
-        ========================================================
-        */
+        /* =====================================================
+           مهم جداً:
+           نخفي chatView بالكامل أثناء التحميل.
+           لا نخلي المستخدم يشوف تغيير scroll.
+        ===================================================== */
 
         if (chatView) {
 
@@ -2699,6 +2986,9 @@
             chatView.classList.remove(
                 "wfesc-chat-opening"
             );
+
+            chatView.style.visibility =
+                "hidden";
         }
 
 
@@ -2710,7 +3000,7 @@
 
 
         /* =====================================================
-           تحميل الرسائل أولاً
+           LOAD MESSAGES
         ===================================================== */
 
         const loaded =
@@ -2719,6 +3009,10 @@
             );
 
 
+        /*
+         * إذا صار فتح آخر أثناء التحميل،
+         * نتجاهل النتيجة القديمة.
+         */
         if (
             loadToken !==
             conversationLoadToken
@@ -2733,15 +3027,14 @@
 
         if (!loaded) {
 
-            /*
-               إذا صار خطأ، لا نخلي الصفحة سوداء.
-            */
-
             if (chatView) {
 
                 chatView.classList.remove(
                     "open"
                 );
+
+                chatView.style.visibility =
+                    "visible";
             }
 
             if (chatMessages) {
@@ -2757,20 +3050,21 @@
         }
 
 
-        /*
-        ========================================================
-           الرسائل الآن موجودة.
-
-           نفتح chatView وهي مخفية حتى يحصل
-           clientHeight حقيقي.
-        ========================================================
-        */
+        /* =====================================================
+           OPEN HIDDEN CHAT
+        ===================================================== */
 
         if (chatView) {
 
             chatView.classList.add(
                 "open"
             );
+
+            /*
+             * يبقى hidden حتى ينتهي ضبط الـscroll.
+             */
+            chatView.style.visibility =
+                "hidden";
         }
 
 
@@ -2781,15 +3075,9 @@
         }
 
 
-        /*
-        ========================================================
-           الآن المتصفح يستطيع حساب:
-           clientHeight
-           scrollHeight
-
-           بدون أن يرى المستخدم أي شيء.
-        ========================================================
-        */
+        /* =====================================================
+           PREPARE SCROLL
+        ===================================================== */
 
         prepareChatAtBottom();
 
@@ -2816,11 +3104,20 @@
         forceScrollToBottom();
 
 
-        /*
-        ========================================================
-           الآن الرسائل جاهزة تماماً.
-        ========================================================
-        */
+        await new Promise(
+            resolve =>
+                requestAnimationFrame(
+                    resolve
+                )
+        );
+
+
+        forceScrollToBottom();
+
+
+        /* =====================================================
+           الآن كل شيء جاهز
+        ===================================================== */
 
         if (chatMessages) {
 
@@ -2828,34 +3125,16 @@
                 "visible";
         }
 
+        if (chatView) {
 
-        /*
-        ========================================================
-           تفعيل typing بعد فتح المحادثة
-        ========================================================
-        */
-
-        await setupTypingChannel(
-            conversationId
-        );
+            chatView.style.visibility =
+                "visible";
+        }
 
 
-        /*
-        ========================================================
-           تعليم المحادثة كمقروءة
-        ========================================================
-        */
-
-        await markConversationRead(
-            conversationId
-        );
-
-
-        /*
-        ========================================================
-           إظهار واجهة المحادثة في الصفحة
-        ========================================================
-        */
+        /* =====================================================
+           إظهار الصفحة الرئيسية للمحادثة
+        ===================================================== */
 
         if (page) {
 
@@ -2863,7 +3142,6 @@
                 "chat-active"
             );
         }
-
 
         if (searchSection) {
 
@@ -2874,19 +3152,44 @@
 
 
         /*
-        ========================================================
-           تثبيت آخر رسالة مرة أخيرة
-        ========================================================
-        */
-
+         * تأكيد آخر Scroll قبل الأنيميشن.
+         */
         prepareChatAtBottom();
 
 
-        /*
-        ========================================================
-           Slide Up ناعم
-        ========================================================
-        */
+        /* =====================================================
+           TYPING + MARK READ
+           
+           لا ننتظرهم حتى تظهر المحادثة.
+        ===================================================== */
+
+        setupTypingChannel(
+            conversationId
+        ).catch(error => {
+
+            console.warn(
+                "WFESC typing setup:",
+                error
+            );
+
+        });
+
+
+        markConversationRead(
+            conversationId
+        ).catch(error => {
+
+            console.warn(
+                "WFESC mark read:",
+                error
+            );
+
+        });
+
+
+        /* =====================================================
+           SLIDE UP
+        ===================================================== */
 
         requestAnimationFrame(() => {
 
@@ -2943,11 +3246,9 @@
             currentConversationId;
 
 
-        /*
-        ========================================================
-           تنظيف الرسائل القديمة بدون إظهار أي شيء
-        ========================================================
-        */
+        /* =====================================================
+           تنظيف القديم بدون عرضه
+        ===================================================== */
 
         if (chatMessages) {
 
@@ -2976,6 +3277,10 @@
             );
 
 
+            /*
+             * إذا تغيرت المحادثة أثناء الطلب،
+             * لا نلمس الواجهة الجديدة.
+             */
             if (
                 expectedLoadToken !==
                 conversationLoadToken ||
@@ -2993,12 +3298,6 @@
                     "WFESC messages error:",
                     error
                 );
-
-
-                /*
-                   نعرض الخطأ فقط بعد أن نتأكد
-                   أن المستخدم ما زال في نفس المحادثة.
-                */
 
                 if (chatMessages) {
 
@@ -3025,18 +3324,21 @@
             }
 
 
+            /*
+             * المصدر الأساسي للرسائل هو Supabase.
+             *
+             * لا نعتمد على الذاكرة القديمة.
+             */
             currentMessages =
                 Array.isArray(data)
                     ? [...data]
                     : [];
 
 
-            /*
-            ====================================================
+            /* =================================================
                الأقدم أولاً
                الأحدث أخيراً
-            ====================================================
-            */
+            ================================================= */
 
             currentMessages.sort(
                 (a, b) => {
@@ -3055,11 +3357,36 @@
 
 
             /*
-            ====================================================
-               رسم الرسائل بدون إظهارها
-            ====================================================
-            */
+             * بعد تحميل الرسائل من قاعدة البيانات،
+             * لا نريد أن تبقى أي نسخة Optimistic قديمة.
+             */
+            currentMessages =
+                currentMessages.map(
+                    message => {
 
+                        if (
+                            message &&
+                            message.optimistic
+                        ) {
+
+                            const cleanMessage =
+                                {
+                                    ...message
+                                };
+
+                            delete cleanMessage.optimistic;
+
+                            return cleanMessage;
+                        }
+
+                        return message;
+                    }
+                );
+
+
+            /*
+             * الرسم يتم وهو مخفي.
+             */
             renderMessages({
                 initialLoad:
                     true
@@ -3075,7 +3402,13 @@
                 error
             );
 
-            if (chatMessages) {
+            if (
+                expectedLoadToken ===
+                conversationLoadToken &&
+                requestedConversationId ===
+                currentConversationId &&
+                chatMessages
+            ) {
 
                 chatMessages.innerHTML = `
                     <div class="empty-state">
@@ -3140,11 +3473,9 @@
             "";
 
 
-        /*
-        ========================================================
-           لا توجد رسائل
-        ========================================================
-        */
+        /* =====================================================
+           NO MESSAGES
+        ===================================================== */
 
         if (!currentMessages.length) {
 
@@ -3172,11 +3503,6 @@
 
             if (initialLoad) {
 
-                /*
-                   لا نظهرها هنا.
-                   openConversation هو الذي يقرر متى تظهر.
-                */
-
                 requestAnimationFrame(() => {
 
                     forceScrollToBottom();
@@ -3188,11 +3514,9 @@
         }
 
 
-        /*
-        ========================================================
-           إنشاء الرسائل
-        ========================================================
-        */
+        /* =====================================================
+           CREATE MESSAGES
+        ===================================================== */
 
         const fragment =
             document.createDocumentFragment();
@@ -3221,14 +3545,9 @@
         scheduleMessageSettingsApply();
 
 
-        /*
-        ========================================================
-           Initial Load
-
-           نستخدم auto فقط.
-           لا يوجد smooth هنا نهائياً.
-        ========================================================
-        */
+        /* =====================================================
+           INITIAL LOAD
+        ===================================================== */
 
         if (initialLoad) {
 
@@ -3284,11 +3603,9 @@
         }
 
 
-        /*
-        ========================================================
-           Render عادي بعد إرسال/Realtime
-        ========================================================
-        */
+        /* =====================================================
+           NORMAL RENDER
+        ===================================================== */
 
         if (wasNear) {
 
@@ -3345,6 +3662,10 @@
             );
 
 
+        /*
+         * Optimistic message تحصل على class خاص.
+         * Realtime يحذف هذا class عند التأكيد.
+         */
         if (
             message?.optimistic
         ) {
@@ -3360,8 +3681,9 @@
                 message
             );
 
-
-        if (messageId != null) {
+        if (
+            messageId != null
+        ) {
 
             row.dataset.messageId =
                 String(
@@ -3449,7 +3771,7 @@
 
 
     /* =========================================================
-       ADD MESSAGE
+       ADD MESSAGE TO CURRENT CONVERSATION
     ========================================================= */
 
     function addMessageToCurrentConversation(
@@ -3460,6 +3782,7 @@
         if (!message) {
             return null;
         }
+
 
         if (
             options.conversationId &&
@@ -3474,11 +3797,17 @@
             return null;
         }
 
+
         const messageId =
             getMessageId(
                 message
             );
 
+
+        /*
+         * لا تضف الرسالة إذا كانت موجودة
+         * فعلياً بنفس ID.
+         */
         if (
             messageId != null &&
             findMessageInStateById(
@@ -3488,6 +3817,7 @@
 
             return null;
         }
+
 
         const wasAtBottom =
             isNearBottom();
@@ -3513,6 +3843,10 @@
             }
         );
 
+
+        /* =====================================================
+           APPEND ONLY
+        ===================================================== */
 
         if (
             options.appendOnly &&
@@ -3550,6 +3884,10 @@
             return element;
         }
 
+
+        /* =====================================================
+           NORMAL RENDER
+        ===================================================== */
 
         renderMessages();
 
@@ -3621,6 +3959,9 @@
 
     async function closeConversation() {
 
+        /*
+         * إلغاء أي تحميل سابق فوراً.
+         */
         conversationLoadToken++;
 
 
@@ -3652,6 +3993,13 @@
             chatView.classList.remove(
                 "open"
             );
+
+            /*
+             * مهم:
+             * بعد الإغلاق يجب ألا يبقى hidden.
+             */
+            chatView.style.visibility =
+                "visible";
         }
 
 
