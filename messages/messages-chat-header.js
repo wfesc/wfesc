@@ -9,6 +9,7 @@
    - تحديث النقطة الخضراء
    - الاعتماد على messages-activity.js لمعرفة النشاط
    - الاستماع لتحديثات Core و Activity
+   - حماية بيانات المستخدم عند وجود حظر
    - تجهيز زر رأس المحادثة للمستقبل
 
    لا يحتوي هذا الملف على:
@@ -42,6 +43,16 @@
 
         return (
             window.WFESC_MESSAGES_ACTIVITY ||
+            null
+        );
+
+    }
+
+
+    function getBlock() {
+
+        return (
+            window.WFESC_MESSAGES_BLOCK ||
             null
         );
 
@@ -94,6 +105,19 @@
         null;
 
 
+    let currentBlockState = {
+
+        blocked: false,
+
+        blockedBy: false
+
+    };
+
+
+    let blockCheckToken =
+        0;
+
+
     /* =========================================================
        الصورة الافتراضية
     ========================================================= */
@@ -137,8 +161,73 @@
 
 
     /* =========================================================
+       صورة مستخدم محظور
+       لا تحتوي على أي معلومة عن المستخدم الحقيقي
+    ========================================================= */
+
+    const BLOCKED_AVATAR =
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(`
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="200"
+                height="200"
+                viewBox="0 0 200 200"
+            >
+
+                <rect
+                    width="200"
+                    height="200"
+                    rx="100"
+                    fill="#151515"
+                />
+
+                <circle
+                    cx="100"
+                    cy="100"
+                    r="72"
+                    fill="#242424"
+                    stroke="#555"
+                    stroke-width="5"
+                />
+
+                <rect
+                    x="58"
+                    y="88"
+                    width="84"
+                    height="58"
+                    rx="10"
+                    fill="#777"
+                />
+
+                <path
+                    d="
+                        M75 88
+                        V70
+                        C75 56 86 45 100 45
+                        C114 45 125 56 125 70
+                        V88
+                    "
+                    fill="none"
+                    stroke="#999"
+                    stroke-width="12"
+                    stroke-linecap="round"
+                />
+
+                <circle
+                    cx="100"
+                    cy="115"
+                    r="7"
+                    fill="#151515"
+                />
+
+            </svg>
+        `);
+
+
+    /* =========================================================
        الحصول على معرف المستخدم من بيانات Contact
-       
+
        يدعم:
        user_id
        id
@@ -298,6 +387,194 @@
 
             DEFAULT_AVATAR
 
+        );
+
+    }
+
+
+    /* =========================================================
+       فحص حالة الحظر
+       
+       blocked:
+       المستخدم الحالي قام بحظر الشخص.
+
+       blockedBy:
+       الشخص الحالي قام بحظر المستخدم الحالي.
+    ========================================================= */
+
+    async function getBlockState(contact) {
+
+        const block =
+            getBlock();
+
+
+        const userId =
+            getContactUserId(
+                contact
+            );
+
+
+        if (
+            !block ||
+            !userId
+        ) {
+
+            return {
+
+                blocked: false,
+
+                blockedBy: false
+
+            };
+
+        }
+
+
+        let blocked =
+            false;
+
+
+        let blockedBy =
+            false;
+
+
+        try {
+
+            if (
+                typeof block.isBlocked ===
+                "function"
+            ) {
+
+                blocked =
+                    await block.isBlocked(
+                        userId
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CHAT HEADER] isBlocked failed:",
+                error
+            );
+
+        }
+
+
+        try {
+
+            if (
+                typeof block.isBlockedBy ===
+                "function"
+            ) {
+
+                blockedBy =
+                    await block.isBlockedBy(
+                        userId
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CHAT HEADER] isBlockedBy failed:",
+                error
+            );
+
+        }
+
+
+        return {
+
+            blocked:
+                blocked === true,
+
+            blockedBy:
+                blockedBy === true
+
+        };
+
+    }
+
+
+    /* =========================================================
+       تحديث حالة الحظر الحالية
+    ========================================================= */
+
+    async function refreshBlockState(
+        contact
+    ) {
+
+        const token =
+            ++blockCheckToken;
+
+
+        const normalized =
+            normalizeContact(
+                contact
+            );
+
+
+        if (!normalized) {
+
+            currentBlockState = {
+
+                blocked: false,
+
+                blockedBy: false
+
+            };
+
+            return currentBlockState;
+
+        }
+
+
+        const state =
+            await getBlockState(
+                normalized
+            );
+
+
+        /*
+         * إذا تغيرت المحادثة أثناء الفحص،
+         * لا نطبق نتيجة الفحص القديمة.
+         */
+
+        if (
+            token !== blockCheckToken
+        ) {
+
+            return currentBlockState;
+
+        }
+
+
+        currentBlockState =
+            state;
+
+
+        return state;
+
+    }
+
+
+    /* =========================================================
+       هل يجب إخفاء هوية المستخدم؟
+       
+       فقط إذا كان الطرف الآخر هو الذي حظر المستخدم الحالي.
+       
+       إذا المستخدم الحالي هو الذي حظر الطرف الآخر،
+       تبقى بيانات الطرف الآخر ظاهرة عنده.
+    ========================================================= */
+
+    function isContactBlockedByThem() {
+
+        return (
+            currentBlockState?.blockedBy ===
+            true
         );
 
     }
@@ -524,6 +801,21 @@
         }
 
 
+        /*
+         * إذا المستخدم حاظر الطرف الآخر،
+         * لا نحتاج لإظهار حالة النشاط.
+         */
+
+        if (
+            currentBlockState?.blockedBy ===
+            true
+        ) {
+
+            return false;
+
+        }
+
+
         const state =
             getActivityState(
                 contact
@@ -550,6 +842,20 @@
 
         if (!contact) {
             return "";
+        }
+
+
+        /*
+         * الحظر من الطرف الآخر
+         */
+
+        if (
+            currentBlockState?.blockedBy ===
+            true
+        ) {
+
+            return "قام المستخدم بحظرك";
+
         }
 
 
@@ -617,6 +923,32 @@
         }
 
 
+        /*
+         * إذا الطرف الآخر حاظر المستخدم الحالي،
+         * لا نعرض صورته الحقيقية.
+         */
+
+        if (
+            isContactBlockedByThem()
+        ) {
+
+            chatAvatar.src =
+                BLOCKED_AVATAR;
+
+
+            chatAvatar.alt =
+                "قام المستخدم بحظرك";
+
+
+            chatAvatar.onerror =
+                null;
+
+
+            return;
+
+        }
+
+
         const normalized =
             normalizeContact(
                 contact
@@ -670,6 +1002,24 @@
 
         if (!chatName) {
             return;
+        }
+
+
+        /*
+         * لا نكشف الاسم الحقيقي
+         * لمن قام بحظره.
+         */
+
+        if (
+            isContactBlockedByThem()
+        ) {
+
+            chatName.textContent =
+                "قام المستخدم بحظرك";
+
+
+            return;
+
         }
 
 
@@ -727,9 +1077,15 @@
 
         if (chatOnlineDot) {
 
+            /*
+             * لا تظهر النقطة الخضراء
+             * إذا كان المستخدم قد حظرك.
+             */
+
             chatOnlineDot.classList.toggle(
                 "active",
-                online
+                online &&
+                !isContactBlockedByThem()
             );
 
         }
@@ -741,7 +1097,7 @@
        تحديث رأس المحادثة بالكامل
     ========================================================= */
 
-    function renderHeader(contact) {
+    async function renderHeader(contact) {
 
         if (!contact) {
             return;
@@ -756,6 +1112,36 @@
 
         currentContact =
             normalized;
+
+
+        /*
+         * نتحقق من الحظر قبل عرض
+         * الاسم والصورة.
+         */
+
+        await refreshBlockState(
+            normalized
+        );
+
+
+        /*
+         * قد تكون المحادثة تغيرت أثناء
+         * انتظار فحص الحظر.
+         */
+
+        if (
+            currentContact !== normalized &&
+            getContactUserId(
+                currentContact
+            ) !==
+            getContactUserId(
+                normalized
+            )
+        ) {
+
+            return;
+
+        }
 
 
         renderAvatar(
@@ -895,6 +1281,35 @@
 
 
         /*
+         * إذا كان الطرف الآخر حاظراً للمستخدم،
+         * نعيد رسم الرأس فقط بدون كشف النشاط.
+         */
+
+        if (
+            isContactBlockedByThem()
+        ) {
+
+            renderName(
+                currentContact
+            );
+
+
+            renderAvatar(
+                currentContact
+            );
+
+
+            renderActivity(
+                currentContact
+            );
+
+
+            return;
+
+        }
+
+
+        /*
          * نعيد توحيد البيانات كل مرة.
          */
 
@@ -961,6 +1376,90 @@
 
 
     /* =========================================================
+       أحداث الحظر
+       
+       عند الحظر أو إلغاء الحظر:
+       - نعيد فحص الحالة
+       - نعيد الاسم
+       - نعيد الصورة
+       - نعيد حالة النشاط
+    ========================================================= */
+
+    function handleBlockChanged(event) {
+
+        const changedUserId =
+            event?.detail?.userId ||
+            event?.detail?.blockedUserId ||
+            event?.detail?.blocked_id ||
+            null;
+
+
+        const currentContactId =
+            getContactUserId(
+                currentContact
+            );
+
+
+        /*
+         * إذا كان الحدث متعلقاً
+         * بشخص آخر فلا داعي لإعادة الرسم.
+         */
+
+        if (
+            changedUserId &&
+            currentContactId &&
+            String(changedUserId) !==
+            String(currentContactId)
+        ) {
+
+            return;
+
+        }
+
+
+        currentBlockState = {
+
+            blocked: false,
+
+            blockedBy: false
+
+        };
+
+
+        if (currentContact) {
+
+            renderHeader(
+                currentContact
+            );
+
+        } else {
+
+            refreshFromCore();
+
+        }
+
+    }
+
+
+    window.addEventListener(
+        "wfesc:block-changed",
+        handleBlockChanged
+    );
+
+
+    window.addEventListener(
+        "wfesc:blocked",
+        handleBlockChanged
+    );
+
+
+    window.addEventListener(
+        "wfesc:unblocked",
+        handleBlockChanged
+    );
+
+
+    /* =========================================================
        طلب تحديث النشاط عند الحاجة
     ========================================================= */
 
@@ -1008,7 +1507,13 @@
                                     currentContact,
 
                                 conversationId:
-                                    currentConversationId
+                                    currentConversationId,
+
+                                blocked:
+                                    currentBlockState.blocked,
+
+                                blockedBy:
+                                    currentBlockState.blockedBy
 
                             }
                         }
@@ -1138,6 +1643,15 @@
 
         getDisplayName() {
 
+            if (
+                isContactBlockedByThem()
+            ) {
+
+                return "قام المستخدم بحظرك";
+
+            }
+
+
             return getDisplayName(
                 currentContact
             );
@@ -1146,6 +1660,15 @@
 
 
         getAvatarUrl() {
+
+            if (
+                isContactBlockedByThem()
+            ) {
+
+                return BLOCKED_AVATAR;
+
+            }
+
 
             return getAvatarUrl(
                 currentContact
@@ -1189,6 +1712,37 @@
                     currentContact
                 )
             );
+
+        },
+
+
+        isBlocked() {
+
+            return (
+                currentBlockState.blocked ===
+                true
+            );
+
+        },
+
+
+        isBlockedBy() {
+
+            return (
+                currentBlockState.blockedBy ===
+                true
+            );
+
+        },
+
+
+        getBlockState() {
+
+            return {
+
+                ...currentBlockState
+
+            };
 
         },
 
