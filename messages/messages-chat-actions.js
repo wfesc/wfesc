@@ -3,7 +3,7 @@
 
     /*
     ============================================================
-    WFESC MESSAGES CHAT ACTIONS
+       WFESC MESSAGES CHAT ACTIONS
     ============================================================
 
     المسؤول عن:
@@ -22,6 +22,7 @@
     - الحفاظ على Messages Core كما هو
 
     لا يتم تعديل:
+
     messages-core.js
     messages-send.js
     messages-settings.js
@@ -34,30 +35,27 @@
 
     /* =========================================================
        CORE
-    ========================================================= */
+       ========================================================= */
 
-    const CORE =
-        () =>
-            window.WFESC_MESSAGES_CORE || null;
+    const CORE = () =>
+        window.WFESC_MESSAGES_CORE || null;
 
 
     /* =========================================================
        BLOCK MODULE
-    ========================================================= */
+       ========================================================= */
 
-    const BLOCK =
-        () =>
-            window.WFESC_MESSAGES_BLOCK || null;
+    const BLOCK = () =>
+        window.WFESC_MESSAGES_BLOCK || null;
 
 
     /* =========================================================
        HELPERS
-    ========================================================= */
+       ========================================================= */
 
     function getClient() {
 
-        const core =
-            CORE();
+        const core = CORE();
 
         return core?.client || null;
     }
@@ -65,13 +63,11 @@
 
     function getCurrentUser() {
 
-        const core =
-            CORE();
+        const core = CORE();
 
         if (
             !core ||
-            typeof core.getCurrentUser !==
-            "function"
+            typeof core.getCurrentUser !== "function"
         ) {
             return null;
         }
@@ -81,18 +77,16 @@
 
 
     /* =========================================================
-       FIXED CONVERSATION ID
+       CONVERSATION ID
        ========================================================= */
 
     function getConversationId() {
 
-        const core =
-            CORE();
+        const core = CORE();
 
         if (
             !core ||
-            typeof core.getCurrentConversation !==
-            "function"
+            typeof core.getCurrentConversation !== "function"
         ) {
             return null;
         }
@@ -100,24 +94,15 @@
         const conversation =
             core.getCurrentConversation();
 
-        if (
-            conversation == null
-        ) {
+        if (conversation == null) {
             return null;
         }
 
-        if (
-            typeof conversation ===
-            "string"
-        ) {
-
+        if (typeof conversation === "string") {
             return conversation;
         }
 
-        if (
-            typeof conversation ===
-            "object"
-        ) {
+        if (typeof conversation === "object") {
 
             return (
                 conversation.conversation_id ||
@@ -137,13 +122,11 @@
 
     function getCurrentContact() {
 
-        const core =
-            CORE();
+        const core = CORE();
 
         if (
             !core ||
-            typeof core.getCurrentContact !==
-            "function"
+            typeof core.getCurrentContact !== "function"
         ) {
             return null;
         }
@@ -153,7 +136,7 @@
 
 
     /* =========================================================
-       GET CONTACT USER ID
+       CONTACT USER ID
        ========================================================= */
 
     function getContactUserId(
@@ -176,7 +159,7 @@
 
 
     /* =========================================================
-       GET CONTACT NAME
+       CONTACT NAME
        ========================================================= */
 
     function getContactName(
@@ -199,35 +182,17 @@
 
 
     /* =========================================================
-       ESCAPE
+       ESCAPE HTML
        ========================================================= */
 
     function escapeHtml(value) {
 
-        return String(
-            value ?? ""
-        )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
 
@@ -248,9 +213,7 @@
         if (!toast) {
 
             toast =
-                document.createElement(
-                    "div"
-                );
+                document.createElement("div");
 
             toast.id =
                 "wfescChatActionsToast";
@@ -260,65 +223,42 @@
 
             toast.style.cssText = `
                 position:fixed;
-
                 left:50%;
                 bottom:92px;
-
                 transform:
                     translateX(-50%)
                     translateY(15px);
-
                 z-index:9999999;
-
                 max-width:
                     calc(100vw - 32px);
-
-                padding:
-                    12px 18px;
-
-                border-radius:
-                    14px;
-
+                padding:12px 18px;
+                border-radius:14px;
                 background:
                     rgba(18,18,18,.96);
-
                 color:#fff;
-
                 border:
                     1px solid
                     rgba(255,255,255,.10);
-
                 box-shadow:
                     0 15px 45px
                     rgba(0,0,0,.55);
-
                 font-size:13px;
                 font-weight:600;
-
                 text-align:center;
-
                 opacity:0;
-
                 pointer-events:none;
-
                 transition:
                     opacity .18s ease,
                     transform .18s ease;
-
-                backdrop-filter:
-                    blur(14px);
-
-                -webkit-backdrop-filter:
-                    blur(14px);
+                backdrop-filter:blur(14px);
+                -webkit-backdrop-filter:blur(14px);
             `;
 
-            document.body.appendChild(
-                toast
-            );
+            document.body.appendChild(toast);
         }
 
         toast.textContent =
-            message;
+            String(message ?? "");
 
         toast.style.opacity =
             "1";
@@ -331,18 +271,15 @@
         );
 
         toast._wfescTimer =
-            setTimeout(
-                () => {
+            setTimeout(() => {
 
-                    toast.style.opacity =
-                        "0";
+                toast.style.opacity =
+                    "0";
 
-                    toast.style.transform =
-                        "translateX(-50%) translateY(15px)";
+                toast.style.transform =
+                    "translateX(-50%) translateY(15px)";
 
-                },
-                duration
-            );
+            }, duration);
     }
 
 
@@ -350,8 +287,7 @@
        ACTION MENU
        ========================================================= */
 
-    let menu =
-        null;
+    let menu = null;
 
 
     function closeMenu() {
@@ -361,9 +297,7 @@
         }
 
         menu.remove();
-
-        menu =
-            null;
+        menu = null;
     }
 
 
@@ -372,9 +306,7 @@
         closeMenu();
 
         menu =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         menu.id =
             "wfescChatActionsMenu";
@@ -384,35 +316,22 @@
 
         menu.style.cssText = `
             position:fixed;
-
             z-index:999998;
-
             top:64px;
             left:16px;
-
             width:220px;
-
             padding:7px;
-
             background:
                 rgba(15,15,15,.97);
-
             border:
                 1px solid
                 rgba(255,255,255,.10);
-
             border-radius:16px;
-
             box-shadow:
                 0 18px 55px
                 rgba(0,0,0,.65);
-
-            backdrop-filter:
-                blur(18px);
-
-            -webkit-backdrop-filter:
-                blur(18px);
-
+            backdrop-filter:blur(18px);
+            -webkit-backdrop-filter:blur(18px);
             animation:
                 wfescChatActionsMenuIn
                 .16s ease both;
@@ -423,24 +342,17 @@
             "wfescChatActionsMenuStyle";
 
 
-        if (
-            !document.getElementById(
-                styleId
-            )
-        ) {
+        if (!document.getElementById(styleId)) {
 
             const style =
-                document.createElement(
-                    "style"
-                );
+                document.createElement("style");
 
             style.id =
                 styleId;
 
             style.textContent = `
 
-                @keyframes
-                wfescChatActionsMenuIn {
+                @keyframes wfescChatActionsMenuIn {
 
                     from {
                         opacity:0;
@@ -461,33 +373,18 @@
                 .wfesc-chat-action-item {
 
                     width:100%;
-
                     display:flex;
                     align-items:center;
-
                     gap:10px;
-
                     border:0;
-
-                    background:
-                        transparent;
-
+                    background:transparent;
                     color:#fff;
-
-                    padding:
-                        12px 13px;
-
+                    padding:12px 13px;
                     border-radius:11px;
-
-                    font-family:
-                        inherit;
-
+                    font-family:inherit;
                     font-size:13px;
-
                     text-align:right;
-
                     cursor:pointer;
-
                     transition:
                         background .15s ease;
                 }
@@ -515,18 +412,13 @@
                 .wfesc-chat-action-divider {
 
                     height:1px;
-
-                    margin:
-                        5px 8px;
-
+                    margin:5px 8px;
                     background:
                         rgba(255,255,255,.07);
                 }
             `;
 
-            document.head.appendChild(
-                style
-            );
+            document.head.appendChild(style);
         }
 
 
@@ -535,9 +427,7 @@
            ===================================================== */
 
         const deleteButton =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
         deleteButton.type =
             "button";
@@ -545,18 +435,16 @@
         deleteButton.className =
             "wfesc-chat-action-item danger";
 
-        deleteButton.innerHTML =
-            `
-                <span>🗑️</span>
-                <span>حذف المحادثة</span>
-            `;
+        deleteButton.innerHTML = `
+            <span>🗑️</span>
+            <span>حذف المحادثة</span>
+        `;
 
         deleteButton.addEventListener(
             "click",
             () => {
 
                 closeMenu();
-
                 openDeleteChoice();
 
             }
@@ -568,9 +456,7 @@
            ===================================================== */
 
         const divider =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         divider.className =
             "wfesc-chat-action-divider";
@@ -581,9 +467,7 @@
            ===================================================== */
 
         const blockButton =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
         blockButton.type =
             "button";
@@ -591,74 +475,64 @@
         blockButton.className =
             "wfesc-chat-action-item block";
 
-        blockButton.innerHTML =
-            `
-                <span>🚫</span>
-                <span>حظر المستخدم</span>
-            `;
+        blockButton.innerHTML = `
+            <span>🚫</span>
+            <span>حظر المستخدم</span>
+        `;
 
         blockButton.addEventListener(
             "click",
             () => {
 
                 closeMenu();
-
                 openBlockConfirmation();
 
             }
         );
 
 
-        menu.appendChild(
-            deleteButton
-        );
+        menu.appendChild(deleteButton);
+        menu.appendChild(divider);
+        menu.appendChild(blockButton);
 
-        menu.appendChild(
-            divider
-        );
-
-        menu.appendChild(
-            blockButton
-        );
+        document.body.appendChild(menu);
 
 
-        document.body.appendChild(
-            menu
-        );
+        setTimeout(() => {
 
+            const currentMenu =
+                menu;
 
-        setTimeout(
-            () => {
+            if (!currentMenu) {
+                return;
+            }
 
-                const outsideClick =
-                    event => {
+            const outsideClick =
+                event => {
 
-                        if (
-                            menu &&
-                            !menu.contains(
-                                event.target
-                            )
-                        ) {
+                    if (
+                        !currentMenu.contains(
+                            event.target
+                        )
+                    ) {
 
-                            closeMenu();
+                        closeMenu();
 
-                            document.removeEventListener(
-                                "pointerdown",
-                                outsideClick,
-                                true
-                            );
-                        }
-                    };
+                        document.removeEventListener(
+                            "pointerdown",
+                            outsideClick,
+                            true
+                        );
+                    }
+                };
 
-                document.addEventListener(
-                    "pointerdown",
-                    outsideClick,
-                    true
-                );
+            document.addEventListener(
+                "pointerdown",
+                outsideClick,
+                true
+            );
 
-            },
-            0
-        );
+        }, 0);
     }
 
 
@@ -674,11 +548,11 @@
             ) ||
 
             document.querySelector(
-                '[data-chat-menu-button]'
+                "[data-chat-menu-button]"
             ) ||
 
             document.querySelector(
-                '.chat-menu-button'
+                ".chat-menu-button"
             )
         );
     }
@@ -693,9 +567,7 @@
         closeOverlay();
 
         const overlay =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         overlay.id =
             "wfescChatActionsOverlay";
@@ -705,27 +577,16 @@
 
         overlay.style.cssText = `
             position:fixed;
-
             inset:0;
-
             z-index:9999998;
-
             display:flex;
-
             align-items:center;
             justify-content:center;
-
             padding:20px;
-
             background:
                 rgba(0,0,0,.72);
-
-            backdrop-filter:
-                blur(12px);
-
-            -webkit-backdrop-filter:
-                blur(12px);
-
+            backdrop-filter:blur(12px);
+            -webkit-backdrop-filter:blur(12px);
             animation:
                 wfescActionsOverlayIn
                 .18s ease both;
@@ -736,24 +597,17 @@
             "wfescActionsOverlayStyle";
 
 
-        if (
-            !document.getElementById(
-                styleId
-            )
-        ) {
+        if (!document.getElementById(styleId)) {
 
             const style =
-                document.createElement(
-                    "style"
-                );
+                document.createElement("style");
 
             style.id =
                 styleId;
 
             style.textContent = `
 
-                @keyframes
-                wfescActionsOverlayIn {
+                @keyframes wfescActionsOverlayIn {
 
                     from {
                         opacity:0;
@@ -771,7 +625,6 @@
                         min(430px, 100%);
 
                     padding:22px;
-
                     border-radius:20px;
 
                     background:
@@ -792,13 +645,9 @@
                 .wfesc-actions-title {
 
                     color:#fff;
-
                     font-size:17px;
-
                     font-weight:800;
-
                     line-height:1.7;
-
                     margin-bottom:10px;
                 }
 
@@ -806,11 +655,8 @@
                 .wfesc-actions-message {
 
                     color:#aaa;
-
                     font-size:13px;
-
                     line-height:1.8;
-
                     margin-bottom:20px;
                 }
 
@@ -818,9 +664,7 @@
                 .wfesc-actions-buttons {
 
                     display:flex;
-
                     gap:9px;
-
                     flex-direction:column;
                 }
 
@@ -828,27 +672,26 @@
                 .wfesc-actions-button {
 
                     width:100%;
-
                     border:0;
-
                     border-radius:12px;
-
                     padding:12px;
-
                     font-family:inherit;
-
                     font-size:13px;
-
                     font-weight:700;
-
                     cursor:pointer;
+                }
+
+                #wfescChatActionsOverlay
+                .wfesc-actions-button:disabled {
+
+                    opacity:.55;
+                    cursor:wait;
                 }
 
                 #wfescChatActionsOverlay
                 .wfesc-actions-confirm {
 
                     background:#fff;
-
                     color:#000;
                 }
 
@@ -856,7 +699,6 @@
                 .wfesc-actions-danger {
 
                     background:#b82b2b;
-
                     color:#fff;
                 }
 
@@ -864,7 +706,6 @@
                 .wfesc-actions-cancel {
 
                     background:#222;
-
                     color:#ddd;
                 }
 
@@ -872,9 +713,7 @@
                 .wfesc-actions-choice {
 
                     background:#191919;
-
                     color:#fff;
-
                     border:
                         1px solid
                         rgba(255,255,255,.08);
@@ -885,23 +724,16 @@
 
                     width:56px;
                     height:56px;
-
-                    margin:
-                        0 auto 12px;
-
+                    margin:0 auto 12px;
                     border-radius:50%;
-
                     display:flex;
                     align-items:center;
                     justify-content:center;
-
                     background:
                         rgba(184,43,43,.14);
-
                     border:
                         1px solid
                         rgba(255,100,100,.15);
-
                     font-size:26px;
                 }
 
@@ -909,19 +741,13 @@
                 .wfesc-block-name {
 
                     color:#fff;
-
                     font-size:15px;
-
                     font-weight:800;
-
-                    margin:
-                        4px 0 12px;
+                    margin:4px 0 12px;
                 }
             `;
 
-            document.head.appendChild(
-                style
-            );
+            document.head.appendChild(style);
         }
 
         return overlay;
@@ -963,15 +789,11 @@
         const overlay =
             createOverlay();
 
-
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         card.className =
             "wfesc-actions-card";
-
 
         card.innerHTML = `
 
@@ -1022,51 +844,32 @@
         `;
 
 
-        overlay.appendChild(
-            card
-        );
-
-        document.body.appendChild(
-            overlay
-        );
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
 
 
         card
-            .querySelector(
-                '[data-action="me"]'
-            )
+            .querySelector('[data-action="me"]')
             ?.addEventListener(
                 "click",
                 () => {
-
-                    openDeleteConfirmation(
-                        "me"
-                    );
-
+                    openDeleteConfirmation("me");
                 }
             );
 
 
         card
-            .querySelector(
-                '[data-action="everyone"]'
-            )
+            .querySelector('[data-action="everyone"]')
             ?.addEventListener(
                 "click",
                 () => {
-
-                    openDeleteConfirmation(
-                        "everyone"
-                    );
-
+                    openDeleteConfirmation("everyone");
                 }
             );
 
 
         card
-            .querySelector(
-                '[data-action="cancel"]'
-            )
+            .querySelector('[data-action="cancel"]')
             ?.addEventListener(
                 "click",
                 closeOverlay
@@ -1078,9 +881,7 @@
        DELETE CONFIRMATION
        ========================================================= */
 
-    function openDeleteConfirmation(
-        mode
-    ) {
+    function openDeleteConfirmation(mode) {
 
         const conversationId =
             getConversationId();
@@ -1100,11 +901,8 @@
         const overlay =
             createOverlay();
 
-
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         card.className =
             "wfesc-actions-card";
@@ -1117,16 +915,13 @@
             "";
 
 
-        if (
-            mode ===
-            "everyone"
-        ) {
+        if (mode === "everyone") {
 
             title =
                 "هل أنت متأكد من طلبك بحذف الرسائل؟";
 
             message =
-                "تحذير: سوف تنحذف من كلا الطرفين ولا يمكن استعادتها نهائيا";
+                "سيتم تطبيق حذف الطرفين مع إبقاء سجل الحذف محفوظاً في قاعدة البيانات للمراجعة الإدارية عند الحاجة.";
 
         } else {
 
@@ -1134,8 +929,7 @@
                 "هل أنت متأكد من حذف الرسائل لديك؟";
 
             message =
-                "سيتم حذف الرسائل من حسابك فقط، وسيبقى الطرف الآخر قادراً على رؤيتها.";
-
+                "ستختفي المحادثة من حسابك فقط، بينما تبقى بيانات الطرف الآخر محفوظة.";
         }
 
 
@@ -1177,35 +971,22 @@
         `;
 
 
-        overlay.appendChild(
-            card
-        );
-
-        document.body.appendChild(
-            overlay
-        );
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
 
 
         card
-            .querySelector(
-                '[data-action="confirm"]'
-            )
+            .querySelector('[data-action="confirm"]')
             ?.addEventListener(
                 "click",
                 () => {
-
-                    openFinalDeleteConfirmation(
-                        mode
-                    );
-
+                    openFinalDeleteConfirmation(mode);
                 }
             );
 
 
         card
-            .querySelector(
-                '[data-action="cancel"]'
-            )
+            .querySelector('[data-action="cancel"]')
             ?.addEventListener(
                 "click",
                 closeOverlay
@@ -1217,9 +998,7 @@
        FINAL DELETE CONFIRMATION
        ========================================================= */
 
-    function openFinalDeleteConfirmation(
-        mode
-    ) {
+    function openFinalDeleteConfirmation(mode) {
 
         const conversationId =
             getConversationId();
@@ -1239,11 +1018,8 @@
         const overlay =
             createOverlay();
 
-
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         card.className =
             "wfesc-actions-card";
@@ -1256,16 +1032,13 @@
             "";
 
 
-        if (
-            mode ===
-            "everyone"
-        ) {
+        if (mode === "everyone") {
 
             title =
                 "أكد طلبك بحذف الرسائل من الطرفين";
 
             message =
-                "سيتم حذف المحادثة والرسائل نهائياً من الطرفين ولا يمكن استعادتها.";
+                "سيتم إخفاء الرسائل من واجهة الطرفين، مع الاحتفاظ بالسجل غير المعروض في قاعدة البيانات وفق نظام الحذف الخاص بـ WFESC.";
 
         } else {
 
@@ -1274,7 +1047,6 @@
 
             message =
                 "ستختفي الرسائل من حسابك فقط.";
-
         }
 
 
@@ -1316,19 +1088,12 @@
         `;
 
 
-        overlay.appendChild(
-            card
-        );
-
-        document.body.appendChild(
-            overlay
-        );
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
 
 
         card
-            .querySelector(
-                '[data-action="final"]'
-            )
+            .querySelector('[data-action="final"]')
             ?.addEventListener(
                 "click",
                 async () => {
@@ -1343,9 +1108,7 @@
 
 
         card
-            .querySelector(
-                '[data-action="cancel"]'
-            )
+            .querySelector('[data-action="cancel"]')
             ?.addEventListener(
                 "click",
                 closeOverlay
@@ -1357,9 +1120,7 @@
        DELETE FOR ME
        ========================================================= */
 
-    async function deleteForMe(
-        conversationId
-    ) {
+    async function deleteForMe(conversationId) {
 
         const client =
             getClient();
@@ -1405,9 +1166,7 @@
        DELETE FOR EVERYONE
        ========================================================= */
 
-    async function deleteForEveryone(
-        conversationId
-    ) {
+    async function deleteForEveryone(conversationId) {
 
         const client =
             getClient();
@@ -1427,6 +1186,11 @@
             );
         }
 
+
+        /*
+         * إرسال إشعار للطرف الآخر قبل تنفيذ RPC.
+         * فشل الإشعار لا يمنع تنفيذ الحذف.
+         */
 
         await broadcastConversationDeleted(
             conversationId,
@@ -1452,9 +1216,7 @@
         }
 
 
-        if (
-            data === false
-        ) {
+        if (data === false) {
 
             throw new Error(
                 "لم يتم حذف المحادثة"
@@ -1505,10 +1267,7 @@
 
         try {
 
-            if (
-                mode ===
-                "everyone"
-            ) {
+            if (mode === "everyone") {
 
                 await deleteForEveryone(
                     conversationId
@@ -1526,7 +1285,7 @@
 
 
             showToast(
-                "تم حذف المحادثة بنجاح",
+                "تم تنفيذ حذف المحادثة بنجاح",
                 2000
             );
 
@@ -1542,7 +1301,6 @@
             ) {
 
                 await core.closeConversation();
-
             }
 
 
@@ -1553,7 +1311,6 @@
             ) {
 
                 await core.loadConversations();
-
             }
 
 
@@ -1569,7 +1326,7 @@
 
 
             showToast(
-                "تعذر حذف المحادثة"
+                "تعذر تنفيذ حذف المحادثة"
             );
 
 
@@ -1604,115 +1361,164 @@
 
 
     /* =========================================================
-       REMOTE DELETE CHANNEL
+       REMOTE DELETE CHANNELS
        ========================================================= */
 
     const deleteChannels =
         new Map();
 
 
-    async function broadcastConversationDeleted(
-        conversationId,
-        userId
+    /*
+     * الحصول على قناة خاصة بالمحادثة.
+     *
+     * مهم:
+     * القناة نفسها تستخدم للإرسال والاستماع.
+     * لا ننشئ قناة ثانية لنفس conversation_id.
+     */
+
+    async function getDeleteChannel(
+        conversationId
     ) {
 
         const client =
             getClient();
 
-
         if (
             !client ||
             !conversationId
         ) {
-            return;
+            return null;
+        }
+
+
+        const key =
+            String(conversationId);
+
+
+        let entry =
+            deleteChannels.get(key);
+
+
+        if (entry?.channel) {
+            return entry.channel;
         }
 
 
         const channelName =
             "wfesc-chat-actions-" +
-            String(
-                conversationId
+            key;
+
+
+        const channel =
+            client.channel(
+                channelName,
+                {
+                    config: {
+                        broadcast: {
+                            self: false
+                        }
+                    }
+                }
             );
 
 
-        let channel =
-            deleteChannels.get(
-                conversationId
-            );
+        entry = {
+            channel,
+            subscribed: false,
+            subscribing: false
+        };
 
 
-        if (!channel) {
+        deleteChannels.set(
+            key,
+            entry
+        );
 
-            channel =
-                client.channel(
-                    channelName,
-                    {
-                        config: {
-                            broadcast: {
-                                self:
-                                    false
-                            }
+
+        if (!entry.subscribing) {
+
+            entry.subscribing =
+                true;
+
+            await new Promise(resolve => {
+
+                let finished =
+                    false;
+
+                const finish =
+                    () => {
+
+                        if (finished) {
+                            return;
+                        }
+
+                        finished =
+                            true;
+
+                        resolve();
+                    };
+
+
+                channel.subscribe(
+                    status => {
+
+                        if (
+                            status ===
+                            "SUBSCRIBED"
+                        ) {
+
+                            entry.subscribed =
+                                true;
+
+                            finish();
+
+                        } else if (
+                            status ===
+                            "CHANNEL_ERROR" ||
+                            status ===
+                            "TIMED_OUT" ||
+                            status ===
+                            "CLOSED"
+                        ) {
+
+                            finish();
                         }
                     }
                 );
 
 
-            deleteChannels.set(
-                conversationId,
-                channel
+                setTimeout(
+                    finish,
+                    1500
+                );
+            });
+
+            entry.subscribing =
+                false;
+        }
+
+
+        return channel;
+    }
+
+
+    /* =========================================================
+       BROADCAST REMOTE DELETE
+       ========================================================= */
+
+    async function broadcastConversationDeleted(
+        conversationId,
+        userId
+    ) {
+
+        const channel =
+            await getDeleteChannel(
+                conversationId
             );
 
 
-            await new Promise(
-                resolve => {
-
-                    let finished =
-                        false;
-
-
-                    const finish =
-                        () => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished =
-                                true;
-
-                            resolve();
-                        };
-
-
-                    channel.subscribe(
-                        status => {
-
-                            if (
-                                status ===
-                                "SUBSCRIBED"
-                            ) {
-
-                                finish();
-
-                            } else if (
-                                status ===
-                                "CHANNEL_ERROR" ||
-                                status ===
-                                "TIMED_OUT"
-                            ) {
-
-                                finish();
-                            }
-                        }
-                    );
-
-
-                    setTimeout(
-                        finish,
-                        1500
-                    );
-                }
-            );
+        if (!channel) {
+            return;
         }
 
 
@@ -1739,6 +1545,11 @@
 
         } catch (error) {
 
+            /*
+             * Realtime مجرد إشعار إضافي.
+             * لا نمنع عملية الحذف إذا فشل.
+             */
+
             console.warn(
                 "WFESC delete broadcast:",
                 error
@@ -1751,56 +1562,45 @@
        LISTEN FOR REMOTE DELETE
        ========================================================= */
 
-    function setupRemoteDeleteListener(
+    async function setupRemoteDeleteListener(
         conversationId
     ) {
 
-        const client =
-            getClient();
-
-
-        if (
-            !client ||
-            !conversationId
-        ) {
+        if (!conversationId) {
             return;
         }
-
-
-        if (
-            deleteChannels.has(
-                conversationId
-            )
-        ) {
-            return;
-        }
-
-
-        const channelName =
-            "wfesc-chat-actions-" +
-            String(
-                conversationId
-            );
 
 
         const channel =
-            client.channel(
-                channelName,
-                {
-                    config: {
-                        broadcast: {
-                            self:
-                                false
-                        }
-                    }
-                }
+            await getDeleteChannel(
+                conversationId
             );
 
 
-        deleteChannels.set(
-            conversationId,
-            channel
-        );
+        if (!channel) {
+            return;
+        }
+
+
+        const key =
+            String(conversationId);
+
+
+        const entry =
+            deleteChannels.get(key);
+
+
+        if (
+            entry?.listenerReady
+        ) {
+            return;
+        }
+
+
+        if (entry) {
+            entry.listenerReady =
+                true;
+        }
 
 
         channel.on(
@@ -1821,7 +1621,7 @@
 
 
                 const deletedConversationId =
-                    data.conversation_id;
+                    data?.conversation_id;
 
 
                 if (
@@ -1841,9 +1641,14 @@
                     getCurrentUser();
 
 
+                /*
+                 * self=false يفترض أنه يمنع وصول
+                 * الرسالة للمرسل، وهذا تحقق إضافي.
+                 */
+
                 if (
                     currentUser?.id &&
-                    data.deleted_by &&
+                    data?.deleted_by &&
                     String(
                         currentUser.id
                     ) ===
@@ -1851,30 +1656,11 @@
                         data.deleted_by
                     )
                 ) {
-
                     return;
                 }
 
 
                 showRemoteDeleteOverlay();
-
-            }
-        );
-
-
-        channel.subscribe(
-            status => {
-
-                if (
-                    status !==
-                    "SUBSCRIBED"
-                ) {
-
-                    console.warn(
-                        "WFESC delete channel:",
-                        status
-                    );
-                }
             }
         );
     }
@@ -1898,9 +1684,7 @@
 
 
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
 
         card.className =
@@ -1923,20 +1707,14 @@
             </div>
 
             <div class="wfesc-actions-message">
-                تم حذف هذه المحادثة نهائياً.
+                تم تحديث المحادثة وإخفاء الرسائل المحذوفة.
             </div>
 
         `;
 
 
-        overlay.appendChild(
-            card
-        );
-
-
-        document.body.appendChild(
-            overlay
-        );
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
 
 
         setTimeout(
@@ -1987,9 +1765,8 @@
         const block =
             BLOCK();
 
-        if (
-            !block
-        ) {
+
+        if (!block) {
 
             console.error(
                 "WFESC BLOCK: messages-block.js غير محمل"
@@ -1997,6 +1774,7 @@
 
             return null;
         }
+
 
         return block;
     }
@@ -2006,9 +1784,7 @@
        CHECK CURRENT BLOCK
        ========================================================= */
 
-    async function checkCurrentBlock(
-        userId
-    ) {
+    async function checkCurrentBlock(userId) {
 
         const block =
             getBlockModule();
@@ -2016,15 +1792,8 @@
 
         if (
             !block ||
-            !userId
-        ) {
-            return false;
-        }
-
-
-        if (
-            typeof block.isBlocked !==
-            "function"
+            !userId ||
+            typeof block.isBlocked !== "function"
         ) {
             return false;
         }
@@ -2032,8 +1801,10 @@
 
         try {
 
-            return await block.isBlocked(
-                userId
+            return Boolean(
+                await block.isBlocked(
+                    userId
+                )
             );
 
         } catch (error) {
@@ -2052,9 +1823,7 @@
        CHECK IF OTHER USER BLOCKED ME
        ========================================================= */
 
-    async function checkBlockedBy(
-        userId
-    ) {
+    async function checkBlockedBy(userId) {
 
         const block =
             getBlockModule();
@@ -2062,15 +1831,8 @@
 
         if (
             !block ||
-            !userId
-        ) {
-            return false;
-        }
-
-
-        if (
-            typeof block.isBlockedBy !==
-            "function"
+            !userId ||
+            typeof block.isBlockedBy !== "function"
         ) {
             return false;
         }
@@ -2078,8 +1840,10 @@
 
         try {
 
-            return await block.isBlockedBy(
-                userId
+            return Boolean(
+                await block.isBlockedBy(
+                    userId
+                )
             );
 
         } catch (error) {
@@ -2119,9 +1883,7 @@
 
 
         const name =
-            getContactName(
-                contact
-            );
+            getContactName(contact);
 
 
         const block =
@@ -2157,18 +1919,14 @@
 
 
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
 
         card.className =
             "wfesc-actions-card";
 
 
-        if (
-            alreadyBlocked
-        ) {
+        if (alreadyBlocked) {
 
             card.innerHTML = `
 
@@ -2266,52 +2024,56 @@
         }
 
 
-        overlay.appendChild(
-            card
-        );
-
-
-        document.body.appendChild(
-            overlay
-        );
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
 
 
         card
-            .querySelector(
-                '[data-action="block"]'
-            )
+            .querySelector('[data-action="block"]')
             ?.addEventListener(
                 "click",
                 async () => {
 
-                    await blockUser(
-                        userId
-                    );
+                    const button =
+                        card.querySelector(
+                            '[data-action="block"]'
+                        );
 
+                    if (button) {
+                        button.disabled = true;
+                        button.textContent =
+                            "جارٍ الحظر...";
+                    }
+
+                    await blockUser(userId);
                 }
             );
 
 
         card
-            .querySelector(
-                '[data-action="unblock"]'
-            )
+            .querySelector('[data-action="unblock"]')
             ?.addEventListener(
                 "click",
                 async () => {
 
-                    await unblockUser(
-                        userId
-                    );
+                    const button =
+                        card.querySelector(
+                            '[data-action="unblock"]'
+                        );
 
+                    if (button) {
+                        button.disabled = true;
+                        button.textContent =
+                            "جارٍ إلغاء الحظر...";
+                    }
+
+                    await unblockUser(userId);
                 }
             );
 
 
         card
-            .querySelector(
-                '[data-action="cancel"]'
-            )
+            .querySelector('[data-action="cancel"]')
             ?.addEventListener(
                 "click",
                 closeOverlay
@@ -2323,9 +2085,7 @@
        BLOCK USER
        ========================================================= */
 
-    async function blockUser(
-        blockedUserId
-    ) {
+    async function blockUser(blockedUserId) {
 
         const block =
             getBlockModule();
@@ -2347,8 +2107,7 @@
         try {
 
             if (
-                typeof block.blockUser !==
-                "function"
+                typeof block.blockUser !== "function"
             ) {
 
                 throw new Error(
@@ -2370,10 +2129,6 @@
             );
 
 
-            /*
-             * إعلام بقية وحدات WFESC
-             */
-
             window.dispatchEvent(
                 new CustomEvent(
                     "wfesc:user-blocked",
@@ -2387,15 +2142,14 @@
             );
 
 
-            /*
-             * إغلاق المحادثة الحالية.
-             *
-             * الرسائل لا يتم حذفها.
-             */
-
             const core =
                 CORE();
 
+
+            /*
+             * الحظر لا يحذف الرسائل.
+             * فقط نغلق المحادثة الحالية من الواجهة.
+             */
 
             if (
                 core &&
@@ -2417,6 +2171,20 @@
             }
 
 
+            if (
+                core &&
+                typeof core.loadConversations ===
+                "function"
+            ) {
+
+                try {
+
+                    await core.loadConversations();
+
+                } catch (_) {}
+            }
+
+
             return true;
 
 
@@ -2431,21 +2199,9 @@
             closeOverlay();
 
 
-            let message =
-                "تعذر حظر المستخدم";
-
-
-            if (
-                error?.message
-            ) {
-
-                message =
-                    error.message;
-            }
-
-
             showToast(
-                message
+                error?.message ||
+                "تعذر حظر المستخدم"
             );
 
 
@@ -2458,9 +2214,7 @@
        UNBLOCK USER
        ========================================================= */
 
-    async function unblockUser(
-        blockedUserId
-    ) {
+    async function unblockUser(blockedUserId) {
 
         const block =
             getBlockModule();
@@ -2505,10 +2259,6 @@
             );
 
 
-            /*
-             * إعلام بقية وحدات WFESC
-             */
-
             window.dispatchEvent(
                 new CustomEvent(
                     "wfesc:user-unblocked",
@@ -2536,21 +2286,9 @@
             closeOverlay();
 
 
-            let message =
-                "تعذر إلغاء حظر المستخدم";
-
-
-            if (
-                error?.message
-            ) {
-
-                message =
-                    error.message;
-            }
-
-
             showToast(
-                message
+                error?.message ||
+                "تعذر إلغاء حظر المستخدم"
             );
 
 
@@ -2560,7 +2298,7 @@
 
 
     /* =========================================================
-       BLOCK STATUS FOR CURRENT CHAT
+       CURRENT CHAT BLOCK STATUS
        ========================================================= */
 
     async function getCurrentBlockStatus() {
@@ -2572,6 +2310,7 @@
         if (!userId) {
 
             return {
+
                 blockedByMe:
                     false,
 
@@ -2589,27 +2328,18 @@
             blockedMe
         ] =
             await Promise.all([
-                checkCurrentBlock(
-                    userId
-                ),
-
-                checkBlockedBy(
-                    userId
-                )
+                checkCurrentBlock(userId),
+                checkBlockedBy(userId)
             ]);
 
 
         return {
 
             blockedByMe:
-                Boolean(
-                    blockedByMe
-                ),
+                Boolean(blockedByMe),
 
             blockedMe:
-                Boolean(
-                    blockedMe
-                ),
+                Boolean(blockedMe),
 
             userId:
                 userId
@@ -2621,18 +2351,14 @@
        CURRENT CHAT BLOCK WARNING
        ========================================================= */
 
-    async function showBlockedConversationWarning(
-        type
-    ) {
+    async function showBlockedConversationWarning(type) {
 
         const contact =
             getCurrentContact();
 
 
         const name =
-            getContactName(
-                contact
-            );
+            getContactName(contact);
 
 
         closeOverlay();
@@ -2647,9 +2373,7 @@
 
 
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
 
         card.className =
@@ -2659,22 +2383,18 @@
         let title =
             "تعذر التواصل";
 
-
         let message =
             "";
 
 
-        if (
-            type ===
-            "blocked-by-me"
-        ) {
+        if (type === "blocked-by-me") {
 
             title =
                 "قمت بحظر هذا المستخدم";
 
             message =
                 `لا يمكنك التواصل مع ${name} حالياً.
-                 يمكنك إلغاء الحظر من قائمة الحظر للعودة إلى التواصل.`;
+يمكنك إلغاء الحظر من قائمة الحظر للعودة إلى التواصل.`;
 
         } else {
 
@@ -2683,7 +2403,6 @@
 
             message =
                 "لا يمكن فتح محادثة جديدة أو إرسال رسائل إلى هذا المستخدم لأنه قام بحظرك.";
-
         }
 
 
@@ -2722,20 +2441,12 @@
         `;
 
 
-        overlay.appendChild(
-            card
-        );
-
-
-        document.body.appendChild(
-            overlay
-        );
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
 
 
         card
-            .querySelector(
-                '[data-action="close"]'
-            )
+            .querySelector('[data-action="close"]')
             ?.addEventListener(
                 "click",
                 closeOverlay
@@ -2789,7 +2500,6 @@
 
 
         if (!button) {
-
             return false;
         }
 
@@ -2812,7 +2522,6 @@
             event => {
 
                 event.preventDefault();
-
                 event.stopPropagation();
 
 
@@ -2846,10 +2555,7 @@
 
     function watchForMenuButton() {
 
-        if (
-            setupMenuButton()
-        ) {
-
+        if (setupMenuButton()) {
             return;
         }
 
@@ -2870,9 +2576,7 @@
                         attempts >= 60
                     ) {
 
-                        clearInterval(
-                            timer
-                        );
+                        clearInterval(timer);
                     }
 
                 },
@@ -2937,7 +2641,6 @@
             },
             0
         );
-
     }
 
 
