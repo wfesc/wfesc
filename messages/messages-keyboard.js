@@ -5,17 +5,23 @@
 
    الوظيفة:
    - اكتشاف ارتفاع كيبورد الهاتف
-   - تحريك خانة الكتابة فقط فوق الكيبورد
-   - تثبيت شريط WFESC Navigation أسفل الشاشة
-   - منع Navigation من الصعود فوق الكيبورد
+   - تحريك خانة الكتابة فقط
+   - إبقاء Header المحادثة ثابتًا
+   - إبقاء Navigation في مكانه الأصلي
+   - لا يصعد Navigation فوق الكيبورد
    - دعم VisualViewport
    - دعم تدوير الشاشة
-   - دعم فتح/إغلاق المحادثة
    ========================================================= */
 
 (function () {
 
     "use strict";
+
+    if (window.WFESCMessageKeyboardLoaded) {
+        return;
+    }
+
+    window.WFESCMessageKeyboardLoaded = true;
 
 
     /* =========================================================
@@ -27,78 +33,202 @@
 
 
     function getBody() {
-
         return document.body || null;
-
     }
 
 
-    /*
-     * ارتفاع شريط التنقل الطبيعي.
-     *
-     * هذا هو مكانه الطبيعي فوق أزرار الهاتف.
-     */
-    const navigationHeight =
-        82;
-
-
-    /*
-     * المسافة الصغيرة بين شريط WFESC
-     * وأسفل الشاشة.
-     */
-    const navigationBottom =
-        7;
-
-
-    /*
-     * أقل فرق نعتبره كيبورد.
-     */
-    const keyboardThreshold =
-        80;
-
-
-    let lastKeyboardHeight =
-        -1;
-
-
-    let updateTimer =
-        null;
-
-
-    let initialized =
-        false;
-
-
-    let visualViewportInstance =
-        null;
-
-
-    let keyboardWasOpen =
-        false;
-
-
-    const scheduledTimers =
-        new Set();
-
-
-    /* =========================================================
-       العثور على شريط التنقل
-       ========================================================= */
-
     function getNavigation() {
-
         return document.getElementById(
             "wfesc-navigation"
         );
+    }
+
+
+    function getChatView() {
+        return document.getElementById(
+            "chatView"
+        );
+    }
+
+
+    function getMessageInput() {
+        return document.getElementById(
+            "messageInput"
+        );
+    }
+
+
+    /* =========================================================
+       الإعدادات
+       ========================================================= */
+
+    const navigationHeight = 82;
+
+    const navigationBottom = 7;
+
+    const keyboardThreshold = 80;
+
+
+    /* =========================================================
+       الحالة
+       ========================================================= */
+
+    let initialized = false;
+
+    let updateTimer = null;
+
+    let visualViewportInstance = null;
+
+    let lastKeyboardHeight = -1;
+
+    let baseViewportHeight = 0;
+
+    let keyboardWasOpen = false;
+
+    const scheduledTimers = new Set();
+
+
+    /* =========================================================
+       الحصول على ارتفاع الـViewport الحالي
+       ========================================================= */
+
+    function getCurrentViewportHeight() {
+
+        if (visualViewportInstance) {
+
+            const height =
+                Number(
+                    visualViewportInstance.height
+                ) || 0;
+
+            const offsetTop =
+                Number(
+                    visualViewportInstance.offsetTop
+                ) || 0;
+
+            const total =
+                height +
+                offsetTop;
+
+            if (
+                Number.isFinite(total) &&
+                total > 0
+            ) {
+                return total;
+            }
+        }
+
+
+        return (
+            Number(window.innerHeight) ||
+            Number(document.documentElement.clientHeight) ||
+            0
+        );
+    }
+
+
+    /* =========================================================
+       تحديد ارتفاع الـViewport الأساسي
+       ========================================================= */
+
+    function captureBaseViewportHeight() {
+
+        const current =
+            getCurrentViewportHeight();
+
+
+        const inner =
+            Number(
+                window.innerHeight
+            ) || 0;
+
+
+        baseViewportHeight =
+            Math.max(
+                current,
+                inner,
+                baseViewportHeight
+            );
+
+
+        if (
+            baseViewportHeight <= 0
+        ) {
+
+            baseViewportHeight =
+                current ||
+                inner ||
+                0;
+
+        }
 
     }
 
 
     /* =========================================================
-       تثبيت شريط التنقل
+       حساب ارتفاع الكيبورد
        ========================================================= */
 
-    function lockNavigationPosition(
+    function calculateKeyboardHeight() {
+
+        if (
+            baseViewportHeight <= 0
+        ) {
+
+            captureBaseViewportHeight();
+
+        }
+
+
+        const current =
+            getCurrentViewportHeight();
+
+
+        let height =
+            baseViewportHeight -
+            current;
+
+
+        if (
+            !Number.isFinite(height)
+        ) {
+
+            height = 0;
+
+        }
+
+
+        height =
+            Math.max(
+                0,
+                Math.round(height)
+            );
+
+
+        /*
+         * الفروقات الصغيرة ليست كيبورد.
+         */
+
+        if (
+            height <
+            keyboardThreshold
+        ) {
+
+            height = 0;
+
+        }
+
+
+        return height;
+
+    }
+
+
+    /* =========================================================
+       تثبيت الـNavigation
+       ========================================================= */
+
+    function lockNavigation(
         keyboardHeight
     ) {
 
@@ -107,9 +237,7 @@
 
 
         if (!navigation) {
-
             return;
-
         }
 
 
@@ -117,23 +245,23 @@
             Math.max(
                 0,
                 Math.round(
-                    Number(keyboardHeight) || 0
+                    Number(
+                        keyboardHeight
+                    ) || 0
                 )
             );
 
 
         /*
-         * عندما يكون الكيبورد مغلقًا:
+         * مهم جدًا:
          *
-         * navigationBottom = 7px
+         * عند فتح الكيبورد:
          *
-         * وعندما يفتح الكيبورد:
+         * bottom = 7px - ارتفاع الكيبورد
          *
-         * نطرح ارتفاع الكيبورد.
-         *
-         * النتيجة:
-         * يبقى شريط WFESC في مكانه الأصلي
-         * أسفل الشاشة/الـlayout ولا يصعد فوق الكيبورد.
+         * هذا يعوض تقلص الـVisualViewport
+         * ويحافظ على Navigation في مكانه
+         * الأصلي بدل أن يصعد فوق الكيبورد.
          */
 
         const bottom =
@@ -163,14 +291,42 @@
 
 
         navigation.style.setProperty(
-            "margin-bottom",
-            "0px",
+            "left",
+            "7px",
+            "important"
+        );
+
+
+        navigation.style.setProperty(
+            "right",
+            "7px",
+            "important"
+        );
+
+
+        navigation.style.setProperty(
+            "width",
+            "auto",
+            "important"
+        );
+
+
+        navigation.style.setProperty(
+            "margin",
+            "0",
             "important"
         );
 
 
         navigation.style.setProperty(
             "transform",
+            "none",
+            "important"
+        );
+
+
+        navigation.style.setProperty(
+            "translate",
             "none",
             "important"
         );
@@ -186,6 +342,13 @@
         navigation.style.setProperty(
             "animation",
             "none",
+            "important"
+        );
+
+
+        navigation.style.setProperty(
+            "will-change",
+            "auto",
             "important"
         );
 
@@ -210,175 +373,204 @@
             "important"
         );
 
-    }
 
+        /*
+         * الشريط يجب ألا يختفي أبدًا.
+         */
 
-    /* =========================================================
-       ارتفاع الـLayout
-       ========================================================= */
-
-    function getLayoutHeight() {
-
-        const documentHeight =
-            Number(
-                document.documentElement.clientHeight
-            ) || 0;
-
-
-        const windowHeight =
-            Number(
-                window.innerHeight
-            ) || 0;
-
-
-        return Math.max(
-            documentHeight,
-            windowHeight
+        navigation.classList.remove(
+            "wfesc-navigation-hide"
         );
 
     }
 
 
     /* =========================================================
-       أسفل الـViewport
+       تثبيت واجهة المحادثة
        ========================================================= */
 
-    function getViewportBottom() {
+    function lockChatView() {
 
-        if (visualViewportInstance) {
-
-            const viewportHeight =
-                Number(
-                    visualViewportInstance.height
-                ) || 0;
+        const chatView =
+            getChatView();
 
 
-            const viewportOffsetTop =
-                Number(
-                    visualViewportInstance.offsetTop
-                ) || 0;
-
-
-            const bottom =
-                viewportHeight +
-                viewportOffsetTop;
-
-
-            if (
-                Number.isFinite(bottom) &&
-                bottom > 0
-            ) {
-
-                return bottom;
-
-            }
-
+        if (!chatView) {
+            return;
         }
 
 
-        return (
-            Number(window.innerHeight) ||
-            getLayoutHeight()
+        chatView.style.setProperty(
+            "position",
+            "fixed",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "top",
+            "0",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "right",
+            "0",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "bottom",
+            "auto",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "left",
+            "0",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "width",
+            "100%",
+            "important"
+        );
+
+
+        /*
+         * لا نستخدم 100dvh هنا.
+         *
+         * نستخدم Largest Viewport حتى لا يصغر
+         * الـChat View عند ظهور الكيبورد.
+         */
+
+        chatView.style.setProperty(
+            "height",
+            "100lvh",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "min-height",
+            "100lvh",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "max-height",
+            "none",
+            "important"
+        );
+
+
+        chatView.style.setProperty(
+            "transform",
+            "none",
+            "important"
         );
 
     }
 
 
     /* =========================================================
-       حساب ارتفاع الكيبورد
+       تثبيت Header المحادثة
        ========================================================= */
 
-    function calculateKeyboardHeight() {
+    function lockChatHeader() {
 
-        const layoutHeight =
-            getLayoutHeight();
-
-
-        const viewportBottom =
-            getViewportBottom();
+        const chatView =
+            getChatView();
 
 
-        let height =
-            layoutHeight -
-            viewportBottom;
-
-
-        if (
-            !Number.isFinite(height)
-        ) {
-
-            height = 0;
-
+        if (!chatView) {
+            return;
         }
 
 
-        height =
-            Math.max(
-                0,
-                Math.round(height)
+        const header =
+            chatView.querySelector(
+                ".chat-header"
             );
 
 
-        if (
-            height <
-            keyboardThreshold
-        ) {
-
-            height = 0;
-
+        if (!header) {
+            return;
         }
 
 
-        return height;
+        header.style.setProperty(
+            "position",
+            "relative",
+            "important"
+        );
+
+
+        header.style.setProperty(
+            "top",
+            "auto",
+            "important"
+        );
+
+
+        header.style.setProperty(
+            "bottom",
+            "auto",
+            "important"
+        );
+
+
+        header.style.setProperty(
+            "transform",
+            "none",
+            "important"
+        );
+
+
+        header.style.setProperty(
+            "translate",
+            "none",
+            "important"
+        );
+
+
+        header.style.setProperty(
+            "flex-shrink",
+            "0",
+            "important"
+        );
+
+
+        header.style.setProperty(
+            "transition",
+            "none",
+            "important"
+        );
 
     }
 
 
     /* =========================================================
-       Timer آمن
+       تثبيت كل العناصر الحساسة
        ========================================================= */
 
-    function safeTimeout(
-        callback,
-        delay
+    function enforceLayout(
+        keyboardHeight
     ) {
 
-        const timer =
-            setTimeout(
-                function () {
-
-                    scheduledTimers.delete(
-                        timer
-                    );
-
-
-                    try {
-
-                        callback();
-
-                    } catch (error) {
-
-                        console.error(
-                            "[WFESC KEYBOARD] Timer error:",
-                            error
-                        );
-
-                    }
-
-                },
-                Math.max(
-                    0,
-                    Number(delay) || 0
-                )
-            );
-
-
-        scheduledTimers.add(
-            timer
+        lockNavigation(
+            keyboardHeight
         );
 
+        lockChatView();
 
-        return timer;
+        lockChatHeader();
 
     }
 
@@ -400,30 +592,21 @@
             );
 
 
-        /*
-         * حتى إذا لم يتغير ارتفاع الكيبورد،
-         * نعيد تثبيت Navigation.
-         *
-         * لأن Android قد يغير الـviewport
-         * بدون تغيير القيمة المحسوبة.
-         */
-
-        lockNavigationPosition(
+        enforceLayout(
             height
         );
 
 
         /*
-         * لا نعيد حساب باقي النظام
-         * إذا لم تتغير القيمة.
+         * إذا لم تتغير القيمة،
+         * لا نعيد كل CSS الخاص بالكومبوزر.
          */
+
         if (
             height ===
             lastKeyboardHeight
         ) {
-
             return;
-
         }
 
 
@@ -432,7 +615,7 @@
 
 
         /* =====================================================
-           متغير ارتفاع الكيبورد
+           متغير الكيبورد
            ===================================================== */
 
         root.style.setProperty(
@@ -448,12 +631,6 @@
         if (
             height > 0
         ) {
-
-            /*
-             * هذا للكومبوزر فقط.
-             *
-             * لا يستخدم لتحريك Navigation.
-             */
 
             root.style.setProperty(
                 "--composer-bottom",
@@ -478,8 +655,24 @@
             }
 
 
-            return;
+            /*
+             * منع الصفحة الرئيسية من الانزلاق
+             * بسبب التركيز على textarea.
+             */
 
+            try {
+
+                window.scrollTo(
+                    0,
+                    0
+                );
+
+            } catch (error) {
+
+            }
+
+
+            return;
         }
 
 
@@ -511,19 +704,31 @@
 
 
         /*
-         * إعادة تثبيت Navigation
-         * بعد إغلاق الكيبورد.
+         * أصبح الـViewport طبيعيًا.
+         * نلتقط القيمة الجديدة كأساس.
          */
 
-        lockNavigationPosition(
-            0
-        );
+        const current =
+            getCurrentViewportHeight();
+
+
+        if (
+            current > 0
+        ) {
+
+            baseViewportHeight =
+                current;
+
+        }
+
+
+        enforceLayout(0);
 
     }
 
 
     /* =========================================================
-       التحديث الأساسي
+       تحديث النظام
        ========================================================= */
 
     function update() {
@@ -531,9 +736,7 @@
         if (
             !initialized
         ) {
-
             return;
-
         }
 
 
@@ -549,7 +752,56 @@
 
 
     /* =========================================================
-       تحديث مؤجل
+       Timer آمن
+       ========================================================= */
+
+    function safeTimeout(
+        callback,
+        delay
+    ) {
+
+        const timer =
+            setTimeout(
+                function () {
+
+                    scheduledTimers.delete(
+                        timer
+                    );
+
+
+                    try {
+
+                        callback();
+
+                    } catch (error) {
+
+                        console.error(
+                            "[WFESC KEYBOARD]",
+                            error
+                        );
+
+                    }
+
+                },
+                Math.max(
+                    0,
+                    Number(delay) || 0
+                )
+            );
+
+
+        scheduledTimers.add(
+            timer
+        );
+
+
+        return timer;
+
+    }
+
+
+    /* =========================================================
+       جدولة تحديث
        ========================================================= */
 
     function scheduleUpdate(
@@ -610,43 +862,35 @@
 
 
     /* =========================================================
-       جاهزية الصفحة
-       ========================================================= */
-
-    function isPageReady() {
-
-        return (
-            document.readyState ===
-                "interactive" ||
-            document.readyState ===
-                "complete"
-        );
-
-    }
-
-
-    /* =========================================================
-       التركيز على حقل الرسالة
+       Focus
        ========================================================= */
 
     function handleInputFocus() {
 
-        scheduleUpdate(
-            30
-        );
+        /*
+         * نثبت الـViewport الأساسي قبل ظهور الكيبورد.
+         */
 
+        if (
+            !keyboardWasOpen
+        ) {
+
+            captureBaseViewportHeight();
+
+        }
+
+
+        scheduleUpdate(30);
 
         safeTimeout(
             update,
             100
         );
 
-
         safeTimeout(
             update,
             250
         );
-
 
         safeTimeout(
             update,
@@ -657,21 +901,17 @@
 
 
     /* =========================================================
-       فقدان التركيز
+       Blur
        ========================================================= */
 
     function handleInputBlur() {
 
-        scheduleUpdate(
-            50
-        );
-
+        scheduleUpdate(50);
 
         safeTimeout(
             update,
             150
         );
-
 
         safeTimeout(
             update,
@@ -682,15 +922,12 @@
 
 
     /* =========================================================
-       تغيير حجم النافذة
+       Resize
        ========================================================= */
 
     function handleWindowResize() {
 
-        scheduleUpdate(
-            20
-        );
-
+        scheduleUpdate(20);
 
         safeTimeout(
             update,
@@ -701,32 +938,29 @@
 
 
     /* =========================================================
-       تدوير الشاشة
+       Orientation
        ========================================================= */
 
     function handleOrientationChange() {
 
-        scheduleUpdate(
-            50
-        );
-
-
         safeTimeout(
-            update,
-            150
+            function () {
+
+                /*
+                 * بعد التدوير نلتقط
+                 * الـViewport الطبيعي الجديد.
+                 */
+
+                captureBaseViewportHeight();
+
+                lastKeyboardHeight = -1;
+
+                update();
+
+            },
+            500
         );
 
-
-        safeTimeout(
-            update,
-            350
-        );
-
-
-        safeTimeout(
-            update,
-            600
-        );
 
     }
 
@@ -740,9 +974,7 @@
         if (
             !window.visualViewport
         ) {
-
             return;
-
         }
 
 
@@ -750,17 +982,11 @@
             window.visualViewport;
 
 
-        /*
-         * تغيير الحجم.
-         */
-
         visualViewportInstance.addEventListener(
             "resize",
             function () {
 
-                scheduleUpdate(
-                    0
-                );
+                scheduleUpdate(0);
 
             },
             {
@@ -769,17 +995,16 @@
         );
 
 
-        /*
-         * تغيير موضع الـViewport.
-         */
-
         visualViewportInstance.addEventListener(
             "scroll",
             function () {
 
-                scheduleUpdate(
-                    0
-                );
+                /*
+                 * scroll الخاص بالـVisualViewport
+                 * لا يجب أن يحرك Navigation أو Header.
+                 */
+
+                scheduleUpdate(0);
 
             },
             {
@@ -791,21 +1016,17 @@
 
 
     /* =========================================================
-       مراقبة فتح وإغلاق المحادثة
+       مراقبة Chat
        ========================================================= */
 
     function setupChatObserver() {
 
         const chatView =
-            document.getElementById(
-                "chatView"
-            );
+            getChatView();
 
 
         if (!chatView) {
-
             return;
-
         }
 
 
@@ -813,14 +1034,8 @@
             new MutationObserver(
                 function () {
 
-                    scheduleUpdate(
-                        0
-                    );
-
-
-                    safeTimeout(
-                        update,
-                        100
+                    enforceLayout(
+                        calculateKeyboardHeight()
                     );
 
                 }
@@ -832,7 +1047,8 @@
             {
                 attributes: true,
                 attributeFilter: [
-                    "class"
+                    "class",
+                    "style"
                 ]
             }
         );
@@ -841,21 +1057,55 @@
 
 
     /* =========================================================
-       مراقبة حقل الكتابة
+       مراقبة ظهور Navigation
+       ========================================================= */
+
+    function setupNavigationObserver() {
+
+        const observer =
+            new MutationObserver(
+                function () {
+
+                    const navigation =
+                        getNavigation();
+
+
+                    if (!navigation) {
+                        return;
+                    }
+
+
+                    enforceLayout(
+                        calculateKeyboardHeight()
+                    );
+
+                }
+            );
+
+
+        observer.observe(
+            document.documentElement,
+            {
+                childList: true,
+                subtree: true
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       أحداث Input
        ========================================================= */
 
     function setupInputEvents() {
 
         const input =
-            document.getElementById(
-                "messageInput"
-            );
+            getMessageInput();
 
 
         if (!input) {
-
             return;
-
         }
 
 
@@ -880,7 +1130,7 @@
 
 
     /* =========================================================
-       مراقبة الصفحة
+       أحداث الصفحة
        ========================================================= */
 
     function setupWindowEvents() {
@@ -907,10 +1157,11 @@
             "pageshow",
             function () {
 
-                scheduleUpdate(
-                    50
-                );
+                captureBaseViewportHeight();
 
+                lastKeyboardHeight = -1;
+
+                scheduleUpdate(50);
 
                 safeTimeout(
                     update,
@@ -927,7 +1178,7 @@
 
 
     /* =========================================================
-       تنظيف حالة الكيبورد
+       Reset
        ========================================================= */
 
     function resetKeyboardState() {
@@ -965,20 +1216,15 @@
         }
 
 
-        /*
-         * تثبيت Navigation في مكانه
-         * منذ البداية.
-         */
+        captureBaseViewportHeight();
 
-        lockNavigationPosition(
-            0
-        );
+        enforceLayout(0);
 
     }
 
 
     /* =========================================================
-       التهيئة
+       INIT
        ========================================================= */
 
     function init() {
@@ -986,9 +1232,7 @@
         if (
             initialized
         ) {
-
             return;
-
         }
 
 
@@ -996,10 +1240,11 @@
             true;
 
 
-        resetKeyboardState();
-
-
         setupVisualViewport();
+
+        captureBaseViewportHeight();
+
+        resetKeyboardState();
 
         setupInputEvents();
 
@@ -1007,10 +1252,10 @@
 
         setupChatObserver();
 
+        setupNavigationObserver();
 
-        scheduleUpdate(
-            0
-        );
+
+        scheduleUpdate(0);
 
 
         safeTimeout(
@@ -1034,7 +1279,7 @@
 
 
     /* =========================================================
-       API عام
+       API
        ========================================================= */
 
     window.WFESC_MESSAGE_KEYBOARD = {
@@ -1043,11 +1288,7 @@
             init,
 
         update:
-            function () {
-
-                update();
-
-            },
+            update,
 
         getHeight:
             function () {
@@ -1060,7 +1301,8 @@
             function () {
 
                 return (
-                    calculateKeyboardHeight() > 0
+                    calculateKeyboardHeight() >
+                    0
                 );
 
             }
@@ -1069,45 +1311,43 @@
 
 
     /* =========================================================
-       إشارات الجاهزية
+       READY FLAGS
        ========================================================= */
 
     window.WFESC_MESSAGE_KEYBOARD_READY =
         true;
 
-
     window.WFESC_KEYBOARD_FILE_LOADED =
         true;
-
 
     window.__WFESC_KEYBOARD_FILE_LOADED__ =
         true;
 
 
     /* =========================================================
-       التشغيل التلقائي
+       BOOT
        ========================================================= */
 
     function boot() {
 
         if (
-            isPageReady()
+            document.readyState ===
+                "loading"
         ) {
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                init,
+                {
+                    once: true
+                }
+            );
+
+        } else {
 
             init();
 
-            return;
-
         }
-
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            init,
-            {
-                once: true
-            }
-        );
 
     }
 
