@@ -7,24 +7,37 @@
 
     "use strict";
 
+
     /* =========================================================
        CONFIG
     ========================================================= */
 
-    const ACTIVITY_DEBUG = true;
+    const ACTIVITY_DEBUG =
+        true;
 
-    const ACTIVITY_TABLE = "profiles";
 
-    const ACTIVITY_FIELD = "show_activity";
+    const ACTIVITY_TABLE =
+        "profiles";
+
+
+    const ACTIVITY_FIELD =
+        "show_activity";
+
 
     const ACTIVITY_CHANNEL =
         "wfesc-activity-presence";
 
+
     const HEARTBEAT_TIME =
         30000;
 
+
     const OFFLINE_AFTER =
         70000;
+
+
+    const BLOCK_CACHE_TTL =
+        30000;
 
 
     /* =========================================================
@@ -34,52 +47,142 @@
     const SUPABASE_URL =
         "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
+
     const SUPABASE_KEY =
-        "sb_publishable_V9RaHJDWmhox-XMzj1SK_w_6p5pAK5L";
+        "sb_publishable_V9Ha2JDWmhox-XMzj1SK_w6p5pAK5L";
 
 
     let client =
-        window.WFESCSupabase ||
-        window.supabase?.createClient(
-            SUPABASE_URL,
-            SUPABASE_KEY
-        );
+        null;
+
+
+    function getClient() {
+
+        const core =
+            window.WFESC_MESSAGES_CORE;
+
+
+        if (
+            core &&
+            core.client &&
+            typeof core.client.from ===
+                "function"
+        ) {
+
+            client =
+                core.client;
+
+
+            return client;
+
+        }
+
+
+        if (
+            window.WFESCSupabase &&
+            typeof window.WFESCSupabase.from ===
+                "function"
+        ) {
+
+            client =
+                window.WFESCSupabase;
+
+
+            return client;
+
+        }
+
+
+        if (
+            !client &&
+            window.supabase &&
+            typeof window.supabase.createClient ===
+                "function"
+        ) {
+
+            client =
+                window.supabase.createClient(
+                    SUPABASE_URL,
+                    SUPABASE_KEY
+                );
+
+        }
+
+
+        return client;
+
+    }
 
 
     /* =========================================================
        STATE
     ========================================================= */
 
-    let currentUser = null;
+    let currentUser =
+        null;
 
-    let showActivity = true;
 
-    let presenceChannel = null;
+    let showActivity =
+        true;
 
-    let presenceStarted = false;
 
-    let heartbeatTimer = null;
+    let presenceChannel =
+        null;
 
-    let initialized = false;
 
-    let uiReady = false;
+    let presenceStarted =
+        false;
 
-    let visibilityReady = false;
 
-    let lastPresenceState = null;
+    let heartbeatTimer =
+        null;
+
+
+    let initialized =
+        false;
+
+
+    let uiReady =
+        false;
+
+
+    let visibilityReady =
+        false;
+
+
+    let lastPresenceState =
+        null;
+
+
+    /*
+     * حالة الحظر بالنسبة للنشاط.
+     *
+     * true =
+     * لا نعرض نشاط هذا المستخدم.
+     */
+
+    const activityBlockCache =
+        new Map();
 
 
     /* =========================================================
        DOM
     ========================================================= */
 
-    let activityButton = null;
+    let activityButton =
+        null;
 
-    let activityModal = null;
 
-    let activitySwitch = null;
+    let activityModal =
+        null;
 
-    let closeActivityModal = null;
+
+    let activitySwitch =
+        null;
+
+
+    let closeActivityModal =
+        null;
 
 
     /* =========================================================
@@ -89,8 +192,11 @@
     function debug() {
 
         if (!ACTIVITY_DEBUG) {
+
             return;
+
         }
+
 
         try {
 
@@ -111,13 +217,17 @@
     function getStorageKey() {
 
         if (!currentUser?.id) {
+
             return null;
+
         }
+
 
         return (
             "wfesc_activity_" +
             currentUser.id
         );
+
     }
 
 
@@ -127,15 +237,27 @@
 
     async function loadUser() {
 
-        if (!client) {
-            debug("Supabase client غير موجود");
+        const supabaseClient =
+            getClient();
+
+
+        if (!supabaseClient) {
+
+            debug(
+                "Supabase client غير موجود"
+            );
+
+
             return null;
+
         }
+
 
         try {
 
             const result =
-                await client.auth.getUser();
+                await supabaseClient.auth.getUser();
+
 
             if (result.error) {
 
@@ -144,17 +266,22 @@
                     result.error
                 );
 
+
                 return null;
+
             }
+
 
             currentUser =
                 result.data?.user ||
                 null;
 
+
             debug(
                 "Current user:",
                 currentUser?.id
             );
+
 
             return currentUser;
 
@@ -165,8 +292,11 @@
                 error
             );
 
+
             return null;
+
         }
+
     }
 
 
@@ -176,30 +306,48 @@
 
     async function loadSetting() {
 
-        if (!currentUser?.id) {
+        const supabaseClient =
+            getClient();
+
+
+        if (
+            !currentUser?.id ||
+            !supabaseClient
+        ) {
+
             return;
+
         }
 
-        let loadedFromDatabase = false;
+
+        let loadedFromDatabase =
+            false;
+
 
         try {
 
             const result =
-                await client
-                    .from(ACTIVITY_TABLE)
-                    .select(ACTIVITY_FIELD)
+                await supabaseClient
+                    .from(
+                        ACTIVITY_TABLE
+                    )
+                    .select(
+                        ACTIVITY_FIELD
+                    )
                     .eq(
                         "id",
                         currentUser.id
                     )
                     .maybeSingle();
 
+
             if (
                 !result.error &&
                 result.data &&
                 typeof result.data[
                     ACTIVITY_FIELD
-                ] === "boolean"
+                ] ===
+                    "boolean"
             ) {
 
                 showActivity =
@@ -207,12 +355,16 @@
                         ACTIVITY_FIELD
                     ];
 
-                loadedFromDatabase = true;
+
+                loadedFromDatabase =
+                    true;
+
 
                 debug(
                     "Activity setting from database:",
                     showActivity
                 );
+
             }
 
         } catch (error) {
@@ -221,6 +373,7 @@
                 "loadSetting database error:",
                 error
             );
+
         }
 
 
@@ -235,10 +388,14 @@
                 const key =
                     getStorageKey();
 
+
                 if (key) {
 
                     const saved =
-                        localStorage.getItem(key);
+                        localStorage.getItem(
+                            key
+                        );
+
 
                     if (
                         saved === "true" ||
@@ -247,21 +404,27 @@
 
                         showActivity =
                             saved === "true";
+
                     }
+
                 }
 
             } catch (error) {}
+
 
             debug(
                 "Activity setting from localStorage:",
                 showActivity
             );
+
         }
 
 
         updateSwitchUI();
 
-        publishPresence();
+
+        await publishPresence();
+
     }
 
 
@@ -269,7 +432,9 @@
        SAVE ACTIVITY SETTING
     ========================================================= */
 
-    async function saveSetting(value) {
+    async function saveSetting(
+        value
+    ) {
 
         showActivity =
             Boolean(value);
@@ -284,12 +449,14 @@
             const key =
                 getStorageKey();
 
+
             if (key) {
 
                 localStorage.setItem(
                     key,
                     String(showActivity)
                 );
+
             }
 
         } catch (error) {}
@@ -299,21 +466,33 @@
            DATABASE
         ----------------------------------------------------- */
 
-        if (currentUser?.id && client) {
+        const supabaseClient =
+            getClient();
+
+
+        if (
+            currentUser?.id &&
+            supabaseClient
+        ) {
 
             try {
 
                 const result =
-                    await client
-                        .from(ACTIVITY_TABLE)
+                    await supabaseClient
+                        .from(
+                            ACTIVITY_TABLE
+                        )
                         .update({
+
                             [ACTIVITY_FIELD]:
                                 showActivity
+
                         })
                         .eq(
                             "id",
                             currentUser.id
                         );
+
 
                 if (result.error) {
 
@@ -328,6 +507,7 @@
                         "Activity saved:",
                         showActivity
                     );
+
                 }
 
             } catch (error) {
@@ -336,7 +516,9 @@
                     "saveSetting exception:",
                     error
                 );
+
             }
+
         }
 
 
@@ -348,7 +530,7 @@
 
 
         /* -----------------------------------------------------
-           UPDATE PRESENCE IMMEDIATELY
+           UPDATE PRESENCE
         ----------------------------------------------------- */
 
         await publishPresence();
@@ -362,6 +544,7 @@
 
 
         return showActivity;
+
     }
 
 
@@ -372,28 +555,35 @@
     function updateSwitchUI() {
 
         if (!activitySwitch) {
+
             return;
+
         }
+
 
         activitySwitch.classList.toggle(
             "active",
             showActivity
         );
 
+
         activitySwitch.classList.toggle(
             "on",
             showActivity
         );
+
 
         activitySwitch.setAttribute(
             "aria-checked",
             String(showActivity)
         );
 
+
         activitySwitch.setAttribute(
             "data-active",
             String(showActivity)
         );
+
 
         activitySwitch.setAttribute(
             "role",
@@ -401,20 +591,19 @@
         );
 
 
-        /*
-         * بعض التصاميم تعتمد على inner text
-         */
-
         if (
             activitySwitch.dataset &&
-            activitySwitch.dataset.textMode === "true"
+            activitySwitch.dataset.textMode ===
+                "true"
         ) {
 
             activitySwitch.textContent =
                 showActivity
                     ? "تشغيل"
                     : "إيقاف";
+
         }
+
     }
 
 
@@ -427,6 +616,7 @@
         const nextValue =
             !showActivity;
 
+
         debug(
             "Toggle activity:",
             showActivity,
@@ -434,9 +624,11 @@
             nextValue
         );
 
+
         await saveSetting(
             nextValue
         );
+
     }
 
 
@@ -447,35 +639,47 @@
     function openActivityModal() {
 
         if (!activityModal) {
+
             findDOM();
+
         }
+
 
         if (!activityModal) {
+
             return;
+
         }
 
+
         updateSwitchUI();
+
 
         activityModal.classList.add(
             "active"
         );
 
+
         activityModal.classList.add(
             "show"
         );
 
+
         activityModal.removeAttribute(
             "hidden"
         );
+
 
         activityModal.setAttribute(
             "aria-hidden",
             "false"
         );
 
+
         debug(
             "Activity modal opened"
         );
+
     }
 
 
@@ -486,25 +690,32 @@
     function closeActivityModalInternal() {
 
         if (!activityModal) {
+
             return;
+
         }
+
 
         activityModal.classList.remove(
             "active"
         );
 
+
         activityModal.classList.remove(
             "show"
         );
+
 
         activityModal.setAttribute(
             "aria-hidden",
             "true"
         );
 
+
         debug(
             "Activity modal closed"
         );
+
     }
 
 
@@ -519,15 +730,18 @@
                 "activityButton"
             );
 
+
         activityModal =
             document.getElementById(
                 "activityModal"
             );
 
+
         activitySwitch =
             document.getElementById(
                 "activitySwitch"
             );
+
 
         closeActivityModal =
             document.getElementById(
@@ -537,12 +751,15 @@
 
         updateSwitchUI();
 
-        uiReady = true;
+
+        uiReady =
+            true;
 
 
         debug(
             "DOM:",
             {
+
                 activityButton:
                     Boolean(activityButton),
 
@@ -554,8 +771,10 @@
 
                 closeActivityModal:
                     Boolean(closeActivityModal)
+
             }
         );
+
     }
 
 
@@ -569,7 +788,7 @@
 
 
         /*
-         * زر النشاط الرئيسي
+         * زر النشاط
          */
 
         if (
@@ -580,6 +799,7 @@
             activityButton.dataset.wfescActivityBound =
                 "true";
 
+
             activityButton.addEventListener(
                 "click",
                 function (event) {
@@ -589,8 +809,10 @@
                     event.stopPropagation();
 
                     openActivityModal();
+
                 }
             );
+
         }
 
 
@@ -606,6 +828,7 @@
             activitySwitch.dataset.wfescActivityBound =
                 "true";
 
+
             activitySwitch.addEventListener(
                 "click",
                 async function (event) {
@@ -615,16 +838,20 @@
                     event.stopPropagation();
 
                     await toggleActivity();
+
                 }
             );
+
 
             activitySwitch.addEventListener(
                 "keydown",
                 async function (event) {
 
                     if (
-                        event.key === "Enter" ||
-                        event.key === " "
+                        event.key ===
+                            "Enter" ||
+                        event.key ===
+                            " "
                     ) {
 
                         event.preventDefault();
@@ -632,9 +859,12 @@
                         event.stopPropagation();
 
                         await toggleActivity();
+
                     }
+
                 }
             );
+
         }
 
 
@@ -650,6 +880,7 @@
             closeActivityModal.dataset.wfescActivityBound =
                 "true";
 
+
             closeActivityModal.addEventListener(
                 "click",
                 function (event) {
@@ -659,8 +890,10 @@
                     event.stopPropagation();
 
                     closeActivityModalInternal();
+
                 }
             );
+
         }
 
 
@@ -676,6 +909,7 @@
             activityModal.dataset.wfescActivityBound =
                 "true";
 
+
             activityModal.addEventListener(
                 "click",
                 function (event) {
@@ -686,16 +920,20 @@
                     ) {
 
                         closeActivityModalInternal();
+
                     }
+
                 }
             );
+
         }
+
     }
 
 
     /* =========================================================
-       FALLBACK GLOBAL CLICK HANDLER
-       ========================================================= */
+       FALLBACK GLOBAL CLICK
+    ========================================================= */
 
     function setupGlobalActivityClick() {
 
@@ -703,8 +941,11 @@
             document.documentElement.dataset
                 .wfescActivityGlobalClick
         ) {
+
             return;
+
         }
+
 
         document.documentElement.dataset
             .wfescActivityGlobalClick =
@@ -715,10 +956,26 @@
             "click",
             async function (event) {
 
+                const target =
+                    event.target;
+
+
+                if (
+                    !target ||
+                    typeof target.closest !==
+                        "function"
+                ) {
+
+                    return;
+
+                }
+
+
                 const button =
-                    event.target.closest(
+                    target.closest(
                         "#activityButton"
                     );
+
 
                 if (button) {
 
@@ -729,13 +986,15 @@
                     openActivityModal();
 
                     return;
+
                 }
 
 
                 const switchButton =
-                    event.target.closest(
+                    target.closest(
                         "#activitySwitch"
                     );
+
 
                 if (switchButton) {
 
@@ -746,13 +1005,15 @@
                     await toggleActivity();
 
                     return;
+
                 }
 
 
                 const closeButton =
-                    event.target.closest(
+                    target.closest(
                         "#closeActivityModal"
                     );
+
 
                 if (closeButton) {
 
@@ -761,11 +1022,321 @@
                     event.stopPropagation();
 
                     closeActivityModalInternal();
+
                 }
+
             },
             true
         );
+
     }
+
+
+    /* =========================================================
+       BLOCK MODULE
+    ========================================================= */
+
+    function getBlockModule() {
+
+        return (
+            window.WFESC_MESSAGES_BLOCK ||
+            null
+        );
+
+    }
+
+
+    function getCachedActivityBlock(
+        userId
+    ) {
+
+        if (!userId) {
+
+            return null;
+
+        }
+
+
+        const item =
+            activityBlockCache.get(
+                String(userId)
+            );
+
+
+        if (!item) {
+
+            return null;
+
+        }
+
+
+        if (
+            Date.now() -
+            item.loadedAt >
+            BLOCK_CACHE_TTL
+        ) {
+
+            activityBlockCache.delete(
+                String(userId)
+            );
+
+
+            return null;
+
+        }
+
+
+        return {
+
+            blocked:
+                item.blocked === true,
+
+            blockedBy:
+                item.blockedBy === true
+
+        };
+
+    }
+
+
+    function setCachedActivityBlock(
+        userId,
+        blocked,
+        blockedBy
+    ) {
+
+        if (!userId) {
+
+            return;
+
+        }
+
+
+        activityBlockCache.set(
+            String(userId),
+            {
+
+                blocked:
+                    blocked === true,
+
+                blockedBy:
+                    blockedBy === true,
+
+                loadedAt:
+                    Date.now()
+
+            }
+        );
+
+    }
+
+
+    async function refreshActivityBlockState(
+        userId
+    ) {
+
+        if (!userId) {
+
+            return {
+
+                blocked: false,
+
+                blockedBy: false
+
+            };
+
+        }
+
+
+        const block =
+            getBlockModule();
+
+
+        if (!block) {
+
+            return {
+
+                blocked: false,
+
+                blockedBy: false
+
+            };
+
+        }
+
+
+        let blocked =
+            false;
+
+
+        let blockedBy =
+            false;
+
+
+        try {
+
+            if (
+                typeof block.isBlocked ===
+                    "function"
+            ) {
+
+                blocked =
+                    await block.isBlocked(
+                        userId
+                    );
+
+            }
+
+        } catch (error) {
+
+            debug(
+                "Activity block isBlocked error:",
+                error
+            );
+
+        }
+
+
+        try {
+
+            if (
+                typeof block.isBlockedBy ===
+                    "function"
+            ) {
+
+                blockedBy =
+                    await block.isBlockedBy(
+                        userId
+                    );
+
+            }
+
+        } catch (error) {
+
+            debug(
+                "Activity block isBlockedBy error:",
+                error
+            );
+
+        }
+
+
+        setCachedActivityBlock(
+            userId,
+            blocked,
+            blockedBy
+        );
+
+
+        return {
+
+            blocked:
+                blocked === true,
+
+            blockedBy:
+                blockedBy === true
+
+        };
+
+    }
+
+
+    function invalidateActivityBlock(
+        userId
+    ) {
+
+        if (userId) {
+
+            activityBlockCache.delete(
+                String(userId)
+            );
+
+        } else {
+
+            activityBlockCache.clear();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       BLOCK EVENTS
+    ========================================================= */
+
+    function handleActivityBlockEvent(
+        event
+    ) {
+
+        const changedUserId =
+            event?.detail?.userId ||
+            event?.detail?.blockedUserId ||
+            event?.detail?.blocked_id ||
+            null;
+
+
+        invalidateActivityBlock(
+            changedUserId
+        );
+
+
+        if (changedUserId) {
+
+            refreshActivityBlockState(
+                changedUserId
+            )
+            .then(
+                function () {
+
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "wfesc:activity-sync",
+                            {
+                                detail: {
+
+                                    userId:
+                                        changedUserId,
+
+                                    blockChanged:
+                                        true
+
+                                }
+                            }
+                        )
+                    );
+
+                }
+            )
+            .catch(
+                function () {}
+            );
+
+        } else {
+
+            processPresence();
+
+        }
+
+    }
+
+
+    [
+        "wfesc:block-changed",
+        "wfesc:blocked",
+        "wfesc:unblocked",
+        "wfesc:user-blocked",
+        "wfesc:user-unblocked"
+    ]
+    .forEach(
+        function (eventName) {
+
+            window.addEventListener(
+                eventName,
+                handleActivityBlockEvent
+            );
+
+        }
+    );
 
 
     /* =========================================================
@@ -774,17 +1345,24 @@
 
     function createPresenceChannel() {
 
-        if (!client || !currentUser?.id) {
+        const supabaseClient =
+            getClient();
+
+
+        if (
+            !supabaseClient ||
+            !currentUser?.id
+        ) {
+
             return null;
+
         }
 
 
-        /*
-         * إذا القناة موجودة بالفعل لا ننشئ ثانية
-         */
-
         if (presenceChannel) {
+
             return presenceChannel;
+
         }
 
 
@@ -794,7 +1372,7 @@
 
 
         presenceChannel =
-            client.channel(
+            supabaseClient.channel(
                 ACTIVITY_CHANNEL,
                 {
                     config: {
@@ -814,7 +1392,8 @@
         presenceChannel.on(
             "presence",
             {
-                event: "sync"
+                event:
+                    "sync"
             },
             function () {
 
@@ -822,7 +1401,9 @@
                     "Presence sync"
                 );
 
+
                 processPresence();
+
             }
         );
 
@@ -834,7 +1415,8 @@
         presenceChannel.on(
             "presence",
             {
-                event: "join"
+                event:
+                    "join"
             },
             function () {
 
@@ -842,7 +1424,9 @@
                     "Presence join"
                 );
 
+
                 processPresence();
+
             }
         );
 
@@ -854,7 +1438,8 @@
         presenceChannel.on(
             "presence",
             {
-                event: "leave"
+                event:
+                    "leave"
             },
             function () {
 
@@ -862,12 +1447,15 @@
                     "Presence leave"
                 );
 
+
                 processPresence();
+
             }
         );
 
 
         return presenceChannel;
+
     }
 
 
@@ -877,12 +1465,13 @@
 
     async function startPresence() {
 
-        if (!currentUser?.id) {
-            return;
-        }
+        if (
+            !currentUser?.id ||
+            !getClient()
+        ) {
 
-        if (!client) {
             return;
+
         }
 
 
@@ -890,19 +1479,18 @@
 
 
         if (!presenceChannel) {
+
             return;
+
         }
 
-
-        /*
-         * إذا كانت القناة بدأت سابقًا
-         */
 
         if (presenceStarted) {
 
             await publishPresence();
 
             return;
+
         }
 
 
@@ -928,26 +1516,22 @@
                     presenceStarted =
                         true;
 
+
                     debug(
                         "Presence subscribed"
                     );
 
 
-                    /*
-                     * أول نشر فورًا
-                     */
-
                     await publishPresence();
 
 
-                    /*
-                     * إرسال تحديث للواجهة
-                     */
-
                     processPresence();
+
                 }
+
             }
         );
+
     }
 
 
@@ -962,7 +1546,9 @@
             !currentUser?.id ||
             !presenceStarted
         ) {
+
             return;
+
         }
 
 
@@ -970,20 +1556,6 @@
             document.visibilityState !==
             "hidden";
 
-
-        /*
-         * مهم:
-         *
-         * حتى إذا show_activity = false
-         * ننشر المستخدم داخل Presence
-         * لكن نرسل online = false
-         * و show_activity = false
-         *
-         * حتى يعرف الطرف الثاني أن المستخدم
-         * اختار إخفاء نشاطه ويعرض:
-         *
-         * "عدم النشاط"
-         */
 
         const payload = {
 
@@ -999,6 +1571,7 @@
 
             last_seen:
                 new Date().toISOString()
+
         };
 
 
@@ -1023,7 +1596,9 @@
                 "Presence publish error:",
                 error
             );
+
         }
+
     }
 
 
@@ -1034,7 +1609,9 @@
     function processPresence() {
 
         if (!presenceChannel) {
+
             return;
+
         }
 
 
@@ -1057,7 +1634,10 @@
                     "wfesc:activity-sync",
                     {
                         detail: {
-                            state: state
+
+                            state:
+                                state
+
                         }
                     }
                 )
@@ -1075,7 +1655,63 @@
                 "processPresence error:",
                 error
             );
+
         }
+
+    }
+
+
+    /* =========================================================
+       GET RAW PRESENCE ENTRY
+    ========================================================= */
+
+    function getPresenceEntry(
+        userId
+    ) {
+
+        if (!presenceChannel || !userId) {
+
+            return null;
+
+        }
+
+
+        let state;
+
+
+        try {
+
+            state =
+                presenceChannel.presenceState();
+
+        } catch (error) {
+
+            return null;
+
+        }
+
+
+        const entries =
+            state[
+                String(userId)
+            ] ||
+            [];
+
+
+        if (!entries.length) {
+
+            return null;
+
+        }
+
+
+        return (
+            entries[
+                entries.length - 1
+            ] ||
+            null
+        );
+
     }
 
 
@@ -1087,88 +1723,140 @@
         userId
     ) {
 
-        /*
-         * بدون user id
-         */
-
         if (!userId) {
 
             return {
+
                 online: false,
+
                 disabled: false,
+
+                show_activity: true,
+
                 last_seen: null
+
             };
+
         }
 
 
         /*
-         * لا توجد قناة بعد
+         * إذا كنا نعرف أن الشخص محظور
+         * بأي اتجاه، لا نرجع نشاطه.
+         */
+
+        const cachedBlock =
+            getCachedActivityBlock(
+                userId
+            );
+
+
+        if (
+            cachedBlock &&
+            (
+                cachedBlock.blocked ||
+                cachedBlock.blockedBy
+            )
+        ) {
+
+            return {
+
+                online: false,
+
+                disabled: true,
+
+                show_activity: false,
+
+                last_seen: null,
+
+                blocked: true
+
+            };
+
+        }
+
+
+        /*
+         * إذا بعدنا ما فحصنا الحظر،
+         * نبدأ فحصًا بالخلفية بدون تعطيل
+         * الواجهة المتزامنة.
+         */
+
+        if (!cachedBlock) {
+
+            refreshActivityBlockState(
+                userId
+            )
+            .then(
+                function () {
+
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "wfesc:activity-sync",
+                            {
+                                detail: {
+
+                                    userId:
+                                        userId,
+
+                                    blockRefresh:
+                                        true
+
+                                }
+                            }
+                        )
+                    );
+
+                }
+            )
+            .catch(
+                function () {}
+            );
+
+        }
+
+
+        /*
+         * لا توجد قناة بعد.
          */
 
         if (!presenceChannel) {
 
             return {
+
                 online: false,
+
                 disabled: false,
+
+                show_activity: true,
+
                 last_seen: null
+
             };
+
         }
 
-
-        let state;
-
-        try {
-
-            state =
-                presenceChannel.presenceState();
-
-        } catch (error) {
-
-            return {
-                online: false,
-                disabled: false,
-                last_seen: null
-            };
-        }
-
-
-        /*
-         * بعض البيانات قد تأتي بالمفتاح
-         * user_id وبعضها بالمفتاح الداخلي
-         */
-
-        const entries =
-            state[userId] ||
-            [];
-
-
-        if (!entries.length) {
-
-            return {
-                online: false,
-                disabled: false,
-                last_seen: null
-            };
-        }
-
-
-        /*
-         * نأخذ آخر Presence
-         */
 
         const latest =
-            entries[
-                entries.length - 1
-            ];
+            getPresenceEntry(
+                userId
+            );
 
 
         if (!latest) {
 
             return {
+
                 online: false,
+
                 disabled: false,
+
+                show_activity: true,
+
                 last_seen: null
+
             };
+
         }
 
 
@@ -1190,13 +1878,12 @@
             (
                 Date.now() -
                 timestamp
-            ) <= OFFLINE_AFTER;
+            ) <=
+            OFFLINE_AFTER;
 
 
         /*
-         * المستخدم مطفي حالة النشاط
-         *
-         * هذه أهم نقطة بالإصلاح
+         * المستخدم أخفى نشاطه.
          */
 
         if (
@@ -1214,13 +1901,11 @@
 
                 last_seen:
                     lastSeen
+
             };
+
         }
 
-
-        /*
-         * المستخدم مشغل النشاط
-         */
 
         return {
 
@@ -1228,13 +1913,17 @@
                 latest.online === true &&
                 recent,
 
-            disabled: false,
+            disabled:
+                false,
 
-            show_activity: true,
+            show_activity:
+                true,
 
             last_seen:
                 lastSeen
+
         };
+
     }
 
 
@@ -1255,6 +1944,7 @@
         return (
             activity.online === true
         );
+
     }
 
 
@@ -1273,39 +1963,36 @@
 
 
         /*
-         * المستخدم أخفى نشاطه
+         * مخفي بسبب الحظر
+         * أو بسبب إعداد المستخدم.
          */
 
         if (
+            activity.blocked === true ||
             activity.disabled === true ||
             activity.show_activity === false
         ) {
 
             return "عدم النشاط";
+
         }
 
-
-        /*
-         * المستخدم متصل
-         */
 
         if (
             activity.online === true
         ) {
 
             return "متصل الآن";
+
         }
 
-
-        /*
-         * لا يوجد آخر ظهور
-         */
 
         if (
             !activity.last_seen
         ) {
 
             return "غير متصل";
+
         }
 
 
@@ -1322,6 +2009,7 @@
         ) {
 
             return "غير متصل";
+
         }
 
 
@@ -1330,31 +2018,26 @@
             timestamp;
 
 
-        /*
-         * آخر ظهور أقل من دقيقة
-         */
-
         if (
             diff <
             60000
         ) {
 
             return "كان نشطًا للتو";
+
         }
 
 
-        /*
-         * دقائق
-         */
-
         const minutes =
             Math.floor(
-                diff / 60000
+                diff /
+                60000
             );
 
 
         if (
-            minutes < 60
+            minutes <
+            60
         ) {
 
             return (
@@ -1362,21 +2045,20 @@
                 minutes +
                 " دقيقة"
             );
+
         }
 
 
-        /*
-         * ساعات
-         */
-
         const hours =
             Math.floor(
-                minutes / 60
+                minutes /
+                60
             );
 
 
         if (
-            hours < 24
+            hours <
+            24
         ) {
 
             return (
@@ -1384,16 +2066,14 @@
                 hours +
                 " ساعة"
             );
+
         }
 
 
-        /*
-         * أيام
-         */
-
         const days =
             Math.floor(
-                hours / 24
+                hours /
+                24
             );
 
 
@@ -1402,6 +2082,7 @@
             days +
             " يوم"
         );
+
     }
 
 
@@ -1416,6 +2097,7 @@
             processPresence();
 
         } catch (error) {}
+
     }
 
 
@@ -1426,10 +2108,14 @@
     function setupVisibility() {
 
         if (visibilityReady) {
+
             return;
+
         }
 
-        visibilityReady = true;
+
+        visibilityReady =
+            true;
 
 
         document.addEventListener(
@@ -1442,14 +2128,11 @@
                 );
 
 
-                /*
-                 * عند دخول الموقع/عودة التبويب
-                 * ننشر Presence مباشرة
-                 */
-
                 await publishPresence();
 
+
                 processPresence();
+
             }
         );
 
@@ -1460,7 +2143,9 @@
 
                 await publishPresence();
 
+
                 processPresence();
+
             }
         );
 
@@ -1471,9 +2156,12 @@
 
                 await publishPresence();
 
+
                 processPresence();
+
             }
         );
+
     }
 
 
@@ -1488,6 +2176,7 @@
             clearInterval(
                 heartbeatTimer
             );
+
         }
 
 
@@ -1497,11 +2186,13 @@
 
                     await publishPresence();
 
+
                     processPresence();
 
                 },
                 HEARTBEAT_TIME
             );
+
     }
 
 
@@ -1527,12 +2218,79 @@
 
                             showActivity:
                                 showActivity
+
                         }
                     }
                 )
             );
+
         }
     );
+
+
+    /* =========================================================
+       AUTH CLEANUP
+    ========================================================= */
+
+    async function cleanupPresence() {
+
+        const supabaseClient =
+            getClient();
+
+
+        if (
+            heartbeatTimer
+        ) {
+
+            clearInterval(
+                heartbeatTimer
+            );
+
+
+            heartbeatTimer =
+                null;
+
+        }
+
+
+        if (
+            presenceChannel &&
+            supabaseClient
+        ) {
+
+            try {
+
+                await presenceChannel.untrack();
+
+            } catch (error) {}
+
+
+            try {
+
+                await supabaseClient.removeChannel(
+                    presenceChannel
+                );
+
+            } catch (error) {}
+
+        }
+
+
+        presenceChannel =
+            null;
+
+
+        presenceStarted =
+            false;
+
+
+        lastPresenceState =
+            null;
+
+
+        activityBlockCache.clear();
+
+    }
 
 
     /* =========================================================
@@ -1541,12 +2299,34 @@
 
     function setupAuthListener() {
 
-        if (!client) {
+        const supabaseClient =
+            getClient();
+
+
+        if (
+            !supabaseClient ||
+            !supabaseClient.auth
+        ) {
+
             return;
+
         }
 
 
-        client.auth.onAuthStateChange(
+        if (
+            window.__WFESC_ACTIVITY_AUTH_LISTENER__
+        ) {
+
+            return;
+
+        }
+
+
+        window.__WFESC_ACTIVITY_AUTH_LISTENER__ =
+            true;
+
+
+        supabaseClient.auth.onAuthStateChange(
             async function (
                 event,
                 session
@@ -1563,62 +2343,100 @@
                     "SIGNED_OUT"
                 ) {
 
+                    await cleanupPresence();
+
+
                     currentUser =
                         null;
 
-                    presenceStarted =
-                        false;
 
-                    lastPresenceState =
-                        null;
+                    showActivity =
+                        true;
 
-                    if (presenceChannel) {
 
-                        try {
+                    updateSwitchUI();
 
-                            await client.removeChannel(
-                                presenceChannel
-                            );
-
-                        } catch (error) {}
-                    }
-
-                    presenceChannel =
-                        null;
 
                     return;
+
                 }
 
 
                 if (
                     event ===
-                    "SIGNED_IN" ||
+                        "SIGNED_IN" ||
                     event ===
-                    "INITIAL_SESSION"
+                        "INITIAL_SESSION" ||
+                    event ===
+                        "TOKEN_REFRESHED"
                 ) {
 
-                    currentUser =
+                    const sessionUser =
                         session?.user ||
                         null;
 
 
-                    if (!currentUser) {
+                    if (
+                        sessionUser
+                    ) {
 
-                        await loadUser();
-                    }
+                        const previousId =
+                            currentUser?.id ||
+                            null;
 
 
-                    if (currentUser) {
+                        currentUser =
+                            sessionUser;
+
+
+                        /*
+                         * إذا تغير المستخدم،
+                         * نعيد بناء Presence بالكامل.
+                         */
+
+                        if (
+                            previousId &&
+                            previousId !==
+                                currentUser.id
+                        ) {
+
+                            await cleanupPresence();
+
+                        }
+
 
                         await loadSetting();
 
+
                         await startPresence();
 
+
                         processPresence();
+
+                    } else {
+
+                        await loadUser();
+
+
+                        if (currentUser) {
+
+                            await loadSetting();
+
+
+                            await startPresence();
+
+
+                            processPresence();
+
+                        }
+
                     }
+
                 }
+
             }
         );
+
     }
 
 
@@ -1629,10 +2447,14 @@
     async function initialize() {
 
         if (initialized) {
+
             return;
+
         }
 
-        initialized = true;
+
+        initialized =
+            true;
 
 
         debug(
@@ -1642,18 +2464,34 @@
 
         setupUI();
 
+
         setupGlobalActivityClick();
+
 
         setupVisibility();
 
+
         startHeartbeat();
+
+
+        const supabaseClient =
+            getClient();
+
+
+        if (!supabaseClient) {
+
+            debug(
+                "No Supabase client available"
+            );
+
+
+            return;
+
+        }
+
 
         setupAuthListener();
 
-
-        /*
-         * نحصل على المستخدم مباشرة
-         */
 
         await loadUser();
 
@@ -1664,27 +2502,17 @@
                 "No authenticated user"
             );
 
+
             return;
+
         }
 
-
-        /*
-         * تحميل إعداد النشاط
-         */
 
         await loadSetting();
 
 
-        /*
-         * تشغيل Presence فورًا
-         */
-
         await startPresence();
 
-
-        /*
-         * تحديث أخير
-         */
 
         processPresence();
 
@@ -1692,6 +2520,7 @@
         debug(
             "Activity initialized successfully"
         );
+
     }
 
 
@@ -1704,12 +2533,14 @@
         getCurrentUser() {
 
             return currentUser;
+
         },
 
 
         isActivityVisible() {
 
             return showActivity;
+
         },
 
 
@@ -1720,24 +2551,28 @@
             return await saveSetting(
                 Boolean(value)
             );
+
         },
 
 
         async toggleActivity() {
 
             return await toggleActivity();
+
         },
 
 
         openActivityModal() {
 
             openActivityModal();
+
         },
 
 
         closeActivityModal() {
 
             closeActivityModalInternal();
+
         },
 
 
@@ -1748,6 +2583,7 @@
             return isUserOnline(
                 userId
             );
+
         },
 
 
@@ -1758,6 +2594,7 @@
             return getUserActivity(
                 userId
             );
+
         },
 
 
@@ -1768,14 +2605,18 @@
             return getActivityText(
                 userId
             );
+
         },
 
 
         getPresenceState() {
 
             if (!presenceChannel) {
+
                 return {};
+
             }
+
 
             try {
 
@@ -1784,7 +2625,9 @@
             } catch (error) {
 
                 return {};
+
             }
+
         },
 
 
@@ -1792,8 +2635,29 @@
 
             await publishPresence();
 
+
             processPresence();
+
+        },
+
+
+        async refreshBlockState(
+            userId
+        ) {
+
+            return await refreshActivityBlockState(
+                userId
+            );
+
+        },
+
+
+        clearBlockCache() {
+
+            activityBlockCache.clear();
+
         }
+
     };
 
 
@@ -1811,15 +2675,18 @@
             function () {
 
                 initialize();
+
             },
             {
-                once: true
+                once:
+                    true
             }
         );
 
     } else {
 
         initialize();
+
     }
 
 })();
