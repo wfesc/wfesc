@@ -19,6 +19,10 @@
 
     const MAX_NOTIFICATIONS = 50;
 
+    const MAX_VISIBLE_NOTIFICATIONS = 3;
+
+    const NOTIFICATION_DURATION = 2000;
+
     const MUTE_CACHE_TTL = 30000;
 
 
@@ -44,17 +48,11 @@
 
     let cachedUserPromise = null;
 
-    /*
-     * conversationId -> {
-     *   muted: boolean,
-     *   loadedAt: number
-     * }
-     */
-    const muteCache = new Map();
-
     let buttonDelegationStarted = false;
 
     let bootStarted = false;
+
+    const muteCache = new Map();
 
 
     /* =====================================================
@@ -65,6 +63,7 @@
 
         const core =
             window.WFESC_MESSAGES_CORE;
+
 
         if (
             core &&
@@ -175,7 +174,7 @@
 
 
     /* =====================================================
-       AUTH CHANGE
+       AUTH
     ===================================================== */
 
     function setupAuthListener() {
@@ -251,10 +250,6 @@
             window.WFESC_MESSAGES_CHAT_HEADER;
 
 
-        /*
-         * أولاً من chat header
-         */
-
         if (
             header &&
             typeof header.getConversationId === "function"
@@ -271,21 +266,10 @@
 
                 }
 
-            } catch (error) {
-
-                console.warn(
-                    "WFESC NOTIFICATIONS: header conversation error",
-                    error
-                );
-
-            }
+            } catch (error) {}
 
         }
 
-
-        /*
-         * من core chatHeader
-         */
 
         if (
             core &&
@@ -309,10 +293,6 @@
         }
 
 
-        /*
-         * من getter
-         */
-
         if (
             core &&
             typeof core.getCurrentConversationId === "function"
@@ -333,10 +313,6 @@
 
         }
 
-
-        /*
-         * من property
-         */
 
         if (
             core &&
@@ -509,7 +485,7 @@
                 promise.catch(function (error) {
 
                     console.warn(
-                        "WFESC NOTIFICATIONS: sound blocked by browser",
+                        "WFESC NOTIFICATIONS: sound blocked",
                         error
                     );
 
@@ -520,7 +496,7 @@
         } catch (error) {
 
             console.error(
-                "WFESC NOTIFICATIONS: playSound error",
+                "WFESC NOTIFICATIONS: sound error",
                 error
             );
 
@@ -823,19 +799,6 @@
             !conversationId
         ) {
 
-            console.warn(
-                "WFESC NOTIFICATIONS: cannot toggle mute",
-                {
-                    client:
-                        !!client,
-
-                    user:
-                        !!user,
-
-                    conversationId
-                }
-            );
-
             return;
 
         }
@@ -879,7 +842,7 @@
 
 
             /*
-             * نحدث الواجهة والكاش فورًا.
+             * تحديث فوري للواجهة والكاش.
              */
 
             setCachedMute(
@@ -892,10 +855,6 @@
                 newMuted
             );
 
-
-            /*
-             * ثم نحفظ في Supabase.
-             */
 
             const result =
                 await client
@@ -916,10 +875,6 @@
 
             if (result.error) {
 
-                /*
-                 * إذا فشل الحفظ نرجع الحالة القديمة.
-                 */
-
                 setCachedMute(
                     conversationId,
                     oldMuted
@@ -936,16 +891,7 @@
                     result.error
                 );
 
-
-                return;
-
             }
-
-
-            console.log(
-                "WFESC NOTIFICATIONS: mute changed",
-                newMuted
-            );
 
         } catch (error) {
 
@@ -995,7 +941,7 @@
             "click",
             function (event) {
 
-                let target =
+                const target =
                     event.target;
 
 
@@ -1077,11 +1023,6 @@
 
             if (result.error) {
 
-                console.warn(
-                    "WFESC NOTIFICATIONS: profile read failed",
-                    result.error
-                );
-
                 return null;
 
             }
@@ -1090,11 +1031,6 @@
             return result.data || null;
 
         } catch (error) {
-
-            console.warn(
-                "WFESC NOTIFICATIONS: profile exception",
-                error
-            );
 
             return null;
 
@@ -1156,27 +1092,10 @@
         message
     ) {
 
-        /*
-         * الملف الشخصي ليس شرطًا لوصول الإشعار.
-         */
-
-        let profile =
-            null;
-
-
-        try {
-
-            profile =
-                await getSenderProfile(
-                    message.sender_id
-                );
-
-        } catch (error) {
-
-            profile =
-                null;
-
-        }
+        const profile =
+            await getSenderProfile(
+                message.sender_id
+            );
 
 
         return {
@@ -1245,19 +1164,19 @@
             "fixed";
 
         notificationPanel.style.top =
-            "76px";
+            "82px";
 
         notificationPanel.style.right =
-            "16px";
+            "12px";
 
         notificationPanel.style.width =
-            "min(390px, calc(100vw - 32px))";
+            "min(310px, calc(100vw - 24px))";
 
         notificationPanel.style.maxHeight =
-            "calc(100vh - 100px)";
+            "calc(100vh - 110px)";
 
-        notificationPanel.style.overflowY =
-            "auto";
+        notificationPanel.style.overflow =
+            "hidden";
 
         notificationPanel.style.zIndex =
             "999999";
@@ -1271,8 +1190,14 @@
         notificationPanel.style.flexDirection =
             "column";
 
+        notificationPanel.style.alignItems =
+            "flex-end";
+
         notificationPanel.style.gap =
-            "10px";
+            "7px";
+
+        notificationPanel.style.pointerEvents =
+            "none";
 
 
         document.body.appendChild(
@@ -1284,6 +1209,91 @@
 
     }
 
+
+    /* =====================================================
+       REMOVE NOTIFICATION
+    ===================================================== */
+
+    function removeNotificationCard(
+        card,
+        notificationId
+    ) {
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        if (
+            card.dataset.removing === "true"
+        ) {
+
+            return;
+
+        }
+
+
+        card.dataset.removing =
+            "true";
+
+
+        /*
+         * إزالة من الذاكرة.
+         */
+
+        notifications =
+            notifications.filter(
+                function (item) {
+
+                    return (
+                        String(item.id) !==
+                        String(notificationId)
+                    );
+
+                }
+            );
+
+
+        /*
+         * Animation
+         */
+
+        card.style.transition =
+            "transform .22s ease, opacity .22s ease";
+
+        card.style.transform =
+            "translateX(120px) scale(.94)";
+
+        card.style.opacity =
+            "0";
+
+
+        setTimeout(
+            function () {
+
+                if (
+                    card &&
+                    card.parentNode
+                ) {
+
+                    card.parentNode.removeChild(
+                        card
+                    );
+
+                }
+
+            },
+            230
+        );
+
+    }
+
+
+    /* =====================================================
+       RENDER NOTIFICATION
+    ===================================================== */
 
     function renderNotification(
         item
@@ -1303,9 +1313,22 @@
             "wfesc-incoming-notification";
 
 
+        card.dataset.notificationId =
+            item.id;
+
+
         card.dataset.conversationId =
             item.conversationId;
 
+
+        card.style.width =
+            "100%";
+
+        card.style.maxWidth =
+            "310px";
+
+        card.style.boxSizing =
+            "border-box";
 
         card.style.background =
             "#111";
@@ -1317,23 +1340,129 @@
             "1px solid rgba(255,255,255,.12)";
 
         card.style.borderRadius =
-            "16px";
+            "13px";
 
         card.style.padding =
-            "12px";
+            "9px";
 
         card.style.boxShadow =
-            "0 12px 35px rgba(0,0,0,.45)";
+            "0 8px 24px rgba(0,0,0,.42)";
 
         card.style.display =
             "flex";
 
         card.style.gap =
-            "11px";
+            "8px";
 
         card.style.alignItems =
             "flex-start";
 
+        card.style.position =
+            "relative";
+
+        card.style.pointerEvents =
+            "auto";
+
+        card.style.touchAction =
+            "pan-y";
+
+        card.style.transform =
+            "translateX(35px) scale(.97)";
+
+        card.style.opacity =
+            "0";
+
+        card.style.transition =
+            "transform .25s cubic-bezier(.2,.8,.2,1), opacity .25s ease";
+
+
+        /* =================================================
+           CLOSE BUTTON
+        ================================================= */
+
+        const closeButton =
+            document.createElement(
+                "button"
+            );
+
+
+        closeButton.type =
+            "button";
+
+        closeButton.textContent =
+            "×";
+
+
+        closeButton.setAttribute(
+            "aria-label",
+            "إغلاق الإشعار"
+        );
+
+
+        closeButton.style.position =
+            "absolute";
+
+        closeButton.style.top =
+            "4px";
+
+        closeButton.style.left =
+            "5px";
+
+        closeButton.style.width =
+            "23px";
+
+        closeButton.style.height =
+            "23px";
+
+        closeButton.style.padding =
+            "0";
+
+        closeButton.style.border =
+            "0";
+
+        closeButton.style.borderRadius =
+            "50%";
+
+        closeButton.style.background =
+            "rgba(255,255,255,.08)";
+
+        closeButton.style.color =
+            "#fff";
+
+        closeButton.style.fontSize =
+            "17px";
+
+        closeButton.style.lineHeight =
+            "23px";
+
+        closeButton.style.cursor =
+            "pointer";
+
+        closeButton.style.zIndex =
+            "3";
+
+
+        closeButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                removeNotificationCard(
+                    card,
+                    item.id
+                );
+
+            }
+        );
+
+
+        /* =================================================
+           AVATAR
+        ================================================= */
 
         const avatar =
             document.createElement(
@@ -1342,13 +1471,13 @@
 
 
         avatar.style.width =
-            "44px";
+            "38px";
 
         avatar.style.height =
-            "44px";
+            "38px";
 
         avatar.style.minWidth =
-            "44px";
+            "38px";
 
         avatar.style.borderRadius =
             "50%";
@@ -1367,6 +1496,9 @@
 
         avatar.style.justifyContent =
             "center";
+
+        avatar.style.marginTop =
+            "1px";
 
 
         if (item.avatar) {
@@ -1417,6 +1549,10 @@
         }
 
 
+        /* =================================================
+           BODY
+        ================================================= */
+
         const body =
             document.createElement(
                 "div"
@@ -1429,6 +1565,9 @@
         body.style.minWidth =
             "0";
 
+        body.style.paddingLeft =
+            "16px";
+
 
         const name =
             document.createElement(
@@ -1439,11 +1578,24 @@
         name.textContent =
             item.name;
 
+
         name.style.fontWeight =
             "700";
 
+        name.style.fontSize =
+            "14px";
+
         name.style.marginBottom =
-            "4px";
+            "2px";
+
+        name.style.whiteSpace =
+            "nowrap";
+
+        name.style.overflow =
+            "hidden";
+
+        name.style.textOverflow =
+            "ellipsis";
 
 
         const text =
@@ -1455,18 +1607,35 @@
         text.textContent =
             item.content;
 
+
         text.style.fontSize =
-            "14px";
+            "13px";
 
         text.style.lineHeight =
-            "1.5";
+            "1.4";
 
         text.style.opacity =
-            ".88";
+            ".86";
 
         text.style.wordBreak =
             "break-word";
 
+        text.style.display =
+            "-webkit-box";
+
+        text.style.webkitLineClamp =
+            "2";
+
+        text.style.webkitBoxOrient =
+            "vertical";
+
+        text.style.overflow =
+            "hidden";
+
+
+        /* =================================================
+           OPEN BUTTON
+        ================================================= */
 
         const openButton =
             document.createElement(
@@ -1482,16 +1651,16 @@
 
 
         openButton.style.marginTop =
-            "9px";
+            "6px";
 
         openButton.style.border =
             "0";
 
         openButton.style.borderRadius =
-            "9px";
+            "7px";
 
         openButton.style.padding =
-            "7px 11px";
+            "5px 9px";
 
         openButton.style.cursor =
             "pointer";
@@ -1502,13 +1671,27 @@
         openButton.style.color =
             "#111";
 
+        openButton.style.fontSize =
+            "12px";
+
         openButton.style.fontWeight =
             "700";
 
 
         openButton.addEventListener(
             "click",
-            function () {
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                removeNotificationCard(
+                    card,
+                    item.id
+                );
+
 
                 openConversation(
                     item.conversationId
@@ -1532,6 +1715,10 @@
 
 
         card.appendChild(
+            closeButton
+        );
+
+        card.appendChild(
             avatar
         );
 
@@ -1540,19 +1727,288 @@
         );
 
 
+        /*
+         * إضافة إلى أعلى القائمة.
+         */
+
         panel.prepend(
             card
         );
 
 
-        while (
-            panel.children.length >
-            MAX_NOTIFICATIONS
-        ) {
+        /*
+         * Animation الدخول.
+         */
 
-            panel.lastElementChild.remove();
+        requestAnimationFrame(
+            function () {
 
-        }
+                requestAnimationFrame(
+                    function () {
+
+                        card.style.transform =
+                            "translateX(0) scale(1)";
+
+                        card.style.opacity =
+                            "1";
+
+                    }
+                );
+
+            }
+        );
+
+
+        /*
+         * إزالة تلقائية بعد ثانيتين.
+         */
+
+        const autoRemoveTimer =
+            setTimeout(
+                function () {
+
+                    removeNotificationCard(
+                        card,
+                        item.id
+                    );
+
+                },
+                NOTIFICATION_DURATION
+            );
+
+
+        card.dataset.autoRemoveTimer =
+            String(
+                autoRemoveTimer
+            );
+
+
+        /* =================================================
+           SWIPE
+        ================================================= */
+
+        let startX = 0;
+
+        let currentX = 0;
+
+        let dragging = false;
+
+
+        card.addEventListener(
+            "touchstart",
+            function (event) {
+
+                if (
+                    !event.touches ||
+                    !event.touches[0]
+                ) {
+
+                    return;
+
+                }
+
+
+                startX =
+                    event.touches[0].clientX;
+
+                currentX =
+                    startX;
+
+                dragging =
+                    true;
+
+
+                card.style.transition =
+                    "none";
+
+            },
+            {
+                passive:
+                    true
+            }
+        );
+
+
+        card.addEventListener(
+            "touchmove",
+            function (event) {
+
+                if (
+                    !dragging ||
+                    !event.touches ||
+                    !event.touches[0]
+                ) {
+
+                    return;
+
+                }
+
+
+                currentX =
+                    event.touches[0].clientX;
+
+
+                const delta =
+                    currentX -
+                    startX;
+
+
+                /*
+                 * السماح بالسحب يمين ويسار.
+                 */
+
+                if (
+                    Math.abs(delta) >
+                    8
+                ) {
+
+                    card.style.transform =
+                        "translateX(" +
+                        delta +
+                        "px)";
+
+                    card.style.opacity =
+                        String(
+                            Math.max(
+                                .25,
+                                1 -
+                                Math.abs(delta) /
+                                180
+                            )
+                        );
+
+                }
+
+            },
+            {
+                passive:
+                    true
+            }
+        );
+
+
+        card.addEventListener(
+            "touchend",
+            function () {
+
+                if (!dragging) {
+
+                    return;
+
+                }
+
+
+                dragging =
+                    false;
+
+
+                const delta =
+                    currentX -
+                    startX;
+
+
+                card.style.transition =
+                    "transform .22s ease, opacity .22s ease";
+
+
+                if (
+                    Math.abs(delta) >=
+                    70
+                ) {
+
+                    removeNotificationCard(
+                        card,
+                        item.id
+                    );
+
+                } else {
+
+                    card.style.transform =
+                        "translateX(0) scale(1)";
+
+                    card.style.opacity =
+                        "1";
+
+                }
+
+            },
+            {
+                passive:
+                    true
+            }
+        );
+
+
+        /*
+         * الماوس أيضًا للسحب على الأجهزة التي تدعم pointer.
+         */
+
+        let pointerStartX =
+            null;
+
+
+        card.addEventListener(
+            "pointerdown",
+            function (event) {
+
+                if (
+                    event.pointerType ===
+                    "mouse"
+                ) {
+
+                    pointerStartX =
+                        event.clientX;
+
+                }
+
+            }
+        );
+
+
+        card.addEventListener(
+            "pointerup",
+            function (event) {
+
+                if (
+                    pointerStartX ===
+                    null
+                ) {
+
+                    return;
+
+                }
+
+
+                const delta =
+                    event.clientX -
+                    pointerStartX;
+
+
+                pointerStartX =
+                    null;
+
+
+                if (
+                    Math.abs(delta) >=
+                    90
+                ) {
+
+                    removeNotificationCard(
+                        card,
+                        item.id
+                    );
+
+                }
+
+            }
+        );
+
+
+        /*
+         * إبقاء عدد الكروت الظاهرة محدود.
+         */
+
+        trimVisibleNotifications();
 
 
         return card;
@@ -1560,15 +2016,80 @@
     }
 
 
+    /* =====================================================
+       TRIM VISIBLE NOTIFICATIONS
+    ===================================================== */
+
+    function trimVisibleNotifications() {
+
+        if (!notificationPanel) {
+
+            return;
+
+        }
+
+
+        const cards =
+            Array.from(
+                notificationPanel.children
+            );
+
+
+        while (
+            cards.length >
+            MAX_VISIBLE_NOTIFICATIONS
+        ) {
+
+            const oldCard =
+                cards.pop();
+
+
+            if (
+                oldCard &&
+                oldCard.parentNode
+            ) {
+
+                const id =
+                    oldCard.dataset.notificationId;
+
+
+                if (id) {
+
+                    notifications =
+                        notifications.filter(
+                            function (item) {
+
+                                return (
+                                    String(item.id) !==
+                                    String(id)
+                                );
+
+                            }
+                        );
+
+                }
+
+
+                oldCard.parentNode.removeChild(
+                    oldCard
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       ADD NOTIFICATION
+    ===================================================== */
+
     function addNotification(
         item
     ) {
 
-        /*
-         * منع التكرار إذا Realtime أعاد نفس الرسالة.
-         */
-
-        const alreadyExists =
+        const exists =
             notifications.some(
                 function (existing) {
 
@@ -1581,7 +2102,7 @@
             );
 
 
-        if (alreadyExists) {
+        if (exists) {
 
             return;
 
@@ -1658,7 +2179,7 @@
             "999998";
 
         conversationNotice.style.width =
-            "min(430px, calc(100vw - 30px))";
+            "min(330px, calc(100vw - 30px))";
 
         conversationNotice.style.background =
             "#111";
@@ -1670,16 +2191,22 @@
             "1px solid rgba(255,255,255,.12)";
 
         conversationNotice.style.borderRadius =
-            "14px";
+            "12px";
 
         conversationNotice.style.padding =
-            "10px 13px";
+            "9px 12px";
 
         conversationNotice.style.direction =
             "rtl";
 
         conversationNotice.style.boxShadow =
-            "0 10px 30px rgba(0,0,0,.4)";
+            "0 8px 25px rgba(0,0,0,.4)";
+
+        conversationNotice.style.opacity =
+            "0";
+
+        conversationNotice.style.transition =
+            "opacity .2s ease, transform .2s ease";
 
 
         const title =
@@ -1696,6 +2223,9 @@
         title.style.fontWeight =
             "700";
 
+        title.style.fontSize =
+            "13px";
+
 
         const content =
             document.createElement(
@@ -1707,10 +2237,13 @@
             item.content;
 
         content.style.marginTop =
-            "4px";
+            "3px";
 
         content.style.opacity =
             ".85";
+
+        content.style.fontSize =
+            "12px";
 
         content.style.wordBreak =
             "break-word";
@@ -1730,6 +2263,16 @@
         );
 
 
+        requestAnimationFrame(
+            function () {
+
+                conversationNotice.style.opacity =
+                    "1";
+
+            }
+        );
+
+
         setTimeout(
             function () {
 
@@ -1742,9 +2285,6 @@
 
                 conversationNotice.style.opacity =
                     "0";
-
-                conversationNotice.style.transition =
-                    "opacity .2s ease";
 
 
                 setTimeout(
@@ -1762,11 +2302,11 @@
                         }
 
                     },
-                    250
+                    220
                 );
 
             },
-            4000
+            NOTIFICATION_DURATION
         );
 
     }
@@ -1871,14 +2411,7 @@
                 : null;
 
 
-        if (!message) {
-
-            return;
-
-        }
-
-
-        if (!message.id) {
+        if (!message || !message.id) {
 
             return;
 
@@ -1898,7 +2431,7 @@
 
         /*
          * رسالتي أنا:
-         * لا صوت ولا إشعار.
+         * ممنوع إشعار أو صوت.
          */
 
         if (
@@ -1912,10 +2445,7 @@
 
 
         /*
-         * نفحص الكتم.
-         *
-         * إذا موجود بالكاش:
-         * لا يوجد انتظار.
+         * الكتم.
          */
 
         let muted =
@@ -1923,10 +2453,6 @@
                 message.conversation_id
             );
 
-
-        /*
-         * إذا غير موجود، نقرأه مرة واحدة فقط.
-         */
 
         if (muted === null) {
 
@@ -1941,26 +2467,20 @@
 
         if (muted) {
 
-            console.log(
-                "WFESC NOTIFICATIONS: incoming message muted"
-            );
-
             return;
 
         }
 
 
         /*
-         * =================================================
-         * الصوت هنا قبل قراءة profile.
-         * =================================================
+         * الصوت فورًا.
          */
 
         playSound();
 
 
         /*
-         * تحديد المحادثة الحالية.
+         * معرفة المحادثة المفتوحة.
          */
 
         const currentConversationId =
@@ -1976,7 +2496,29 @@
 
 
         /*
-         * نبني بيانات الإشعار.
+         * إذا المستخدم داخل نفس المحادثة:
+         *
+         * لا نضيف notification card.
+         *
+         * الرسالة نفسها تظهر من messages-core.
+         *
+         * هذا يمنع تكرار الرسالة بصندوق فوق الشاشة.
+         */
+
+        if (insideSameConversation) {
+
+            console.log(
+                "WFESC NOTIFICATIONS: same conversation - no popup"
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * فقط للمحادثة الأخرى:
+         * نبني الإشعار.
          */
 
         const item =
@@ -1985,31 +2527,10 @@
             );
 
 
-        /*
-         * الإشعار يحفظ دائمًا.
-         */
-
         addNotification(
             item
         );
 
-
-        /*
-         * إذا كان داخل نفس المحادثة.
-         */
-
-        if (insideSameConversation) {
-
-            showConversationNotice(
-                item
-            );
-
-        }
-
-
-        /*
-         * حدث عام لأي جزء آخر بالموقع.
-         */
 
         document.dispatchEvent(
             new CustomEvent(
@@ -2023,7 +2544,7 @@
 
 
         console.log(
-            "WFESC NOTIFICATIONS: incoming message processed",
+            "WFESC NOTIFICATIONS: incoming notification",
             item
         );
 
@@ -2042,10 +2563,6 @@
 
         if (!client) {
 
-            console.warn(
-                "WFESC NOTIFICATIONS: client not ready"
-            );
-
             return false;
 
         }
@@ -2063,11 +2580,6 @@
 
         realtimeStarted =
             true;
-
-
-        console.log(
-            "WFESC NOTIFICATIONS: starting realtime"
-        );
 
 
         realtimeChannel =
@@ -2089,10 +2601,6 @@
                     },
                     function (payload) {
 
-                        /*
-                         * لا ننتظر.
-                         */
-
                         handleMessage(
                             payload
                         );
@@ -2106,33 +2614,6 @@
                             "WFESC NOTIFICATIONS REALTIME:",
                             status
                         );
-
-
-                        if (
-                            status ===
-                            "SUBSCRIBED"
-                        ) {
-
-                            console.log(
-                                "WFESC NOTIFICATIONS: REALTIME CONNECTED"
-                            );
-
-                        }
-
-
-                        if (
-                            status ===
-                            "CHANNEL_ERROR" ||
-                            status ===
-                            "TIMED_OUT"
-                        ) {
-
-                            console.error(
-                                "WFESC NOTIFICATIONS: REALTIME FAILED",
-                                status
-                            );
-
-                        }
 
                     }
                 );
@@ -2224,11 +2705,6 @@
 
         loadMuteState();
 
-
-        /*
-         * إعادة المحاولة إذا Supabase/Core
-         * لم يكن جاهزًا في لحظة تحميل الملف.
-         */
 
         const retryTimes = [
             300,
