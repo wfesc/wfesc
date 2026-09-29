@@ -1,41 +1,28 @@
 /* =========================================================
    WFESC MESSAGES CHAT ACTIONS
    File: messages/messages-chat-actions.js
-   ========================================================= */
+
+   المسؤول عن:
+   - قائمة الثلاث نقاط
+   - حذف المحادثة
+   - حذف لدي
+   - حذف للطرفين
+   - تأكيدات الحذف
+   - حظر المستخدم
+   - إلغاء الحظر
+   - ربط الحظر مع messages-block.js
+   - تحديث الواجهة بعد الحذف والحظر
+   - استقبال حذف الطرفين عبر Realtime
+   - الحفاظ على سجل الرسائل في قاعدة البيانات
+========================================================= */
 
 (() => {
     "use strict";
 
-    /*
-    ============================================================
-       المسؤول عن:
-
-    - قائمة الثلاث نقاط داخل المحادثة
-    - حذف المحادثة
-    - حذف لدي
-    - حذف للطرفين
-    - تأكيدات الحذف
-    - حظر المستخدم
-    - إلغاء الحظر
-    - ربط الحظر مع messages-block.js
-    - إشعار الواجهة بحالة الحظر
-    - إشعار الطرف الآخر عند حذف المحادثة للطرفين
-    - إخراج الطرف الآخر من المحادثة عبر Realtime
-
-    ملاحظة:
-    نظام الحظر الفعلي موجود في:
-
-        messages-block.js
-
-    وهذا الملف يستدعيه فقط ولا ينفذ عمليات
-    blocked_users مباشرة.
-    ============================================================
-    */
-
 
     /* =========================================================
        CORE
-       ========================================================= */
+    ========================================================= */
 
     const CORE = () =>
         window.WFESC_MESSAGES_CORE || null;
@@ -43,7 +30,7 @@
 
     /* =========================================================
        BLOCK MODULE
-       ========================================================= */
+    ========================================================= */
 
     const BLOCK = () =>
         window.WFESC_MESSAGES_BLOCK || null;
@@ -51,13 +38,17 @@
 
     /* =========================================================
        HELPERS
-       ========================================================= */
+    ========================================================= */
 
     function getClient() {
 
         const core = CORE();
 
-        return core?.client || null;
+        return (
+            core?.client ||
+            window.WFESCSupabase ||
+            null
+        );
     }
 
 
@@ -66,19 +57,23 @@
         const core = CORE();
 
         if (
-            !core ||
-            typeof core.getCurrentUser !== "function"
+            core &&
+            typeof core.getCurrentUser === "function"
         ) {
-            return null;
+            try {
+
+                return core.getCurrentUser();
+
+            } catch (_) {}
         }
 
-        return core.getCurrentUser();
+        return null;
     }
 
 
     /* =========================================================
        CONVERSATION ID
-       ========================================================= */
+    ========================================================= */
 
     function getConversationId() {
 
@@ -92,30 +87,42 @@
             return null;
         }
 
-        const conversation =
-            core.getCurrentConversation();
+        try {
 
-        if (conversation == null) {
-            return null;
-        }
+            const conversation =
+                core.getCurrentConversation();
 
-        if (
-            typeof conversation ===
-            "string"
-        ) {
-            return conversation;
-        }
+            if (conversation == null) {
+                return null;
+            }
 
-        if (
-            typeof conversation ===
-            "object"
-        ) {
+            if (
+                typeof conversation ===
+                "string"
+            ) {
+                return conversation;
+            }
 
-            return (
-                conversation.conversation_id ||
-                conversation.id ||
-                conversation.currentConversationId ||
-                null
+            if (
+                typeof conversation ===
+                "object"
+            ) {
+
+                return (
+                    conversation.conversation_id ||
+                    conversation.id ||
+                    conversation.currentConversationId ||
+                    conversation.chat_id ||
+                    conversation.chatId ||
+                    null
+                );
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC CHAT ACTIONS getConversationId:",
+                error
             );
         }
 
@@ -125,7 +132,7 @@
 
     /* =========================================================
        CURRENT CONTACT
-       ========================================================= */
+    ========================================================= */
 
     function getCurrentContact() {
 
@@ -139,13 +146,25 @@
             return null;
         }
 
-        return core.getCurrentContact();
+        try {
+
+            return core.getCurrentContact();
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC CHAT ACTIONS getCurrentContact:",
+                error
+            );
+
+            return null;
+        }
     }
 
 
     /* =========================================================
        CONTACT USER ID
-       ========================================================= */
+    ========================================================= */
 
     function getContactUserId(
         contact = getCurrentContact()
@@ -161,6 +180,15 @@
             contact.profile_id ||
             contact.profileId ||
             contact.id ||
+            contact.profile?.user_id ||
+            contact.profile?.userId ||
+            contact.profile?.id ||
+            contact.user?.user_id ||
+            contact.user?.userId ||
+            contact.user?.id ||
+            contact.contact?.user_id ||
+            contact.contact?.userId ||
+            contact.contact?.id ||
             null
         );
     }
@@ -168,7 +196,7 @@
 
     /* =========================================================
        CONTACT NAME
-       ========================================================= */
+    ========================================================= */
 
     function getContactName(
         contact = getCurrentContact()
@@ -181,9 +209,13 @@
         return (
             contact.display_name ||
             contact.full_name ||
-            contact.username ||
             contact.name ||
+            contact.username ||
             contact.nickname ||
+            contact.profile?.display_name ||
+            contact.profile?.full_name ||
+            contact.profile?.name ||
+            contact.profile?.username ||
             "المستخدم"
         );
     }
@@ -191,37 +223,22 @@
 
     /* =========================================================
        ESCAPE HTML
-       ========================================================= */
+    ========================================================= */
 
     function escapeHtml(value) {
 
         return String(value ?? "")
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
 
     /* =========================================================
        TOAST
-       ========================================================= */
+    ========================================================= */
 
     function showToast(
         message,
@@ -253,7 +270,7 @@
                 transform:
                     translateX(-50%)
                     translateY(15px);
-                z-index:9999999;
+                z-index:99999999;
                 max-width:
                     calc(100vw - 32px);
                 padding:12px 18px;
@@ -312,7 +329,7 @@
 
     /* =========================================================
        ACTION MENU
-       ========================================================= */
+    ========================================================= */
 
     let menu = null;
 
@@ -321,9 +338,7 @@
 
     function closeMenu() {
 
-        if (
-            menuOutsideHandler
-        ) {
+        if (menuOutsideHandler) {
 
             document.removeEventListener(
                 "pointerdown",
@@ -331,8 +346,7 @@
                 true
             );
 
-            menuOutsideHandler =
-                null;
+            menuOutsideHandler = null;
         }
 
         if (!menu) {
@@ -346,7 +360,7 @@
 
     /* =========================================================
        BLOCK STATUS
-       ========================================================= */
+    ========================================================= */
 
     async function getCurrentBlockStatus() {
 
@@ -378,6 +392,11 @@
 
         try {
 
+            let blockedByMe = false;
+            let blockedMe = false;
+            let info = null;
+
+
             if (
                 typeof block.getBlockStatus ===
                 "function"
@@ -386,80 +405,72 @@
                 const status =
                     await block.getBlockStatus(
                         userId,
-                        false
+                        true
                     );
 
-                return {
-                    blockedByMe:
-                        Boolean(
-                            status?.blocked ??
-                            status?.isBlocked
-                        ),
+                blockedByMe =
+                    Boolean(
+                        status?.blocked ??
+                        status?.isBlocked
+                    );
 
-                    blockedMe:
-                        Boolean(
-                            status?.blockedBy ??
-                            status?.isBlockedBy
-                        ),
-
-                    userId,
-
-                    info:
-                        status?.info ||
-                        null
-                };
-            }
-
-
-            const [
-                blockedByMe,
-                blockedMe
-            ] =
-                await Promise.all([
-                    typeof block.isBlocked ===
-                        "function"
-                        ? block.isBlocked(
-                            userId
-                        )
-                        : false,
-
-                    typeof block.isBlockedBy ===
-                        "function"
-                        ? block.isBlockedBy(
-                            userId
-                        )
-                        : false
-                ]);
-
-
-            let info = null;
-
-            if (
-                blockedByMe &&
-                typeof block.getBlockInfo ===
-                    "function"
-            ) {
+                blockedMe =
+                    Boolean(
+                        status?.blockedBy ??
+                        status?.isBlockedBy
+                    );
 
                 info =
-                    await block.getBlockInfo(
-                        userId
+                    status?.info ||
+                    null;
+
+            } else {
+
+                const results =
+                    await Promise.all([
+                        typeof block.isBlocked ===
+                            "function"
+                            ? block.isBlocked(
+                                userId
+                            )
+                            : false,
+
+                        typeof block.isBlockedBy ===
+                            "function"
+                            ? block.isBlockedBy(
+                                userId
+                            )
+                            : false
+                    ]);
+
+                blockedByMe =
+                    Boolean(
+                        results[0]
                     );
+
+                blockedMe =
+                    Boolean(
+                        results[1]
+                    );
+
+                if (
+                    blockedByMe &&
+                    typeof block.getBlockInfo ===
+                        "function"
+                ) {
+
+                    info =
+                        await block.getBlockInfo(
+                            userId
+                        );
+                }
             }
 
 
             return {
-                blockedByMe:
-                    Boolean(
-                        blockedByMe
-                    ),
-
-                blockedMe:
-                    Boolean(
-                        blockedMe
-                    ),
-
+                blockedByMe,
+                blockedMe,
                 userId,
-
                 info
             };
 
@@ -482,7 +493,7 @@
 
     /* =========================================================
        CREATE MENU
-       ========================================================= */
+    ========================================================= */
 
     async function createMenu() {
 
@@ -517,9 +528,6 @@
                 rgba(0,0,0,.65);
             backdrop-filter:blur(18px);
             -webkit-backdrop-filter:blur(18px);
-            animation:
-                wfescChatActionsMenuIn
-                .16s ease both;
         `;
 
 
@@ -542,23 +550,6 @@
                 styleId;
 
             style.textContent = `
-
-                @keyframes wfescChatActionsMenuIn {
-
-                    from {
-                        opacity:0;
-                        transform:
-                            translateY(-6px)
-                            scale(.97);
-                    }
-
-                    to {
-                        opacity:1;
-                        transform:
-                            translateY(0)
-                            scale(1);
-                    }
-                }
 
                 #wfescChatActionsMenu
                 .wfesc-chat-action-item {
@@ -588,32 +579,32 @@
                 }
 
                 #wfescChatActionsMenu
-                .wfesc-chat-action-item.danger {
+                .danger {
 
                     color:#ff6b6b;
                 }
 
                 #wfescChatActionsMenu
-                .wfesc-chat-action-item.block {
+                .block {
 
                     color:#ffb0b0;
                 }
 
                 #wfescChatActionsMenu
-                .wfesc-chat-action-item.unblock {
+                .unblock {
 
                     color:#d7ffd7;
                 }
 
                 #wfescChatActionsMenu
-                .wfesc-chat-action-item.disabled {
+                .disabled {
 
                     color:#777;
                     cursor:default;
                 }
 
                 #wfescChatActionsMenu
-                .wfesc-chat-action-divider {
+                .divider {
 
                     height:1px;
                     margin:5px 8px;
@@ -629,8 +620,8 @@
 
 
         /* =====================================================
-           DELETE
-           ===================================================== */
+           DELETE BUTTON
+        ===================================================== */
 
         const deleteButton =
             document.createElement(
@@ -662,7 +653,7 @@
 
         /* =====================================================
            DIVIDER
-           ===================================================== */
+        ===================================================== */
 
         const divider =
             document.createElement(
@@ -670,12 +661,12 @@
             );
 
         divider.className =
-            "wfesc-chat-action-divider";
+            "divider";
 
 
         /* =====================================================
            BLOCK BUTTON
-           ===================================================== */
+        ===================================================== */
 
         const blockButton =
             document.createElement(
@@ -693,10 +684,6 @@
             <span>جارٍ التحقق...</span>
         `;
 
-        /*
-         * نضيف القائمة أولاً حتى تظهر مباشرة،
-         * ثم نتحقق من حالة الحظر في الخلفية.
-         */
 
         menu.appendChild(
             deleteButton
@@ -715,18 +702,9 @@
         );
 
 
-        /* =====================================================
-           LOAD BLOCK STATUS
-           ===================================================== */
-
         const status =
             await getCurrentBlockStatus();
 
-
-        /*
-         * إذا المستخدم أغلق القائمة أثناء
-         * طلب Supabase، لا نعدل القائمة القديمة.
-         */
 
         if (!menu) {
             return;
@@ -755,7 +733,6 @@
                     );
                 };
 
-
         } else if (
             status.blockedMe
         ) {
@@ -770,7 +747,6 @@
 
             blockButton.disabled =
                 true;
-
 
         } else {
 
@@ -793,10 +769,6 @@
                 };
         }
 
-
-        /* =====================================================
-           OUTSIDE CLICK
-           ===================================================== */
 
         const currentMenu =
             menu;
@@ -839,7 +811,7 @@
 
     /* =========================================================
        FIND THREE DOT BUTTON
-       ========================================================= */
+    ========================================================= */
 
     function getChatMenuButton() {
 
@@ -860,8 +832,8 @@
 
 
     /* =========================================================
-       CONFIRMATION OVERLAY
-       ========================================================= */
+       OVERLAY
+    ========================================================= */
 
     function createOverlay() {
 
@@ -890,9 +862,6 @@
                 rgba(0,0,0,.72);
             backdrop-filter:blur(12px);
             -webkit-backdrop-filter:blur(12px);
-            animation:
-                wfescActionsOverlayIn
-                .18s ease both;
         `;
 
 
@@ -915,17 +884,6 @@
                 styleId;
 
             style.textContent = `
-
-                @keyframes wfescActionsOverlayIn {
-
-                    from {
-                        opacity:0;
-                    }
-
-                    to {
-                        opacity:1;
-                    }
-                }
 
                 #wfescChatActionsOverlay
                 .wfesc-actions-card {
@@ -1080,7 +1038,7 @@
 
     /* =========================================================
        DELETE CHOICE
-       ========================================================= */
+    ========================================================= */
 
     function openDeleteChoice() {
 
@@ -1115,7 +1073,7 @@
             </div>
 
             <div class="wfesc-actions-message">
-                اختر طريقة حذف الرسائل
+                اختر طريقة الحذف
             </div>
 
             <div class="wfesc-actions-buttons">
@@ -1211,7 +1169,7 @@
 
     /* =========================================================
        DELETE CONFIRMATION
-       ========================================================= */
+    ========================================================= */
 
     function openDeleteConfirmation(
         mode
@@ -1244,31 +1202,16 @@
             "wfesc-actions-card";
 
 
-        let title =
-            "هل أنت متأكد؟";
-
-        let message =
-            "";
-
-
-        if (
+        const title =
             mode === "everyone"
-        ) {
+                ? "هل تريد حذف الرسائل للطرفين؟"
+                : "هل تريد حذف الرسائل لديك؟";
 
-            title =
-                "هل أنت متأكد من طلبك بحذف الرسائل؟";
 
-            message =
-                "سيتم تطبيق حذف الطرفين مع إبقاء سجل الحذف محفوظاً في قاعدة البيانات للمراجعة الإدارية عند الحاجة.";
-
-        } else {
-
-            title =
-                "هل أنت متأكد من حذف الرسائل لديك؟";
-
-            message =
-                "ستختفي المحادثة من حسابك فقط، بينما تبقى بيانات الطرف الآخر محفوظة.";
-        }
+        const message =
+            mode === "everyone"
+                ? "ستختفي الرسائل من واجهة الطرفين، مع بقاء السجل محفوظًا في قاعدة البيانات."
+                : "ستختفي المحادثة من حسابك فقط، بينما تبقى بيانات الطرف الآخر محفوظة.";
 
 
         card.innerHTML = `
@@ -1326,143 +1269,7 @@
                 "click",
                 () => {
 
-                    openFinalDeleteConfirmation(
-                        mode
-                    );
-
-                }
-            );
-
-
-        card
-            .querySelector(
-                '[data-action="cancel"]'
-            )
-            ?.addEventListener(
-                "click",
-                closeOverlay
-            );
-    }
-
-
-    /* =========================================================
-       FINAL DELETE CONFIRMATION
-       ========================================================= */
-
-    function openFinalDeleteConfirmation(
-        mode
-    ) {
-
-        const conversationId =
-            getConversationId();
-
-        if (!conversationId) {
-
-            closeOverlay();
-
-            showToast(
-                "لا توجد محادثة مفتوحة"
-            );
-
-            return;
-        }
-
-
-        const overlay =
-            createOverlay();
-
-        const card =
-            document.createElement(
-                "div"
-            );
-
-        card.className =
-            "wfesc-actions-card";
-
-
-        let title =
-            "";
-
-        let message =
-            "";
-
-
-        if (
-            mode === "everyone"
-        ) {
-
-            title =
-                "أكد طلبك بحذف الرسائل من الطرفين";
-
-            message =
-                "سيتم إخفاء الرسائل من واجهة الطرفين، مع الاحتفاظ بالسجل غير المعروض في قاعدة البيانات وفق نظام الحذف الخاص بـ WFESC.";
-
-        } else {
-
-            title =
-                "أكد طلبك بحذف الرسائل لديك";
-
-            message =
-                "ستختفي الرسائل من حسابك فقط.";
-        }
-
-
-        card.innerHTML = `
-
-            <div class="wfesc-actions-title">
-                ${escapeHtml(title)}
-            </div>
-
-            <div class="wfesc-actions-message">
-                ${escapeHtml(message)}
-            </div>
-
-            <div class="wfesc-actions-buttons">
-
-                <button
-                    type="button"
-                    class="
-                        wfesc-actions-button
-                        wfesc-actions-danger
-                    "
-                    data-action="final"
-                >
-                    تأكيد الحذف
-                </button>
-
-                <button
-                    type="button"
-                    class="
-                        wfesc-actions-button
-                        wfesc-actions-cancel
-                    "
-                    data-action="cancel"
-                >
-                    إلغاء
-                </button>
-
-            </div>
-        `;
-
-
-        overlay.appendChild(
-            card
-        );
-
-        document.body.appendChild(
-            overlay
-        );
-
-
-        card
-            .querySelector(
-                '[data-action="final"]'
-            )
-            ?.addEventListener(
-                "click",
-                async () => {
-
-                    await executeDelete(
+                    executeDelete(
                         mode,
                         conversationId
                     );
@@ -1484,7 +1291,7 @@
 
     /* =========================================================
        DELETE FOR ME
-       ========================================================= */
+    ========================================================= */
 
     async function deleteForMe(
         conversationId
@@ -1526,13 +1333,73 @@
         }
 
 
+        /*
+         * علامة محلية تفيد بأن المستخدم
+         * أخفى هذه المحادثة.
+         *
+         * هذا السجل لا يحذف الرسائل.
+         */
+
+        try {
+
+            const key =
+                `wfesc_hidden_conversation_${user.id}`;
+
+            const existing =
+                JSON.parse(
+                    localStorage.getItem(
+                        key
+                    ) ||
+                    "[]"
+                );
+
+            const ids =
+                Array.isArray(existing)
+                    ? existing
+                    : [];
+
+            if (
+                !ids.some(
+                    id =>
+                        String(id) ===
+                        String(conversationId)
+                )
+            ) {
+
+                ids.push(
+                    conversationId
+                );
+            }
+
+            localStorage.setItem(
+                key,
+                JSON.stringify(ids)
+            );
+
+        } catch (_) {}
+
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "wfesc:conversation-hidden-for-me",
+                {
+                    detail: {
+                        conversationId,
+                        userId:
+                            user.id
+                    }
+                }
+            )
+        );
+
+
         return true;
     }
 
 
     /* =========================================================
        DELETE FOR EVERYONE
-       ========================================================= */
+    ========================================================= */
 
     async function deleteForEveryone(
         conversationId
@@ -1581,12 +1448,28 @@
         }
 
 
-        if (data === false) {
+        if (
+            data === false
+        ) {
 
             throw new Error(
-                "لم يتم حذف المحادثة"
+                "لم يتم تنفيذ حذف الطرفين"
             );
         }
+
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "wfesc:conversation-deleted-everyone",
+                {
+                    detail: {
+                        conversationId,
+                        deletedBy:
+                            user.id
+                    }
+                }
+            )
+        );
 
 
         return true;
@@ -1595,12 +1478,23 @@
 
     /* =========================================================
        EXECUTE DELETE
-       ========================================================= */
+    ========================================================= */
+
+    let deleteOperationRunning =
+        false;
+
 
     async function executeDelete(
         mode,
         conversationId
     ) {
+
+        if (
+            deleteOperationRunning
+        ) {
+            return;
+        }
+
 
         if (!conversationId) {
 
@@ -1614,9 +1508,13 @@
         }
 
 
+        deleteOperationRunning =
+            true;
+
+
         const button =
             document.querySelector(
-                "#wfescChatActionsOverlay [data-action='final']"
+                "#wfescChatActionsOverlay [data-action='confirm']"
             );
 
 
@@ -1626,7 +1524,7 @@
                 true;
 
             button.textContent =
-                "جارٍ الحذف...";
+                "جارٍ التنفيذ...";
         }
 
 
@@ -1652,17 +1550,9 @@
 
 
             /*
-             * لا نعرض رسالة نجاح طويلة داخل
-             * المحادثة في هذه المرحلة.
-             * نظام تحديث الواجهة الكامل سيُصلح
-             * في خطوة الحذف القادمة.
+             * نغلق المحادثة محلياً.
+             * لا نحذف الرسائل من قاعدة البيانات.
              */
-
-            showToast(
-                "تم تنفيذ الحذف",
-                1500
-            );
-
 
             const core =
                 CORE();
@@ -1674,9 +1564,18 @@
                     "function"
             ) {
 
-                await core.closeConversation();
+                try {
+
+                    await core.closeConversation();
+
+                } catch (_) {}
             }
 
+
+            /*
+             * إجبار قائمة المحادثات
+             * على إعادة القراءة.
+             */
 
             if (
                 core &&
@@ -1684,9 +1583,27 @@
                     "function"
             ) {
 
-                await core.loadConversations();
+                try {
+
+                    await core.loadConversations();
+
+                } catch (_) {}
             }
 
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:conversations-refresh"
+                )
+            );
+
+
+            showToast(
+                mode === "everyone"
+                    ? "تم حذف الرسائل للطرفين"
+                    : "تم حذف المحادثة لديك",
+                1400
+            );
 
         } catch (error) {
 
@@ -1700,7 +1617,8 @@
 
 
             showToast(
-                "تعذر تنفيذ حذف المحادثة"
+                error?.message ||
+                "تعذر تنفيذ الحذف"
             );
 
 
@@ -1730,13 +1648,18 @@
                 }
 
             } catch (_) {}
+
+        } finally {
+
+            deleteOperationRunning =
+                false;
         }
     }
 
 
     /* =========================================================
        REMOTE DELETE CHANNELS
-       ========================================================= */
+    ========================================================= */
 
     const deleteChannels =
         new Map();
@@ -1772,6 +1695,7 @@
         if (
             entry?.channel
         ) {
+
             return entry.channel;
         }
 
@@ -1821,6 +1745,7 @@
                     let finished =
                         false;
 
+
                     const finish =
                         () => {
 
@@ -1834,43 +1759,57 @@
                                 true;
 
                             resolve();
+
                         };
 
 
-                    channel.subscribe(
-                        status => {
+                    try {
 
-                            if (
-                                status ===
-                                "SUBSCRIBED"
-                            ) {
+                        channel.subscribe(
+                            status => {
 
-                                entry.subscribed =
-                                    true;
+                                if (
+                                    status ===
+                                    "SUBSCRIBED"
+                                ) {
 
-                                finish();
+                                    entry.subscribed =
+                                        true;
 
-                            } else if (
-                                status ===
-                                    "CHANNEL_ERROR" ||
-                                status ===
-                                    "TIMED_OUT" ||
-                                status ===
-                                    "CLOSED"
-                            ) {
+                                    finish();
 
-                                finish();
+                                } else if (
+                                    status ===
+                                        "CHANNEL_ERROR" ||
+                                    status ===
+                                        "TIMED_OUT" ||
+                                    status ===
+                                        "CLOSED"
+                                ) {
+
+                                    finish();
+                                }
                             }
-                        }
-                    );
+                        );
+
+                    } catch (error) {
+
+                        console.warn(
+                            "WFESC DELETE CHANNEL:",
+                            error
+                        );
+
+                        finish();
+                    }
 
 
                     setTimeout(
                         finish,
-                        1500
+                        1800
                     );
                 }
             );
+
 
             entry.subscribing =
                 false;
@@ -1883,7 +1822,7 @@
 
     /* =========================================================
        BROADCAST REMOTE DELETE
-       ========================================================= */
+    ========================================================= */
 
     async function broadcastConversationDeleted(
         conversationId,
@@ -1933,8 +1872,8 @@
 
 
     /* =========================================================
-       LISTEN FOR REMOTE DELETE
-       ========================================================= */
+       LISTEN REMOTE DELETE
+    ========================================================= */
 
     async function setupRemoteDeleteListener(
         conversationId
@@ -1976,6 +1915,7 @@
 
 
         if (entry) {
+
             entry.listenerReady =
                 true;
         }
@@ -2030,74 +1970,28 @@
                 }
 
 
-                showRemoteDeleteOverlay();
-            }
-        );
-    }
+                /*
+                 * لا نعرض أي Overlay هنا.
+                 *
+                 * الطرف الآخر يجب أن يرى فقط
+                 * أن المحادثة اختفت/تحدثت.
+                 */
 
+                window.dispatchEvent(
+                    new CustomEvent(
+                        "wfesc:remote-conversation-deleted",
+                        {
+                            detail: {
+                                conversationId:
+                                    conversationId,
 
-    /* =========================================================
-       REMOTE DELETE OVERLAY
-       ========================================================= */
-
-    function showRemoteDeleteOverlay() {
-
-        closeOverlay();
-
-
-        const overlay =
-            createOverlay();
-
-
-        overlay.style.zIndex =
-            "99999999";
-
-
-        const card =
-            document.createElement(
-                "div"
-            );
-
-
-        card.className =
-            "wfesc-actions-card";
-
-
-        card.innerHTML = `
-
-            <div
-                style="
-                    font-size:38px;
-                    margin-bottom:12px;
-                "
-            >
-                🗑️
-            </div>
-
-            <div class="wfesc-actions-title">
-                تم تحديث المحادثة
-            </div>
-
-            <div class="wfesc-actions-message">
-                تم إخفاء الرسائل المحذوفة.
-            </div>
-
-        `;
-
-
-        overlay.appendChild(
-            card
-        );
-
-        document.body.appendChild(
-            overlay
-        );
-
-
-        setTimeout(
-            async () => {
-
-                closeOverlay();
+                                deletedBy:
+                                    data?.deleted_by ||
+                                    null
+                            }
+                        }
+                    )
+                );
 
 
                 const core =
@@ -2117,15 +2011,34 @@
                     } catch (_) {}
                 }
 
-            },
-            1200
+
+                if (
+                    core &&
+                    typeof core.loadConversations ===
+                        "function"
+                ) {
+
+                    try {
+
+                        await core.loadConversations();
+
+                    } catch (_) {}
+                }
+
+
+                window.dispatchEvent(
+                    new CustomEvent(
+                        "wfesc:conversations-refresh"
+                    )
+                );
+            }
         );
     }
 
 
     /* =========================================================
        BLOCK CONFIRMATION
-       ========================================================= */
+    ========================================================= */
 
     async function openBlockConfirmation(
         action = "block"
@@ -2168,11 +2081,6 @@
             return;
         }
 
-
-        /*
-         * إذا لم يتم تحديد العملية، نتحقق من
-         * الحالة الحالية.
-         */
 
         if (
             action !== "block" &&
@@ -2275,11 +2183,10 @@
                 </div>
 
                 <div class="wfesc-actions-message">
-                    سيتم حظر هذا المستخدم ولن يتمكن
-                    من إرسال رسائل جديدة إليك.
+                    سيتم إيقاف المراسلة مع هذا المستخدم.
                     <br><br>
-                    ستبقى المحادثة والرسائل القديمة
-                    محفوظة ولن يتم حذفها.
+                    ستبقى المحادثة والرسائل القديمة محفوظة
+                    ولن يتم حذفها بسبب الحظر.
                 </div>
 
                 <div class="wfesc-actions-buttons">
@@ -2322,7 +2229,7 @@
 
         /* =====================================================
            BLOCK
-           ===================================================== */
+        ===================================================== */
 
         card
             .querySelector(
@@ -2336,6 +2243,7 @@
                         card.querySelector(
                             '[data-action="block"]'
                         );
+
 
                     if (button) {
 
@@ -2370,7 +2278,7 @@
 
         /* =====================================================
            UNBLOCK
-           ===================================================== */
+        ===================================================== */
 
         card
             .querySelector(
@@ -2384,6 +2292,7 @@
                         card.querySelector(
                             '[data-action="unblock"]'
                         );
+
 
                     if (button) {
 
@@ -2429,11 +2338,22 @@
 
     /* =========================================================
        BLOCK USER
-       ========================================================= */
+    ========================================================= */
+
+    let blockOperationRunning =
+        false;
+
 
     async function blockUser(
         blockedUserId
     ) {
+
+        if (
+            blockOperationRunning
+        ) {
+            return false;
+        }
+
 
         const block =
             BLOCK();
@@ -2450,6 +2370,10 @@
 
             return false;
         }
+
+
+        blockOperationRunning =
+            true;
 
 
         try {
@@ -2473,21 +2397,47 @@
             closeOverlay();
 
 
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:block-changed",
+                    {
+                        detail: {
+                            userId:
+                                blockedUserId,
+
+                            blocked:
+                                true,
+
+                            action:
+                                "block"
+                        }
+                    }
+                )
+            );
+
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:conversation-block-state-changed",
+                    {
+                        detail: {
+                            userId:
+                                blockedUserId,
+
+                            blocked:
+                                true
+                        }
+                    }
+                )
+            );
+
+
             showToast(
                 "تم حظر المستخدم"
             );
 
 
-            /*
-             * لا نرسل wfesc:user-blocked
-             * مرة ثانية هنا.
-             *
-             * messages-block.js أرسله بالفعل.
-             */
-
-
             return true;
-
 
         } catch (error) {
 
@@ -2504,17 +2454,33 @@
 
 
             return false;
+
+        } finally {
+
+            blockOperationRunning =
+                false;
         }
     }
 
 
     /* =========================================================
        UNBLOCK USER
-       ========================================================= */
+    ========================================================= */
+
+    let unblockOperationRunning =
+        false;
+
 
     async function unblockUser(
         blockedUserId
     ) {
+
+        if (
+            unblockOperationRunning
+        ) {
+            return false;
+        }
+
 
         const block =
             BLOCK();
@@ -2531,6 +2497,10 @@
 
             return false;
         }
+
+
+        unblockOperationRunning =
+            true;
 
 
         try {
@@ -2554,19 +2524,47 @@
             closeOverlay();
 
 
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:block-changed",
+                    {
+                        detail: {
+                            userId:
+                                blockedUserId,
+
+                            blocked:
+                                false,
+
+                            action:
+                                "unblock"
+                        }
+                    }
+                )
+            );
+
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:conversation-block-state-changed",
+                    {
+                        detail: {
+                            userId:
+                                blockedUserId,
+
+                            blocked:
+                                false
+                        }
+                    }
+                )
+            );
+
+
             showToast(
                 "تم إلغاء حظر المستخدم"
             );
 
 
-            /*
-             * messages-block.js يتولى
-             * إرسال أحداث التحديث.
-             */
-
-
             return true;
-
 
         } catch (error) {
 
@@ -2583,13 +2581,18 @@
 
 
             return false;
+
+        } finally {
+
+            unblockOperationRunning =
+                false;
         }
     }
 
 
     /* =========================================================
        CURRENT CHAT BLOCK WARNING
-       ========================================================= */
+    ========================================================= */
 
     async function showBlockedConversationWarning(
         type
@@ -2626,32 +2629,21 @@
             "wfesc-actions-card";
 
 
-        let title =
-            "تعذر التواصل";
-
-        let message =
-            "";
-
-
-        if (
+        const blockedByMe =
             type ===
-            "blocked-by-me"
-        ) {
+            "blocked-by-me";
 
-            title =
-                "قمت بحظر هذا المستخدم";
 
-            message =
-                `لا يمكنك إرسال رسائل جديدة إلى ${name} حالياً.`;
+        const title =
+            blockedByMe
+                ? "قمت بحظر هذا المستخدم"
+                : "قام المستخدم بحظرك";
 
-        } else {
 
-            title =
-                "قام المستخدم بحظرك";
-
-            message =
-                "لا يمكنك إرسال رسائل جديدة إلى هذا المستخدم لأنه قام بحظرك.";
-        }
+        const message =
+            blockedByMe
+                ? `لا يمكنك إرسال رسائل جديدة إلى ${name} حالياً.`
+                : "لا يمكنك إرسال رسائل جديدة إلى هذا المستخدم لأنه قام بحظرك.";
 
 
         card.innerHTML = `
@@ -2664,9 +2656,15 @@
                 ${escapeHtml(title)}
             </div>
 
-            <div class="wfesc-block-name">
-                ${escapeHtml(name)}
-            </div>
+            ${
+                blockedByMe
+                    ? `
+                        <div class="wfesc-block-name">
+                            ${escapeHtml(name)}
+                        </div>
+                    `
+                    : ""
+            }
 
             <div class="wfesc-actions-message">
                 ${escapeHtml(message)}
@@ -2711,7 +2709,7 @@
 
     /* =========================================================
        SETUP CURRENT CONVERSATION
-       ========================================================= */
+    ========================================================= */
 
     function setupForCurrentConversation() {
 
@@ -2732,7 +2730,7 @@
 
     /* =========================================================
        CHAT HEADER EVENT
-       ========================================================= */
+    ========================================================= */
 
     window.addEventListener(
         "wfesc:chat-header-refresh",
@@ -2745,8 +2743,22 @@
 
 
     /* =========================================================
+       REMOTE DELETE EVENT
+    ========================================================= */
+
+    window.addEventListener(
+        "wfesc:remote-conversation-deleted",
+        () => {
+
+            closeOverlay();
+
+        }
+    );
+
+
+    /* =========================================================
        MENU BUTTON
-       ========================================================= */
+    ========================================================= */
 
     function setupMenuButton() {
 
@@ -2808,7 +2820,7 @@
 
     /* =========================================================
        RETRY BUTTON SETUP
-       ========================================================= */
+    ========================================================= */
 
     function watchForMenuButton() {
 
@@ -2848,7 +2860,7 @@
 
     /* =========================================================
        PUBLIC API
-       ========================================================= */
+    ========================================================= */
 
     window.WFESC_MESSAGES_CHAT_ACTIONS = {
 
@@ -2887,7 +2899,7 @@
 
     /* =========================================================
        BLOCK EVENTS
-       ========================================================= */
+    ========================================================= */
 
     window.addEventListener(
         "wfesc:user-blocked",
@@ -2921,7 +2933,7 @@
 
     /* =========================================================
        START
-       ========================================================= */
+    ========================================================= */
 
     function start() {
 
@@ -2940,5 +2952,6 @@
 
 
     start();
+
 
 })();
