@@ -46,17 +46,11 @@ ROOT
 --shadow:
     0 20px 70px rgba(0,0,0,.55);
 
---navigation-height:82px;
-
 /*
- * هذه القيم لا يتم حسابها من HTML.
- * messages-keyboard.js هو المسؤول عن
- * قيم الكيبورد والحقل.
+ * مسؤولية Navigation موجودة في ملفات navigation.
+ * هذه القيمة تستخدم فقط للمسافات البصرية داخل الصفحة.
  */
---keyboard-height:0px;
-
---composer-bottom:
-    var(--navigation-height);
+--navigation-height:82px;
 
 
 /* =====================================================
@@ -968,8 +962,8 @@ display:none;
 flex-direction:column;
 
 width:100%;
+
 height:100vh;
-height:100dvh;
 
 min-height:0;
 
@@ -1000,8 +994,8 @@ display:flex;
 flex-direction:column;
 
 width:100%;
+
 height:100vh;
-height:100dvh;
 
 min-height:0;
 
@@ -1282,14 +1276,20 @@ padding:
     16px
     12px
     calc(
-        var(--composer-bottom) +
+        var(
+            --composer-bottom,
+            var(--navigation-height)
+        ) +
         68px +
         env(safe-area-inset-bottom)
     );
 
 scroll-padding-bottom:
     calc(
-        var(--composer-bottom) +
+        var(
+            --composer-bottom,
+            var(--navigation-height)
+        ) +
         68px +
         env(safe-area-inset-bottom)
     );
@@ -1662,7 +1662,11 @@ position:absolute;
 
 bottom:
     calc(
-        var(--composer-bottom) + 70px
+        var(
+            --composer-bottom,
+            var(--navigation-height)
+        ) +
+        70px
     );
 
 right:14px;
@@ -1745,6 +1749,11 @@ animation-delay:.3s;
 
 /* =========================================================
 COMPOSER
+
+   ملاحظة:
+   messages.html لا يحسب الكيبورد.
+   messages-keyboard.js هو الذي يغير
+   --composer-bottom عند الحاجة.
 ========================================================= */
 
 .message-composer{
@@ -1755,7 +1764,10 @@ right:0;
 left:0;
 
 bottom:
-    var(--composer-bottom);
+    var(
+        --composer-bottom,
+        var(--navigation-height)
+    );
 
 z-index:18;
 
@@ -3187,178 +3199,11 @@ max-height:
 
 
 /* =========================================================
-NAVIGATION — ABSOLUTE FIXED LOCK
-========================================================= */
-
-.wfesc-navigation-keyboard-lock{
-
-position:fixed !important;
-
-top:auto !important;
-
-right:0 !important;
-bottom:0 !important;
-left:0 !important;
-
-inset-block-start:auto !important;
-inset-block-end:0 !important;
-
-width:100% !important;
-
-height:
-calc(
-var(--navigation-height) +
-env(safe-area-inset-bottom)
-) !important;
-
-min-height:
-calc(
-var(--navigation-height) +
-env(safe-area-inset-bottom)
-) !important;
-
-max-height:
-calc(
-var(--navigation-height) +
-env(safe-area-inset-bottom)
-) !important;
-
-margin:0 !important;
-
-padding-bottom:
-env(safe-area-inset-bottom) !important;
-
-z-index:1000 !important;
-
-transform:none !important;
-
-translate:none !important;
-
-flex:none !important;
-
-transition:none !important;
-
-animation:none !important;
-
-will-change:auto !important;
-
-pointer-events:auto !important;
-
-visibility:visible !important;
-
-opacity:1 !important;
-
-}
-
-body.wfesc-keyboard-open
-.wfesc-navigation-keyboard-lock{
-
-position:fixed !important;
-
-top:auto !important;
-
-right:0 !important;
-bottom:0 !important;
-left:0 !important;
-
-inset-block-start:auto !important;
-inset-block-end:0 !important;
-
-width:100% !important;
-
-height:
-calc(
-var(--navigation-height) +
-env(safe-area-inset-bottom)
-) !important;
-
-transform:none !important;
-
-translate:none !important;
-
-margin:0 !important;
-
-z-index:1000 !important;
-
-visibility:visible !important;
-
-opacity:1 !important;
-
-pointer-events:auto !important;
-
-animation:none !important;
-
-transition:none !important;
-
-will-change:auto !important;
-
-}
-
-.wfesc-navigation-keyboard-lock,
-.wfesc-navigation-keyboard-lock *{
-
-box-sizing:border-box !important;
-
-}
-
-
-/* =========================================================
-KEYBOARD SAFETY
-========================================================= */
-
-body.wfesc-keyboard-open{
-
-overflow:hidden;
-
-}
-
-
-/* =========================================================
-VIEWPORT SUPPORT
-========================================================= */
-
-@supports (height:100dvh){
-
-.chat-view{
-
-height:100dvh;
-
-min-height:0;
-
-}
-
-.chat-header{
-
-flex:
-    0 0 auto;
-
-}
-
-.chat-messages{
-
-flex:
-    1 1 auto;
-
-min-height:0;
-
-}
-
-.modal-card{
-
-max-height:
-    calc(
-        100dvh -
-        var(--navigation-height) -
-        40px
-    );
-
-}
-
-}
-
-
-/* =========================================================
-FINAL CHAT LAYOUT LOCK
+FINAL CHAT LAYOUT
+=========================================================
+
+الـChat الأساسي هنا فقط.
+لا يوجد هنا أي منطق كيبورد أو Navigation.
 ========================================================= */
 
 #chatView{
@@ -3370,8 +3215,8 @@ flex-direction:column;
 overflow:hidden;
 
 width:100%;
+
 height:100vh;
-height:100dvh;
 
 min-height:0;
 
@@ -3386,8 +3231,8 @@ flex-direction:column;
 overflow:hidden;
 
 width:100%;
+
 height:100vh;
-height:100dvh;
 
 min-height:0;
 
@@ -3424,14 +3269,20 @@ padding:
 16px
 12px
 calc(
-var(--composer-bottom) +
+var(
+    --composer-bottom,
+    var(--navigation-height)
+) +
 68px +
 env(safe-area-inset-bottom)
 );
 
 scroll-padding-bottom:
 calc(
-var(--composer-bottom) +
+var(
+    --composer-bottom,
+    var(--navigation-height)
+) +
 68px +
 env(safe-area-inset-bottom)
 );
@@ -3815,7 +3666,6 @@ user-drag:none !important;
             placeholder="اكتب رسالة..."
             autocomplete="off"
             spellcheck="false"
-            readonly
             data-keyboard-required="true"
         ></textarea>
 
@@ -4594,16 +4444,13 @@ user-drag:none !important;
 
 <!-- =========================================================
      KEYBOARD
-     هذا هو المتحكم الوحيد بالكيبورد.
+     
+     هذا الملف فقط مسؤول عن الكيبورد.
 ========================================================= -->
 
 <script
 src="./messages/messages-keyboard.js"
 id="wfescKeyboardScript"
-onload="
-    window.__WFESC_KEYBOARD_FILE_LOADED__=true;
-    window.WFESC_KEYBOARD_FILE_LOADED=true;
-"
 ></script>
 
 
@@ -4640,112 +4487,6 @@ BLOCK SYSTEM
 ========================================================= -->
 
 <script src="./messages/messages-block.js"></script>
-
-
-<!-- =========================================================
-KEYBOARD MODULE GATE
-========================================================= -->
-
-<script>
-
-(function(){
-
-"use strict";
-
-
-function enableMessageInput(){
-
-    const input =
-        document.getElementById(
-            "messageInput"
-        );
-
-
-    if(!input){
-
-        return false;
-
-    }
-
-
-    const keyboardReady =
-        window.__WFESC_KEYBOARD_FILE_LOADED__ === true ||
-        window.WFESC_KEYBOARD_FILE_LOADED === true ||
-        window.WFESC_MESSAGE_KEYBOARD_READY === true;
-
-
-    if(
-        keyboardReady
-    ){
-
-        input.removeAttribute(
-            "readonly"
-        );
-
-
-        input.dataset.keyboardReady =
-            "true";
-
-
-        return true;
-
-    }
-
-
-    input.setAttribute(
-        "readonly",
-        "readonly"
-    );
-
-
-    input.dataset.keyboardReady =
-        "false";
-
-
-    return false;
-
-}
-
-
-/*
- * المحاولة الأولى.
- */
-enableMessageInput();
-
-
-/*
- * محاولة إضافية بعد اكتمال DOM.
- */
-document.addEventListener(
-    "DOMContentLoaded",
-    function(){
-
-        enableMessageInput();
-
-    },
-    {
-        once:true
-    }
-);
-
-
-/*
- * احتياط إضافي بسيط إذا تأخر تحميل
- * ملف الكيبورد عن باقي السكربتات.
- */
-setTimeout(
-    enableMessageInput,
-    100
-);
-
-setTimeout(
-    enableMessageInput,
-    500
-);
-
-})();
-
-</script>
 
 
 <!-- =========================================================
@@ -4894,6 +4635,9 @@ document.addEventListener(
 
 <!-- =========================================================
 NAVIGATION
+
+المسؤولية الكاملة عن Navigation موجودة
+في ملفات navigation.
 ========================================================= -->
 
 <script src="./navigation/navigation-loader.js"></script>
