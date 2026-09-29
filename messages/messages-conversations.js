@@ -34,6 +34,7 @@
      * - القائمة تُرسم فوراً
      * - بيانات الأشخاص والحظر تُحدّث بالخلفية
      * - لا يتم ضرب فحص حظر جديد عند كل ضغطة
+     * - فتح المحادثة لا ينتظر أي طلب شبكة
      *
      * =========================================================
      */
@@ -794,7 +795,7 @@
 
         /* =====================================================
            SUPPORT
-           ===================================================== */
+        ===================================================== */
 
         if (
             isSupportConversation(
@@ -827,7 +828,7 @@
 
         /* =====================================================
            EXISTING REAL CONTACT
-           ===================================================== */
+        ===================================================== */
 
         if (
             existing &&
@@ -863,7 +864,7 @@
 
         /* =====================================================
            CACHE
-           ===================================================== */
+        ===================================================== */
 
         const cached =
             getCachedContact(
@@ -877,7 +878,7 @@
 
         /* =====================================================
            CORE RPC
-           ===================================================== */
+        ===================================================== */
 
         const messagesCore =
             getCore();
@@ -1838,6 +1839,13 @@
                         conversationId
                     )
             );
+
+        /*
+         * إذا كانت المحادثة مخفية عند المستخدم الحالي
+         * ثم وصلت رسالة جديدة من الطرف الآخر،
+         * نحتاج إعادة تحميل قائمة المحادثات من الـCore
+         * حتى تعود المحادثة للظهور.
+         */
 
         if (!exists) {
 
@@ -3297,7 +3305,7 @@
 
         card.addEventListener(
             "click",
-            async event => {
+            event => {
 
                 if (
                     event.target.closest(
@@ -3309,151 +3317,36 @@
                 }
 
                 /*
-                 * إذا كانت الحالة معروفة من الرسم أو الـCache:
-                 * استخدمها مباشرة.
+                 * =================================================
+                 * مهم:
                  *
-                 * إذا لم تكن معروفة بعد:
-                 * نعمل طلب واحد فقط هنا.
+                 * لا ننتظر هنا:
                  *
-                 * هذا أفضل من force=true في كل ضغطة.
+                 * getBlockStatus()
+                 *
+                 * ولا:
+                 *
+                 * isBlocked()
+                 *
+                 * ولا:
+                 *
+                 * isBlockedBy()
+                 *
+                 *
+                 * السبب:
+                 * الضغط على المحادثة يجب أن يفتحها مباشرة.
+                 *
+                 * حالة الحظر الموجودة مسبقاً في الـCache أو
+                 * البطاقة تكفي لمنع الفتح إذا كانت معروفة.
+                 *
+                 * التحقق النهائي من الحظر يبقى داخل Core.
+                 * =================================================
                  */
 
-                let blockedByNow =
+                const blockedByNow =
                     card.dataset
                         .wfescBlockedBy ===
                     "true";
-
-                const blockKnown =
-                    card.dataset
-                        .wfescBlockKnown ===
-                    "true";
-
-                if (
-                    userId &&
-                    !blockKnown
-                ) {
-
-                    const latestBlockState =
-                        await getBlockStatus(
-                            userId,
-                            false
-                        );
-
-                    applyBlockStateToCard(
-                        card,
-                        latestBlockState
-                    );
-
-                    blockedByNow =
-                        latestBlockState.blockedBy ===
-                        true;
-
-                    if (
-                        blockedByNow
-                    ) {
-
-                        /*
-                         * إعادة بناء شكل البطاقة
-                         * فور معرفة الحظر.
-                         */
-
-                        card.classList.add(
-                            "wfesc-blocked-by"
-                        );
-
-                        const nameElement =
-                            card.querySelector(
-                                ".wfesc-conversation-name"
-                            );
-
-                        if (nameElement) {
-
-                            nameElement.textContent =
-                                "قام المستخدم بحظرك";
-
-                            nameElement.title =
-                                "قام المستخدم بحظرك";
-                        }
-
-                        const preview =
-                            card.querySelector(
-                                ".wfesc-conversation-preview"
-                            );
-
-                        if (preview) {
-
-                            preview.textContent =
-                                "قام المستخدم بحظرك";
-
-                            preview.classList.remove(
-                                "typing"
-                            );
-                        }
-
-                        const avatarElement =
-                            card.querySelector(
-                                ".wfesc-conversation-avatar"
-                            );
-
-                        if (avatarElement) {
-
-                            avatarElement.src =
-                                CONFIG.BLOCKED_AVATAR;
-                        }
-
-                        const dot =
-                            card.querySelector(
-                                ".wfesc-conversation-online"
-                            );
-
-                        if (dot) {
-
-                            dot.classList.remove(
-                                "active"
-                            );
-
-                            dot.style.display =
-                                "none";
-                        }
-
-                        if (
-                            !card.querySelector(
-                                ".wfesc-conversation-block-label"
-                            )
-                        ) {
-
-                            const info =
-                                card.querySelector(
-                                    ".wfesc-conversation-info"
-                                );
-
-                            if (info) {
-
-                                const label =
-                                    document.createElement(
-                                        "div"
-                                    );
-
-                                label.className =
-                                    "wfesc-conversation-block-label";
-
-                                label.textContent =
-                                    "لا يمكنك فتح المحادثة";
-
-                                info.appendChild(
-                                    label
-                                );
-                            }
-                        }
-
-                        showBlockedConversationNotice(
-                            card
-                        );
-
-                        return;
-                    }
-
-                }
 
                 if (
                     blockedByNow
@@ -3466,6 +3359,11 @@
                     return;
                 }
 
+
+                /* =================================================
+                   OPEN IMMEDIATELY
+                ================================================= */
+
                 const messagesCore =
                     getCore();
 
@@ -3475,6 +3373,11 @@
                         messagesCore.openConversation ===
                         "function"
                 ) {
+
+                    /*
+                     * لا يوجد await هنا.
+                     * فتح المحادثة يبدأ فوراً.
+                     */
 
                     messagesCore.openConversation(
 
@@ -3491,6 +3394,11 @@
 
                     return;
                 }
+
+
+                /* =================================================
+                   FALLBACK
+                ================================================= */
 
                 if (
                     typeof
