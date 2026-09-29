@@ -2,7 +2,8 @@
    WFESC MESSAGES SEARCH
    File: messages/messages-search.js
 
-   Features:
+   Optimized:
+   - Fast debounced search
    - Search messages across conversations
    - Search users
    - Result count
@@ -15,6 +16,10 @@
    - Shake animation on every navigation
    - Keeps search state after opening a result
    - Attempts to load older messages when needed
+   - Avoids MutationObserver recursive work
+   - Avoids repeated block requests
+   - Uses parallel block checks
+   - Uses DocumentFragment for faster rendering
 
    BLOCK INTEGRATION:
    - Detect users who blocked the current user
@@ -29,6 +34,17 @@
 (function () {
 
     "use strict";
+
+
+    /* =========================================================
+       CONFIG
+    ========================================================= */
+
+    const SEARCH_DEBOUNCE_MS = 180;
+
+    const OLDER_MESSAGES_MAX_ATTEMPTS = 30;
+
+    const OLDER_MESSAGES_WAIT_MS = 60;
 
 
     /* =========================================================
@@ -69,9 +85,13 @@
 
     let observerStarted = false;
 
+    let initialized = false;
+
+    let observerFrame = 0;
+
 
     /*
-     * Cache حالة الحظر حتى لا نرسل طلب Supabase
+     * Cache حالة الحظر حتى لا نرسل طلبات Supabase
      * لكل عنصر بشكل متكرر.
      */
     const blockStatusCache = new Map();
@@ -122,7 +142,12 @@
             getCore()?.client ||
             getBlock()?.client ||
             window.WFESCSupabase ||
-            window.supabase ||
+            (
+                window.supabase &&
+                typeof window.supabase.rpc === "function"
+                    ? window.supabase
+                    : null
+            ) ||
             null
         );
 
@@ -143,6 +168,29 @@
             return null;
 
         }
+
+    }
+
+
+    function getCurrentUserId() {
+
+        const user =
+            getCurrentUser();
+
+
+        if (!user) {
+
+            return null;
+
+        }
+
+
+        return (
+            user.id ||
+            user.user_id ||
+            user.userId ||
+            null
+        );
 
     }
 
@@ -235,7 +283,7 @@
 
         const safeQuery =
             escapeRegExp(
-                query.trim()
+                String(query).trim()
             );
 
 
@@ -387,6 +435,84 @@
     }
 
 
+    function getPossibleOtherUserId(row) {
+
+        const currentUserId =
+            normalizeId(
+                getCurrentUserId()
+            );
+
+
+        const candidates = [
+
+            row?.other_user_id,
+
+            row?.otherUserId,
+
+            row?.contact_id,
+
+            row?.contactId,
+
+            row?.target_user_id,
+
+            row?.targetUserId,
+
+            row?.receiver_id,
+
+            row?.receiverId,
+
+            row?.recipient_id,
+
+            row?.recipientId,
+
+            row?.participant_id,
+
+            row?.participantId
+
+        ];
+
+
+        for (
+            const candidate of candidates
+        ) {
+
+            const id =
+                normalizeId(candidate);
+
+
+            if (
+                id &&
+                id !== currentUserId
+            ) {
+
+                return id;
+
+            }
+
+        }
+
+
+        const senderId =
+            normalizeId(
+                getSenderId(row)
+            );
+
+
+        if (
+            senderId &&
+            senderId !== currentUserId
+        ) {
+
+            return senderId;
+
+        }
+
+
+        return null;
+
+    }
+
+
     function isBlockedYou(user) {
 
         return (
@@ -411,7 +537,50 @@
 
         }
 
+
         return String(value);
+
+    }
+
+
+    function normalizeSearchText(value) {
+
+        return String(value ?? "")
+            .trim()
+            .toLocaleLowerCase();
+
+    }
+
+
+    function getMessageId(row) {
+
+        return (
+            row?.message_id ||
+            row?.id ||
+            null
+        );
+
+    }
+
+
+    function getConversationIdFromRow(row) {
+
+        return (
+            row?.conversation_id ||
+            row?.conversationId ||
+            null
+        );
+
+    }
+
+
+    function getCreatedAt(row) {
+
+        return (
+            row?.created_at ||
+            row?.createdAt ||
+            0
+        );
 
     }
 
@@ -433,9 +602,33 @@
 
             return {
 
-                blocked:false,
+                blocked: false,
 
-                blockedBy:false
+                blockedBy: false
+
+            };
+
+        }
+
+
+        const currentUserId =
+            normalizeId(
+                getCurrentUserId()
+            );
+
+
+        /*
+         * المستخدم الحالي لا يمكن أن يكون محظورًا من نفسه.
+         */
+        if (
+            normalizedId === currentUserId
+        ) {
+
+            return {
+
+                blocked: false,
+
+                blockedBy: false
 
             };
 
@@ -466,9 +659,9 @@
 
             const fallback = {
 
-                blocked:false,
+                blocked: false,
 
-                blockedBy:false
+                blockedBy: false
 
             };
 
@@ -491,50 +684,40 @@
 
         try {
 
-            if (
-                typeof block.isBlocked ===
-                "function"
-            ) {
+            /*
+             * تشغيل الفحصين بالتوازي بدل انتظار الأول ثم الثاني.
+             */
+            const checks =
+                await Promise.all([
 
-                blocked =
-                    !!(
-                        await block.isBlocked(
+                    typeof block.isBlocked ===
+                        "function"
+                        ? block.isBlocked(
                             userId
                         )
-                    );
+                        : false,
 
-            }
+                    typeof block.isBlockedBy ===
+                        "function"
+                        ? block.isBlockedBy(
+                            userId
+                        )
+                        : false
+
+                ]);
+
+
+            blocked =
+                !!checks[0];
+
+
+            blockedBy =
+                !!checks[1];
 
         } catch (error) {
 
             console.warn(
-                "[WFESC SEARCH] isBlocked failed:",
-                error
-            );
-
-        }
-
-
-        try {
-
-            if (
-                typeof block.isBlockedBy ===
-                "function"
-            ) {
-
-                blockedBy =
-                    !!(
-                        await block.isBlockedBy(
-                            userId
-                        )
-                    );
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "[WFESC SEARCH] isBlockedBy failed:",
+                "[WFESC SEARCH] block status failed:",
                 error
             );
 
@@ -570,6 +753,18 @@
 
     function setupBlockStateListeners() {
 
+        if (
+            setupBlockStateListeners.started
+        ) {
+
+            return;
+
+        }
+
+
+        setupBlockStateListeners.started = true;
+
+
         const eventNames = [
 
             "wfesc:block-changed",
@@ -585,22 +780,38 @@
         ];
 
 
+        function handler() {
+
+            clearBlockStatusCache();
+
+        }
+
+
+        /*
+         * بعض الملفات قد ترسل الحدث على window
+         * وبعضها على document.
+         */
         eventNames.forEach(
             function (eventName) {
 
                 document.addEventListener(
                     eventName,
-                    function () {
+                    handler
+                );
 
-                        clearBlockStatusCache();
 
-                    }
+                window.addEventListener(
+                    eventName,
+                    handler
                 );
 
             }
         );
 
     }
+
+
+    setupBlockStateListeners.started = false;
 
 
     async function decorateUserBlockStatus(
@@ -628,18 +839,40 @@
                             isBlockedYou(user);
 
 
+                        /*
+                         * إذا الـRPC أكد مسبقًا أن المستخدم حاجبنا،
+                         * لا داعي لفحص isBlockedBy مرة ثانية.
+                         */
+                        if (rpcBlocked) {
+
+                            return {
+
+                                user,
+
+                                status: {
+
+                                    blocked: false,
+
+                                    blockedBy: true
+
+                                }
+
+                            };
+
+                        }
+
+
                         if (!userId) {
 
                             return {
 
                                 user,
 
-                                status:{
+                                status: {
 
-                                    blocked:false,
+                                    blocked: false,
 
-                                    blockedBy:
-                                        rpcBlocked
+                                    blockedBy: false
 
                                 }
 
@@ -658,18 +891,13 @@
 
                             user,
 
-                            status:{
+                            status: {
 
                                 blocked:
-                                    !!(
-                                        status.blocked
-                                    ),
+                                    !!status.blocked,
 
                                 blockedBy:
-                                    !!(
-                                        status.blockedBy ||
-                                        rpcBlocked
-                                    )
+                                    !!status.blockedBy
 
                             }
 
@@ -703,25 +931,37 @@
             new Set();
 
 
+        const currentUserId =
+            normalizeId(
+                getCurrentUserId()
+            );
+
+
         rows.forEach(
             function (row) {
 
                 const id =
                     normalizeId(
-                        getSenderId(row)
+                        getPossibleOtherUserId(
+                            row
+                        )
                     );
 
 
                 if (
-                    id &&
-                    !seen.has(id)
+                    !id ||
+                    id === currentUserId ||
+                    seen.has(id)
                 ) {
 
-                    seen.add(id);
-
-                    ids.push(id);
+                    return;
 
                 }
+
+
+                seen.add(id);
+
+                ids.push(id);
 
             }
         );
@@ -731,6 +971,9 @@
             new Map();
 
 
+        /*
+         * كل معرف مرة واحدة فقط + بالتوازي.
+         */
         await Promise.all(
 
             ids.map(
@@ -756,22 +999,71 @@
         return rows.map(
             function (row) {
 
+                const targetUserId =
+                    normalizeId(
+                        getPossibleOtherUserId(
+                            row
+                        )
+                    );
+
+
                 const senderId =
                     normalizeId(
                         getSenderId(row)
                     );
 
 
-                const status =
-                    statuses.get(
-                        senderId
-                    ) || {
+                let status = {
 
-                        blocked:false,
+                    blocked: false,
 
-                        blockedBy:false
+                    blockedBy: false
+
+                };
+
+
+                if (
+                    targetUserId &&
+                    targetUserId !== currentUserId
+                ) {
+
+                    status =
+                        statuses.get(
+                            targetUserId
+                        ) || status;
+
+                } else if (
+                    senderId &&
+                    senderId !== currentUserId
+                ) {
+
+                    status =
+                        statuses.get(
+                            senderId
+                        ) || status;
+
+                }
+
+
+                /*
+                 * بعض نتائج الـRPC قد تحتوي مباشرة على
+                 * blocked_you / blockedYou.
+                 */
+                if (
+                    row?.blocked_you === true ||
+                    row?.blockedYou === true
+                ) {
+
+                    status = {
+
+                        blocked:
+                            !!status.blocked,
+
+                        blockedBy: true
 
                     };
+
+                }
 
 
                 return {
@@ -831,6 +1123,16 @@
 
     function init() {
 
+        if (initialized) {
+
+            return;
+
+        }
+
+
+        initialized = true;
+
+
         els.input =
             document.getElementById(
                 "messageSearch"
@@ -880,6 +1182,9 @@
 
 
         if (!els.input) {
+
+            initialized = false;
+
 
             console.warn(
                 "[WFESC SEARCH] messageSearch not found."
@@ -1437,6 +1742,12 @@
                 );
 
 
+                /*
+                 * إلغاء نتيجة البحث السابقة منطقيًا فورًا.
+                 */
+                searchRequestToken++;
+
+
                 if (!text) {
 
                     resetSearchState();
@@ -1455,7 +1766,7 @@
                             );
 
                         },
-                        300
+                        SEARCH_DEBOUNCE_MS
                     );
 
             }
@@ -1575,6 +1886,8 @@
 
     function resetSearchState() {
 
+        navigationToken++;
+
         searchRows = [];
 
         conversationSearchRows = [];
@@ -1589,7 +1902,7 @@
 
         pendingMessageContent = "";
 
-        navigationToken++;
+        updateMatchNavigator();
 
         clearSearchResults();
 
@@ -1730,6 +2043,16 @@
 
         } catch (error) {
 
+            if (
+                token !==
+                searchRequestToken
+            ) {
+
+                return;
+
+            }
+
+
             console.error(
                 "[WFESC SEARCH] user search exception:",
                 error
@@ -1774,6 +2097,10 @@
             "";
 
 
+        const fragment =
+            document.createDocumentFragment();
+
+
         users.forEach(
             function (entry) {
 
@@ -1784,7 +2111,7 @@
                 const status =
                     entry?.status || {
 
-                        blocked:false,
+                        blocked: false,
 
                         blockedBy:
                             isBlockedYou(user)
@@ -1831,8 +2158,8 @@
 
 
                 /*
-                 * إذا كان المستخدم حاظراً لنا:
-                 * لا نعرض اسمه الحقيقي أو صورته أو username.
+                 * المستخدم الذي حظرنا:
+                 * نخفي الاسم + الصورة + username.
                  */
                 if (blockedYou) {
 
@@ -1998,10 +2325,6 @@
                     "click",
                     async function () {
 
-                        /*
-                         * من حظرنا:
-                         * لا نفتح المحادثة.
-                         */
                         if (blockedYou) {
 
                             shakeBlockedUser(
@@ -2013,10 +2336,6 @@
                         }
 
 
-                        /*
-                         * المستخدم الذي قمنا بحظره:
-                         * لا نفتح محادثة جديدة.
-                         */
                         if (blockedByMe) {
 
                             shakeBlockedUser(
@@ -2028,11 +2347,6 @@
                         }
 
 
-                        /*
-                         * فحص أخير قبل الفتح،
-                         * لمنع تجاوز حالة الحظر إذا تغيرت
-                         * بعد ظهور نتيجة البحث.
-                         */
                         const latestStatus =
                             await getBlockStatus(
                                 userId,
@@ -2044,51 +2358,15 @@
                             latestStatus.blockedBy
                         ) {
 
-                            clearBlockStatusCache();
-
-                            item.classList.add(
-                                "wfesc-blocked-you"
+                            replaceUserResultWithBlocked(
+                                item
                             );
-
-
-                            item.innerHTML = `
-
-                                <div
-                                    class="wfesc-search-user-row"
-                                >
-
-                                    <div
-                                        class="wfesc-search-avatar-blocked"
-                                    >
-                                        !
-                                    </div>
-
-                                    <div
-                                        class="wfesc-search-user-info"
-                                    >
-
-                                        <div
-                                            class="wfesc-search-user-name wfesc-search-hidden-identity"
-                                        >
-                                            قام المستخدم بحظرك
-                                        </div>
-
-                                        <div
-                                            class="wfesc-search-blocked-label"
-                                        >
-                                            لا يمكنك بدء محادثة مع هذا المستخدم
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            `;
 
 
                             shakeBlockedUser(
                                 item
                             );
+
 
                             return;
 
@@ -2126,12 +2404,76 @@
                 );
 
 
-                els.results.appendChild(
+                fragment.appendChild(
                     item
                 );
 
             }
         );
+
+
+        els.results.appendChild(
+            fragment
+        );
+
+    }
+
+
+    function replaceUserResultWithBlocked(
+        item
+    ) {
+
+        if (!item) {
+
+            return;
+
+        }
+
+
+        item.classList.add(
+            "wfesc-blocked-you"
+        );
+
+
+        item.classList.remove(
+            "wfesc-blocked-by-me"
+        );
+
+
+        item.innerHTML = `
+
+            <div
+                class="wfesc-search-user-row"
+            >
+
+                <div
+                    class="wfesc-search-avatar-blocked"
+                    aria-hidden="true"
+                >
+                    !
+                </div>
+
+                <div
+                    class="wfesc-search-user-info"
+                >
+
+                    <div
+                        class="wfesc-search-user-name wfesc-search-hidden-identity"
+                    >
+                        قام المستخدم بحظرك
+                    </div>
+
+                    <div
+                        class="wfesc-search-blocked-label"
+                    >
+                        لا يمكنك بدء محادثة مع هذا المستخدم
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
 
     }
 
@@ -2189,9 +2531,6 @@
         }
 
 
-        /*
-         * فحص حظر مباشر قبل RPC.
-         */
         const status =
             await getBlockStatus(
                 userId,
@@ -2241,42 +2580,6 @@
 
         try {
 
-            /*
-             * فحص إضافي مباشرة قبل RPC.
-             */
-            const finalStatus =
-                await getBlockStatus(
-                    userId,
-                    true
-                );
-
-
-            if (
-                finalStatus.blockedBy
-            ) {
-
-                showSearchError(
-                    "قام المستخدم بحظرك ولا يمكن بدء المحادثة."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                finalStatus.blocked
-            ) {
-
-                showSearchError(
-                    "قمت بحظر هذا المستخدم ولا يمكن بدء المحادثة."
-                );
-
-                return;
-
-            }
-
-
             const rpcResult =
                 await client.rpc(
                     "get_or_create_direct_conversation",
@@ -2322,7 +2625,7 @@
 
 
             /*
-             * إعادة الفحص بعد إنشاء/استرجاع المحادثة.
+             * إعادة فحص واحدة فقط بعد RPC.
              */
             const afterRpcStatus =
                 await getBlockStatus(
@@ -2356,9 +2659,11 @@
 
                 const contact = {
 
-                    user_id:userId,
+                    user_id:
+                        userId,
 
-                    id:userId,
+                    id:
+                        userId,
 
                     username:
                         getUsername(user),
@@ -2385,7 +2690,6 @@
 
                 hideOnlySearchResults();
 
-
                 return;
 
             }
@@ -2395,9 +2699,13 @@
                 new CustomEvent(
                     "wfesc:open-conversation",
                     {
-                        detail:{
+                        detail: {
+
                             conversationId,
-                            contact:user
+
+                            contact:
+                                user
+
                         }
                     }
                 )
@@ -2569,41 +2877,38 @@
                 );
 
 
+            /*
+             * Newest -> oldest
+             */
             rows.sort(
                 function (a, b) {
 
                     const dateA =
                         new Date(
-                            a.created_at ||
-                            a.createdAt ||
-                            0
+                            getCreatedAt(a)
                         ).getTime();
 
 
                     const dateB =
                         new Date(
-                            b.created_at ||
-                            b.createdAt ||
-                            0
+                            getCreatedAt(b)
                         ).getTime();
 
 
-                    if (dateA !== dateB) {
+                    if (
+                        dateA !== dateB
+                    ) {
 
                         return dateB - dateA;
 
                     }
 
 
-                    return (
+                    return normalizeId(
+                        getMessageId(b)
+                    ).localeCompare(
                         normalizeId(
-                            b.message_id ||
-                            b.id
-                        ).localeCompare(
-                            normalizeId(
-                                a.message_id ||
-                                a.id
-                            )
+                            getMessageId(a)
                         )
                     );
 
@@ -2637,6 +2942,16 @@
             );
 
         } catch (error) {
+
+            if (
+                token !==
+                searchRequestToken
+            ) {
+
+                return;
+
+            }
+
 
             console.error(
                 "[WFESC SEARCH] message search exception:",
@@ -2699,6 +3014,10 @@
         );
 
 
+        const fragment =
+            document.createDocumentFragment();
+
+
         rows.forEach(
             function (row, index) {
 
@@ -2711,9 +3030,9 @@
                 const blockStatus =
                     row?.__wfescBlockStatus || {
 
-                        blocked:false,
+                        blocked: false,
 
-                        blockedBy:false
+                        blockedBy: false
 
                     };
 
@@ -2726,6 +3045,13 @@
                     !!blockStatus.blocked;
 
 
+                /*
+                 * إذا الطرف حاجبنا:
+                 * يمنع فتح المحادثة من خارج المحادثة.
+                 *
+                 * إذا نحن حاجبين الطرف:
+                 * يبقى البحث في السجل مسموحًا لأن السجل موجود.
+                 */
                 item.className =
                     "search-result wfesc-search-message-row" +
 
@@ -2750,30 +3076,21 @@
 
 
                 const conversationId =
-
-                    row.conversation_id ||
-
-                    row.conversationId ||
-
-                    null;
+                    getConversationIdFromRow(
+                        row
+                    );
 
 
                 const messageId =
-
-                    row.message_id ||
-
-                    row.id ||
-
-                    null;
+                    getMessageId(
+                        row
+                    );
 
 
                 const createdAt =
-
-                    row.created_at ||
-
-                    row.createdAt ||
-
-                    "";
+                    getCreatedAt(
+                        row
+                    );
 
 
                 let senderName =
@@ -2796,9 +3113,7 @@
 
 
                 /*
-                 * إذا كان المرسل هو المستخدم الذي حظرنا:
-                 * نخفي اسمه وصورته، لكن لا نحذف محتوى الرسالة
-                 * لأن سجل الرسائل يبقى محفوظًا.
+                 * نخفي هوية من حظرنا.
                  */
                 if (blockedBy) {
 
@@ -2910,15 +3225,9 @@
                                         : ""
                                 }"
                             >
-                                ${
-                                    blockedBy
-                                        ? escapeHTML(
-                                            senderName
-                                        )
-                                        : escapeHTML(
-                                            senderName
-                                        )
-                                }
+                                ${escapeHTML(
+                                    senderName
+                                )}
                             </div>
 
                             ${blockedLabel}
@@ -2981,21 +3290,20 @@
                             index;
 
 
-                        /*
-                         * إذا كان الطرف قد حظرنا،
-                         * نسمح بعرض السجل فقط إذا كانت
-                         * المحادثة مفتوحة أصلًا.
-                         *
-                         * أما فتح محادثة جديدة من نتيجة البحث
-                         * فيتم منعه داخل openMessageSearchResult.
-                         */
                         await openMessageSearchResult(
                             {
+
                                 conversationId,
+
                                 messageId,
+
                                 content,
+
                                 row,
-                                searchIndex:index
+
+                                searchIndex:
+                                    index
+
                             }
                         );
 
@@ -3013,11 +3321,16 @@
                 );
 
 
-                els.results.appendChild(
+                fragment.appendChild(
                     item
                 );
 
             }
+        );
+
+
+        els.results.appendChild(
+            fragment
         );
 
     }
@@ -3057,11 +3370,13 @@
 
 
         pendingMessageId =
-            result.messageId || null;
+            result.messageId ||
+            null;
 
 
         pendingMessageContent =
-            result.content || "";
+            result.content ||
+            "";
 
 
         const currentConversationId =
@@ -3069,9 +3384,8 @@
 
 
         /*
-         * إذا كانت المحادثة مفتوحة أصلًا،
-         * يسمح للمستخدم بمشاهدة السجل والتنقل داخله
-         * حتى لو كان الطرف قد حظره.
+         * المحادثة مفتوحة أصلًا:
+         * نسمح بالتنقل حتى لو كان هناك حظر.
          */
         if (
 
@@ -3104,22 +3418,12 @@
         }
 
 
-        /*
-         * المحادثة ليست مفتوحة.
-         *
-         * نحاول معرفة الطرف المرتبط بنتيجة البحث
-         * قبل فتح المحادثة.
-         */
         let targetUserId =
-            getSenderId(
+            getPossibleOtherUserId(
                 result.row
             );
 
 
-        /*
-         * إذا لم يكن sender_id موجودًا،
-         * نحاول أخذ جهة الاتصال من قائمة المحادثات.
-         */
         const core =
             getCore();
 
@@ -3134,41 +3438,49 @@
                 "function"
         ) {
 
-            const conversations =
-                core.getConversations?.() ||
-                [];
+            try {
+
+                const conversations =
+                    core.getConversations?.() ||
+                    [];
 
 
-            if (
-                Array.isArray(
-                    conversations
-                )
-            ) {
+                if (
+                    Array.isArray(
+                        conversations
+                    )
+                {
 
-                knownConversation =
-                    conversations.find(
-                        function (item) {
+                    knownConversation =
+                        conversations.find(
+                            function (item) {
 
-                            return (
+                                return (
 
-                                normalizeId(
-                                    item?.conversation_id
-                                ) ===
-                                normalizeId(
-                                    conversationId
-                                ) ||
+                                    normalizeId(
+                                        item?.conversation_id
+                                    ) ===
+                                    normalizeId(
+                                        conversationId
+                                    ) ||
 
-                                normalizeId(
-                                    item?.id
-                                ) ===
-                                normalizeId(
-                                    conversationId
-                                )
+                                    normalizeId(
+                                        item?.id
+                                    ) ===
+                                    normalizeId(
+                                        conversationId
+                                    )
 
-                            );
+                                );
 
-                        }
-                    ) || null;
+                            }
+                        ) || null;
+
+                }
+
+            } catch (error) {
+
+                knownConversation = null;
 
             }
 
@@ -3194,7 +3506,11 @@
 
 
         /*
-         * فحص الحظر قبل فتح المحادثة.
+         * إذا كنا نعرف الطرف وفعلًا هو حاجبنا:
+         * نمنع فتح المحادثة.
+         *
+         * blockedByMe لا يمنع فتح السجل الحالي
+         * لأن المستخدم يستطيع رؤية تاريخه القديم.
          */
         if (targetUserId) {
 
@@ -3211,19 +3527,6 @@
 
                 showSearchError(
                     "قام المستخدم بحظرك ولا يمكن فتح هذه المحادثة."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                blockStatus.blocked
-            ) {
-
-                showSearchError(
-                    "قمت بحظر هذا المستخدم ولا يمكن فتح هذه المحادثة."
                 );
 
                 return;
@@ -3247,7 +3550,7 @@
                 new CustomEvent(
                     "wfesc:search-message-open",
                     {
-                        detail:result
+                        detail: result
                     }
                 )
 
@@ -3279,6 +3582,10 @@
 
                 } catch (contactError) {
 
+                    /*
+                     * لا نخلي فشل جهة الاتصال يوقف البحث
+                     * أو يخرب ترتيب النتائج.
+                     */
                     console.warn(
                         "[WFESC SEARCH] contact lookup failed:",
                         contactError
@@ -3289,10 +3596,6 @@
             }
 
 
-            /*
-             * بعد جلب جهة الاتصال،
-             * نعيد فحص الحظر.
-             */
             if (!targetUserId && contact) {
 
                 targetUserId =
@@ -3301,6 +3604,9 @@
             }
 
 
+            /*
+             * إعادة فحص واحدة بعد معرفة جهة الاتصال.
+             */
             if (targetUserId) {
 
                 const finalBlockStatus =
@@ -3316,19 +3622,6 @@
 
                     showSearchError(
                         "قام المستخدم بحظرك ولا يمكن فتح هذه المحادثة."
-                    );
-
-                    return;
-
-                }
-
-
-                if (
-                    finalBlockStatus.blocked
-                ) {
-
-                    showSearchError(
-                        "قمت بحظر هذا المستخدم ولا يمكن فتح هذه المحادثة."
                     );
 
                     return;
@@ -3398,14 +3691,19 @@
             );
 
 
+        /*
+         * searchRows أصلًا مرتبة من الأحدث إلى الأقدم،
+         * لذلك لا نعيد الفرز هنا.
+         */
         conversationSearchRows =
             searchRows.filter(
                 function (row) {
 
                     return (
                         normalizeId(
-                            row?.conversation_id ||
-                            row?.conversationId
+                            getConversationIdFromRow(
+                                row
+                            )
                         ) ===
                         targetConversation
                     );
@@ -3414,41 +3712,24 @@
             );
 
 
-        conversationSearchRows.sort(
-            function (a, b) {
-
-                return (
-                    new Date(
-                        b.created_at ||
-                        b.createdAt ||
-                        0
-                    ).getTime() -
-
-                    new Date(
-                        a.created_at ||
-                        a.createdAt ||
-                        0
-                    ).getTime()
-                );
-
-            }
-        );
-
-
         let selectedIndex =
             conversationSearchRows.findIndex(
                 function (row) {
 
                     const rowId =
-                        row?.message_id ||
-                        row?.id ||
-                        null;
+                        getMessageId(
+                            row
+                        );
 
 
                     return (
                         selectedMessageId &&
-                        normalizeId(rowId) ===
-                        normalizeId(selectedMessageId)
+                        normalizeId(
+                            rowId
+                        ) ===
+                        normalizeId(
+                            selectedMessageId
+                        )
                     );
 
                 }
@@ -3460,21 +3741,32 @@
             selectedContent
         ) {
 
-            selectedIndex =
-                conversationSearchRows.findIndex(
-                    function (row) {
+            const wanted =
+                String(
+                    selectedContent || ""
+                ).trim();
 
-                        return (
-                            String(
-                                row?.content || ""
-                            ).trim() ===
-                            String(
-                                selectedContent || ""
-                            ).trim()
-                        );
 
-                    }
-                );
+            if (wanted) {
+
+                selectedIndex =
+                    conversationSearchRows.findIndex(
+                        function (row) {
+
+                            return (
+                                String(
+                                    row?.content ||
+                                    row?.message ||
+                                    row?.message_content ||
+                                    row?.text ||
+                                    ""
+                                ).trim() === wanted
+                            );
+
+                        }
+                    );
+
+            }
 
         }
 
@@ -3497,9 +3789,11 @@
 
         pendingMessageId =
             selectedMessageId ||
-            conversationSearchRows[
-                selectedIndex
-            ]?.message_id ||
+            getMessageId(
+                conversationSearchRows[
+                    selectedIndex
+                ]
+            ) ||
             null;
 
 
@@ -3508,6 +3802,12 @@
             conversationSearchRows[
                 selectedIndex
             ]?.content ||
+            conversationSearchRows[
+                selectedIndex
+            ]?.message ||
+            conversationSearchRows[
+                selectedIndex
+            ]?.message_content ||
             "";
 
 
@@ -3615,12 +3915,18 @@
         }
 
 
+        /*
+         * مهم:
+         * لا نستخدم subtree:true حتى لا نراقب العلامات
+         * التي يضيفها البحث لنفسه وندخل في حلقة إعادة معالجة.
+         */
         const observer =
             new MutationObserver(
-                function () {
+                function (mutations) {
 
                     if (
-                        !currentSearchText
+                        !currentSearchText ||
+                        searchMode !== "messages"
                     ) {
 
                         return;
@@ -3628,9 +3934,31 @@
                     }
 
 
+                    let hasDirectChildChanges =
+                        false;
+
+
+                    for (
+                        const mutation of mutations
+                    ) {
+
+                        if (
+                            mutation.type ===
+                                "childList"
+                        ) {
+
+                            hasDirectChildChanges =
+                                true;
+
+                            break;
+
+                        }
+
+                    }
+
+
                     if (
-                        searchMode !==
-                        "messages"
+                        !hasDirectChildChanges
                     ) {
 
                         return;
@@ -3638,10 +3966,22 @@
                     }
 
 
-                    applyCurrentConversationSearch(
-                        currentSearchText,
-                        false
+                    cancelAnimationFrame(
+                        observerFrame
                     );
+
+
+                    observerFrame =
+                        requestAnimationFrame(
+                            function () {
+
+                                applyCurrentConversationSearch(
+                                    currentSearchText,
+                                    false
+                                );
+
+                            }
+                        );
 
                 }
             );
@@ -3650,8 +3990,8 @@
         observer.observe(
             chatMessages,
             {
-                childList:true,
-                subtree:true
+                childList: true,
+                subtree: false
             }
         );
 
@@ -3702,41 +4042,24 @@
                 );
 
 
+            /*
+             * searchRows مرتبة مسبقًا، لذلك لا نعيد sort.
+             */
             conversationSearchRows =
                 searchRows.filter(
                     function (row) {
 
                         return (
                             normalizeId(
-                                row?.conversation_id ||
-                                row?.conversationId
+                                getConversationIdFromRow(
+                                    row
+                                )
                             ) ===
                             target
                         );
 
                     }
                 );
-
-
-            conversationSearchRows.sort(
-                function (a, b) {
-
-                    return (
-                        new Date(
-                            b.created_at ||
-                            b.createdAt ||
-                            0
-                        ).getTime() -
-
-                        new Date(
-                            a.created_at ||
-                            a.createdAt ||
-                            0
-                        ).getTime()
-                    );
-
-                }
-            );
 
         }
 
@@ -3755,7 +4078,7 @@
                     navigateToSelectedSearchResult();
 
                 },
-                80
+                50
             );
 
         }
@@ -3801,7 +4124,11 @@
         );
 
 
-        if (!text.trim()) {
+        const normalizedText =
+            normalizeSearchText(text);
+
+
+        if (!normalizedText) {
 
             currentResults = [];
 
@@ -3842,16 +4169,16 @@
 
 
                 if (
-                    rawText
-                        .toLocaleLowerCase()
-                        .includes(
-                            text.toLocaleLowerCase()
-                        )
+                    normalizeSearchText(
+                        rawText
+                    ).includes(
+                        normalizedText
+                    )
                 ) {
 
                     highlightElementText(
                         target,
-                        text
+                        String(text)
                     );
 
 
@@ -3883,16 +4210,16 @@
 
 
                     if (
-                        rawText
-                            .toLocaleLowerCase()
-                            .includes(
-                                text.toLocaleLowerCase()
-                            )
+                        normalizeSearchText(
+                            rawText
+                        ).includes(
+                            normalizedText
+                        )
                     ) {
 
                         highlightElementText(
                             content,
-                            text
+                            String(text)
                         );
 
 
@@ -3938,15 +4265,23 @@
             if (targetRow) {
 
                 const targetId =
-                    targetRow.message_id ||
-                    targetRow.id ||
-                    null;
+                    getMessageId(
+                        targetRow
+                    );
+
+
+                const targetContent =
+                    targetRow.content ||
+                    targetRow.message ||
+                    targetRow.message_content ||
+                    targetRow.text ||
+                    "";
 
 
                 const targetElement =
                     findMessageElement(
                         targetId,
-                        targetRow.content
+                        targetContent
                     );
 
 
@@ -4029,6 +4364,21 @@
         }
 
 
+        const queryText =
+            String(query);
+
+
+        const lowerQuery =
+            queryText.toLocaleLowerCase();
+
+
+        if (!lowerQuery) {
+
+            return;
+
+        }
+
+
         const walker =
             document.createTreeWalker(
 
@@ -4042,6 +4392,7 @@
                         function (node) {
 
                             if (
+                                !node.nodeValue ||
                                 !node.nodeValue.trim()
                             ) {
 
@@ -4086,10 +4437,6 @@
         }
 
 
-        const lowerQuery =
-            query.toLocaleLowerCase();
-
-
         nodes.forEach(
             function (textNode) {
 
@@ -4097,12 +4444,14 @@
                     textNode.nodeValue || "";
 
 
+                const lowerValue =
+                    value.toLocaleLowerCase();
+
+
                 if (
-                    !value
-                        .toLocaleLowerCase()
-                        .includes(
-                            lowerQuery
-                        )
+                    !lowerValue.includes(
+                        lowerQuery
+                    )
                 ) {
 
                     return;
@@ -4183,7 +4532,7 @@
                             index,
 
                             index +
-                                query.length
+                                queryText.length
 
                         );
 
@@ -4197,7 +4546,7 @@
                         remaining.slice(
 
                             index +
-                                query.length
+                                queryText.length
 
                         );
 
@@ -4313,13 +4662,16 @@
 
 
         pendingMessageId =
-            row.message_id ||
-            row.id ||
-            null;
+            getMessageId(
+                row
+            );
 
 
         pendingMessageContent =
             row.content ||
+            row.message ||
+            row.message_content ||
+            row.text ||
             "";
 
 
@@ -4412,6 +4764,13 @@
                 : "none";
 
 
+        /*
+         * index 0 = الأحدث
+         * index الأعلى = الأقدم
+         *
+         * Up (+1) = أقدم
+         * Down (-1) = أحدث
+         */
         if (els.matchUp) {
 
             els.matchUp.disabled =
@@ -4503,13 +4862,17 @@
 
 
         pendingMessageId =
-            row.message_id ||
-            row.id ||
+            getMessageId(
+                row
+            ) ||
             pendingMessageId;
 
 
         pendingMessageContent =
             row.content ||
+            row.message ||
+            row.message_content ||
+            row.text ||
             pendingMessageContent;
 
 
@@ -4590,12 +4953,14 @@
         }
 
 
-        const maxAttempts = 40;
+        let previousCount =
+            getRenderedMessageCount();
 
 
         for (
             let attempt = 0;
-            attempt < maxAttempts;
+            attempt <
+                OLDER_MESSAGES_MAX_ATTEMPTS;
             attempt++
         ) {
 
@@ -4625,15 +4990,13 @@
 
             try {
 
-                const beforeCount =
-                    getRenderedMessageCount();
-
-
                 const result =
                     await core.loadOlderMessages();
 
 
-                await wait(80);
+                await wait(
+                    OLDER_MESSAGES_WAIT_MS
+                );
 
 
                 target =
@@ -4654,9 +5017,13 @@
                     getRenderedMessageCount();
 
 
+                /*
+                 * لا يوجد أي تقدم:
+                 * نوقف المحاولة بدل إهدار الوقت.
+                 */
                 if (
                     result === false &&
-                    afterCount <= beforeCount
+                    afterCount <= previousCount
                 ) {
 
                     break;
@@ -4665,7 +5032,7 @@
 
 
                 if (
-                    afterCount <= beforeCount &&
+                    afterCount <= previousCount &&
                     result == null
                 ) {
 
@@ -4673,12 +5040,26 @@
 
                 }
 
+
+                if (
+                    afterCount <= previousCount
+                ) {
+
+                    break;
+
+                }
+
+
+                previousCount =
+                    afterCount;
+
             } catch (error) {
 
                 console.warn(
                     "[WFESC SEARCH] older messages load failed:",
                     error
                 );
+
 
                 break;
 
@@ -4752,49 +5133,61 @@
 
         if (messageId) {
 
-            const safeId =
-                String(messageId)
-                    .replace(
-                        /\\/g,
-                        "\\\\"
-                    )
-                    .replace(
-                        /"/g,
-                        '\\"'
-                    );
+            const normalizedId =
+                String(messageId);
 
 
-            const selectors = [
-
-                `[data-message-id="${safeId}"]`,
-
-                `[data-id="${safeId}"]`,
-
-                `#message-${safeId}`
-
-            ];
+            const elements =
+                container.querySelectorAll(
+                    "[data-message-id],[data-id]"
+                );
 
 
             for (
-                const selector
-                of selectors
+                const element of elements
             ) {
+
+                if (
+                    normalizeId(
+                        element.dataset?.messageId
+                    ) ===
+                    normalizedId ||
+                    normalizeId(
+                        element.dataset?.id
+                    ) ===
+                    normalizedId
+                ) {
+
+                    target =
+                        element;
+
+                    break;
+
+                }
+
+            }
+
+
+            if (!target) {
+
+                const legacyId =
+                    `message-${normalizedId}`;
+
 
                 try {
 
                     target =
                         container.querySelector(
-                            selector
+                            `#${escapeCSS(
+                                legacyId
+                            )}`
                         );
 
+                } catch (error) {
 
-                    if (target) {
+                    target = null;
 
-                        break;
-
-                    }
-
-                } catch (error) {}
+                }
 
             }
 
@@ -4810,6 +5203,13 @@
                 String(content)
                     .trim()
                     .toLocaleLowerCase();
+
+
+            if (!wanted) {
+
+                return null;
+
+            }
 
 
             const bubbles =
@@ -4896,6 +5296,30 @@
     }
 
 
+    function escapeCSS(value) {
+
+        const text =
+            String(value ?? "");
+
+
+        if (
+            typeof CSS !== "undefined" &&
+            typeof CSS.escape === "function"
+        ) {
+
+            return CSS.escape(text);
+
+        }
+
+
+        return text.replace(
+            /([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g,
+            "\\$1"
+        );
+
+    }
+
+
     function animateSearchTarget(
         target
     ) {
@@ -4949,9 +5373,9 @@
 
             target.scrollIntoView(
                 {
-                    behavior:"smooth",
-                    block:"center",
-                    inline:"nearest"
+                    behavior: "smooth",
+                    block: "center",
+                    inline: "nearest"
                 }
             );
 
@@ -5027,7 +5451,7 @@
 
     async function waitForChatRender() {
 
-        const maxAttempts = 30;
+        const maxAttempts = 25;
 
 
         for (
@@ -5057,7 +5481,7 @@
             }
 
 
-            await wait(100);
+            await wait(60);
 
         }
 
@@ -5130,8 +5554,8 @@
             return date.toLocaleString(
                 "ar-IQ",
                 {
-                    dateStyle:"short",
-                    timeStyle:"short"
+                    dateStyle: "short",
+                    timeStyle: "short"
                 }
             );
 
@@ -5206,7 +5630,7 @@
             "DOMContentLoaded",
             init,
             {
-                once:true
+                once: true
             }
         );
 
