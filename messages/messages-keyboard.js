@@ -1,4 +1,4 @@
-/* =========================================================
+ /* =========================================================
    WFESC MESSAGES KEYBOARD
    File:
    messages/messages-keyboard.js
@@ -22,8 +22,19 @@
        العناصر الأساسية
     ========================================================= */
 
-    const root = document.documentElement;
-    const body = document.body;
+    const root =
+        document.documentElement;
+
+
+    /*
+     * لا نعتمد على body وقت تحميل الملف
+     * حتى لو كان السكربت مبكرًا.
+     */
+    function getBody() {
+
+        return document.body || null;
+
+    }
 
 
     /*
@@ -34,55 +45,57 @@
      *
      * الموجود في messages.html
      */
-    const navigationHeight = 82;
+    const navigationHeight =
+        82;
 
 
     /*
      * أقل فرق نعتبره كيبورد.
-     *
-     * أي فرق أقل من هذا الرقم
-     * يعتبر تغييراً عادياً في الـviewport.
      */
-    const keyboardThreshold = 80;
+    const keyboardThreshold =
+        80;
 
 
     /*
      * آخر ارتفاع مطبق.
      */
-    let lastKeyboardHeight = -1;
+    let lastKeyboardHeight =
+        -1;
 
 
     /*
-     * مؤقت التحديث.
+     * مؤقت التحديث الرئيسي.
      */
-    let updateTimer = null;
+    let updateTimer =
+        null;
 
 
     /*
      * منع التهيئة أكثر من مرة.
      */
-    let initialized = false;
+    let initialized =
+        false;
 
 
     /*
      * VisualViewport.
      */
-    let visualViewportInstance = null;
+    let visualViewportInstance =
+        null;
 
 
     /*
      * حالة الكيبورد السابقة.
      */
-    let keyboardWasOpen = false;
+    let keyboardWasOpen =
+        false;
 
 
     /*
-     * مؤقتات التحديث الإضافية.
-     *
-     * نحتفظ بها حتى نستطيع تنظيفها
-     * عند الحاجة.
+     * المؤقتات الإضافية.
      */
-    const scheduledTimers = new Set();
+    const scheduledTimers =
+        new Set();
 
 
     /* =========================================================
@@ -96,15 +109,18 @@
                 document.documentElement.clientHeight
             ) || 0;
 
+
         const windowHeight =
             Number(
                 window.innerHeight
             ) || 0;
 
+
         return Math.max(
             documentHeight,
             windowHeight
         );
+
     }
 
 
@@ -112,7 +128,7 @@
 
         /*
          * VisualViewport هو المصدر الأساسي
-         * عندما يكون متاحاً.
+         * عندما يكون متاحًا.
          */
         if (visualViewportInstance) {
 
@@ -121,21 +137,27 @@
                     visualViewportInstance.height
                 ) || 0;
 
+
             const viewportOffsetTop =
                 Number(
                     visualViewportInstance.offsetTop
                 ) || 0;
 
+
             const bottom =
                 viewportHeight +
                 viewportOffsetTop;
+
 
             if (
                 Number.isFinite(bottom) &&
                 bottom > 0
             ) {
+
                 return bottom;
+
             }
+
         }
 
 
@@ -146,6 +168,7 @@
             Number(window.innerHeight) ||
             getLayoutHeight()
         );
+
     }
 
 
@@ -157,6 +180,7 @@
 
         const layoutHeight =
             getLayoutHeight();
+
 
         const viewportBottom =
             getViewportBottom();
@@ -170,8 +194,13 @@
         /*
          * منع القيم غير الصالحة.
          */
-        if (!Number.isFinite(height)) {
-            height = 0;
+        if (
+            !Number.isFinite(height)
+        ) {
+
+            height =
+                0;
+
         }
 
 
@@ -186,17 +215,22 @@
 
 
         /*
-         * الفروقات الصغيرة لا تعتبر كيبورد.
+         * الفروقات الصغيرة
+         * لا تعتبر كيبورد.
          */
         if (
             height <
             keyboardThreshold
         ) {
-            height = 0;
+
+            height =
+                0;
+
         }
 
 
         return height;
+
     }
 
 
@@ -204,7 +238,10 @@
        جدولة تحديث آمنة
     ========================================================= */
 
-    function safeTimeout(callback, delay) {
+    function safeTimeout(
+        callback,
+        delay
+    ) {
 
         const timer =
             setTimeout(
@@ -214,7 +251,19 @@
                         timer
                     );
 
-                    callback();
+
+                    try {
+
+                        callback();
+
+                    } catch (error) {
+
+                        console.error(
+                            "[WFESC KEYBOARD] Timer error:",
+                            error
+                        );
+
+                    }
 
                 },
                 Math.max(
@@ -230,6 +279,7 @@
 
 
         return timer;
+
     }
 
 
@@ -237,7 +287,9 @@
        تطبيق ارتفاع الكيبورد
     ========================================================= */
 
-    function applyKeyboardHeight(height) {
+    function applyKeyboardHeight(
+        height
+    ) {
 
         height =
             Math.max(
@@ -256,7 +308,9 @@
             height ===
             lastKeyboardHeight
         ) {
+
             return;
+
         }
 
 
@@ -278,12 +332,14 @@
            الكيبورد مفتوح
         ===================================================== */
 
-        if (height > 0) {
+        if (
+            height > 0
+        ) {
 
             /*
              * حقل الكتابة يصعد فوق الكيبورد.
              *
-             * هذا المتغير مخصص للكومبوزر فقط.
+             * هذا المتغير للكومبوزر فقط.
              *
              * لا يتم استخدامه لتحريك navigation.
              */
@@ -293,25 +349,25 @@
             );
 
 
-            /*
-             * حالة الكيبورد.
-             *
-             * CSS يستطيع معرفة أن الكيبورد مفتوح،
-             * لكن navigation نفسه لا يتم تحريكه من هنا.
-             */
-            if (!keyboardWasOpen) {
+            keyboardWasOpen =
+                true;
 
-                keyboardWasOpen = true;
+
+            const body =
+                getBody();
+
+
+            if (body) {
+
+                body.classList.add(
+                    "wfesc-keyboard-open"
+                );
 
             }
 
 
-            body.classList.add(
-                "wfesc-keyboard-open"
-            );
-
-
             return;
+
         }
 
 
@@ -325,12 +381,22 @@
         );
 
 
-        keyboardWasOpen = false;
+        keyboardWasOpen =
+            false;
 
 
-        body.classList.remove(
-            "wfesc-keyboard-open"
-        );
+        const body =
+            getBody();
+
+
+        if (body) {
+
+            body.classList.remove(
+                "wfesc-keyboard-open"
+            );
+
+        }
+
     }
 
 
@@ -340,8 +406,12 @@
 
     function update() {
 
-        if (!initialized) {
+        if (
+            !initialized
+        ) {
+
             return;
+
         }
 
 
@@ -352,6 +422,7 @@
         applyKeyboardHeight(
             height
         );
+
     }
 
 
@@ -359,19 +430,27 @@
        تحديث مؤجل
     ========================================================= */
 
-    function scheduleUpdate(delay) {
+    function scheduleUpdate(
+        delay
+    ) {
 
-        if (updateTimer !== null) {
+        if (
+            updateTimer !== null
+        ) {
 
             clearTimeout(
                 updateTimer
             );
 
+
             scheduledTimers.delete(
                 updateTimer
             );
 
-            updateTimer = null;
+
+            updateTimer =
+                null;
+
         }
 
 
@@ -379,7 +458,14 @@
             setTimeout(
                 function () {
 
-                    updateTimer = null;
+                    scheduledTimers.delete(
+                        updateTimer
+                    );
+
+
+                    updateTimer =
+                        null;
+
 
                     update();
 
@@ -394,6 +480,10 @@
         scheduledTimers.add(
             updateTimer
         );
+
+
+        return updateTimer;
+
     }
 
 
@@ -409,6 +499,7 @@
             document.readyState ===
                 "complete"
         );
+
     }
 
 
@@ -419,12 +510,12 @@
     function handleInputFocus() {
 
         /*
-         * عند الضغط على حقل الرسالة،
-         * Android يحتاج أحياناً عدة دورات
+         * Android يحتاج أحيانًا عدة دورات
          * حتى يستقر VisualViewport.
          */
-
-        scheduleUpdate(30);
+        scheduleUpdate(
+            30
+        );
 
 
         safeTimeout(
@@ -443,6 +534,7 @@
             update,
             500
         );
+
     }
 
 
@@ -456,8 +548,9 @@
          * بعد إغلاق الكيبورد،
          * ننتظر استقرار الـviewport.
          */
-
-        scheduleUpdate(50);
+        scheduleUpdate(
+            50
+        );
 
 
         safeTimeout(
@@ -470,6 +563,7 @@
             update,
             350
         );
+
     }
 
 
@@ -479,13 +573,16 @@
 
     function handleWindowResize() {
 
-        scheduleUpdate(20);
+        scheduleUpdate(
+            20
+        );
 
 
         safeTimeout(
             update,
             100
         );
+
     }
 
 
@@ -495,7 +592,9 @@
 
     function handleOrientationChange() {
 
-        scheduleUpdate(50);
+        scheduleUpdate(
+            50
+        );
 
 
         safeTimeout(
@@ -514,6 +613,7 @@
             update,
             600
         );
+
     }
 
 
@@ -526,7 +626,9 @@
         if (
             !window.visualViewport
         ) {
+
             return;
+
         }
 
 
@@ -541,7 +643,9 @@
             "resize",
             function () {
 
-                scheduleUpdate(0);
+                scheduleUpdate(
+                    0
+                );
 
             },
             {
@@ -552,20 +656,21 @@
 
         /*
          * تغيير موضع VisualViewport.
-         *
-         * مهم لبعض أجهزة Android.
          */
         visualViewportInstance.addEventListener(
             "scroll",
             function () {
 
-                scheduleUpdate(0);
+                scheduleUpdate(
+                    0
+                );
 
             },
             {
                 passive: true
             }
         );
+
     }
 
 
@@ -582,7 +687,9 @@
 
 
         if (!chatView) {
+
             return;
+
         }
 
 
@@ -594,13 +701,16 @@
                      * عند فتح أو إغلاق المحادثة
                      * قد يتغير الـviewport.
                      */
-                    scheduleUpdate(0);
+                    scheduleUpdate(
+                        0
+                    );
 
 
                     safeTimeout(
                         update,
                         100
                     );
+
                 }
             );
 
@@ -614,6 +724,7 @@
                 ]
             }
         );
+
     }
 
 
@@ -630,7 +741,9 @@
 
 
         if (!input) {
+
             return;
+
         }
 
 
@@ -650,6 +763,7 @@
                 passive: true
             }
         );
+
     }
 
 
@@ -690,7 +804,9 @@
             "pageshow",
             function () {
 
-                scheduleUpdate(50);
+                scheduleUpdate(
+                    50
+                );
 
 
                 safeTimeout(
@@ -703,6 +819,7 @@
                 passive: true
             }
         );
+
     }
 
 
@@ -712,9 +829,12 @@
 
     function resetKeyboardState() {
 
-        lastKeyboardHeight = -1;
+        lastKeyboardHeight =
+            -1;
 
-        keyboardWasOpen = false;
+
+        keyboardWasOpen =
+            false;
 
 
         root.style.setProperty(
@@ -729,9 +849,18 @@
         );
 
 
-        body.classList.remove(
-            "wfesc-keyboard-open"
-        );
+        const body =
+            getBody();
+
+
+        if (body) {
+
+            body.classList.remove(
+                "wfesc-keyboard-open"
+            );
+
+        }
+
     }
 
 
@@ -744,12 +873,17 @@
         /*
          * منع تشغيل init مرتين.
          */
-        if (initialized) {
+        if (
+            initialized
+        ) {
+
             return;
+
         }
 
 
-        initialized = true;
+        initialized =
+            true;
 
 
         /* =====================================================
@@ -776,7 +910,9 @@
            تحديث أولي
         ===================================================== */
 
-        scheduleUpdate(0);
+        scheduleUpdate(
+            0
+        );
 
 
         safeTimeout(
@@ -795,6 +931,7 @@
             update,
             600
         );
+
     }
 
 
@@ -807,57 +944,67 @@
         /*
          * تشغيل المتحكم.
          */
-        init: init,
+        init:
+            init,
 
 
         /*
          * تحديث يدوي.
          */
-        update: function () {
+        update:
+            function () {
 
-            update();
+                update();
 
-        },
+            },
 
 
         /*
          * إرجاع ارتفاع الكيبورد الحالي.
          */
-        getHeight: function () {
+        getHeight:
+            function () {
 
-            return calculateKeyboardHeight();
+                return calculateKeyboardHeight();
 
-        },
+            },
 
 
         /*
          * معرفة هل الكيبورد مفتوح.
          */
-        isOpen: function () {
+        isOpen:
+            function () {
 
-            return (
-                calculateKeyboardHeight() > 0
-            );
+                return (
+                    calculateKeyboardHeight() > 0
+                );
 
-        }
+            }
+
     };
 
 
     /* =========================================================
-       إشارة الجاهزية
+       إشارات الجاهزية
     ========================================================= */
 
     /*
-     * هذه ليست متحكمة بالكيبورد.
-     *
-     * وظيفتها فقط إخبار messages.html
-     * أن ملف messages-keyboard.js موجود
-     * وتم تحميله.
-     *
-     * إذا الملف غير موجود:
-     * لن يتم وضع هذه الإشارة.
+     * نضع جميع الأسماء المتداولة في المشروع
+     * حتى لا يصير تعارض بين messages.html
+     * وأي كود قديم كان يعتمد على اسم مختلف.
      */
-    window.WFESC_MESSAGE_KEYBOARD_READY = true;
+
+    window.WFESC_MESSAGE_KEYBOARD_READY =
+        true;
+
+
+    window.WFESC_KEYBOARD_FILE_LOADED =
+        true;
+
+
+    window.__WFESC_KEYBOARD_FILE_LOADED__ =
+        true;
 
 
     /* =========================================================
@@ -870,11 +1017,14 @@
          * إذا الصفحة جاهزة،
          * نشغل مباشرة.
          */
-        if (isPageReady()) {
+        if (
+            isPageReady()
+        ) {
 
             init();
 
             return;
+
         }
 
 
@@ -889,6 +1039,7 @@
                 once: true
             }
         );
+
     }
 
 
