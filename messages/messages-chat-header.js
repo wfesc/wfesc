@@ -1,6 +1,6 @@
 /* =========================================================
    WFESC MESSAGES — CHAT HEADER
-   الملف: messages-chat-header.js
+   الملف: messages/messages-chat-header.js
 
    المسؤوليات:
    - تحديث صورة الشخص
@@ -26,7 +26,7 @@
 
 
     /* =========================================================
-       الانتظار حتى تكون الملفات الأساسية جاهزة
+       الحصول على الموديولات
     ========================================================= */
 
     function getCore() {
@@ -115,7 +115,7 @@
 
 
     /*
-     * Token لمنع تطبيق نتيجة فحص قديم
+     * يمنع تطبيق نتيجة فحص حظر قديم
      * بعد الانتقال إلى محادثة أخرى.
      */
 
@@ -124,12 +124,20 @@
 
 
     /*
-     * يمنع تشغيل أكثر من تحديث Header
-     * متزامن عند كثرة الأحداث.
+     * يمنع تطبيق رسم قديم للرأس
+     * بعد بدء تحديث أحدث.
      */
 
     let headerRenderToken =
         0;
+
+
+    /*
+     * مؤقت النشاط.
+     */
+
+    let activityRefreshTimer =
+        null;
 
 
     /* =========================================================
@@ -176,7 +184,7 @@
 
     /* =========================================================
        صورة مستخدم محظور
-       لا تحتوي على أي معلومة عن المستخدم الحقيقي
+       لا تحتوي على معلومات حقيقية عن المستخدم
     ========================================================= */
 
     const BLOCKED_AVATAR =
@@ -240,24 +248,15 @@
 
 
     /* =========================================================
-       الحصول على معرف المستخدم من بيانات Contact
-
-       يدعم:
-       user_id
-       id
-       userId
-       profile.user_id
-       profile.id
-       user.user_id
-       user.id
-       contact.user_id
-       contact.id
+       الحصول على معرف المستخدم من Contact
     ========================================================= */
 
     function getContactUserId(contact) {
 
         if (!contact) {
+
             return null;
+
         }
 
 
@@ -281,13 +280,42 @@
 
 
     /* =========================================================
+       الحصول على معرف المحادثة
+    ========================================================= */
+
+    function getConversationId(
+        conversation
+    ) {
+
+        if (!conversation) {
+
+            return null;
+
+        }
+
+
+        return (
+            conversation.id ||
+            conversation.conversation_id ||
+            conversation.conversationId ||
+            conversation.chat_id ||
+            conversation.chatId ||
+            null
+        );
+
+    }
+
+
+    /* =========================================================
        توحيد بيانات Contact
     ========================================================= */
 
     function normalizeContact(contact) {
 
         if (!contact) {
+
             return null;
+
         }
 
 
@@ -308,7 +336,8 @@
 
             ...(
                 nestedProfile &&
-                typeof nestedProfile === "object"
+                typeof nestedProfile ===
+                "object"
                     ? nestedProfile
                     : {}
             ),
@@ -317,7 +346,8 @@
 
 
             user_id:
-                userId || null,
+                userId ||
+                null,
 
 
             display_name:
@@ -359,22 +389,18 @@
     function getDisplayName(contact) {
 
         if (!contact) {
+
             return "مستخدم";
+
         }
 
 
         return (
-
             contact.display_name ||
-
             contact.full_name ||
-
             contact.name ||
-
             contact.username ||
-
             "مستخدم"
-
         );
 
     }
@@ -387,20 +413,17 @@
     function getAvatarUrl(contact) {
 
         if (!contact) {
+
             return DEFAULT_AVATAR;
+
         }
 
 
         return (
-
             contact.avatar_url ||
-
             contact.avatar ||
-
             contact.photo_url ||
-
             DEFAULT_AVATAR
-
         );
 
     }
@@ -408,15 +431,11 @@
 
     /* =========================================================
        فحص حالة الحظر
-
-       blocked:
-       المستخدم الحالي قام بحظر الشخص.
-
-       blockedBy:
-       الشخص الحالي قام بحظر المستخدم الحالي.
     ========================================================= */
 
-    async function getBlockState(contact) {
+    async function getBlockState(
+        contact
+    ) {
 
         const block =
             getBlock();
@@ -541,6 +560,7 @@
 
             };
 
+
             return currentBlockState;
 
         }
@@ -560,7 +580,7 @@
 
         /*
          * إذا تغيرت المحادثة أثناء الفحص،
-         * لا نطبق نتيجة الفحص القديمة.
+         * لا نطبق النتيجة القديمة.
          */
 
         if (
@@ -571,12 +591,6 @@
 
         }
 
-
-        /*
-         * حماية إضافية:
-         * نتأكد أن النتيجة تخص المستخدم
-         * الموجود حالياً في رأس المحادثة.
-         */
 
         const currentUserId =
             getContactUserId(
@@ -606,12 +620,7 @@
 
 
     /* =========================================================
-       هل يجب إخفاء هوية المستخدم؟
-
-       فقط إذا كان الطرف الآخر هو الذي حظر المستخدم الحالي.
-
-       إذا المستخدم الحالي هو الذي حظر الطرف الآخر،
-       تبقى بيانات الطرف الآخر ظاهرة عنده.
+       هل الطرف الآخر حظر المستخدم الحالي؟
     ========================================================= */
 
     function isContactBlockedByThem() {
@@ -625,34 +634,12 @@
 
 
     /* =========================================================
-       الحصول على حالة إظهار النشاط
-
-       ملاحظة:
-       لا نستخدم هذه القيمة وحدها لتحديد النشاط.
-
-       Activity Module هو المصدر الأساسي.
-       هذا فقط fallback في حالة عدم وجود Activity.
+       الحصول على حالة النشاط
     ========================================================= */
 
-    function isActivityVisible(contact) {
-
-        if (!contact) {
-            return false;
-        }
-
-
-        return (
-            contact.show_activity !== false
-        );
-
-    }
-
-
-    /* =========================================================
-       الحصول على حالة النشاط من Activity Module
-    ========================================================= */
-
-    function getActivityState(contact) {
+    function getActivityState(
+        contact
+    ) {
 
         if (!contact) {
 
@@ -682,21 +669,20 @@
 
 
         /*
-         * لا يوجد Activity Module بعد
+         * إذا لم يكن Activity Module
+         * جاهزًا بعد، نستخدم بيانات Core.
          */
 
         if (
             !activity ||
             typeof activity.getUserActivity !==
-                "function"
+            "function"
         ) {
 
             return {
 
                 online:
-                    Boolean(
-                        contact.is_online
-                    ),
+                    contact.is_online === true,
 
                 disabled:
                     contact.show_activity === false,
@@ -712,10 +698,6 @@
 
         }
 
-
-        /*
-         * بدون معرف مستخدم
-         */
 
         if (!userId) {
 
@@ -746,9 +728,41 @@
                 );
 
 
+            /*
+             * دعم الموديولات التي ترجع
+             * Promise.
+             */
+
             if (
                 result &&
-                typeof result === "object"
+                typeof result.then ===
+                "function"
+            ) {
+
+                return {
+
+                    online:
+                        contact.is_online === true,
+
+                    disabled:
+                        contact.show_activity === false,
+
+                    show_activity:
+                        contact.show_activity !== false,
+
+                    last_seen:
+                        contact.last_seen ||
+                        null
+
+                };
+
+            }
+
+
+            if (
+                result &&
+                typeof result ===
+                "object"
             ) {
 
                 return {
@@ -775,12 +789,9 @@
             }
 
 
-            /*
-             * دعم الإصدارات التي ترجع Boolean
-             */
-
             if (
-                typeof result === "boolean"
+                typeof result ===
+                "boolean"
             ) {
 
                 return {
@@ -809,15 +820,13 @@
 
 
         /*
-         * Fallback من بيانات Core
+         * Fallback من Core.
          */
 
         return {
 
             online:
-                Boolean(
-                    contact.is_online
-                ),
+                contact.is_online === true,
 
             disabled:
                 contact.show_activity === false,
@@ -835,19 +844,23 @@
 
 
     /* =========================================================
-       الحصول على حالة النشاط
+       الحصول على حالة النشاط الحالية
     ========================================================= */
 
-    function getOnlineState(contact) {
+    function getOnlineState(
+        contact
+    ) {
 
         if (!contact) {
+
             return false;
+
         }
 
 
         /*
-         * إذا المستخدم حاظر الطرف الآخر،
-         * لا نحتاج لإظهار حالة النشاط.
+         * إذا قام الطرف الآخر بحظرنا،
+         * لا تظهر النقطة الخضراء.
          */
 
         if (
@@ -885,12 +898,14 @@
     ) {
 
         if (!contact) {
+
             return "";
+
         }
 
 
         /*
-         * الحظر من الطرف الآخر
+         * إذا الطرف الآخر قام بحظر المستخدم.
          */
 
         if (
@@ -910,7 +925,7 @@
 
 
         /*
-         * المستخدم اختار إخفاء نشاطه
+         * المستخدم أخفى نشاطه.
          */
 
         if (
@@ -924,34 +939,27 @@
 
 
         /*
-         * حساب WFESC
+         * حساب الدعم.
          */
 
         if (
             contact.is_support
         ) {
 
-            if (isOnline) {
-                return "نشط الآن";
-            }
-
-            return "غير نشط";
+            return isOnline
+                ? "نشط الآن"
+                : "غير نشط";
 
         }
 
 
         /*
-         * مستخدم عادي
+         * مستخدم عادي.
          */
 
-        if (isOnline) {
-
-            return "نشط الآن";
-
-        }
-
-
-        return "غير نشط";
+        return isOnline
+            ? "نشط الآن"
+            : "غير نشط";
 
     }
 
@@ -960,16 +968,20 @@
        تحديث الصورة
     ========================================================= */
 
-    function renderAvatar(contact) {
+    function renderAvatar(
+        contact
+    ) {
 
         if (!chatAvatar) {
+
             return;
+
         }
 
 
         /*
-         * إذا الطرف الآخر حاظر المستخدم الحالي،
-         * لا نعرض صورته الحقيقية.
+         * إذا الطرف الآخر حظرنا،
+         * نخفي صورته الحقيقية.
          */
 
         if (
@@ -1015,11 +1027,6 @@
             );
 
 
-        /*
-         * إذا فشلت الصورة،
-         * نستخدم الصورة الافتراضية.
-         */
-
         chatAvatar.onerror =
             function () {
 
@@ -1042,17 +1049,16 @@
        تحديث الاسم
     ========================================================= */
 
-    function renderName(contact) {
+    function renderName(
+        contact
+    ) {
 
         if (!chatName) {
+
             return;
+
         }
 
-
-        /*
-         * لا نكشف الاسم الحقيقي
-         * لمن قام بحظره.
-         */
 
         if (
             isContactBlockedByThem()
@@ -1085,10 +1091,14 @@
        تحديث حالة النشاط
     ========================================================= */
 
-    function renderActivity(contact) {
+    function renderActivity(
+        contact
+    ) {
 
         if (!contact) {
+
             return;
+
         }
 
 
@@ -1121,11 +1131,6 @@
 
         if (chatOnlineDot) {
 
-            /*
-             * لا تظهر النقطة الخضراء
-             * إذا كان المستخدم قد حظرك.
-             */
-
             chatOnlineDot.classList.toggle(
                 "active",
                 online &&
@@ -1141,10 +1146,14 @@
        تحديث رأس المحادثة بالكامل
     ========================================================= */
 
-    async function renderHeader(contact) {
+    async function renderHeader(
+        contact
+    ) {
 
         if (!contact) {
+
             return;
+
         }
 
 
@@ -1168,11 +1177,6 @@
             normalized;
 
 
-        /*
-         * نتحقق من الحظر قبل عرض
-         * الاسم والصورة.
-         */
-
         const blockState =
             await refreshBlockState(
                 normalized
@@ -1180,8 +1184,8 @@
 
 
         /*
-         * إذا تغيرت المحادثة أو بدأ تحديث أحدث،
-         * لا نطبق النتيجة القديمة.
+         * إذا بدأ تحديث أحدث،
+         * نتجاهل هذا التحديث.
          */
 
         if (
@@ -1221,24 +1225,6 @@
         }
 
 
-        /*
-         * قد تكون المحادثة تغيرت أثناء
-         * انتظار فحص الحظر.
-         */
-
-        if (
-            currentContact !== normalized &&
-            getContactUserId(
-                currentContact
-            ) !==
-            normalizedUserId
-        ) {
-
-            return;
-
-        }
-
-
         renderAvatar(
             normalized
         );
@@ -1257,19 +1243,196 @@
 
 
     /* =========================================================
-       قراءة بيانات Core
+       جلب Contact الحالي من Core
+    ========================================================= */
+
+    function getContactFromCore() {
+
+        const core =
+            getCore();
+
+
+        if (!core) {
+
+            return {
+
+                contact: null,
+
+                conversationId: null
+
+            };
+
+        }
+
+
+        let contact =
+            null;
+
+
+        let conversationId =
+            null;
+
+
+        /*
+         * المسار الأساسي الحالي:
+         * getCurrentContact()
+         */
+
+        try {
+
+            if (
+                typeof core.getCurrentContact ===
+                "function"
+            ) {
+
+                contact =
+                    core.getCurrentContact();
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CHAT HEADER] getCurrentContact failed:",
+                error
+            );
+
+        }
+
+
+        /*
+         * نقرأ المحادثة الحالية كمسار إضافي.
+         */
+
+        try {
+
+            if (
+                typeof core.getCurrentConversation ===
+                "function"
+            ) {
+
+                const conversation =
+                    core.getCurrentConversation();
+
+
+                if (conversation) {
+
+                    conversationId =
+                        getConversationId(
+                            conversation
+                        );
+
+
+                    if (!contact) {
+
+                        contact =
+                            conversation.contact ||
+                            conversation.user ||
+                            conversation.other_user ||
+                            conversation.otherUser ||
+                            conversation.recipient ||
+                            null;
+
+                    }
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CHAT HEADER] getCurrentConversation failed:",
+                error
+            );
+
+        }
+
+
+        /*
+         * توافق مع إصدارات قديمة
+         * تستخدم core.chatHeader.
+         */
+
+        try {
+
+            if (
+                core.chatHeader
+            ) {
+
+                if (
+                    !contact &&
+                    typeof
+                    core.chatHeader.getContact ===
+                    "function"
+                ) {
+
+                    contact =
+                        core.chatHeader.getContact();
+
+                }
+
+
+                if (
+                    !conversationId &&
+                    typeof
+                    core.chatHeader.getConversationId ===
+                    "function"
+                ) {
+
+                    conversationId =
+                        core.chatHeader.getConversationId();
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CHAT HEADER] chatHeader fallback failed:",
+                error
+            );
+
+        }
+
+
+        return {
+
+            contact:
+                contact
+                    ? normalizeContact(
+                        contact
+                    )
+                    : null,
+
+            conversationId:
+                conversationId ||
+                null
+
+        };
+
+    }
+
+
+    /* =========================================================
+       تحديث الرأس من Core
     ========================================================= */
 
     function refreshFromCore(
         detail = null
     ) {
 
-        const core =
-            getCore();
+        let contact =
+            null;
+
+
+        let conversationId =
+            null;
 
 
         /*
-         * إذا أرسل Core البيانات مباشرة
+         * إذا الحدث أرسل Contact مباشر.
          */
 
         if (
@@ -1277,30 +1440,70 @@
             detail.contact
         ) {
 
-            currentConversationId =
-                detail.conversationId ||
-                null;
-
-
-            currentContact =
+            contact =
                 normalizeContact(
                     detail.contact
                 );
 
 
-            /*
-             * إلغاء أي فحص قديم قبل بدء
-             * فحص المحادثة الجديدة.
-             */
+            conversationId =
+                detail.conversationId ||
+                detail.conversation_id ||
+                detail.chatId ||
+                detail.chat_id ||
+                null;
+
+        }
+
+
+        /*
+         * إذا الحدث لم يرسل Contact،
+         * نأخذه من Core مباشرة.
+         */
+
+        if (!contact) {
+
+            const result =
+                getContactFromCore();
+
+
+            contact =
+                result.contact;
+
+
+            conversationId =
+                result.conversationId;
+
+        }
+
+
+        /*
+         * لا توجد محادثة حالياً.
+         */
+
+        if (!contact) {
+
+            currentConversationId =
+                conversationId ||
+                null;
+
+
+            currentContact =
+                null;
+
+
+            currentBlockState = {
+
+                blocked: false,
+
+                blockedBy: false
+
+            };
+
 
             ++blockCheckToken;
 
             ++headerRenderToken;
-
-
-            renderHeader(
-                currentContact
-            );
 
 
             return;
@@ -1308,100 +1511,57 @@
         }
 
 
+        const newUserId =
+            getContactUserId(
+                contact
+            );
+
+
+        const oldUserId =
+            getContactUserId(
+                currentContact
+            );
+
+
         /*
-         * إذا لم توجد بيانات في الحدث،
-         * نقرأها من واجهة Core.
+         * إذا تغير المستخدم الحالي،
+         * نلغي الفحوص القديمة فوراً.
          */
 
         if (
-            core &&
-            core.chatHeader
+            String(newUserId || "") !==
+            String(oldUserId || "")
         ) {
 
-            let contact =
-                null;
+            ++blockCheckToken;
+
+            ++headerRenderToken;
 
 
-            if (
-                typeof
-                core.chatHeader.getContact ===
-                "function"
-            ) {
+            currentBlockState = {
 
-                contact =
-                    core.chatHeader.getContact();
+                blocked: false,
 
-            }
+                blockedBy: false
 
-
-            if (contact) {
-
-                const normalized =
-                    normalizeContact(
-                        contact
-                    );
-
-
-                const newUserId =
-                    getContactUserId(
-                        normalized
-                    );
-
-
-                const oldUserId =
-                    getContactUserId(
-                        currentContact
-                    );
-
-
-                /*
-                 * إذا انتقلنا لمستخدم آخر،
-                 * نلغي الفحوص السابقة فوراً.
-                 */
-
-                if (
-                    String(newUserId || "") !==
-                    String(oldUserId || "")
-                ) {
-
-                    ++blockCheckToken;
-
-                    ++headerRenderToken;
-
-                    currentBlockState = {
-
-                        blocked: false,
-
-                        blockedBy: false
-
-                    };
-
-                }
-
-
-                currentContact =
-                    normalized;
-
-
-                if (
-                    typeof
-                    core.chatHeader.getConversationId ===
-                    "function"
-                ) {
-
-                    currentConversationId =
-                        core.chatHeader.getConversationId();
-
-                }
-
-
-                renderHeader(
-                    currentContact
-                );
-
-            }
+            };
 
         }
+
+
+        currentConversationId =
+            conversationId ||
+            currentConversationId ||
+            null;
+
+
+        currentContact =
+            contact;
+
+
+        renderHeader(
+            currentContact
+        );
 
     }
 
@@ -1411,11 +1571,6 @@
     ========================================================= */
 
     function refreshActivityOnly() {
-
-        /*
-         * إذا لم توجد محادثة حالية،
-         * نحاول أخذها من Core.
-         */
 
         if (!currentContact) {
 
@@ -1427,8 +1582,8 @@
 
 
         /*
-         * إذا كان الطرف الآخر حاظراً للمستخدم،
-         * نعيد رسم الرأس فقط بدون كشف النشاط.
+         * إذا الطرف الآخر حاظرنا،
+         * لا نحاول عرض نشاطه.
          */
 
         if (
@@ -1455,19 +1610,11 @@
         }
 
 
-        /*
-         * نعيد توحيد البيانات كل مرة.
-         */
-
         currentContact =
             normalizeContact(
                 currentContact
             );
 
-
-        /*
-         * إعادة قراءة النشاط مباشرة.
-         */
 
         renderActivity(
             currentContact
@@ -1484,13 +1631,9 @@
         "wfesc:chat-header-refresh",
         function (event) {
 
-            const detail =
-                event?.detail ||
-                null;
-
-
             refreshFromCore(
-                detail
+                event?.detail ||
+                null
             );
 
         }
@@ -1498,7 +1641,7 @@
 
 
     /* =========================================================
-       أحداث Activity Module
+       تحديثات Activity
     ========================================================= */
 
     window.addEventListener(
@@ -1522,16 +1665,12 @@
 
 
     /* =========================================================
-       أحداث الحظر
-
-       عند الحظر أو إلغاء الحظر:
-       - نعيد فحص الحالة
-       - نعيد الاسم
-       - نعيد الصورة
-       - نعيد حالة النشاط
+       تحديثات الحظر
     ========================================================= */
 
-    function handleBlockChanged(event) {
+    function handleBlockChanged(
+        event
+    ) {
 
         const changedUserId =
             event?.detail?.userId ||
@@ -1547,8 +1686,8 @@
 
 
         /*
-         * إذا كان الحدث متعلقاً
-         * بشخص آخر فلا داعي لإعادة الرسم.
+         * إذا الحدث متعلق بمستخدم آخر،
+         * لا نحدث الرأس.
          */
 
         if (
@@ -1562,10 +1701,6 @@
 
         }
 
-
-        /*
-         * إلغاء أي فحص سابق.
-         */
 
         ++blockCheckToken;
 
@@ -1581,7 +1716,9 @@
         };
 
 
-        if (currentContact) {
+        if (
+            currentContact
+        ) {
 
             renderHeader(
                 currentContact
@@ -1614,8 +1751,20 @@
     );
 
 
+    window.addEventListener(
+        "wfesc:user-blocked",
+        handleBlockChanged
+    );
+
+
+    window.addEventListener(
+        "wfesc:user-unblocked",
+        handleBlockChanged
+    );
+
+
     /* =========================================================
-       طلب تحديث النشاط عند الحاجة
+       طلب تحديث النشاط
     ========================================================= */
 
     function requestActivityRefresh() {
@@ -1641,9 +1790,6 @@
 
     /* =========================================================
        زر الشخص في رأس المحادثة
-
-       حالياً لا نفتح الملف الشخصي مباشرة.
-       فقط نرسل حدثاً للموديول المسؤول مستقبلاً.
     ========================================================= */
 
     if (chatPersonButton) {
@@ -1682,7 +1828,7 @@
 
 
     /* =========================================================
-       إعادة التحديث عند الرجوع للصفحة
+       تحديث عند الرجوع للصفحة
     ========================================================= */
 
     document.addEventListener(
@@ -1719,15 +1865,8 @@
 
 
     /* =========================================================
-       تحديث دوري خفيف لرأس المحادثة
-
-       لا ينشئ Presence جديد.
-       فقط يقرأ الحالة الحالية.
+       مؤقت النشاط
     ========================================================= */
-
-    let activityRefreshTimer =
-        null;
-
 
     function startActivityRefreshTimer() {
 
@@ -1763,7 +1902,7 @@
 
 
     /* =========================================================
-       الواجهة العامة للموديول
+       الواجهة العامة
     ========================================================= */
 
     window.WFESC_MESSAGES_CHAT_HEADER = {
@@ -1894,9 +2033,7 @@
         getBlockState() {
 
             return {
-
                 ...currentBlockState
-
             };
 
         },
@@ -1913,10 +2050,6 @@
 
     /* =========================================================
        التشغيل الأول
-
-       Core قد يكون قد فتح المحادثة قبل تحميل
-       هذا الملف، لذلك نحاول قراءة البيانات
-       مباشرة بعد تشغيل الموديول.
     ========================================================= */
 
     setTimeout(
@@ -1931,9 +2064,9 @@
     );
 
 
-    /*
-     * محاولة ثانية بعد تحميل باقي الموديولات.
-     */
+    /* =========================================================
+       محاولة ثانية بعد تحميل الموديولات
+    ========================================================= */
 
     setTimeout(
         function () {
@@ -1947,9 +2080,9 @@
     );
 
 
-    /*
-     * محاولة ثالثة للتأكد من اكتمال Core.
-     */
+    /* =========================================================
+       محاولة ثالثة
+    ========================================================= */
 
     setTimeout(
         function () {
