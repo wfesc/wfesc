@@ -15,17 +15,23 @@
     const NOTIFICATION_SOUND =
         "./messages/sounds/message.mp3";
 
-    const NOTIFICATION_VOLUME = 1.0;
+    const NOTIFICATION_VOLUME =
+        1.0;
 
-    const MAX_NOTIFICATIONS = 50;
+    const MAX_NOTIFICATIONS =
+        50;
 
-    const MAX_VISIBLE_NOTIFICATIONS = 3;
+    const MAX_VISIBLE_NOTIFICATIONS =
+        3;
 
-    const NOTIFICATION_DURATION = 2000;
+    const NOTIFICATION_DURATION =
+        2000;
 
-    const MUTE_CACHE_TTL = 30000;
+    const MUTE_CACHE_TTL =
+        30000;
 
-    const BLOCK_CACHE_TTL = 30000;
+    const BLOCK_CACHE_TTL =
+        30000;
 
 
     /* =====================================================
@@ -54,9 +60,11 @@
 
     let bootStarted = false;
 
-    const muteCache = new Map();
+    const muteCache =
+        new Map();
 
-    const blockCache = new Map();
+    const blockCache =
+        new Map();
 
 
     /* =====================================================
@@ -72,7 +80,8 @@
         if (
             core &&
             core.client &&
-            typeof core.client.from === "function"
+            typeof core.client.from ===
+                "function"
         ) {
 
             return core.client;
@@ -82,7 +91,8 @@
 
         if (
             window.WFESCSupabase &&
-            typeof window.WFESCSupabase.from === "function"
+            typeof window.WFESCSupabase.from ===
+                "function"
         ) {
 
             return window.WFESCSupabase;
@@ -144,6 +154,7 @@
                         cachedUser =
                             result.data.user;
 
+
                         return cachedUser;
 
                     }
@@ -190,7 +201,8 @@
         if (
             !client ||
             !client.auth ||
-            typeof client.auth.onAuthStateChange !== "function"
+            typeof client.auth.onAuthStateChange !==
+                "function"
         ) {
 
             return;
@@ -225,16 +237,21 @@
                     cachedUser =
                         session.user;
 
-                } else {
-
-                    cachedUser =
-                        null;
-
-                    muteCache.clear();
-
-                    blockCache.clear();
+                    return;
 
                 }
+
+
+                cachedUser =
+                    null;
+
+
+                muteCache.clear();
+
+                blockCache.clear();
+
+                notifications =
+                    [];
 
             }
         );
@@ -272,7 +289,9 @@
 
 
         const item =
-            blockCache.get(key);
+            blockCache.get(
+                key
+            );
 
 
         if (!item) {
@@ -288,7 +307,10 @@
             BLOCK_CACHE_TTL
         ) {
 
-            blockCache.delete(key);
+            blockCache.delete(
+                key
+            );
+
 
             return null;
 
@@ -296,11 +318,13 @@
 
 
         return {
+
             blocked:
                 item.blocked === true,
 
             blockedBy:
                 item.blockedBy === true
+
         };
 
     }
@@ -322,6 +346,7 @@
         blockCache.set(
             String(userId),
             {
+
                 blocked:
                     blocked === true,
 
@@ -330,6 +355,7 @@
 
                 loadedAt:
                     Date.now()
+
             }
         );
 
@@ -344,11 +370,11 @@
         if (!userId) {
 
             return {
-                blocked:
-                    false,
 
-                blockedBy:
-                    false
+                blocked: false,
+
+                blockedBy: false
+
             };
 
         }
@@ -378,11 +404,11 @@
         if (!block) {
 
             return {
-                blocked:
-                    false,
 
-                blockedBy:
-                    false
+                blocked: false,
+
+                blockedBy: false
+
             };
 
         }
@@ -390,6 +416,7 @@
 
         let blocked =
             false;
+
 
         let blockedBy =
             false;
@@ -399,7 +426,7 @@
 
             if (
                 typeof block.isBlocked ===
-                "function"
+                    "function"
             ) {
 
                 blocked =
@@ -425,7 +452,7 @@
 
             if (
                 typeof block.isBlockedBy ===
-                "function"
+                    "function"
             ) {
 
                 blockedBy =
@@ -450,18 +477,18 @@
         const state = {
 
             blocked:
-                blocked,
+                blocked === true,
 
             blockedBy:
-                blockedBy
+                blockedBy === true
 
         };
 
 
         setCachedBlock(
             userId,
-            blocked,
-            blockedBy
+            state.blocked,
+            state.blockedBy
         );
 
 
@@ -481,21 +508,181 @@
     }
 
 
+    function getChangedBlockUserId(
+        event
+    ) {
+
+        return (
+            event?.detail?.userId ||
+            event?.detail?.blockedUserId ||
+            event?.detail?.blocked_id ||
+            null
+        );
+
+    }
+
+
+    function removeVisibleNotificationsForUser(
+        userId
+    ) {
+
+        if (!userId) {
+
+            return;
+
+        }
+
+
+        const normalizedId =
+            String(userId);
+
+
+        notifications =
+            notifications.filter(
+                function (item) {
+
+                    return (
+                        String(item.senderId) !==
+                        normalizedId
+                    );
+
+                }
+            );
+
+
+        if (!notificationPanel) {
+
+            return;
+
+        }
+
+
+        const cards =
+            Array.from(
+                notificationPanel.children
+            );
+
+
+        cards.forEach(
+            function (card) {
+
+                const senderId =
+                    card.dataset.senderId ||
+                    null;
+
+
+                if (
+                    senderId &&
+                    String(senderId) ===
+                    normalizedId
+                ) {
+
+                    card.style.transition =
+                        "opacity .18s ease, transform .18s ease";
+
+                    card.style.opacity =
+                        "0";
+
+                    card.style.transform =
+                        "translateX(120px) scale(.94)";
+
+
+                    setTimeout(
+                        function () {
+
+                            if (
+                                card &&
+                                card.parentNode
+                            ) {
+
+                                card.parentNode.removeChild(
+                                    card
+                                );
+
+                            }
+
+                        },
+                        190
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    function handleBlockEvent(
+        event
+    ) {
+
+        clearBlockCache();
+
+
+        const userId =
+            getChangedBlockUserId(
+                event
+            );
+
+
+        /*
+         * إخفاء الإشعارات الظاهرة لهذا المستخدم
+         * عند الحظر.
+         *
+         * لا نحذف أي سجل قاعدة بيانات.
+         */
+
+        if (userId) {
+
+            removeVisibleNotificationsForUser(
+                userId
+            );
+
+        }
+
+
+        /*
+         * حتى عند تغيير الحظر،
+         * نعيد قراءة حالة المحادثة المفتوحة
+         * عند الموديولات الأخرى.
+         */
+
+        setTimeout(
+            function () {
+
+                document.dispatchEvent(
+                    new CustomEvent(
+                        "wfesc:notifications-block-sync",
+                        {
+                            detail: {
+                                userId:
+                                    userId
+                            }
+                        }
+                    )
+                );
+
+            },
+            0
+        );
+
+    }
+
+
     [
         "wfesc:block-changed",
         "wfesc:blocked",
-        "wfesc:unblocked"
+        "wfesc:unblocked",
+        "wfesc:user-blocked",
+        "wfesc:user-unblocked"
     ]
     .forEach(
         function (eventName) {
 
-            document.addEventListener(
+            window.addEventListener(
                 eventName,
-                function () {
-
-                    clearBlockCache();
-
-                }
+                handleBlockEvent
             );
 
         }
@@ -505,6 +692,56 @@
     /* =====================================================
        CURRENT CONVERSATION
     ===================================================== */
+
+    function extractConversationId(
+        value
+    ) {
+
+        if (!value) {
+
+            return null;
+
+        }
+
+
+        /*
+         * إذا كانت القيمة مجرد معرف.
+         */
+
+        if (
+            typeof value === "string" ||
+            typeof value === "number"
+        ) {
+
+            return value;
+
+        }
+
+
+        /*
+         * إذا كانت القيمة كائن محادثة.
+         */
+
+        if (
+            typeof value === "object"
+        ) {
+
+            return (
+                value.id ||
+                value.conversation_id ||
+                value.conversationId ||
+                value.chat_id ||
+                value.chatId ||
+                null
+            );
+
+        }
+
+
+        return null;
+
+    }
+
 
     function getConversationId() {
 
@@ -516,15 +753,23 @@
             window.WFESC_MESSAGES_CHAT_HEADER;
 
 
+        /* -------------------------------------------------
+           1) Chat Header
+        ------------------------------------------------- */
+
         if (
             header &&
-            typeof header.getConversationId === "function"
+            typeof header.getConversationId ===
+                "function"
         ) {
 
             try {
 
                 const id =
-                    header.getConversationId();
+                    extractConversationId(
+                        header.getConversationId()
+                    );
+
 
                 if (id) {
 
@@ -536,17 +781,25 @@
 
         }
 
+
+        /* -------------------------------------------------
+           2) Core chatHeader القديم
+        ------------------------------------------------- */
 
         if (
             core &&
             core.chatHeader &&
-            typeof core.chatHeader.getConversationId === "function"
+            typeof core.chatHeader.getConversationId ===
+                "function"
         ) {
 
             try {
 
                 const id =
-                    core.chatHeader.getConversationId();
+                    extractConversationId(
+                        core.chatHeader.getConversationId()
+                    );
+
 
                 if (id) {
 
@@ -559,16 +812,28 @@
         }
 
 
+        /* -------------------------------------------------
+           3) Core الحالي
+        ------------------------------------------------- */
+
         if (
             core &&
-            typeof core.getCurrentConversation === "function"
+            typeof core.getCurrentConversation ===
+                "function"
         ) {
 
             try {
 
-                const id =
+                const currentConversation =
                     core.getCurrentConversation();
 
+
+                const id =
+                    extractConversationId(
+                        currentConversation
+                    );
+
+
                 if (id) {
 
                     return id;
@@ -580,15 +845,23 @@
         }
 
 
+        /* -------------------------------------------------
+           4) getCurrentConversationId
+        ------------------------------------------------- */
+
         if (
             core &&
-            typeof core.getCurrentConversationId === "function"
+            typeof core.getCurrentConversationId ===
+                "function"
         ) {
 
             try {
 
                 const id =
-                    core.getCurrentConversationId();
+                    extractConversationId(
+                        core.getCurrentConversationId()
+                    );
+
 
                 if (id) {
 
@@ -600,13 +873,27 @@
 
         }
 
+
+        /* -------------------------------------------------
+           5) currentConversationId
+        ------------------------------------------------- */
 
         if (
             core &&
             core.currentConversationId
         ) {
 
-            return core.currentConversationId;
+            const id =
+                extractConversationId(
+                    core.currentConversationId
+                );
+
+
+            if (id) {
+
+                return id;
+
+            }
 
         }
 
@@ -637,6 +924,7 @@
 
         audio.preload =
             "auto";
+
 
         audio.volume =
             NOTIFICATION_VOLUME;
@@ -686,6 +974,7 @@
             sound.muted =
                 true;
 
+
             sound.currentTime =
                 0;
 
@@ -696,30 +985,35 @@
 
             if (
                 promise &&
-                typeof promise.then === "function"
+                typeof promise.then ===
+                    "function"
             ) {
 
                 promise
-                    .then(function () {
+                    .then(
+                        function () {
 
-                        sound.pause();
+                            sound.pause();
 
-                        sound.currentTime =
-                            0;
+                            sound.currentTime =
+                                0;
 
-                        sound.muted =
-                            false;
+                            sound.muted =
+                                false;
 
-                        audioUnlocked =
-                            true;
+                            audioUnlocked =
+                                true;
 
-                    })
-                    .catch(function () {
+                        }
+                    )
+                    .catch(
+                        function () {
 
-                        sound.muted =
-                            false;
+                            sound.muted =
+                                false;
 
-                    });
+                        }
+                    );
 
             }
 
@@ -750,11 +1044,14 @@
 
             sound.pause();
 
+
             sound.currentTime =
                 0;
 
+
             sound.volume =
                 NOTIFICATION_VOLUME;
+
 
             sound.muted =
                 false;
@@ -766,17 +1063,20 @@
 
             if (
                 promise &&
-                typeof promise.catch === "function"
+                typeof promise.catch ===
+                    "function"
             ) {
 
-                promise.catch(function (error) {
+                promise.catch(
+                    function (error) {
 
-                    console.warn(
-                        "WFESC NOTIFICATIONS: sound blocked",
-                        error
-                    );
+                        console.warn(
+                            "WFESC NOTIFICATIONS: sound blocked",
+                            error
+                        );
 
-                });
+                    }
+                );
 
             }
 
@@ -807,9 +1107,13 @@
         }
 
 
+        const key =
+            String(conversationId);
+
+
         const item =
             muteCache.get(
-                String(conversationId)
+                key
             );
 
 
@@ -827,8 +1131,9 @@
         ) {
 
             muteCache.delete(
-                String(conversationId)
+                key
             );
+
 
             return null;
 
@@ -855,11 +1160,13 @@
         muteCache.set(
             String(conversationId),
             {
+
                 muted:
                     muted === true,
 
                 loadedAt:
                     Date.now()
+
             }
         );
 
@@ -890,8 +1197,12 @@
 
             const result =
                 await client
-                    .from("conversation_members")
-                    .select("muted")
+                    .from(
+                        "conversation_members"
+                    )
+                    .select(
+                        "muted"
+                    )
                     .eq(
                         "conversation_id",
                         conversationId
@@ -909,6 +1220,7 @@
                     "WFESC NOTIFICATIONS: mute read error",
                     result.error
                 );
+
 
                 return false;
 
@@ -936,6 +1248,7 @@
                 "WFESC NOTIFICATIONS: mute exception",
                 error
             );
+
 
             return false;
 
@@ -996,15 +1309,18 @@
             button.textContent =
                 "🔕";
 
+
             button.setAttribute(
                 "aria-label",
                 "تشغيل إشعارات المحادثة"
             );
 
+
             button.setAttribute(
                 "title",
                 "الإشعارات مكتومة"
             );
+
 
             button.classList.add(
                 "wfesc-muted"
@@ -1015,15 +1331,18 @@
             button.textContent =
                 "🔔";
 
+
             button.setAttribute(
                 "aria-label",
                 "كتم إشعارات المحادثة"
             );
 
+
             button.setAttribute(
                 "title",
                 "كتم إشعارات المحادثة"
             );
+
 
             button.classList.remove(
                 "wfesc-muted"
@@ -1073,8 +1392,10 @@
         const client =
             getClient();
 
+
         const user =
             await getUser();
+
 
         const conversationId =
             getConversationId();
@@ -1099,7 +1420,8 @@
 
         if (
             button &&
-            button.dataset.wfescBusy === "true"
+            button.dataset.wfescBusy ===
+                "true"
         ) {
 
             return;
@@ -1141,7 +1463,9 @@
 
             const result =
                 await client
-                    .from("conversation_members")
+                    .from(
+                        "conversation_members"
+                    )
                     .update({
                         muted:
                             newMuted
@@ -1230,7 +1554,8 @@
 
                 if (
                     !target ||
-                    typeof target.closest !== "function"
+                    typeof target.closest !==
+                        "function"
                 ) {
 
                     return;
@@ -1253,12 +1578,15 @@
 
                 event.preventDefault();
 
+
                 event.stopPropagation();
+
 
                 event.stopImmediatePropagation();
 
 
                 unlockAudio();
+
 
                 toggleMute();
 
@@ -1295,8 +1623,12 @@
 
             const result =
                 await client
-                    .from("profiles")
-                    .select("*")
+                    .from(
+                        "profiles"
+                    )
+                    .select(
+                        "*"
+                    )
                     .eq(
                         "id",
                         senderId
@@ -1311,7 +1643,10 @@
             }
 
 
-            return result.data || null;
+            return (
+                result.data ||
+                null
+            );
 
         } catch (error) {
 
@@ -1375,6 +1710,20 @@
         message
     ) {
 
+        if (
+            !message ||
+            !message.sender_id
+        ) {
+
+            return null;
+
+        }
+
+
+        /*
+         * فحص إضافي قبل جلب أي بيانات شخصية.
+         */
+
         const blockState =
             await getBlockState(
                 message.sender_id,
@@ -1383,43 +1732,17 @@
 
 
         /*
-         * هذه الحالة تمنع الوصول إلى
-         * هوية الشخص المحظور قبل بناء الإشعار.
+         * لا نبني أي إشعار لشخص:
+         * - قام المستخدم بحظره
+         * - أو قام هو بحظر المستخدم
          */
 
         if (
+            blockState.blocked ||
             blockState.blockedBy
         ) {
 
-            return {
-
-                id:
-                    message.id,
-
-                conversationId:
-                    message.conversation_id,
-
-                senderId:
-                    message.sender_id,
-
-                blockedBy:
-                    true,
-
-                name:
-                    "قام المستخدم بحظرك",
-
-                avatar:
-                    "",
-
-                content:
-                    message.content ||
-                    "أرسل لك رسالة",
-
-                createdAt:
-                    message.created_at ||
-                    new Date().toISOString()
-
-            };
+            return null;
 
         }
 
@@ -1428,6 +1751,27 @@
             await getSenderProfile(
                 message.sender_id
             );
+
+
+        /*
+         * إعادة فحص الحظر بعد جلب البيانات.
+         */
+
+        const latestBlockState =
+            await getBlockState(
+                message.sender_id,
+                true
+            );
+
+
+        if (
+            latestBlockState.blocked ||
+            latestBlockState.blockedBy
+        ) {
+
+            return null;
+
+        }
 
 
         return {
@@ -1498,38 +1842,50 @@
         notificationPanel.style.position =
             "fixed";
 
+
         notificationPanel.style.top =
             "82px";
+
 
         notificationPanel.style.right =
             "12px";
 
+
         notificationPanel.style.width =
             "min(310px, calc(100vw - 24px))";
+
 
         notificationPanel.style.maxHeight =
             "calc(100vh - 110px)";
 
+
         notificationPanel.style.overflow =
             "hidden";
+
 
         notificationPanel.style.zIndex =
             "999999";
 
+
         notificationPanel.style.direction =
             "rtl";
+
 
         notificationPanel.style.display =
             "flex";
 
+
         notificationPanel.style.flexDirection =
             "column";
+
 
         notificationPanel.style.alignItems =
             "flex-end";
 
+
         notificationPanel.style.gap =
             "7px";
+
 
         notificationPanel.style.pointerEvents =
             "none";
@@ -1562,7 +1918,8 @@
 
 
         if (
-            card.dataset.removing === "true"
+            card.dataset.removing ===
+                "true"
         ) {
 
             return;
@@ -1587,11 +1944,26 @@
             );
 
 
+        const autoTimer =
+            card.dataset.autoRemoveTimer;
+
+
+        if (autoTimer) {
+
+            clearTimeout(
+                Number(autoTimer)
+            );
+
+        }
+
+
         card.style.transition =
             "transform .22s ease, opacity .22s ease";
 
+
         card.style.transform =
             "translateX(120px) scale(.94)";
+
 
         card.style.opacity =
             "0";
@@ -1648,64 +2020,81 @@
             item.conversationId;
 
 
-        if (item.blockedBy) {
+        card.dataset.senderId =
+            item.senderId;
 
-            card.dataset.blockedBy =
-                "true";
 
-        }
+        card.dataset.blockedBy =
+            "false";
 
 
         card.style.width =
             "100%";
 
+
         card.style.maxWidth =
             "310px";
+
 
         card.style.boxSizing =
             "border-box";
 
+
         card.style.background =
             "#111";
+
 
         card.style.color =
             "#fff";
 
+
         card.style.border =
             "1px solid rgba(255,255,255,.12)";
+
 
         card.style.borderRadius =
             "13px";
 
+
         card.style.padding =
             "9px";
+
 
         card.style.boxShadow =
             "0 8px 24px rgba(0,0,0,.42)";
 
+
         card.style.display =
             "flex";
+
 
         card.style.gap =
             "8px";
 
+
         card.style.alignItems =
             "flex-start";
+
 
         card.style.position =
             "relative";
 
+
         card.style.pointerEvents =
             "auto";
+
 
         card.style.touchAction =
             "pan-y";
 
+
         card.style.transform =
             "translateX(35px) scale(.97)";
 
+
         card.style.opacity =
             "0";
+
 
         card.style.transition =
             "transform .25s cubic-bezier(.2,.8,.2,1), opacity .25s ease";
@@ -1724,6 +2113,7 @@
         closeButton.type =
             "button";
 
+
         closeButton.textContent =
             "×";
 
@@ -1737,41 +2127,54 @@
         closeButton.style.position =
             "absolute";
 
+
         closeButton.style.top =
             "4px";
+
 
         closeButton.style.left =
             "5px";
 
+
         closeButton.style.width =
             "23px";
+
 
         closeButton.style.height =
             "23px";
 
+
         closeButton.style.padding =
             "0";
+
 
         closeButton.style.border =
             "0";
 
+
         closeButton.style.borderRadius =
             "50%";
+
 
         closeButton.style.background =
             "rgba(255,255,255,.08)";
 
+
         closeButton.style.color =
             "#fff";
+
 
         closeButton.style.fontSize =
             "17px";
 
+
         closeButton.style.lineHeight =
             "23px";
 
+
         closeButton.style.cursor =
             "pointer";
+
 
         closeButton.style.zIndex =
             "3";
@@ -1782,6 +2185,7 @@
             function (event) {
 
                 event.preventDefault();
+
 
                 event.stopPropagation();
 
@@ -1808,52 +2212,44 @@
         avatar.style.width =
             "38px";
 
+
         avatar.style.height =
             "38px";
+
 
         avatar.style.minWidth =
             "38px";
 
+
         avatar.style.borderRadius =
             "50%";
+
 
         avatar.style.overflow =
             "hidden";
 
+
         avatar.style.background =
             "#222";
+
 
         avatar.style.display =
             "flex";
 
+
         avatar.style.alignItems =
             "center";
 
+
         avatar.style.justifyContent =
             "center";
+
 
         avatar.style.marginTop =
             "1px";
 
 
-        if (item.blockedBy) {
-
-            avatar.textContent =
-                "!";
-
-            avatar.style.background =
-                "#8b0000";
-
-            avatar.style.color =
-                "#fff";
-
-            avatar.style.fontWeight =
-                "900";
-
-            avatar.style.fontSize =
-                "20px";
-
-        } else if (item.avatar) {
+        if (item.avatar) {
 
             const img =
                 document.createElement(
@@ -1864,6 +2260,7 @@
             img.src =
                 item.avatar;
 
+
             img.alt =
                 item.name;
 
@@ -1871,8 +2268,10 @@
             img.style.width =
                 "100%";
 
+
             img.style.height =
                 "100%";
+
 
             img.style.objectFit =
                 "cover";
@@ -1882,6 +2281,7 @@
                 function () {
 
                     img.remove();
+
 
                     avatar.textContent =
                         "👤";
@@ -1914,8 +2314,10 @@
         body.style.flex =
             "1";
 
+
         body.style.minWidth =
             "0";
+
 
         body.style.paddingLeft =
             "16px";
@@ -1934,17 +2336,22 @@
         name.style.fontWeight =
             "700";
 
+
         name.style.fontSize =
             "14px";
+
 
         name.style.marginBottom =
             "2px";
 
+
         name.style.whiteSpace =
             "nowrap";
 
+
         name.style.overflow =
             "hidden";
+
 
         name.style.textOverflow =
             "ellipsis";
@@ -1963,23 +2370,30 @@
         text.style.fontSize =
             "13px";
 
+
         text.style.lineHeight =
             "1.4";
+
 
         text.style.opacity =
             ".86";
 
+
         text.style.wordBreak =
             "break-word";
+
 
         text.style.display =
             "-webkit-box";
 
+
         text.style.webkitLineClamp =
             "2";
 
+
         text.style.webkitBoxOrient =
             "vertical";
+
 
         text.style.overflow =
             "hidden";
@@ -1998,6 +2412,7 @@
         openButton.type =
             "button";
 
+
         openButton.textContent =
             "فتح المحادثة";
 
@@ -2005,26 +2420,34 @@
         openButton.style.marginTop =
             "6px";
 
+
         openButton.style.border =
             "0";
+
 
         openButton.style.borderRadius =
             "7px";
 
+
         openButton.style.padding =
             "5px 9px";
+
 
         openButton.style.cursor =
             "pointer";
 
+
         openButton.style.background =
             "#fff";
+
 
         openButton.style.color =
             "#111";
 
+
         openButton.style.fontSize =
             "12px";
+
 
         openButton.style.fontWeight =
             "700";
@@ -2036,13 +2459,12 @@
 
                 event.preventDefault();
 
+
                 event.stopPropagation();
 
 
                 /*
-                 * فحص جديد قبل فتح المحادثة.
-                 * هذا يمنع فتحها إذا حدث الحظر بعد
-                 * وصول الإشعار.
+                 * إعادة فحص الحظر قبل فتح المحادثة.
                  */
 
                 const blockState =
@@ -2053,6 +2475,7 @@
 
 
                 if (
+                    blockState.blocked ||
                     blockState.blockedBy
                 ) {
 
@@ -2061,7 +2484,9 @@
                         item.id
                     );
 
+
                     showBlockedNotificationNotice();
+
 
                     return;
 
@@ -2086,9 +2511,11 @@
             name
         );
 
+
         body.appendChild(
             text
         );
+
 
         body.appendChild(
             openButton
@@ -2099,9 +2526,11 @@
             closeButton
         );
 
+
         card.appendChild(
             avatar
         );
+
 
         card.appendChild(
             body
@@ -2121,6 +2550,7 @@
 
                         card.style.transform =
                             "translateX(0) scale(1)";
+
 
                         card.style.opacity =
                             "1";
@@ -2153,14 +2583,17 @@
 
 
         /* =================================================
-           SWIPE
+           SWIPE — TOUCH
         ================================================= */
 
-        let startX = 0;
+        let startX =
+            0;
 
-        let currentX = 0;
+        let currentX =
+            0;
 
-        let dragging = false;
+        let dragging =
+            false;
 
 
         card.addEventListener(
@@ -2180,8 +2613,10 @@
                 startX =
                     event.touches[0].clientX;
 
+
                 currentX =
                     startX;
+
 
                 dragging =
                     true;
@@ -2231,6 +2666,7 @@
                         "translateX(" +
                         delta +
                         "px)";
+
 
                     card.style.opacity =
                         String(
@@ -2291,6 +2727,7 @@
                     card.style.transform =
                         "translateX(0) scale(1)";
 
+
                     card.style.opacity =
                         "1";
 
@@ -2305,7 +2742,7 @@
 
 
         /* =================================================
-           MOUSE / POINTER SWIPE
+           SWIPE — MOUSE
         ================================================= */
 
         let pointerStartX =
@@ -2378,7 +2815,7 @@
 
 
     /* =====================================================
-       BLOCKED NOTIFICATION NOTICE
+       BLOCKED NOTICE
     ===================================================== */
 
     function showBlockedNotificationNotice() {
@@ -2410,53 +2847,70 @@
         conversationNotice.style.position =
             "fixed";
 
+
         conversationNotice.style.top =
             "76px";
+
 
         conversationNotice.style.left =
             "50%";
 
+
         conversationNotice.style.transform =
             "translateX(-50%)";
+
 
         conversationNotice.style.zIndex =
             "999999";
 
+
         conversationNotice.style.width =
             "min(340px, calc(100vw - 30px))";
+
 
         conversationNotice.style.background =
             "#350808";
 
+
         conversationNotice.style.color =
             "#fff";
+
 
         conversationNotice.style.border =
             "1px solid rgba(255,70,70,.45)";
 
+
         conversationNotice.style.borderRadius =
             "12px";
+
 
         conversationNotice.style.padding =
             "10px 13px";
 
+
         conversationNotice.style.direction =
             "rtl";
+
 
         conversationNotice.style.textAlign =
             "center";
 
+
         conversationNotice.style.fontSize =
             "13px";
+
 
         conversationNotice.style.fontWeight =
             "700";
 
+
         conversationNotice.style.boxShadow =
             "0 8px 25px rgba(0,0,0,.4)";
 
+
         conversationNotice.style.opacity =
             "0";
+
 
         conversationNotice.style.transition =
             "opacity .2s ease";
@@ -2503,6 +2957,7 @@
                         ) {
 
                             conversationNotice.remove();
+
 
                             conversationNotice =
                                 null;
@@ -2593,6 +3048,17 @@
         item
     ) {
 
+        if (
+            !item ||
+            !item.id ||
+            !item.senderId
+        ) {
+
+            return;
+
+        }
+
+
         const exists =
             notifications.some(
                 function (existing) {
@@ -2647,6 +3113,13 @@
         item
     ) {
 
+        if (!item) {
+
+            return;
+
+        }
+
+
         if (conversationNotice) {
 
             conversationNotice.remove();
@@ -2670,44 +3143,58 @@
         conversationNotice.style.position =
             "fixed";
 
+
         conversationNotice.style.top =
             "76px";
+
 
         conversationNotice.style.left =
             "50%";
 
+
         conversationNotice.style.transform =
             "translateX(-50%)";
+
 
         conversationNotice.style.zIndex =
             "999998";
 
+
         conversationNotice.style.width =
             "min(330px, calc(100vw - 30px))";
+
 
         conversationNotice.style.background =
             "#111";
 
+
         conversationNotice.style.color =
             "#fff";
+
 
         conversationNotice.style.border =
             "1px solid rgba(255,255,255,.12)";
 
+
         conversationNotice.style.borderRadius =
             "12px";
+
 
         conversationNotice.style.padding =
             "9px 12px";
 
+
         conversationNotice.style.direction =
             "rtl";
+
 
         conversationNotice.style.boxShadow =
             "0 8px 25px rgba(0,0,0,.4)";
 
+
         conversationNotice.style.opacity =
             "0";
+
 
         conversationNotice.style.transition =
             "opacity .2s ease, transform .2s ease";
@@ -2727,6 +3214,7 @@
         title.style.fontWeight =
             "700";
 
+
         title.style.fontSize =
             "13px";
 
@@ -2740,14 +3228,18 @@
         content.textContent =
             item.content;
 
+
         content.style.marginTop =
             "3px";
+
 
         content.style.opacity =
             ".85";
 
+
         content.style.fontSize =
             "12px";
+
 
         content.style.wordBreak =
             "break-word";
@@ -2756,6 +3248,7 @@
         conversationNotice.appendChild(
             title
         );
+
 
         conversationNotice.appendChild(
             content
@@ -2800,6 +3293,7 @@
 
                             conversationNotice.remove();
 
+
                             conversationNotice =
                                 null;
 
@@ -2837,7 +3331,8 @@
 
         if (
             core &&
-            typeof core.openConversation === "function"
+            typeof core.openConversation ===
+                "function"
         ) {
 
             try {
@@ -2845,6 +3340,7 @@
                 await core.openConversation(
                     conversationId
                 );
+
 
                 return;
 
@@ -2862,7 +3358,8 @@
 
         if (
             core &&
-            typeof core.openConversationInternal === "function"
+            typeof core.openConversationInternal ===
+                "function"
         ) {
 
             try {
@@ -2870,6 +3367,7 @@
                 await core.openConversationInternal(
                     conversationId
                 );
+
 
                 return;
 
@@ -2890,8 +3388,10 @@
                 "wfesc:open-conversation",
                 {
                     detail: {
+
                         conversationId:
                             conversationId
+
                     }
                 }
             )
@@ -2915,7 +3415,10 @@
                 : null;
 
 
-        if (!message || !message.id) {
+        if (
+            !message ||
+            !message.id
+        ) {
 
             return;
 
@@ -2935,7 +3438,7 @@
 
         /* =================================================
            رسالتي أنا
-           ================================================= */
+        ================================================= */
 
         if (
             String(message.sender_id) ===
@@ -2948,10 +3451,8 @@
 
 
         /* =================================================
-           BLOCK CHECK
-           يجب أن يكون قبل الصوت والـPopup
-           وجلب بيانات الملف الشخصي.
-           ================================================= */
+           BLOCK CHECK — قبل الصوت والواجهة
+        ================================================= */
 
         const blockState =
             await getBlockState(
@@ -2961,24 +3462,30 @@
 
 
         /*
-         * إذا الشخص قام بحظر المستخدم الحالي:
+         * إذا:
+         * 1) المستخدم الحالي قام بحظر المرسل
+         * أو
+         * 2) المرسل قام بحظر المستخدم الحالي
          *
-         * لا صوت
-         * لا Popup
-         * لا إشعار جديد
-         * لا جلب لاسم أو صورة الشخص
+         * لا:
+         * - صوت
+         * - Popup
+         * - اسم
+         * - صورة
+         * - إشعار
          *
-         * تبقى الرسالة نفسها موجودة في قاعدة البيانات
-         * ويمكن رؤية التاريخ القديم من المحادثة.
+         * ولا يتم حذف أي سجل من قاعدة البيانات.
          */
 
         if (
+            blockState.blocked ||
             blockState.blockedBy
         ) {
 
             console.log(
                 "WFESC NOTIFICATIONS: blocked sender - silent"
             );
+
 
             return;
 
@@ -2987,26 +3494,30 @@
 
         /* =================================================
            معرفة المحادثة المفتوحة
-           ================================================= */
+        ================================================= */
 
         const currentConversationId =
             getConversationId();
 
 
+        const messageConversationId =
+            extractConversationId(
+                message.conversation_id
+            );
+
+
         const insideSameConversation =
             !!(
                 currentConversationId &&
+                messageConversationId &&
                 String(currentConversationId) ===
-                String(message.conversation_id)
+                String(messageConversationId)
             );
 
 
         /*
          * إذا المستخدم داخل نفس المحادثة:
-         *
-         * لا صوت
-         * لا Popup
-         * لا إشعار إضافي
+         * لا صوت ولا Popup إضافي.
          */
 
         if (insideSameConversation) {
@@ -3015,6 +3526,7 @@
                 "WFESC NOTIFICATIONS: same conversation - silent"
             );
 
+
             return;
 
         }
@@ -3022,21 +3534,25 @@
 
         /* =================================================
            الكتم
-           ================================================= */
+        ================================================= */
 
         let muted =
             getCachedMute(
-                message.conversation_id
+                messageConversationId
             );
 
 
         if (muted === null) {
 
-            muted =
+            const loadedMuted =
                 await loadMuteFromDatabase(
-                    message.conversation_id,
+                    messageConversationId,
                     user.id
                 );
+
+
+            muted =
+                loadedMuted;
 
         }
 
@@ -3049,15 +3565,8 @@
 
 
         /* =================================================
-           الصوت
-           ================================================= */
-
-        playSound();
-
-
-        /* =================================================
            بناء الإشعار
-           ================================================= */
+        ================================================= */
 
         const item =
             await buildNotification(
@@ -3065,21 +3574,44 @@
             );
 
 
+        if (!item) {
+
+            return;
+
+        }
+
+
         /*
-         * فحص أمان إضافي:
-         * يمكن أن يحدث الحظر بين الفحص السابق
-         * وبناء الإشعار.
+         * فحص أخير قبل تشغيل الصوت.
          */
 
+        const finalBlockState =
+            await getBlockState(
+                message.sender_id,
+                true
+            );
+
+
         if (
-            !item ||
-            item.blockedBy
+            finalBlockState.blocked ||
+            finalBlockState.blockedBy
         ) {
 
             return;
 
         }
 
+
+        /* =================================================
+           الصوت
+        ================================================= */
+
+        playSound();
+
+
+        /* =================================================
+           إضافة الإشعار
+        ================================================= */
 
         addNotification(
             item
@@ -3182,7 +3714,7 @@
        CHAT CHANGE
     ===================================================== */
 
-    document.addEventListener(
+    window.addEventListener(
         "wfesc:chat-header-refresh",
         function () {
 
@@ -3193,6 +3725,27 @@
 
                 },
                 50
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       BLOCK SYNC
+    ===================================================== */
+
+    window.addEventListener(
+        "wfesc:notifications-block-sync",
+        function () {
+
+            setTimeout(
+                function () {
+
+                    clearBlockCache();
+
+                },
+                0
             );
 
         }
@@ -3251,11 +3804,15 @@
 
         createAudio();
 
+
         setupButtonDelegation();
+
 
         setupAuthListener();
 
+
         startRealtime();
+
 
         loadMuteState();
 
@@ -3277,7 +3834,9 @@
 
                         setupAuthListener();
 
+
                         startRealtime();
+
 
                         loadMuteState();
 
