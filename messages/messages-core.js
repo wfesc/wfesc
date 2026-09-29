@@ -851,30 +851,242 @@ function formatTime(value) {
 }
 
 
-function getDisplayName(contact) {
+/* =========================================================
+CONTACT PLACEHOLDER HELPERS
+========================================================= */
 
-    if (!contact) {
-        return "مستخدم";
+function normalizeTextValue(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+    .trim()
+    .toLowerCase();
+
+}
+
+
+function isPlaceholderName(
+    value
+) {
+
+    const normalized =
+        normalizeTextValue(
+            value
+        );
+
+    if (!normalized) {
+        return true;
     }
 
     return (
-        contact.display_name ||
-        contact.full_name ||
-        contact.name ||
-        contact.username ||
-        "مستخدم"
+        normalized === "مستخدم" ||
+        normalized === "المستخدم" ||
+        normalized === "user" ||
+        normalized === "unknown" ||
+        normalized === "unknown user"
     );
 
 }
 
 
-function avatarUrl(contact) {
+function isDefaultAvatar(
+    value
+) {
+
+    if (!value) {
+        return true;
+    }
+
+    const avatar =
+        String(
+            value
+        ).trim();
+
+    if (!avatar) {
+        return true;
+    }
+
+    if (
+        avatar ===
+        DEFAULT_AVATAR
+    ) {
+        return true;
+    }
+
+    /*
+     * حماية إضافية إذا كانت النسخة
+     * الافتراضية أعيد توليدها بنفس SVG
+     * لكن بترميز مختلف.
+     */
+    if (
+        avatar.startsWith(
+            "data:image/svg+xml"
+        ) &&
+        avatar.includes(
+            'fill="#111"'
+        ) &&
+        avatar.includes(
+            'fill="#777"'
+        ) &&
+        avatar.includes(
+            'cx="100"'
+        )
+    ) {
+        return true;
+    }
+
+    return false;
+
+}
+
+
+function getDisplayName(
+    contact
+) {
+
+    if (!contact) {
+        return "مستخدم";
+    }
+
+    const candidates = [
+        contact.display_name,
+        contact.full_name,
+        contact.name,
+        contact.username
+    ];
+
+    for (
+        const value
+        of candidates
+    ) {
+
+        if (
+            value &&
+            !isPlaceholderName(
+                value
+            )
+        ) {
+
+            return String(
+                value
+            ).trim();
+
+        }
+
+    }
+
+    return "مستخدم";
+
+}
+
+
+function avatarUrl(
+    contact
+) {
+
+    if (!contact) {
+        return DEFAULT_AVATAR;
+    }
+
+    const candidates = [
+        contact.avatar_url,
+        contact.avatar,
+        contact.photo_url
+    ];
+
+    for (
+        const value
+        of candidates
+    ) {
+
+        if (
+            value &&
+            !isDefaultAvatar(
+                value
+            )
+        ) {
+
+            return String(
+                value
+            ).trim();
+
+        }
+
+    }
+
+    return DEFAULT_AVATAR;
+
+}
+
+
+/*
+ * يحدد إذا جهة الاتصال تحتوي بيانات حقيقية
+ * أم مجرد fallback / placeholder.
+ *
+ * مهم جداً:
+ * لا نعتمد على user_id وحده،
+ * لأن user_id ممكن يكون موجود بينما
+ * الاسم والصورة ما انجابوا بعد.
+ */
+function hasRealContactData(
+    contact
+) {
+
+    if (
+        !contact ||
+        typeof contact !==
+        "object"
+    ) {
+        return false;
+    }
+
+    const displayName =
+        getDisplayName(
+            contact
+        );
+
+    const username =
+        String(
+            contact.username ??
+            ""
+        ).trim();
+
+    const avatar =
+        avatarUrl(
+            contact
+        );
+
+    const hasName =
+        Boolean(
+            displayName &&
+            !isPlaceholderName(
+                displayName
+            )
+        );
+
+    const hasUsername =
+        Boolean(
+            username &&
+            !isPlaceholderName(
+                username
+            )
+        );
+
+    const hasAvatar =
+        Boolean(
+            avatar &&
+            !isDefaultAvatar(
+                avatar
+            )
+        );
 
     return (
-        contact?.avatar_url ||
-        contact?.avatar ||
-        contact?.photo_url ||
-        DEFAULT_AVATAR
+        hasName ||
+        hasUsername ||
+        hasAvatar
     );
 
 }
@@ -1065,6 +1277,10 @@ function getCachedMessages(
 }
 
 
+/* =========================================================
+CONTACT CACHE
+========================================================= */
+
 function cacheConversationContact(
     conversationId,
     contact
@@ -1082,13 +1298,34 @@ function cacheConversationContact(
         return;
     }
 
+    const normalized =
+        normalizeContact(
+            contact
+        );
+
+    /*
+     * أهم إصلاح:
+     * لا نخزن "مستخدم" + الصورة الافتراضية
+     * كأنها بيانات حقيقية.
+     */
+    if (
+        !hasRealContactData(
+            normalized
+        )
+    ) {
+
+        conversationContactCache.delete(
+            key
+        );
+
+        return;
+    }
+
     conversationContactCache.set(
         key,
         {
             contact:
-                normalizeContact(
-                    contact
-                ),
+                normalized,
 
             timestamp:
                 Date.now()
@@ -1133,7 +1370,30 @@ function getCachedConversationContact(
         return null;
     }
 
-    return cached.contact;
+    const normalized =
+        normalizeContact(
+            cached.contact
+        );
+
+    /*
+     * إذا الـCache قديم أو محفوظ
+     * كـplaceholder من نسخة سابقة،
+     * احذفه فوراً ولا تستخدمه.
+     */
+    if (
+        !hasRealContactData(
+            normalized
+        )
+    ) {
+
+        conversationContactCache.delete(
+            key
+        );
+
+        return null;
+    }
+
+    return normalized;
 }
 
 
@@ -1280,7 +1540,6 @@ function normalizeContact(
 
     const source =
         contact ||
-        fallback ||
         {};
 
     const fallbackSource =
@@ -1298,30 +1557,96 @@ function normalizeContact(
         fallbackSource.id ??
         null;
 
-    const displayName =
-        source.display_name ??
-        source.full_name ??
-        source.name ??
-        fallbackSource.display_name ??
-        fallbackSource.full_name ??
-        fallbackSource.name ??
-        source.username ??
-        fallbackSource.username ??
+
+    /*
+     * الاسم:
+     * لا نخلي "مستخدم" من المصدر
+     * يغطي على اسم حقيقي موجود في fallback،
+     * ونستخدم username كخيار أخير.
+     */
+    const nameCandidates = [
+        source.display_name,
+        source.full_name,
+        source.name,
+        fallbackSource.display_name,
+        fallbackSource.full_name,
+        fallbackSource.name,
+        source.username,
+        fallbackSource.username
+    ];
+
+    let displayName =
         null;
+
+    for (
+        const value
+        of nameCandidates
+    ) {
+
+        if (
+            value &&
+            !isPlaceholderName(
+                value
+            )
+        ) {
+
+            displayName =
+                String(
+                    value
+                ).trim();
+
+            break;
+        }
+
+    }
+
 
     const username =
         source.username ??
         fallbackSource.username ??
         null;
 
-    const avatar =
-        source.avatar_url ??
-        source.avatar ??
-        source.photo_url ??
-        fallbackSource.avatar_url ??
-        fallbackSource.avatar ??
-        fallbackSource.photo_url ??
+
+    /*
+     * الصورة:
+     * إذا المصدر أعطى الصورة الافتراضية
+     * لكن fallback يحتوي الصورة الحقيقية،
+     * نأخذ الحقيقية.
+     */
+    const avatarCandidates = [
+        source.avatar_url,
+        source.avatar,
+        source.photo_url,
+        fallbackSource.avatar_url,
+        fallbackSource.avatar,
+        fallbackSource.photo_url
+    ];
+
+    let avatar =
         null;
+
+    for (
+        const value
+        of avatarCandidates
+    ) {
+
+        if (
+            value &&
+            !isDefaultAvatar(
+                value
+            )
+        ) {
+
+            avatar =
+                String(
+                    value
+                ).trim();
+
+            break;
+        }
+
+    }
+
 
     const showActivity =
         source.show_activity ??
@@ -1333,6 +1658,7 @@ function normalizeContact(
         fallbackSource.is_online ??
         fallbackSource.online ??
         false;
+
 
     return {
         ...fallbackSource,
@@ -1940,15 +2266,22 @@ async function getConversationContact(
         return null;
     }
 
+
     /*
-     * Cache محلي سريع.
+     * Cache محلي سريع،
+     * لكن فقط إذا كان يحتوي بيانات حقيقية.
      */
     const cachedContact =
         getCachedConversationContact(
             conversationId
         );
 
-    if (cachedContact) {
+    if (
+        cachedContact &&
+        hasRealContactData(
+            cachedContact
+        )
+    ) {
 
         return normalizeContact(
             cachedContact,
@@ -1957,12 +2290,14 @@ async function getConversationContact(
 
     }
 
+
     const normalizedFallback =
         fallbackContact
             ? normalizeContact(
                 fallbackContact
             )
             : null;
+
 
     /*
      * محاولة واحدة فقط.
@@ -2047,12 +2382,37 @@ async function getConversationContact(
                 normalizedFallback
             );
 
-        cacheConversationContact(
-            conversationId,
-            normalized
-        );
 
-        return normalized;
+        /*
+         * لا نخزن النتيجة إذا كانت مجرد
+         * placeholder.
+         */
+        if (
+            hasRealContactData(
+                normalized
+            )
+        ) {
+
+            cacheConversationContact(
+                conversationId,
+                normalized
+            );
+
+            return normalized;
+
+        }
+
+
+        /*
+         * إذا الـRPC رجع user_id فقط
+         * بدون بيانات هوية حقيقية،
+         * لا نحفظه في Cache.
+         */
+        return (
+            normalizedFallback ||
+            normalized ||
+            null
+        );
 
     } catch (error) {
 
@@ -2213,6 +2573,7 @@ async function loadConversations() {
                     conversation.contact =
                         normalized;
 
+
                     if (
                         normalized.user_id
                     ) {
@@ -2242,16 +2603,39 @@ async function loadConversations() {
                         } catch (_) {}
                     }
 
+
                     if (
                         conversation.id ||
                         conversation.conversation_id
                     ) {
 
-                        cacheConversationContact(
-                            conversation.id ||
-                            conversation.conversation_id,
-                            normalized
-                        );
+                        /*
+                         * إصلاح مهم:
+                         * لا نخزن contact إذا كان مجرد
+                         * user_id + fallback/default.
+                         */
+                        if (
+                            hasRealContactData(
+                                normalized
+                            )
+                        ) {
+
+                            cacheConversationContact(
+                                conversation.id ||
+                                conversation.conversation_id,
+                                normalized
+                            );
+
+                        } else {
+
+                            conversationContactCache.delete(
+                                String(
+                                    conversation.id ||
+                                    conversation.conversation_id
+                                )
+                            );
+
+                        }
 
                     }
 
@@ -2439,23 +2823,28 @@ function createConversationCard(
             conversation
         );
 
+
+    /*
+     * نستخدم نفس منطق البيانات الحقيقية
+     * بدل الاعتماد المباشر على display_name.
+     */
     const name =
-        conversation.display_name ||
-        normalizedContact.display_name ||
-        conversation.full_name ||
-        normalizedContact.full_name ||
-        conversation.name ||
-        normalizedContact.name ||
-        "مستخدم";
+        getDisplayName(
+            {
+                ...conversation,
+                ...normalizedContact
+            }
+        );
+
 
     const avatar =
-        conversation.avatar_url ||
-        normalizedContact.avatar_url ||
-        (
-            conversation.type === "support"
-                ? SUPPORT_AVATAR
-                : DEFAULT_AVATAR
+        avatarUrl(
+            {
+                ...conversation,
+                ...normalizedContact
+            }
         );
+
 
     const preview =
         conversation.last_message ||
@@ -4555,6 +4944,7 @@ function handleRealtimeMessage(
         );
     }
 
+
 }
 
 
@@ -5361,6 +5751,11 @@ async function openConversationInternal(
     currentConversationId =
         conversationId;
 
+
+    /*
+     * استقبل الـcontact القادم من القائمة،
+     * لكن لا نعتبره صالحًا إذا كان مجرد placeholder.
+     */
     let passedContact =
         contact
             ? normalizeContact(
@@ -5368,14 +5763,29 @@ async function openConversationInternal(
             )
             : null;
 
+
+    /*
+     * أولًا نبحث في Cache،
+     * لكن Cache نفسه لن يرجع placeholder.
+     */
     const cachedContact =
         getCachedConversationContact(
             conversationId
         );
 
+
+    /*
+     * إذا contact القادم افتراضي
+     * وCache يحتوي الحقيقي،
+     * نستخدم الحقيقي مباشرة.
+     */
     if (
-        !passedContact &&
-        cachedContact
+        !hasRealContactData(
+            passedContact
+        ) &&
+        hasRealContactData(
+            cachedContact
+        )
     ) {
 
         passedContact =
@@ -5384,8 +5794,10 @@ async function openConversationInternal(
             );
     }
 
+
     currentConversationContact =
         passedContact;
+
 
     typingUsers.clear();
 
@@ -5400,12 +5812,16 @@ async function openConversationInternal(
             getSupportContact();
 
     } else if (
-        !currentConversationContact
+        !hasRealContactData(
+            currentConversationContact
+        )
     ) {
 
         currentConversationContact = {
 
             user_id:
+                passedContact?.user_id ||
+                cachedContact?.user_id ||
                 null,
 
             display_name:
@@ -5433,6 +5849,11 @@ async function openConversationInternal(
             currentConversationContact
         );
 
+
+    /*
+     * عرض الموجود حاليًا فورًا،
+     * ثم يتم تحديثه إذا جاءت البيانات الحقيقية.
+     */
     chatHeaderInterface.refresh();
 
 
@@ -5458,24 +5879,31 @@ async function openConversationInternal(
 
 
     /*
-     * جلب جهة الاتصال صار بالتوازي مع الرسائل.
+     * إذا لم تكن لدينا بيانات حقيقية،
+     * جلبها بالخلفية.
      *
-     * إذا تأخر RPC الخاص بالجهة،
-     * الشات لا ينتظر.
+     * getConversationContact نفسه يتأكد من Cache.
      */
     let contactPromise =
         null;
 
-    if (
+
+    const shouldFetchContact =
         type !== "support" &&
-        !cachedContact
+        !hasRealContactData(
+            currentConversationContact
+        );
+
+
+    if (
+        shouldFetchContact
     ) {
 
         contactPromise =
             getConversationContact(
                 conversationId,
                 type,
-                passedContact
+                currentConversationContact
             )
             .then(
                 fetchedContact => {
@@ -5488,16 +5916,35 @@ async function openConversationInternal(
                     }
 
                     if (
-                        fetchedContact
+                        fetchedContact &&
+                        hasRealContactData(
+                            fetchedContact
+                        )
                     ) {
 
                         currentConversationContact =
                             applyActivityStateToContact(
                                 normalizeContact(
                                     fetchedContact,
-                                    passedContact
+                                    currentConversationContact
                                 )
                             );
+
+                        /*
+                         * خزنه فقط إذا حقيقي.
+                         */
+                        if (
+                            hasRealContactData(
+                                currentConversationContact
+                            )
+                        ) {
+
+                            cacheConversationContact(
+                                conversationId,
+                                currentConversationContact
+                            );
+
+                        }
 
                         chatHeaderInterface.refresh();
 
@@ -5652,7 +6099,7 @@ async function openConversationInternal(
 
 
     openingConversation =
-        false;
+    false;
 
 }
 
@@ -7022,6 +7469,8 @@ client.auth.onAuthStateChange(
                 currentMessages =
                     [];
 
+                conversationContactCache.clear();
+
                 renderConversations();
 
                 return;
@@ -7073,6 +7522,8 @@ client.auth.onAuthStateChange(
 
                 currentMessages =
                     [];
+
+                conversationContactCache.clear();
             }
 
             currentUser =
