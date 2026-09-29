@@ -25,6 +25,8 @@
 
     const MUTE_CACHE_TTL = 30000;
 
+    const BLOCK_CACHE_TTL = 30000;
+
 
     /* =====================================================
        STATE
@@ -53,6 +55,8 @@
     let bootStarted = false;
 
     const muteCache = new Map();
+
+    const blockCache = new Map();
 
 
     /* =====================================================
@@ -228,12 +232,274 @@
 
                     muteCache.clear();
 
+                    blockCache.clear();
+
                 }
 
             }
         );
 
     }
+
+
+    /* =====================================================
+       BLOCK MODULE
+    ===================================================== */
+
+    function getBlockModule() {
+
+        return (
+            window.WFESC_MESSAGES_BLOCK ||
+            null
+        );
+
+    }
+
+
+    function getCachedBlock(
+        userId
+    ) {
+
+        if (!userId) {
+
+            return null;
+
+        }
+
+
+        const key =
+            String(userId);
+
+
+        const item =
+            blockCache.get(key);
+
+
+        if (!item) {
+
+            return null;
+
+        }
+
+
+        if (
+            Date.now() -
+            item.loadedAt >
+            BLOCK_CACHE_TTL
+        ) {
+
+            blockCache.delete(key);
+
+            return null;
+
+        }
+
+
+        return {
+            blocked:
+                item.blocked === true,
+
+            blockedBy:
+                item.blockedBy === true
+        };
+
+    }
+
+
+    function setCachedBlock(
+        userId,
+        blocked,
+        blockedBy
+    ) {
+
+        if (!userId) {
+
+            return;
+
+        }
+
+
+        blockCache.set(
+            String(userId),
+            {
+                blocked:
+                    blocked === true,
+
+                blockedBy:
+                    blockedBy === true,
+
+                loadedAt:
+                    Date.now()
+            }
+        );
+
+    }
+
+
+    async function getBlockState(
+        userId,
+        force
+    ) {
+
+        if (!userId) {
+
+            return {
+                blocked:
+                    false,
+
+                blockedBy:
+                    false
+            };
+
+        }
+
+
+        if (!force) {
+
+            const cached =
+                getCachedBlock(
+                    userId
+                );
+
+
+            if (cached) {
+
+                return cached;
+
+            }
+
+        }
+
+
+        const block =
+            getBlockModule();
+
+
+        if (!block) {
+
+            return {
+                blocked:
+                    false,
+
+                blockedBy:
+                    false
+            };
+
+        }
+
+
+        let blocked =
+            false;
+
+        let blockedBy =
+            false;
+
+
+        try {
+
+            if (
+                typeof block.isBlocked ===
+                "function"
+            ) {
+
+                blocked =
+                    !!(
+                        await block.isBlocked(
+                            userId
+                        )
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC NOTIFICATIONS: isBlocked failed",
+                error
+            );
+
+        }
+
+
+        try {
+
+            if (
+                typeof block.isBlockedBy ===
+                "function"
+            ) {
+
+                blockedBy =
+                    !!(
+                        await block.isBlockedBy(
+                            userId
+                        )
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC NOTIFICATIONS: isBlockedBy failed",
+                error
+            );
+
+        }
+
+
+        const state = {
+
+            blocked:
+                blocked,
+
+            blockedBy:
+                blockedBy
+
+        };
+
+
+        setCachedBlock(
+            userId,
+            blocked,
+            blockedBy
+        );
+
+
+        return state;
+
+    }
+
+
+    /* =====================================================
+       BLOCK EVENTS
+    ===================================================== */
+
+    function clearBlockCache() {
+
+        blockCache.clear();
+
+    }
+
+
+    [
+        "wfesc:block-changed",
+        "wfesc:blocked",
+        "wfesc:unblocked"
+    ]
+    .forEach(
+        function (eventName) {
+
+            document.addEventListener(
+                eventName,
+                function () {
+
+                    clearBlockCache();
+
+                }
+            );
+
+        }
+    );
 
 
     /* =====================================================
@@ -292,10 +558,6 @@
 
         }
 
-
-        /*
-         * دعم messages-core الجديد.
-         */
 
         if (
             core &&
@@ -1113,6 +1375,55 @@
         message
     ) {
 
+        const blockState =
+            await getBlockState(
+                message.sender_id,
+                true
+            );
+
+
+        /*
+         * هذه الحالة تمنع الوصول إلى
+         * هوية الشخص المحظور قبل بناء الإشعار.
+         */
+
+        if (
+            blockState.blockedBy
+        ) {
+
+            return {
+
+                id:
+                    message.id,
+
+                conversationId:
+                    message.conversation_id,
+
+                senderId:
+                    message.sender_id,
+
+                blockedBy:
+                    true,
+
+                name:
+                    "قام المستخدم بحظرك",
+
+                avatar:
+                    "",
+
+                content:
+                    message.content ||
+                    "أرسل لك رسالة",
+
+                createdAt:
+                    message.created_at ||
+                    new Date().toISOString()
+
+            };
+
+        }
+
+
         const profile =
             await getSenderProfile(
                 message.sender_id
@@ -1129,6 +1440,9 @@
 
             senderId:
                 message.sender_id,
+
+            blockedBy:
+                false,
 
             name:
                 getProfileName(
@@ -1334,6 +1648,14 @@
             item.conversationId;
 
 
+        if (item.blockedBy) {
+
+            card.dataset.blockedBy =
+                "true";
+
+        }
+
+
         card.style.width =
             "100%";
 
@@ -1514,7 +1836,24 @@
             "1px";
 
 
-        if (item.avatar) {
+        if (item.blockedBy) {
+
+            avatar.textContent =
+                "!";
+
+            avatar.style.background =
+                "#8b0000";
+
+            avatar.style.color =
+                "#fff";
+
+            avatar.style.fontWeight =
+                "900";
+
+            avatar.style.fontSize =
+                "20px";
+
+        } else if (item.avatar) {
 
             const img =
                 document.createElement(
@@ -1693,11 +2032,40 @@
 
         openButton.addEventListener(
             "click",
-            function (event) {
+            async function (event) {
 
                 event.preventDefault();
 
                 event.stopPropagation();
+
+
+                /*
+                 * فحص جديد قبل فتح المحادثة.
+                 * هذا يمنع فتحها إذا حدث الحظر بعد
+                 * وصول الإشعار.
+                 */
+
+                const blockState =
+                    await getBlockState(
+                        item.senderId,
+                        true
+                    );
+
+
+                if (
+                    blockState.blockedBy
+                ) {
+
+                    removeNotificationCard(
+                        card,
+                        item.id
+                    );
+
+                    showBlockedNotificationNotice();
+
+                    return;
+
+                }
 
 
                 removeNotificationCard(
@@ -2005,6 +2373,149 @@
 
 
         return card;
+
+    }
+
+
+    /* =====================================================
+       BLOCKED NOTIFICATION NOTICE
+    ===================================================== */
+
+    function showBlockedNotificationNotice() {
+
+        if (conversationNotice) {
+
+            conversationNotice.remove();
+
+            conversationNotice =
+                null;
+
+        }
+
+
+        conversationNotice =
+            document.createElement(
+                "div"
+            );
+
+
+        conversationNotice.id =
+            "wfescBlockedNotificationNotice";
+
+
+        conversationNotice.textContent =
+            "تعذر فتح الإشعار لأن المستخدم قام بحظرك";
+
+
+        conversationNotice.style.position =
+            "fixed";
+
+        conversationNotice.style.top =
+            "76px";
+
+        conversationNotice.style.left =
+            "50%";
+
+        conversationNotice.style.transform =
+            "translateX(-50%)";
+
+        conversationNotice.style.zIndex =
+            "999999";
+
+        conversationNotice.style.width =
+            "min(340px, calc(100vw - 30px))";
+
+        conversationNotice.style.background =
+            "#350808";
+
+        conversationNotice.style.color =
+            "#fff";
+
+        conversationNotice.style.border =
+            "1px solid rgba(255,70,70,.45)";
+
+        conversationNotice.style.borderRadius =
+            "12px";
+
+        conversationNotice.style.padding =
+            "10px 13px";
+
+        conversationNotice.style.direction =
+            "rtl";
+
+        conversationNotice.style.textAlign =
+            "center";
+
+        conversationNotice.style.fontSize =
+            "13px";
+
+        conversationNotice.style.fontWeight =
+            "700";
+
+        conversationNotice.style.boxShadow =
+            "0 8px 25px rgba(0,0,0,.4)";
+
+        conversationNotice.style.opacity =
+            "0";
+
+        conversationNotice.style.transition =
+            "opacity .2s ease";
+
+
+        document.body.appendChild(
+            conversationNotice
+        );
+
+
+        requestAnimationFrame(
+            function () {
+
+                if (conversationNotice) {
+
+                    conversationNotice.style.opacity =
+                        "1";
+
+                }
+
+            }
+        );
+
+
+        setTimeout(
+            function () {
+
+                if (!conversationNotice) {
+
+                    return;
+
+                }
+
+
+                conversationNotice.style.opacity =
+                    "0";
+
+
+                setTimeout(
+                    function () {
+
+                        if (
+                            conversationNotice
+                        ) {
+
+                            conversationNotice.remove();
+
+                            conversationNotice =
+                                null;
+
+                        }
+
+                    },
+                    220
+                );
+
+            },
+            3000
+        );
 
     }
 
@@ -2437,8 +2948,45 @@
 
 
         /* =================================================
+           BLOCK CHECK
+           يجب أن يكون قبل الصوت والـPopup
+           وجلب بيانات الملف الشخصي.
+           ================================================= */
+
+        const blockState =
+            await getBlockState(
+                message.sender_id,
+                true
+            );
+
+
+        /*
+         * إذا الشخص قام بحظر المستخدم الحالي:
+         *
+         * لا صوت
+         * لا Popup
+         * لا إشعار جديد
+         * لا جلب لاسم أو صورة الشخص
+         *
+         * تبقى الرسالة نفسها موجودة في قاعدة البيانات
+         * ويمكن رؤية التاريخ القديم من المحادثة.
+         */
+
+        if (
+            blockState.blockedBy
+        ) {
+
+            console.log(
+                "WFESC NOTIFICATIONS: blocked sender - silent"
+            );
+
+            return;
+
+        }
+
+
+        /* =================================================
            معرفة المحادثة المفتوحة
-           يجب فحصها قبل تشغيل الصوت.
            ================================================= */
 
         const currentConversationId =
@@ -2459,8 +3007,6 @@
          * لا صوت
          * لا Popup
          * لا إشعار إضافي
-         *
-         * لأن الرسالة موجودة أمامه أصلًا.
          */
 
         if (insideSameConversation) {
@@ -2504,7 +3050,6 @@
 
         /* =================================================
            الصوت
-           فقط إذا كانت المحادثة مختلفة أو لا توجد محادثة مفتوحة.
            ================================================= */
 
         playSound();
@@ -2518,6 +3063,22 @@
             await buildNotification(
                 message
             );
+
+
+        /*
+         * فحص أمان إضافي:
+         * يمكن أن يحدث الحظر بين الفحص السابق
+         * وبناء الإشعار.
+         */
+
+        if (
+            !item ||
+            item.blockedBy
+        ) {
+
+            return;
+
+        }
 
 
         addNotification(
@@ -2798,7 +3359,10 @@
 
                 }
 
-            }
+            },
+
+        clearBlockCache:
+            clearBlockCache
 
     };
 
