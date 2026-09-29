@@ -3449,7 +3449,7 @@
                     Array.isArray(
                         conversations
                     )
-                {
+                ) {
 
                     knownConversation =
                         conversations.find(
