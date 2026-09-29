@@ -94,9 +94,11 @@
 
     let blockToastTimer = null;
 
+    let blockRefreshTimer = null;
+
     /*
      * آخر مستخدم حصلت له عملية حظر/إلغاء حظر.
-     * يستخدم فقط لتثبيت التحديثات ومنع حالات السباق.
+     * يستخدم لتثبيت التحديثات ومنع حالات السباق.
      */
     let lastBlockTargetId = null;
 
@@ -883,10 +885,6 @@
 
         style.textContent = `
 
-            /* ============================================
-               الصف
-               ============================================ */
-
             #chatView > #chatMessages .message-row {
 
                 padding-inline:
@@ -898,10 +896,6 @@
 
             }
 
-
-            /* ============================================
-               الفقاعة
-               ============================================ */
 
             #chatView > #chatMessages
             .message-row
@@ -963,10 +957,6 @@
             }
 
 
-            /* ============================================
-               محتوى الرسالة
-               ============================================ */
-
             #chatView > #chatMessages
             .message-row
             .message-content {
@@ -983,10 +973,6 @@
 
             }
 
-
-            /* ============================================
-               المعاينة
-               ============================================ */
 
             .preview-message {
 
@@ -1037,10 +1023,6 @@
 
             }
 
-
-            /* ============================================
-               الزجاج
-               ============================================ */
 
             .message-row.mine
             .message-bubble,
@@ -1251,10 +1233,6 @@
             );
 
 
-        /* -------------------------------------------------
-           حجم النص
-           ------------------------------------------------- */
-
         const sizeRange =
             $("messageSizeRange");
 
@@ -1283,10 +1261,6 @@
         }
 
 
-        /* -------------------------------------------------
-           عرض الفقاعة
-           ------------------------------------------------- */
-
         const bubbleWidth =
             $("messageBubbleWidthRange");
 
@@ -1310,10 +1284,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           ارتفاع الفقاعة
-           ------------------------------------------------- */
 
         const bubbleHeight =
             $("messageBubbleHeightRange");
@@ -1339,10 +1309,6 @@
         }
 
 
-        /* -------------------------------------------------
-           المسافة عن الإطار
-           ------------------------------------------------- */
-
         const bubbleEdgeGap =
             $("messageBubbleEdgeRange");
 
@@ -1366,10 +1332,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           شدة لون رسائلي
-           ------------------------------------------------- */
 
         const ownIntensity =
             $("ownColorIntensity");
@@ -1395,10 +1357,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شفافية رسائلي
-           ------------------------------------------------- */
-
         const ownOpacity =
             $("ownColorTransparency");
 
@@ -1423,10 +1381,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شكل رسائلي
-           ------------------------------------------------- */
-
         const ownShape =
             $("ownBubbleShape");
 
@@ -1438,10 +1392,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           استدارة رسائلي
-           ------------------------------------------------- */
 
         const ownRadius =
             $("ownBubbleRadius");
@@ -1467,10 +1417,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شكل الطرف الآخر
-           ------------------------------------------------- */
-
         const otherShape =
             $("otherBubbleShape");
 
@@ -1482,10 +1428,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           شدة لون الطرف الآخر
-           ------------------------------------------------- */
 
         const otherIntensity =
             $("otherColorIntensity");
@@ -1511,10 +1453,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شفافية الطرف الآخر
-           ------------------------------------------------- */
-
         const otherOpacity =
             $("otherColorTransparency");
 
@@ -1539,10 +1477,6 @@
         }
 
 
-        /* -------------------------------------------------
-           استدارة الطرف الآخر
-           ------------------------------------------------- */
-
         const otherRadius =
             $("otherBubbleRadius");
 
@@ -1566,10 +1500,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           Color Pickers
-           ------------------------------------------------- */
 
         const ownPicker =
             $("ownBubbleColorPicker");
@@ -1621,10 +1551,6 @@
             );
 
 
-        /* -------------------------------------------------
-           حجم النص
-           ------------------------------------------------- */
-
         const sizeRange =
             $("messageSizeRange");
 
@@ -1643,10 +1569,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           عرض الفقاعة
-           ------------------------------------------------- */
 
         const bubbleWidth =
             $("messageBubbleWidthRange");
@@ -1667,10 +1589,6 @@
         }
 
 
-        /* -------------------------------------------------
-           ارتفاع الفقاعة
-           ------------------------------------------------- */
-
         const bubbleHeight =
             $("messageBubbleHeightRange");
 
@@ -1689,10 +1607,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           المسافة عن الإطار
-           ------------------------------------------------- */
 
         const bubbleEdgeGap =
             $("messageBubbleEdgeRange");
@@ -1713,10 +1627,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شدة لون رسائلي
-           ------------------------------------------------- */
-
         const ownIntensity =
             $("ownColorIntensity");
 
@@ -1735,10 +1645,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           شفافية رسائلي
-           ------------------------------------------------- */
 
         const ownOpacity =
             $("ownColorTransparency");
@@ -1759,10 +1665,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شكل رسائلي
-           ------------------------------------------------- */
-
         const ownShape =
             $("ownBubbleShape");
 
@@ -1774,10 +1676,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           استدارة رسائلي
-           ------------------------------------------------- */
 
         const ownRadius =
             $("ownBubbleRadius");
@@ -1798,10 +1696,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شكل الطرف الآخر
-           ------------------------------------------------- */
-
         const otherShape =
             $("otherBubbleShape");
 
@@ -1813,10 +1707,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           شدة لون الطرف الآخر
-           ------------------------------------------------- */
 
         const otherIntensity =
             $("otherColorIntensity");
@@ -1837,10 +1727,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شفافية الطرف الآخر
-           ------------------------------------------------- */
-
         const otherOpacity =
             $("otherColorTransparency");
 
@@ -1859,10 +1745,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           استدارة الطرف الآخر
-           ------------------------------------------------- */
 
         const otherRadius =
             $("otherBubbleRadius");
@@ -2446,9 +2328,6 @@
 
     /*
      * جلب نسخة أحدث من جهة الاتصال.
-     *
-     * هذا مهم لأن core قد يحتوي أحياناً على
-     * contact placeholder أو بيانات قديمة.
      */
     async function resolveFreshContact(
         contact,
@@ -2508,7 +2387,194 @@
         }
 
 
+        /*
+         * fallback بسيط للصورة من profiles
+         * بدون الاعتماد على أعمدة غير مؤكدة.
+         */
+        try {
+
+            const block =
+                getBlockModule();
+
+            const client =
+                block?.client ||
+                window.WFESCSupabase ||
+                null;
+
+
+            if (
+                client &&
+                typeof client
+                    .from ===
+                "function"
+            ) {
+
+                const {
+                    data,
+                    error
+                } =
+                    await client
+                        .from("profiles")
+                        .select(
+                            "id, avatar_url"
+                        )
+                        .eq(
+                            "id",
+                            userId
+                        )
+                        .maybeSingle();
+
+
+                if (
+                    !error &&
+                    data
+                ) {
+
+                    return Object.assign(
+                        {},
+                        contact || {},
+                        data
+                    );
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SETTINGS BLOCK] profile fallback failed",
+                error
+            );
+
+        }
+
+
         return contact || null;
+
+    }
+
+
+    /*
+     * جلب جهة اتصال خاصة بالمستخدم المحظور.
+     * نبدأ من Core حتى نحصل على الاسم واليوزر والصورة
+     * الصحيحة إن كانت متوفرة.
+     */
+    async function resolveBlockedUserContact(
+        userId
+    ) {
+
+        if (!userId) {
+
+            return null;
+
+        }
+
+
+        const core =
+            getCore();
+
+
+        if (
+            core &&
+            typeof core.getConversationContact ===
+            "function"
+        ) {
+
+            try {
+
+                const contact =
+                    await core.getConversationContact(
+                        userId
+                    );
+
+
+                if (
+                    contact &&
+                    typeof contact ===
+                    "object"
+                ) {
+
+                    return contact;
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "[WFESC SETTINGS BLOCK] blocked user contact lookup failed",
+                    userId,
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+         * fallback من profiles للصورة على الأقل.
+         */
+        try {
+
+            const block =
+                getBlockModule();
+
+            const client =
+                block?.client ||
+                window.WFESCSupabase ||
+                null;
+
+
+            if (
+                client &&
+                typeof client
+                    .from ===
+                "function"
+            ) {
+
+                const {
+                    data,
+                    error
+                } =
+                    await client
+                        .from("profiles")
+                        .select(
+                            "id, avatar_url"
+                        )
+                        .eq(
+                            "id",
+                            userId
+                        )
+                        .maybeSingle();
+
+
+                if (
+                    !error &&
+                    data
+                ) {
+
+                    return data;
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SETTINGS BLOCK] profiles fallback failed",
+                userId,
+                error
+            );
+
+        }
+
+
+        return {
+            id:
+                userId
+        };
 
     }
 
@@ -2561,6 +2627,62 @@
             );
 
         }
+
+    }
+
+
+    function getSafeAvatar(
+        contact,
+        userId
+    ) {
+
+        const avatar =
+            getContactAvatar(
+                contact
+            );
+
+
+        if (avatar) {
+
+            return avatar;
+
+        }
+
+
+        /*
+         * صورة افتراضية خفيفة حتى لا يكون
+         * src فارغاً.
+         */
+        return (
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(
+                `
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="96"
+                    height="96"
+                    viewBox="0 0 96 96"
+                >
+                    <rect
+                        width="96"
+                        height="96"
+                        rx="48"
+                        fill="#191919"
+                    />
+                    <circle
+                        cx="48"
+                        cy="36"
+                        r="16"
+                        fill="#777"
+                    />
+                    <path
+                        d="M20 80c4-17 15-25 28-25s24 8 28 25"
+                        fill="#777"
+                    />
+                </svg>
+                `
+            )
+        );
 
     }
 
@@ -2661,6 +2783,24 @@
                 line-height:1.75;
 
                 margin-bottom:13px;
+
+            }
+
+
+            /* =========================================
+               BLOCKED USERS LIST
+            ========================================= */
+
+            #wfescSettingsBlockSection
+            .wfesc-block-list {
+
+                display:flex;
+
+                flex-direction:column;
+
+                gap:10px;
+
+                margin-top:10px;
 
             }
 
@@ -2880,6 +3020,77 @@
                 font-size:12px;
 
                 line-height:1.8;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-subtitle {
+
+                margin-top:17px;
+
+                margin-bottom:8px;
+
+                color:#ddd;
+
+                font-size:12px;
+
+                font-weight:800;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-list-button {
+
+                margin-top:10px;
+
+                width:100%;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-user
+            .wfesc-block-card-content {
+
+                min-width:0;
+
+                flex:1;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-user
+            .wfesc-block-card-button {
+
+                width:auto;
+
+                min-width:95px;
+
+                min-height:38px;
+
+                margin-top:0;
+
+                flex:none;
+
+                padding:8px 10px;
+
+                border-radius:12px;
+
+                color:#baffcf;
+
+                background:
+                    rgba(54,226,123,.08);
+
+                border:
+                    1px solid
+                    rgba(54,226,123,.16);
+
+                font-size:11px;
+
+                font-weight:800;
 
             }
 
@@ -3225,6 +3436,31 @@
                 to {
 
                     opacity:1;
+
+                }
+
+            }
+
+
+            @media (
+                max-width:520px
+            ) {
+
+                #wfescSettingsBlockSection
+                .wfesc-block-user {
+
+                    align-items:flex-start;
+
+                }
+
+                #wfescSettingsBlockSection
+                .wfesc-block-user
+                .wfesc-block-card-button {
+
+                    min-width:84px;
+
+                    padding:
+                        8px;
 
                 }
 
@@ -3610,6 +3846,43 @@
 
 
     /* =====================================================
+       SCHEDULE BLOCK REFRESH
+    ===================================================== */
+
+    function scheduleBlockSectionRefresh() {
+
+        clearTimeout(
+            blockRefreshTimer
+        );
+
+
+        blockRefreshTimer =
+            setTimeout(
+                function () {
+
+                    const modal =
+                        $("messageViewSettingsModal");
+
+
+                    if (
+                        modal &&
+                        modal.classList.contains(
+                            "show"
+                        )
+                    ) {
+
+                        refreshBlockSection();
+
+                    }
+
+                },
+                40
+            );
+
+    }
+
+
+    /* =====================================================
        EXECUTE BLOCK ACTION
     ===================================================== */
 
@@ -3705,9 +3978,9 @@
 
 
                 /*
-                 * تحديث مباشر للمودال.
+                 * القائمة تتحدث مباشرة.
                  */
-                await refreshBlockSection();
+                scheduleBlockSectionRefresh();
 
 
                 return;
@@ -3751,15 +4024,10 @@
 
 
             /*
-             * مهم:
-             *
-             * لا نغلق المحادثة هنا.
-             * الرسائل القديمة تبقى ظاهرة.
-             * الحظر يمنع الإرسال فقط.
+             * لا نغلق المحادثة.
+             * التاريخ القديم يبقى موجوداً.
              */
-
-
-            await refreshBlockSection();
+            scheduleBlockSectionRefresh();
 
 
         } catch (error) {
@@ -3783,7 +4051,7 @@
             );
 
 
-            await refreshBlockSection();
+            scheduleBlockSectionRefresh();
 
         }
 
@@ -3914,7 +4182,7 @@
             <div
                 class="wfesc-block-description"
             >
-                إدارة حظر المستخدم المرتبط بهذه المحادثة.
+                إدارة المستخدمين الذين قمت بحظرهم والحظر المرتبط بالمحادثة الحالية.
             </div>
 
 
@@ -3930,15 +4198,272 @@
 
 
     /* =====================================================
-       BLOCK SECTION - RENDER
+       BLOCKED USER CARD
     ===================================================== */
 
-    function renderBlockSection(
-        section,
+    function buildBlockedUserCard(
+        item,
+        contact
+    ) {
+
+        const userId =
+            item?.blocked_id ||
+            item?.userId ||
+            item?.id ||
+            null;
+
+
+        if (!userId) {
+
+            return null;
+
+        }
+
+
+        const name =
+            getContactName(
+                contact
+            );
+
+
+        const username =
+            getContactUsername(
+                contact
+            );
+
+
+        const avatar =
+            getSafeAvatar(
+                contact,
+                userId
+            );
+
+
+        const dateText =
+            formatBlockDate(
+                item?.created_at
+            );
+
+
+        const card =
+            document.createElement(
+                "div"
+            );
+
+
+        card.className =
+            "wfesc-block-user";
+
+
+        card.dataset.userId =
+            String(
+                userId
+            );
+
+
+        card.innerHTML = `
+
+            <img
+                class="wfesc-block-avatar"
+                src="${escapeHTML(
+                    avatar
+                )}"
+                alt=""
+                draggable="false"
+            >
+
+
+            <div
+                class="wfesc-block-card-content"
+            >
+
+                <div
+                    class="wfesc-block-name"
+                >
+                    ${escapeHTML(
+                        name
+                    )}
+                </div>
+
+
+                ${
+                    username
+                        ? `
+                            <div
+                                class="wfesc-block-username"
+                            >
+                                ${escapeHTML(
+                                    username
+                                )}
+                            </div>
+                        `
+                        : ""
+                }
+
+
+                <div
+                    class="wfesc-block-status"
+                >
+                    أنت قمت بحظر هذا المستخدم
+                </div>
+
+
+                <div
+                    class="wfesc-block-date"
+                >
+                    تاريخ ووقت الحظر:
+                    ${escapeHTML(
+                        dateText
+                    )}
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="wfesc-block-card-button"
+                data-block-action="unblock"
+                data-user-id="${escapeHTML(
+                    String(userId)
+                )}"
+                data-user-name="${escapeHTML(
+                    name
+                )}"
+            >
+                🔓 فتح الحظر
+            </button>
+
+        `;
+
+
+        const unblockButton =
+            card.querySelector(
+                '[data-block-action="unblock"]'
+            );
+
+
+        if (unblockButton) {
+
+            unblockButton.addEventListener(
+                "click",
+                function () {
+
+                    openBlockConfirmation(
+                        "unblock",
+                        userId,
+                        name
+                    );
+
+                }
+            );
+
+        }
+
+
+        return card;
+
+    }
+
+
+    /* =====================================================
+       RENDER BLOCKED USERS LIST
+    ===================================================== */
+
+    function renderBlockedUsersList(
+        container,
+        blockedUsers
+    ) {
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+        container.innerHTML = "";
+
+
+        if (
+            !Array.isArray(
+                blockedUsers
+            ) ||
+            blockedUsers.length === 0
+        ) {
+
+            container.innerHTML = `
+
+                <div
+                    class="wfesc-block-empty"
+                >
+                    لا يوجد مستخدمون قمت بحظرهم حالياً.
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        /*
+         * تعرض القائمة حسب created_at القادم من
+         * messages-block.js.
+         */
+        blockedUsers.forEach(
+            function (item) {
+
+                const card =
+                    item?._resolvedContact
+                        ? buildBlockedUserCard(
+                            item,
+                            item._resolvedContact
+                        )
+                        : null;
+
+
+                if (card) {
+
+                    container.appendChild(
+                        card
+                    );
+
+                }
+
+            }
+        );
+
+
+        if (
+            !container.children.length
+        ) {
+
+            container.innerHTML = `
+
+                <div
+                    class="wfesc-block-empty"
+                >
+                    تعذر تحميل بيانات المستخدمين المحظورين حالياً.
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       BLOCK SECTION - CURRENT CONVERSATION
+    ===================================================== */
+
+    function renderCurrentConversationBlock(
+        container,
         data
     ) {
 
-        if (!section) {
+        if (!container) {
 
             return;
 
@@ -3967,49 +4492,6 @@
             );
 
 
-        const blockInfo =
-            data?.blockInfo ||
-            null;
-
-
-        if (
-            !contact ||
-            !userId
-        ) {
-
-            section.innerHTML = `
-
-                <div
-                    class="wfesc-block-title"
-                >
-                    🚫 الحظر
-                </div>
-
-
-                <div
-                    class="wfesc-block-description"
-                >
-                    إدارة حظر المستخدم المرتبط بهذه المحادثة.
-                </div>
-
-
-                <div
-                    class="wfesc-block-empty"
-                >
-                    ${
-                        contact?.is_support
-                            ? "هذه محادثة الدعم، ولا يمكن حظر حساب الدعم."
-                            : "لا توجد جهة اتصال صالحة في المحادثة الحالية."
-                    }
-                </div>
-
-            `;
-
-            return;
-
-        }
-
-
         const name =
             getContactName(
                 contact
@@ -4023,8 +4505,9 @@
 
 
         const avatar =
-            getContactAvatar(
-                contact
+            getSafeAvatar(
+                contact,
+                userId
             );
 
 
@@ -4045,28 +4528,18 @@
         }
 
 
-        const dateText =
-            blockedByMe &&
-            blockInfo?.created_at
-                ? formatBlockDate(
-                    blockInfo.created_at
-                )
-                : "";
+        const wrap =
+            document.createElement(
+                "div"
+            );
 
 
-        section.innerHTML = `
+        wrap.innerHTML = `
 
             <div
-                class="wfesc-block-title"
+                class="wfesc-block-subtitle"
             >
-                🚫 الحظر
-            </div>
-
-
-            <div
-                class="wfesc-block-description"
-            >
-                إدارة حظر المستخدم المرتبط بهذه المحادثة.
+                المحادثة الحالية
             </div>
 
 
@@ -4120,82 +4593,34 @@
                         )}
                     </div>
 
-
-                    ${
-                        dateText
-                            ? `
-                                <div
-                                    class="wfesc-block-date"
-                                >
-                                    تاريخ ووقت الحظر:
-                                    ${escapeHTML(
-                                        dateText
-                                    )}
-                                </div>
-                            `
-                            : ""
-                    }
-
                 </div>
 
             </div>
 
-
-            ${
-                blockedByMe
-                    ? `
-                        <button
-                            type="button"
-                            class="
-                                wfesc-block-action
-                                unblock
-                            "
-                            id="wfescSettingsUnblockButton"
-                        >
-                            🔓 فتح الحظر
-                        </button>
-                    `
-                    : blockedMe
-                        ? `
-                            <div
-                                class="
-                                    wfesc-block-empty
-                                "
-                                style="margin-top:11px;"
-                            >
-                                لا يمكنك إدارة حظر هذا المستخدم لأنه قام بحظرك.
-                            </div>
-                        `
-                        : `
-                            <button
-                                type="button"
-                                class="
-                                    wfesc-block-action
-                                    block
-                                "
-                                id="wfescSettingsBlockButton"
-                            >
-                                🚫 حظر المستخدم
-                            </button>
-                        `
-            }
-
         `;
 
 
-        /* -----------------------------------------
-           UNBLOCK BUTTON
-        ----------------------------------------- */
+        if (blockedByMe) {
 
-        const unblockButton =
-            section.querySelector(
-                "#wfescSettingsUnblockButton"
-            );
+            const action =
+                document.createElement(
+                    "button"
+                );
 
 
-        if (unblockButton) {
+            action.type =
+                "button";
 
-            unblockButton.addEventListener(
+
+            action.className =
+                "wfesc-block-action unblock";
+
+
+            action.textContent =
+                "🔓 فتح الحظر";
+
+
+            action.addEventListener(
                 "click",
                 function () {
 
@@ -4208,22 +4633,56 @@
                 }
             );
 
-        }
 
-
-        /* -----------------------------------------
-           BLOCK BUTTON
-        ----------------------------------------- */
-
-        const blockButton =
-            section.querySelector(
-                "#wfescSettingsBlockButton"
+            wrap.appendChild(
+                action
             );
 
+        } else if (blockedMe) {
 
-        if (blockButton) {
+            const info =
+                document.createElement(
+                    "div"
+                );
 
-            blockButton.addEventListener(
+
+            info.className =
+                "wfesc-block-empty";
+
+
+            info.style.marginTop =
+                "11px";
+
+
+            info.textContent =
+                "لا يمكنك إدارة حظر هذا المستخدم لأنه قام بحظرك.";
+
+
+            wrap.appendChild(
+                info
+            );
+
+        } else {
+
+            const action =
+                document.createElement(
+                    "button"
+                );
+
+
+            action.type =
+                "button";
+
+
+            action.className =
+                "wfesc-block-action block";
+
+
+            action.textContent =
+                "🚫 حظر المستخدم";
+
+
+            action.addEventListener(
                 "click",
                 function () {
 
@@ -4234,6 +4693,150 @@
                     );
 
                 }
+            );
+
+
+            wrap.appendChild(
+                action
+            );
+
+        }
+
+
+        container.appendChild(
+            wrap
+        );
+
+    }
+
+
+    /* =====================================================
+       BLOCK SECTION - RENDER
+    ===================================================== */
+
+    function renderBlockSection(
+        section,
+        data
+    ) {
+
+        if (!section) {
+
+            return;
+
+        }
+
+
+        section.innerHTML = "";
+
+
+        /*
+         * العنوان.
+         */
+        const title =
+            document.createElement(
+                "div"
+            );
+
+
+        title.className =
+            "wfesc-block-title";
+
+
+        title.textContent =
+            "🚫 الحظر";
+
+
+        section.appendChild(
+            title
+        );
+
+
+        /*
+         * الوصف.
+         */
+        const description =
+            document.createElement(
+                "div"
+            );
+
+
+        description.className =
+            "wfesc-block-description";
+
+
+        description.textContent =
+            "إدارة المستخدمين الذين قمت بحظرهم والحظر المرتبط بالمحادثة الحالية.";
+
+
+        section.appendChild(
+            description
+        );
+
+
+        /*
+         * قائمة كل المحظورين.
+         */
+        const listTitle =
+            document.createElement(
+                "div"
+            );
+
+
+        listTitle.className =
+            "wfesc-block-subtitle";
+
+
+        listTitle.textContent =
+            "المستخدمون الذين قمت بحظرهم";
+
+
+        section.appendChild(
+            listTitle
+        );
+
+
+        const list =
+            document.createElement(
+                "div"
+            );
+
+
+        list.className =
+            "wfesc-block-list";
+
+
+        section.appendChild(
+            list
+        );
+
+
+        renderBlockedUsersList(
+            list,
+            data?.blockedUsers || []
+        );
+
+
+        /*
+         * المحادثة الحالية.
+         */
+        const contact =
+            data?.contact ||
+            null;
+
+
+        const userId =
+            data?.userId ||
+            null;
+
+
+        if (
+            contact &&
+            userId
+        ) {
+
+            renderCurrentConversationBlock(
+                section,
+                data
             );
 
         }
@@ -4267,6 +4870,48 @@
         );
 
 
+        const block =
+            getBlockModule();
+
+
+        if (!block) {
+
+            if (
+                token ===
+                blockRefreshToken
+            ) {
+
+                section.innerHTML = `
+
+                    <div
+                        class="wfesc-block-title"
+                    >
+                        🚫 الحظر
+                    </div>
+
+
+                    <div
+                        class="wfesc-block-description"
+                    >
+                        إدارة المستخدمين الذين قمت بحظرهم والحظر المرتبط بالمحادثة الحالية.
+                    </div>
+
+
+                    <div
+                        class="wfesc-block-empty"
+                    >
+                        نظام الحظر لم يتم تحميله بعد.
+                    </div>
+
+                `;
+
+            }
+
+            return;
+
+        }
+
+
         let contact =
             getCurrentContact();
 
@@ -4277,14 +4922,14 @@
             );
 
 
+        /*
+         * fallback للمحادثة الحالية.
+         */
         if (
             !contact ||
             !userId
         ) {
 
-            /*
-             * محاولة أخيرة من المحادثة الحالية.
-             */
             const core =
                 getCore();
 
@@ -4341,93 +4986,79 @@
         }
 
 
-        if (
-            !contact ||
-            !userId ||
-            contact.is_support === true
-        ) {
-
-            if (
-                token ===
-                blockRefreshToken
-            ) {
-
-                renderBlockSection(
-                    section,
-                    {
-                        contact,
-                        userId,
-                        blockedByMe:false,
-                        blockedMe:false,
-                        blockInfo:null
-                    }
-                );
-
-            }
-
-            return;
-
-        }
-
-
-        const block =
-            getBlockModule();
-
-
-        if (!block) {
-
-            /*
-             * messages-settings.js يتم تحميله
-             * قبل messages-block.js، لذلك لا نعتبر
-             * عدم وجود الموديول في البداية خطأ نهائياً.
-             */
-
-            if (
-                token ===
-                blockRefreshToken
-            ) {
-
-                section.innerHTML = `
-
-                    <div
-                        class="wfesc-block-title"
-                    >
-                        🚫 الحظر
-                    </div>
-
-
-                    <div
-                        class="wfesc-block-description"
-                    >
-                        إدارة حظر المستخدم المرتبط بهذه المحادثة.
-                    </div>
-
-
-                    <div
-                        class="wfesc-block-empty"
-                    >
-                        نظام الحظر لم يتم تحميله بعد.
-                    </div>
-
-                `;
-
-            }
-
-            return;
-
-        }
-
-
         try {
 
             /*
-             * نجلب جهة الاتصال من Core مرة ثانية
-             * حتى لا نعتمد على placeholder قديم.
+             * 1) قائمة المحظورين كلها.
              */
-            contact =
-                await resolveFreshContact(
-                    contact,
-                    userId
+            const blockedUsersRaw =
+                typeof block.getBlockedUsers ===
+                "function"
+                    ? await block.getBlockedUsers()
+                    : [];
+
+
+            if (
+                token !==
+                blockRefreshToken
+            ) {
+
+                return;
+
+            }
+
+
+            const blockedUsers =
+                Array.isArray(
+                    blockedUsersRaw
+                )
+                    ? blockedUsersRaw
+                    : [];
+
+
+            /*
+             * 2) جلب بيانات كل شخص محظور.
+             *
+             * لا نعتمد على current contact فقط.
+             */
+            const blockedResolved =
+                await Promise.all(
+                    blockedUsers.map(
+                        async function (item) {
+
+                            const blockedId =
+                                item?.blocked_id ||
+                                null;
+
+
+                            if (!blockedId) {
+
+                                return null;
+
+                            }
+
+
+                            const freshContact =
+                                await resolveBlockedUserContact(
+                                    blockedId
+                                );
+
+
+                            return Object.assign(
+                                {},
+                                item,
+                                {
+                                    _resolvedContact:
+                                        freshContact ||
+                                        {
+                                            id:
+                                                blockedId
+                                        }
+                                }
+                            );
+
+                        }
+                    )
                 );
 
 
@@ -4442,68 +5073,126 @@
 
 
             /*
-             * بعد تحديث contact، نتأكد أن المعرف
-             * ما زال هو نفس المستخدم.
+             * 3) جهة الاتصال الحالية.
              */
-            const freshUserId =
-                getContactUserId(
-                    contact
-                );
-
-
             if (
-                freshUserId
+                contact &&
+                userId &&
+                contact.is_support !== true
             ) {
 
-                userId =
-                    freshUserId;
+                contact =
+                    await resolveFreshContact(
+                        contact,
+                        userId
+                    );
+
+
+                if (
+                    token !==
+                    blockRefreshToken
+                ) {
+
+                    return;
+
+                }
+
+
+                const freshUserId =
+                    getContactUserId(
+                        contact
+                    );
+
+
+                if (
+                    freshUserId
+                ) {
+
+                    userId =
+                        freshUserId;
+
+                }
 
             }
 
 
-            const blockedByMePromise =
-                typeof block.isBlocked ===
-                "function"
-                    ? block.isBlocked(
-                        userId
-                    )
-                    : Promise.resolve(
-                        false
+            /*
+             * 4) حالة حظر المحادثة الحالية.
+             */
+            let blockedByMeResult =
+                false;
+
+            let blockedMeResult =
+                false;
+
+            let blockInfoResult =
+                null;
+
+
+            if (
+                userId &&
+                contact &&
+                contact.is_support !== true
+            ) {
+
+                const blockedByMePromise =
+                    typeof block.isBlocked ===
+                    "function"
+                        ? block.isBlocked(
+                            userId
+                        )
+                        : Promise.resolve(
+                            false
+                        );
+
+
+                const blockedMePromise =
+                    typeof block.isBlockedBy ===
+                    "function"
+                        ? block.isBlockedBy(
+                            userId
+                        )
+                        : Promise.resolve(
+                            false
+                        );
+
+
+                const blockInfoPromise =
+                    typeof block.getBlockInfo ===
+                    "function"
+                        ? block.getBlockInfo(
+                            userId
+                        )
+                        : Promise.resolve(
+                            null
+                        );
+
+
+                const results =
+                    await Promise.all([
+                        blockedByMePromise,
+                        blockedMePromise,
+                        blockInfoPromise
+                    ]);
+
+
+                blockedByMeResult =
+                    Boolean(
+                        results[0]
                     );
 
 
-            const blockedMePromise =
-                typeof block.isBlockedBy ===
-                "function"
-                    ? block.isBlockedBy(
-                        userId
-                    )
-                    : Promise.resolve(
-                        false
+                blockedMeResult =
+                    Boolean(
+                        results[1]
                     );
 
 
-            const blockInfoPromise =
-                typeof block.getBlockInfo ===
-                "function"
-                    ? block.getBlockInfo(
-                        userId
-                    )
-                    : Promise.resolve(
-                        null
-                    );
+                blockInfoResult =
+                    results[2] ||
+                    null;
 
-
-            const [
-                blockedByMeResult,
-                blockedMeResult,
-                blockInfoResult
-            ] =
-                await Promise.all([
-                    blockedByMePromise,
-                    blockedMePromise,
-                    blockInfoPromise
-                ]);
+            }
 
 
             if (
@@ -4517,49 +5206,81 @@
 
 
             /*
-             * إذا كانت هناك عملية حظر حصلت للتو
-             * وكان المعرف المتذكر هو نفس المستخدم،
-             * نضمن أن القسم يتحدث مباشرة.
+             * 5) تثبيت المعرف الذي حصلت عليه عملية الحظر.
              */
             if (
-                lastBlockTargetId &&
-                String(lastBlockTargetId) ===
-                String(userId)
+                lastBlockTargetId
             ) {
 
-                /*
-                 * لا نغير البيانات هنا.
-                 * مجرد تثبيت المعرف الحالي.
-                 */
-                userId =
-                    String(
-                        lastBlockTargetId
+                const existsInList =
+                    blockedUsers.some(
+                        function (item) {
+
+                            return (
+                                String(
+                                    item?.blocked_id
+                                ) ===
+                                String(
+                                    lastBlockTargetId
+                                )
+                            );
+
+                        }
                     );
+
+
+                if (existsInList) {
+
+                    /*
+                     * فقط تثبيت منطقي.
+                     * لا نغيّر البيانات القادمة من DB.
+                     */
+                    lastBlockTargetId =
+                        String(
+                            lastBlockTargetId
+                        );
+
+                }
 
             }
 
 
+            /*
+             * 6) عرض كل شيء.
+             */
             renderBlockSection(
                 section,
                 {
-                    contact,
-                    userId,
+
+                    contact:
+                        contact,
+
+                    userId:
+                        userId,
+
                     blockedByMe:
-                        Boolean(
-                            blockedByMeResult
-                        ),
+                        blockedByMeResult,
+
                     blockedMe:
-                        Boolean(
-                            blockedMeResult
-                        ),
+                        blockedMeResult,
+
                     blockInfo:
                         blockInfoResult &&
+                        userId &&
                         String(
                             blockInfoResult.blocked_id
                         ) ===
-                        String(userId)
+                        String(
+                            userId
+                        )
                             ? blockInfoResult
-                            : null
+                            : null,
+
+                    blockedUsers:
+                        blockedResolved.filter(
+                            Boolean
+                        )
+
                 }
             );
 
@@ -4588,14 +5309,14 @@
                     <div
                         class="wfesc-block-description"
                     >
-                        إدارة حظر المستخدم المرتبط بهذه المحادثة.
+                        إدارة المستخدمين الذين قمت بحظرهم والحظر المرتبط بالمحادثة الحالية.
                     </div>
 
 
                     <div
                         class="wfesc-block-empty"
                     >
-                        تعذر جلب حالة الحظر حالياً.
+                        تعذر جلب قائمة المحظورين حالياً.
                     </div>
 
                 `;
@@ -4630,20 +5351,7 @@
             }
 
 
-            const modal =
-                $("messageViewSettingsModal");
-
-
-            if (
-                modal &&
-                modal.classList.contains(
-                    "show"
-                )
-            ) {
-
-                refreshBlockSection();
-
-            }
+            scheduleBlockSectionRefresh();
 
         }
     );
@@ -4668,20 +5376,7 @@
             }
 
 
-            const modal =
-                $("messageViewSettingsModal");
-
-
-            if (
-                modal &&
-                modal.classList.contains(
-                    "show"
-                )
-            ) {
-
-                refreshBlockSection();
-
-            }
+            scheduleBlockSectionRefresh();
 
         }
     );
@@ -4706,20 +5401,7 @@
             }
 
 
-            const modal =
-                $("messageViewSettingsModal");
-
-
-            if (
-                modal &&
-                modal.classList.contains(
-                    "show"
-                )
-            ) {
-
-                refreshBlockSection();
-
-            }
+            scheduleBlockSectionRefresh();
 
         }
     );
@@ -4729,23 +5411,7 @@
         "wfesc:chat-header-refresh",
         function () {
 
-            const modal =
-                $("messageViewSettingsModal");
-
-
-            if (
-                modal &&
-                modal.classList.contains(
-                    "show"
-                )
-            ) {
-
-                setTimeout(
-                    refreshBlockSection,
-                    0
-                );
-
-            }
+            scheduleBlockSectionRefresh();
 
         }
     );
@@ -4811,11 +5477,6 @@
             "modal-open"
         );
 
-
-        /*
-         * يتم التنفيذ بعد فتح المودال
-         * حتى تكون المحادثة الحالية مستقرة.
-         */
 
         setTimeout(
             function () {
@@ -5056,10 +5717,6 @@
 
     function bindEvents() {
 
-        /* -------------------------------------------------
-           فتح الإعدادات
-           ------------------------------------------------- */
-
         const openButton =
             $("messageViewSettingsButton");
 
@@ -5079,10 +5736,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           إلغاء
-           ------------------------------------------------- */
 
         const cancelButton =
             $("messageViewSettingsCancel");
@@ -5104,10 +5757,6 @@
         }
 
 
-        /* -------------------------------------------------
-           حفظ
-           ------------------------------------------------- */
-
         const saveButton =
             $("messageViewSettingsSave");
 
@@ -5127,10 +5776,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           حجم النص
-           ------------------------------------------------- */
 
         const sizeRange =
             $("messageSizeRange");
@@ -5161,10 +5806,6 @@
         }
 
 
-        /* -------------------------------------------------
-           عرض الفقاعة
-           ------------------------------------------------- */
-
         const bubbleWidth =
             $("messageBubbleWidthRange");
 
@@ -5193,10 +5834,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           ارتفاع الفقاعة
-           ------------------------------------------------- */
 
         const bubbleHeight =
             $("messageBubbleHeightRange");
@@ -5227,10 +5864,6 @@
         }
 
 
-        /* -------------------------------------------------
-           المسافة عن الإطار
-           ------------------------------------------------- */
-
         const bubbleEdgeGap =
             $("messageBubbleEdgeRange");
 
@@ -5260,10 +5893,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شدة لون رسائلي
-           ------------------------------------------------- */
-
         const ownIntensity =
             $("ownColorIntensity");
 
@@ -5277,10 +5906,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           شفافية رسائلي
-           ------------------------------------------------- */
 
         const ownOpacity =
             $("ownColorTransparency");
@@ -5296,10 +5921,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شكل رسائلي
-           ------------------------------------------------- */
-
         const ownShape =
             $("ownBubbleShape");
 
@@ -5313,10 +5934,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           استدارة رسائلي
-           ------------------------------------------------- */
 
         const ownRadius =
             $("ownBubbleRadius");
@@ -5332,10 +5949,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شكل الطرف الآخر
-           ------------------------------------------------- */
-
         const otherShape =
             $("otherBubbleShape");
 
@@ -5349,10 +5962,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           شدة لون الطرف الآخر
-           ------------------------------------------------- */
 
         const otherIntensity =
             $("otherColorIntensity");
@@ -5368,10 +5977,6 @@
         }
 
 
-        /* -------------------------------------------------
-           شفافية الطرف الآخر
-           ------------------------------------------------- */
-
         const otherOpacity =
             $("otherColorTransparency");
 
@@ -5386,10 +5991,6 @@
         }
 
 
-        /* -------------------------------------------------
-           استدارة الطرف الآخر
-           ------------------------------------------------- */
-
         const otherRadius =
             $("otherBubbleRadius");
 
@@ -5403,10 +6004,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           اللون المخصص - رسائلي
-           ------------------------------------------------- */
 
         const ownPicker =
             $("ownBubbleColorPicker");
@@ -5439,10 +6036,6 @@
         }
 
 
-        /* -------------------------------------------------
-           اللون المخصص - الطرف الآخر
-           ------------------------------------------------- */
-
         const otherPicker =
             $("otherBubbleColorPicker");
 
@@ -5473,10 +6066,6 @@
 
         }
 
-
-        /* -------------------------------------------------
-           الضغط خارج المودال
-           ------------------------------------------------- */
 
         const modal =
             $("messageViewSettingsModal");
@@ -5561,12 +6150,6 @@
             currentSettings
         );
 
-
-        /*
-         * إنشاء القسم فقط.
-         * لا نعتمد على messages-block.js هنا
-         * لأنه يتم تحميله بعد هذا الملف.
-         */
 
         ensureBlockSection();
 
