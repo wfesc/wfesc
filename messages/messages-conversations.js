@@ -791,8 +791,13 @@
                 "getConversationContact error:",
                 error
             );
+
         }
 
+        /*
+         * إذا فشل RPC / الشبكة،
+         * لا نوقف بقية قائمة المحادثات.
+         */
         return normalizeContact(
             existing ||
             conversation
@@ -2347,25 +2352,61 @@
                 )
             ];
 
-        await Promise.all(
+        /*
+         * مهم:
+         * Promise.all كان ممكن يخلي استثناء واحد
+         * يوقف تحميل كل الحالات.
+         *
+         * allSettled يخلي كل مستخدم ينفحص بشكل
+         * مستقل، وإذا واحد فشل نبقي البقية.
+         */
+        const results =
+            await Promise.allSettled(
 
-            uniqueUserIds.map(
-                async userId => {
+                uniqueUserIds.map(
+                    async userId => {
 
-                    const state =
-                        await getBlockStatus(
+                        const state =
+                            await getBlockStatus(
+                                userId,
+                                force
+                            );
+
+                        return {
+
                             userId,
-                            force
-                        );
+
+                            state
+
+                        };
+
+                    }
+                )
+
+            );
+
+        results.forEach(
+            result => {
+
+                if (
+                    result.status ===
+                    "fulfilled"
+                ) {
 
                     states.set(
-                        userId,
-                        state
+                        result.value.userId,
+                        result.value.state
                     );
 
+                    return;
                 }
-            )
 
+                debug(
+                    "resolveBlockStates item failed:",
+                    result.reason
+                );
+
+            }
         );
 
         return states;
@@ -2929,7 +2970,7 @@
 
         /* =====================================================
            OPEN CONVERSATION
-           ===================================================== */
+        ===================================================== */
 
         card.addEventListener(
             "click",
@@ -3057,71 +3098,97 @@
             return;
         }
 
-        await Promise.all(
+        /*
+         * مهم:
+         * لا نستخدم Promise.all هنا لأن أي مشكلة
+         * شبكية أو RPC في محادثة واحدة يجب ألا
+         * توقف باقي المحادثات.
+         */
+        const results =
+            await Promise.allSettled(
 
-            conversations.map(
-                async conversation => {
+                conversations.map(
+                    async conversation => {
 
-                    const contact =
-                        getContact(
+                        const contact =
+                            getContact(
+                                conversation
+                            );
+
+                        const userId =
+                            getUserId(
+                                conversation
+                            );
+
+                        const hasName =
+                            Boolean(
+                                firstValue(
+
+                                    conversation?.display_name,
+
+                                    contact?.display_name,
+
+                                    contact?.full_name,
+
+                                    contact?.name,
+
+                                    conversation?.username,
+
+                                    contact?.username
+
+                                )
+                            );
+
+                        const hasAvatar =
+                            Boolean(
+                                firstValue(
+
+                                    conversation?.avatar_url,
+
+                                    conversation?.avatar,
+
+                                    contact?.avatar_url,
+
+                                    contact?.avatar
+
+                                )
+                            );
+
+                        if (
+                            userId &&
+                            hasName &&
+                            hasAvatar
+                        ) {
+
+                            return;
+
+                        }
+
+                        await resolveContact(
                             conversation
                         );
 
-                    const userId =
-                        getUserId(
-                            conversation
-                        );
-
-                    const hasName =
-                        Boolean(
-                            firstValue(
-
-                                conversation?.display_name,
-
-                                contact?.display_name,
-
-                                contact?.full_name,
-
-                                contact?.name,
-
-                                conversation?.username,
-
-                                contact?.username
-
-                            )
-                        );
-
-                    const hasAvatar =
-                        Boolean(
-                            firstValue(
-
-                                conversation?.avatar_url,
-
-                                conversation?.avatar,
-
-                                contact?.avatar_url,
-
-                                contact?.avatar
-
-                            )
-                        );
-
-                    if (
-                        userId &&
-                        hasName &&
-                        hasAvatar
-                    ) {
-
-                        return;
                     }
+                )
 
-                    await resolveContact(
-                        conversation
+            );
+
+        results.forEach(
+            result => {
+
+                if (
+                    result.status ===
+                    "rejected"
+                ) {
+
+                    debug(
+                        "resolveConversationContacts item failed:",
+                        result.reason
                     );
 
                 }
-            )
 
+            }
         );
     }
 
@@ -4203,7 +4270,9 @@
 
                 const userId =
                     detail.userId ||
+                    detail.user_id ||
                     detail.blockedUserId ||
+                    detail.blocked_user_id ||
                     detail.blocked_id ||
                     null;
 
@@ -4220,6 +4289,9 @@
 
                 /*
                  * إعادة بناء القائمة فوراً.
+                 *
+                 * refresh(true) يجبر فحص حالات
+                 * الحظر من Supabase مرة أخرى.
                  */
                 refresh(
                     true
@@ -4242,6 +4314,22 @@
 
         window.addEventListener(
             "wfesc:unblocked",
+            handleBlockChanged
+        );
+
+
+        /*
+         * هذه الأحداث هي التي تستخدمها
+         * messages-chat-actions.js حالياً.
+         */
+        window.addEventListener(
+            "wfesc:user-blocked",
+            handleBlockChanged
+        );
+
+
+        window.addEventListener(
+            "wfesc:user-unblocked",
             handleBlockChanged
         );
 
