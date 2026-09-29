@@ -89,6 +89,8 @@
 
     let observerFrame = 0;
 
+    let blockSearchRefreshTimer = null;
+
 
     /*
      * Cache حالة الحظر حتى لا نرسل طلبات Supabase
@@ -136,32 +138,97 @@
     }
 
 
+    /*
+     * استخدم Client الـCore أولًا إذا كان صالحًا.
+     * ثم Block module.
+     * ثم WFESC global client.
+     */
     function getClient() {
 
-        return (
-            getCore()?.client ||
-            getBlock()?.client ||
-            window.WFESCSupabase ||
-            (
-                window.supabase &&
-                typeof window.supabase.rpc === "function"
-                    ? window.supabase
-                    : null
-            ) ||
-            null
-        );
+        const core =
+            getCore();
+
+
+        if (
+            core?.client &&
+            typeof core.client.rpc ===
+                "function"
+        ) {
+
+            return core.client;
+
+        }
+
+
+        const block =
+            getBlock();
+
+
+        if (
+            block?.client &&
+            typeof block.client.rpc ===
+                "function"
+        ) {
+
+            return block.client;
+
+        }
+
+
+        if (
+            window.WFESCSupabase &&
+            typeof window.WFESCSupabase.rpc ===
+                "function"
+        ) {
+
+            return window.WFESCSupabase;
+
+        }
+
+
+        if (
+            window.supabase &&
+            typeof window.supabase.rpc ===
+                "function"
+        ) {
+
+            return window.supabase;
+
+        }
+
+
+        return null;
 
     }
 
 
+    /*
+     * الـCore الحالي يعيد المستخدم بشكل مباشر،
+     * وليس Promise.
+     */
     function getCurrentUser() {
 
         try {
 
-            return (
-                getCore()?.getCurrentUser?.() ||
-                null
-            );
+            const core =
+                getCore();
+
+
+            if (
+                core &&
+                typeof core.getCurrentUser ===
+                    "function"
+            ) {
+
+                return (
+                    core.getCurrentUser() ||
+                    null
+                );
+
+            }
+
+
+            return null;
 
         } catch (error) {
 
@@ -210,14 +277,20 @@
             }
 
 
-            if (typeof value === "string") {
+            if (
+                typeof value ===
+                    "string"
+            ) {
 
                 return value;
 
             }
 
 
-            if (typeof value === "object") {
+            if (
+                typeof value ===
+                    "object"
+            ) {
 
                 return (
                     value.conversation_id ||
@@ -244,15 +317,30 @@
 
         return String(value ?? "")
 
-            .replace(/&/g, "&amp;")
+            .replace(
+                /&/g,
+                "&amp;"
+            )
 
-            .replace(/</g, "&lt;")
+            .replace(
+                /</g,
+                "&lt;"
+            )
 
-            .replace(/>/g, "&gt;")
+            .replace(
+                />/g,
+                "&gt;"
+            )
 
-            .replace(/"/g, "&quot;")
+            .replace(
+                /"/g,
+                "&quot;"
+            )
 
-            .replace(/'/g, "&#039;");
+            .replace(
+                /'/g,
+                "&#039;"
+            );
 
     }
 
@@ -260,6 +348,7 @@
     function escapeRegExp(value) {
 
         return String(value ?? "")
+
             .replace(
                 /[.*+?^${}()|[\]\\]/g,
                 "\\$&"
@@ -268,7 +357,10 @@
     }
 
 
-    function highlightText(text, query) {
+    function highlightText(
+        text,
+        query
+    ) {
 
         const safeText =
             escapeHTML(text);
@@ -329,7 +421,9 @@
         }
 
 
-        return text.charAt(0).toUpperCase();
+        return text
+            .charAt(0)
+            .toUpperCase();
 
     }
 
@@ -477,7 +571,9 @@
         ) {
 
             const id =
-                normalizeId(candidate);
+                normalizeId(
+                    candidate
+                );
 
 
             if (
@@ -685,23 +781,28 @@
         try {
 
             /*
-             * تشغيل الفحصين بالتوازي بدل انتظار الأول ثم الثاني.
+             * تشغيل الفحصين بالتوازي.
              */
             const checks =
                 await Promise.all([
 
                     typeof block.isBlocked ===
                         "function"
+
                         ? block.isBlocked(
                             userId
                         )
+
                         : false,
+
 
                     typeof block.isBlockedBy ===
                         "function"
+
                         ? block.isBlockedBy(
                             userId
                         )
+
                         : false
 
                 ]);
@@ -762,7 +863,8 @@
         }
 
 
-        setupBlockStateListeners.started = true;
+        setupBlockStateListeners.started =
+            true;
 
 
         const eventNames = [
@@ -783,6 +885,64 @@
         function handler() {
 
             clearBlockStatusCache();
+
+
+            /*
+             * لا نُظهر نتائج البحث من جديد إذا كانت
+             * مخفية بعد فتح محادثة.
+             */
+            if (
+                !currentSearchText ||
+                !els.results
+            ) {
+
+                return;
+
+            }
+
+
+            const resultsVisible =
+                els.results.classList.contains(
+                    "visible"
+                );
+
+
+            if (!resultsVisible) {
+
+                return;
+
+            }
+
+
+            clearTimeout(
+                blockSearchRefreshTimer
+            );
+
+
+            blockSearchRefreshTimer =
+                setTimeout(
+                    function () {
+
+                        if (
+                            !currentSearchText
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * أعد البحث بنفس النمط
+                         * حتى تظهر حالة الحظر فورًا.
+                         */
+                        performMainSearch(
+                            currentSearchText
+                        );
+
+                    },
+                    80
+                );
 
         }
 
@@ -811,7 +971,8 @@
     }
 
 
-    setupBlockStateListeners.started = false;
+    setupBlockStateListeners.started =
+        false;
 
 
     async function decorateUserBlockStatus(
@@ -1009,7 +1170,9 @@
 
                 const senderId =
                     normalizeId(
-                        getSenderId(row)
+                        getSenderId(
+                            row
+                        )
                     );
 
 
@@ -1235,7 +1398,9 @@
 
 
         const style =
-            document.createElement("style");
+            document.createElement(
+                "style"
+            );
 
 
         style.id =
@@ -1648,7 +1813,9 @@
         `;
 
 
-        document.head.appendChild(style);
+        document.head.appendChild(
+            style
+        );
 
     }
 
@@ -1778,7 +1945,8 @@
             function (event) {
 
                 if (
-                    event.key === "Enter"
+                    event.key ===
+                        "Enter"
                 ) {
 
                     event.preventDefault();
@@ -1821,7 +1989,8 @@
 
             els.messagesButton.classList.toggle(
                 "active",
-                searchMode === "messages"
+                searchMode ===
+                    "messages"
             );
 
         }
@@ -1831,7 +2000,8 @@
 
             els.usersButton.classList.toggle(
                 "active",
-                searchMode === "users"
+                searchMode ===
+                    "users"
             );
 
         }
@@ -1839,7 +2009,9 @@
     }
 
 
-    async function performMainSearch(text) {
+    async function performMainSearch(
+        text
+    ) {
 
         const token =
             ++searchRequestToken;
@@ -1864,7 +2036,8 @@
 
 
         if (
-            searchMode === "users"
+            searchMode ===
+                "users"
         ) {
 
             await searchUsers(
@@ -1888,6 +2061,7 @@
 
         navigationToken++;
 
+
         searchRows = [];
 
         conversationSearchRows = [];
@@ -1901,6 +2075,7 @@
         pendingMessageId = null;
 
         pendingMessageContent = "";
+
 
         updateMatchNavigator();
 
@@ -1924,6 +2099,7 @@
         pendingMessageId = null;
 
         pendingMessageContent = "";
+
 
         if (els.results) {
 
@@ -1961,7 +2137,8 @@
 
         if (
             !client ||
-            typeof client.rpc !== "function"
+            typeof client.rpc !==
+                "function"
         ) {
 
             showSearchError(
@@ -2114,7 +2291,9 @@
                         blocked: false,
 
                         blockedBy:
-                            isBlockedYou(user)
+                            isBlockedYou(
+                                user
+                            )
 
                     };
 
@@ -2150,11 +2329,15 @@
 
 
                 const userId =
-                    getUserId(user);
+                    getUserId(
+                        user
+                    );
 
 
                 item.dataset.userId =
-                    normalizeId(userId);
+                    normalizeId(
+                        userId
+                    );
 
 
                 /*
@@ -2201,15 +2384,21 @@
                 } else {
 
                     const avatar =
-                        getAvatar(user);
+                        getAvatar(
+                            user
+                        );
 
 
                     const name =
-                        getDisplayName(user);
+                        getDisplayName(
+                            user
+                        );
 
 
                     const username =
-                        getUsername(user);
+                        getUsername(
+                            user
+                        );
 
 
                     let avatarHTML =
@@ -2222,7 +2411,9 @@
 
                             <img
                                 class="wfesc-search-avatar"
-                                src="${escapeHTML(avatar)}"
+                                src="${escapeHTML(
+                                    avatar
+                                )}"
                                 alt=""
                                 draggable="false"
                             >
@@ -2237,7 +2428,9 @@
                                 class="wfesc-search-avatar-fallback"
                             >
                                 ${escapeHTML(
-                                    getInitial(name)
+                                    getInitial(
+                                        name
+                                    )
                                 )}
                             </div>
 
@@ -2521,7 +2714,9 @@
     ) {
 
         const userId =
-            getUserId(user);
+            getUserId(
+                user
+            );
 
 
         if (!userId) {
@@ -2541,6 +2736,17 @@
         if (
             status.blockedBy
         ) {
+
+            replaceUserResultWithBlocked(
+                document.querySelector(
+                    `.wfesc-user-search-result[data-user-id="${escapeCSS(
+                        normalizeId(
+                            userId
+                        )
+                    )}"]`
+                )
+            );
+
 
             showSearchError(
                 "قام المستخدم بحظرك ولا يمكن بدء المحادثة."
@@ -2570,7 +2776,8 @@
 
         if (
             !client ||
-            typeof client.rpc !== "function"
+            typeof client.rpc !==
+                "function"
         ) {
 
             return;
@@ -2625,7 +2832,7 @@
 
 
             /*
-             * إعادة فحص واحدة فقط بعد RPC.
+             * إعادة فحص واحدة بعد RPC.
              */
             const afterRpcStatus =
                 await getBlockStatus(
@@ -2666,13 +2873,19 @@
                         userId,
 
                     username:
-                        getUsername(user),
+                        getUsername(
+                            user
+                        ),
 
                     display_name:
-                        getDisplayName(user),
+                        getDisplayName(
+                            user
+                        ),
 
                     avatar_url:
-                        getAvatar(user)
+                        getAvatar(
+                            user
+                        )
 
                 };
 
@@ -2740,7 +2953,8 @@
 
 
         if (
-            typeof data === "string"
+            typeof data ===
+                "string"
         ) {
 
             return data;
@@ -2767,7 +2981,8 @@
 
 
         if (
-            typeof data === "object"
+            typeof data ===
+                "object"
         ) {
 
             return (
@@ -2805,7 +3020,8 @@
 
         if (
             !client ||
-            typeof client.rpc !== "function"
+            typeof client.rpc !==
+                "function"
         ) {
 
             showSearchError(
@@ -2998,7 +3214,9 @@
 
 
         const count =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
 
         count.className =
@@ -3050,7 +3268,8 @@
                  * يمنع فتح المحادثة من خارج المحادثة.
                  *
                  * إذا نحن حاجبين الطرف:
-                 * يبقى البحث في السجل مسموحًا لأن السجل موجود.
+                 * يبقى السجل موجودًا ويمكن التعامل معه
+                 * من الواجهات التي تسمح بعرض السجل القديم.
                  */
                 item.className =
                     "search-result wfesc-search-message-row" +
@@ -3109,7 +3328,9 @@
 
 
                 let avatar =
-                    getAvatar(row);
+                    getAvatar(
+                        row
+                    );
 
 
                 /*
@@ -3149,7 +3370,9 @@
 
                         <img
                             class="wfesc-search-avatar"
-                            src="${escapeHTML(avatar)}"
+                            src="${escapeHTML(
+                                avatar
+                            )}"
                             alt=""
                             draggable="false"
                         >
@@ -3164,7 +3387,9 @@
                             class="wfesc-search-avatar-fallback"
                         >
                             ${escapeHTML(
-                                getInitial(senderName)
+                                getInitial(
+                                    senderName
+                                )
                             )}
                         </div>
 
@@ -3385,7 +3610,7 @@
 
         /*
          * المحادثة مفتوحة أصلًا:
-         * نسمح بالتنقل حتى لو كان هناك حظر.
+         * نسمح بالتنقل إلى السجل الموجود.
          */
         if (
 
@@ -3480,7 +3705,8 @@
 
             } catch (error) {
 
-                knownConversation = null;
+                knownConversation =
+                    null;
 
             }
 
@@ -3488,6 +3714,7 @@
 
 
         let contact =
+
             knownConversation?.contact ||
 
             knownConversation?.other_user ||
@@ -3497,20 +3724,22 @@
             null;
 
 
-        if (!targetUserId && contact) {
+        if (
+            !targetUserId &&
+            contact
+        ) {
 
             targetUserId =
-                getUserId(contact);
+                getUserId(
+                    contact
+                );
 
         }
 
 
         /*
          * إذا كنا نعرف الطرف وفعلًا هو حاجبنا:
-         * نمنع فتح المحادثة.
-         *
-         * blockedByMe لا يمنع فتح السجل الحالي
-         * لأن المستخدم يستطيع رؤية تاريخه القديم.
+         * نمنع فتح المحادثة من خارجها.
          */
         if (targetUserId) {
 
@@ -3550,7 +3779,8 @@
                 new CustomEvent(
                     "wfesc:search-message-open",
                     {
-                        detail: result
+                        detail:
+                            result
                     }
                 )
 
@@ -3580,11 +3810,12 @@
                             conversationId
                         );
 
-                } catch (contactError) {
+                } catch (
+                    contactError
+                ) {
 
                     /*
-                     * لا نخلي فشل جهة الاتصال يوقف البحث
-                     * أو يخرب ترتيب النتائج.
+                     * لا نخلي فشل جهة الاتصال يوقف البحث.
                      */
                     console.warn(
                         "[WFESC SEARCH] contact lookup failed:",
@@ -3596,10 +3827,15 @@
             }
 
 
-            if (!targetUserId && contact) {
+            if (
+                !targetUserId &&
+                contact
+            ) {
 
                 targetUserId =
-                    getUserId(contact);
+                    getUserId(
+                        contact
+                    );
 
             }
 
@@ -3743,7 +3979,8 @@
 
             const wanted =
                 String(
-                    selectedContent || ""
+                    selectedContent ||
+                    ""
                 ).trim();
 
 
@@ -3760,7 +3997,8 @@
                                     row?.message_content ||
                                     row?.text ||
                                     ""
-                                ).trim() === wanted
+                                ).trim() ===
+                                wanted
                             );
 
                         }
@@ -3775,7 +4013,8 @@
             selectedIndex < 0
         ) {
 
-            selectedIndex = 0;
+            selectedIndex =
+                0;
 
         }
 
@@ -3784,7 +4023,8 @@
             selectedIndex;
 
 
-        currentResults = [];
+        currentResults =
+            [];
 
 
         pendingMessageId =
@@ -3831,7 +4071,8 @@
             currentMatchIndex < 0
         ) {
 
-            currentMatchIndex = 0;
+            currentMatchIndex =
+                0;
 
         }
 
@@ -3842,7 +4083,8 @@
         ) {
 
             currentMatchIndex =
-                conversationSearchRows.length - 1;
+                conversationSearchRows.length -
+                1;
 
         }
 
@@ -3869,7 +4111,8 @@
         }
 
 
-        observerStarted = true;
+        observerStarted =
+            true;
 
 
         document.addEventListener(
@@ -3918,7 +4161,7 @@
         /*
          * مهم:
          * لا نستخدم subtree:true حتى لا نراقب العلامات
-         * التي يضيفها البحث لنفسه وندخل في حلقة إعادة معالجة.
+         * التي يضيفها البحث لنفسه.
          */
         const observer =
             new MutationObserver(
@@ -3926,7 +4169,8 @@
 
                     if (
                         !currentSearchText ||
-                        searchMode !== "messages"
+                        searchMode !==
+                            "messages"
                     ) {
 
                         return;
@@ -3939,7 +4183,8 @@
 
 
                     for (
-                        const mutation of mutations
+                        const mutation of
+                        mutations
                     ) {
 
                         if (
@@ -4043,7 +4288,8 @@
 
 
             /*
-             * searchRows مرتبة مسبقًا، لذلك لا نعيد sort.
+             * searchRows مرتبة مسبقًا،
+             * لذلك لا نعيد sort.
              */
             conversationSearchRows =
                 searchRows.filter(
@@ -4110,7 +4356,8 @@
 
         if (!container) {
 
-            currentResults = [];
+            currentResults =
+                [];
 
             updateMatchNavigator();
 
@@ -4125,12 +4372,15 @@
 
 
         const normalizedText =
-            normalizeSearchText(text);
+            normalizeSearchText(
+                text
+            );
 
 
         if (!normalizedText) {
 
-            currentResults = [];
+            currentResults =
+                [];
 
             updateMatchNavigator();
 
@@ -4147,7 +4397,8 @@
             );
 
 
-        const matches = [];
+        const matches =
+            [];
 
 
         bubbles.forEach(
@@ -4165,7 +4416,8 @@
 
 
                 const rawText =
-                    target.textContent || "";
+                    target.textContent ||
+                    "";
 
 
                 if (
@@ -4206,7 +4458,8 @@
                 function (content) {
 
                     const rawText =
-                        content.textContent || "";
+                        content.textContent ||
+                        "";
 
 
                     if (
@@ -4333,7 +4586,8 @@
                 parent.replaceChild(
 
                     document.createTextNode(
-                        mark.textContent || ""
+                        mark.textContent ||
+                        ""
                     ),
 
                     mark
@@ -4365,7 +4619,9 @@
 
 
         const queryText =
-            String(query);
+            String(
+                query
+            );
 
 
         const lowerQuery =
@@ -4422,17 +4678,21 @@
             );
 
 
-        const nodes = [];
+        const nodes =
+            [];
 
 
         let node;
 
 
         while (
-            (node = walker.nextNode())
+            (node =
+                walker.nextNode())
         ) {
 
-            nodes.push(node);
+            nodes.push(
+                node
+            );
 
         }
 
@@ -4441,7 +4701,8 @@
             function (textNode) {
 
                 const value =
-                    textNode.nodeValue || "";
+                    textNode.nodeValue ||
+                    "";
 
 
                 const lowerValue =
@@ -4587,7 +4848,9 @@
 
                     event.preventDefault();
 
-                    moveMatch(1);
+                    moveMatch(
+                        1
+                    );
 
                 }
             );
@@ -4603,7 +4866,9 @@
 
                     event.preventDefault();
 
-                    moveMatch(-1);
+                    moveMatch(
+                        -1
+                    );
 
                 }
             );
@@ -5134,7 +5399,9 @@
         if (messageId) {
 
             const normalizedId =
-                String(messageId);
+                String(
+                    messageId
+                );
 
 
             const elements =
@@ -5152,6 +5419,7 @@
                         element.dataset?.messageId
                     ) ===
                     normalizedId ||
+
                     normalizeId(
                         element.dataset?.id
                     ) ===
@@ -5185,7 +5453,8 @@
 
                 } catch (error) {
 
-                    target = null;
+                    target =
+                        null;
 
                 }
 
@@ -5296,18 +5565,26 @@
     }
 
 
-    function escapeCSS(value) {
+    function escapeCSS(
+        value
+    ) {
 
         const text =
-            String(value ?? "");
+            String(
+                value ?? ""
+            );
 
 
         if (
-            typeof CSS !== "undefined" &&
-            typeof CSS.escape === "function"
+            typeof CSS !==
+                "undefined" &&
+            typeof CSS.escape ===
+                "function"
         ) {
 
-            return CSS.escape(text);
+            return CSS.escape(
+                text
+            );
 
         }
 
@@ -5373,9 +5650,15 @@
 
             target.scrollIntoView(
                 {
-                    behavior: "smooth",
-                    block: "center",
-                    inline: "nearest"
+                    behavior:
+                        "smooth",
+
+                    block:
+                        "center",
+
+                    inline:
+                        "nearest"
+
                 }
             );
 
@@ -5451,7 +5734,8 @@
 
     async function waitForChatRender() {
 
-        const maxAttempts = 25;
+        const maxAttempts =
+            25;
 
 
         for (
@@ -5481,7 +5765,9 @@
             }
 
 
-            await wait(60);
+            await wait(
+                60
+            );
 
         }
 
@@ -5511,7 +5797,9 @@
             <div
                 class="wfesc-search-error"
             >
-                ${escapeHTML(message)}
+                ${escapeHTML(
+                    message
+                )}
             </div>
 
         `;
@@ -5537,7 +5825,9 @@
         try {
 
             const date =
-                new Date(value);
+                new Date(
+                    value
+                );
 
 
             if (
@@ -5554,8 +5844,12 @@
             return date.toLocaleString(
                 "ar-IQ",
                 {
-                    dateStyle: "short",
-                    timeStyle: "short"
+                    dateStyle:
+                        "short",
+
+                    timeStyle:
+                        "short"
+
                 }
             );
 
@@ -5630,7 +5924,8 @@
             "DOMContentLoaded",
             init,
             {
-                once: true
+                once:
+                    true
             }
         );
 
