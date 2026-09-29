@@ -16,6 +16,7 @@
      * 6. الاتصال بقنوات Supabase Typing الحقيقية
      * 7. تحديث آخر رسالة
      * 8. فتح المحادثة
+     * 9. تحديث قائمة المحادثات بشكل فوري عبر Realtime
      *
      * لا يعدل messages-core.js
      * ولا يعدل messages-activity.js
@@ -88,6 +89,10 @@
 
     let activityTimer = null;
 
+    let realtimeChannel = null;
+
+    let realtimeStarting = false;
+
     let initialized = false;
 
     let rendering = false;
@@ -97,10 +102,26 @@
     let lastRenderedSignature = "";
 
     /*
+     * conversationId -> {
+     *     content,
+     *     created_at,
+     *     sender_id
+     * }
+     *
+     * هذا يخلي قائمة المحادثات تعرف آخر رسالة
+     * فور وصولها عبر Realtime حتى لو الـCore
+     * لم ينتهِ بعد من تحديث قائمته الداخلية.
+     */
+    const liveMessageOverrides =
+        new Map();
+
+
+    /*
      * conversationId -> Supabase channel
      */
     const typingChannels =
         new Map();
+
 
     /*
      * conversationId -> {
@@ -110,6 +131,7 @@
      */
     const typingStates =
         new Map();
+
 
     /*
      * conversationId -> {
@@ -228,6 +250,24 @@
             );
 
         return conversationList;
+    }
+
+
+    /* =========================================================
+       SUPABASE CLIENT
+       ========================================================= */
+
+    function getSupabaseClient() {
+
+        const messagesCore =
+            getCore();
+
+        return (
+            messagesCore?.client ||
+            window.WFESCSupabase ||
+            window.supabase ||
+            null
+        );
     }
 
 
@@ -779,6 +819,41 @@
         conversation
     ) {
 
+        const conversationId =
+            getConversationId(
+                conversation
+            );
+
+        const live =
+            conversationId
+                ? liveMessageOverrides.get(
+                    String(
+                        conversationId
+                    )
+                )
+                : null;
+
+        /*
+         * إذا وصلت رسالة جديدة عبر Realtime
+         * نعتمد عليها مباشرة.
+         */
+        if (live) {
+
+            return String(
+
+                firstValue(
+
+                    live.content,
+
+                    live.message,
+
+                    ""
+
+                ) || ""
+
+            );
+        }
+
         return String(
 
             firstValue(
@@ -807,6 +882,31 @@
         conversation
     ) {
 
+        const conversationId =
+            getConversationId(
+                conversation
+            );
+
+        const live =
+            conversationId
+                ? liveMessageOverrides.get(
+                    String(
+                        conversationId
+                    )
+                )
+                : null;
+
+        if (live) {
+
+            return firstValue(
+
+                live.created_at,
+
+                live.message_created_at
+
+            );
+        }
+
         return firstValue(
 
             conversation?.last_message_at,
@@ -818,6 +918,565 @@
             conversation?.created_at
 
         );
+    }
+
+
+    /* =========================================================
+       APPLY LIVE MESSAGE
+       ========================================================= */
+
+    function applyLiveMessage(
+        message
+    ) {
+
+        if (!message) {
+            return;
+        }
+
+        const conversationId =
+            firstValue(
+
+                message.conversation_id,
+
+                message.conversationId
+
+            );
+
+        if (!conversationId) {
+            return;
+        }
+
+        const content =
+            firstValue(
+
+                message.content,
+
+                message.message,
+
+                ""
+
+            );
+
+        const createdAt =
+            firstValue(
+
+                message.created_at,
+
+                message.createdAt,
+
+                new Date().toISOString()
+
+            );
+
+        const key =
+            String(
+                conversationId
+            );
+
+        const old =
+            liveMessageOverrides.get(
+                key
+            );
+
+        /*
+         * لا نسمح لرسالة قديمة أن تستبدل
+         * رسالة أحدث وصلت قبلها.
+         */
+        if (
+            old?.created_at &&
+            createdAt
+        ) {
+
+            const oldTime =
+                new Date(
+                    old.created_at
+                ).getTime();
+
+            const newTime =
+                new Date(
+                    createdAt
+                ).getTime();
+
+            if (
+                Number.isFinite(
+                    oldTime
+                ) &&
+                Number.isFinite(
+                    newTime
+                ) &&
+                newTime < oldTime
+            ) {
+
+                return;
+            }
+        }
+
+        liveMessageOverrides.set(
+            key,
+            {
+
+                content:
+                    String(
+                        content
+                    ),
+
+                created_at:
+                    createdAt,
+
+                sender_id:
+                    message.sender_id ||
+                    null
+
+            }
+        );
+
+        debug(
+            "Live message applied:",
+            key,
+            content
+        );
+    }
+
+
+    /* =========================================================
+       GET CURRENT CONVERSATIONS
+       ========================================================= */
+
+    function getCurrentConversations() {
+
+        const messagesCore =
+            getCore();
+
+        if (
+            !messagesCore ||
+            typeof
+                messagesCore.getConversations !==
+                "function"
+        ) {
+
+            return [];
+        }
+
+        let data;
+
+        try {
+
+            data =
+                messagesCore.getConversations();
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC CONVERSATIONS] getConversations:",
+                error
+            );
+
+            return [];
+        }
+
+        if (
+            !Array.isArray(data)
+        ) {
+
+            return [];
+        }
+
+        /*
+         * نضيف تحديثات Realtime إلى نسخة
+         * العرض بدون تعديل الـCore نفسه.
+         */
+        const merged =
+            data.map(
+                conversation => {
+
+                    const conversationId =
+                        getConversationId(
+                            conversation
+                        );
+
+                    if (!conversationId) {
+                        return conversation;
+                    }
+
+                    const live =
+                        liveMessageOverrides.get(
+                            String(
+                                conversationId
+                            )
+                        );
+
+                    if (!live) {
+                        return conversation;
+                    }
+
+                    return {
+
+                        ...conversation,
+
+                        last_message_text:
+                            live.content,
+
+                        last_message:
+                            live.content,
+
+                        last_message_content:
+                            live.content,
+
+                        last_message_at:
+                            live.created_at,
+
+                        last_message_created_at:
+                            live.created_at
+
+                    };
+
+                }
+            );
+
+        return sortConversations(
+            uniqueConversations(
+                merged.filter(
+                    conversation =>
+                        Boolean(
+                            getConversationId(
+                                conversation
+                            )
+                        )
+                )
+            )
+        );
+    }
+
+
+    /* =========================================================
+       REALTIME MESSAGE HANDLER
+       ========================================================= */
+
+    async function handleRealtimeMessage(
+        payload
+    ) {
+
+        const message =
+            payload?.new ||
+            payload?.record ||
+            payload?.payload?.new ||
+            null;
+
+        if (!message) {
+            return;
+        }
+
+        const conversationId =
+            firstValue(
+
+                message.conversation_id,
+
+                message.conversationId
+
+            );
+
+        if (!conversationId) {
+            return;
+        }
+
+        /*
+         * تأكد أن المحادثة موجودة في القائمة الحالية.
+         */
+        const conversations =
+            getCurrentConversations();
+
+        const exists =
+            conversations.some(
+                conversation =>
+                    String(
+                        getConversationId(
+                            conversation
+                        )
+                    ) ===
+                    String(
+                        conversationId
+                    )
+            );
+
+        /*
+         * إذا لم تكن موجودة حالياً،
+         * نطلب من الـCore تحديث قائمته إن كان
+         * يملك أحد هذه الـAPIs.
+         */
+        if (!exists) {
+
+            const messagesCore =
+                getCore();
+
+            const possibleRefreshMethods = [
+
+                "refreshConversations",
+
+                "loadConversations",
+
+                "fetchConversations",
+
+                "refresh"
+
+            ];
+
+            for (
+                const method
+                of possibleRefreshMethods
+            ) {
+
+                if (
+                    messagesCore &&
+                    typeof
+                        messagesCore[method] ===
+                        "function"
+                ) {
+
+                    try {
+
+                        await messagesCore[
+                            method
+                        ]();
+
+                        break;
+
+                    } catch (_) {}
+                }
+            }
+        }
+
+        /*
+         * نخزن آخر رسالة فوراً.
+         */
+        applyLiveMessage(
+            message
+        );
+
+        /*
+         * نحدث القائمة فوراً.
+         */
+        await refresh(
+            true
+        );
+
+        /*
+         * نخلي بقية أجزاء نظام WFESC
+         * تعرف أن هناك رسالة Realtime.
+         */
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:conversation-live-message",
+                    {
+                        detail: {
+                            message:
+                                message,
+
+                            conversationId:
+                                conversationId
+                        }
+                    }
+                )
+            );
+
+        } catch (_) {}
+    }
+
+
+    /* =========================================================
+       START MESSAGE REALTIME
+       ========================================================= */
+
+    async function startMessageRealtime() {
+
+        if (realtimeChannel) {
+            return;
+        }
+
+        if (realtimeStarting) {
+            return;
+        }
+
+        realtimeStarting =
+            true;
+
+        const supabaseClient =
+            getSupabaseClient();
+
+        if (
+            !supabaseClient ||
+            typeof
+                supabaseClient.channel !==
+                "function"
+        ) {
+
+            realtimeStarting =
+                false;
+
+            debug(
+                "Supabase client غير جاهز للـ conversations realtime"
+            );
+
+            return;
+        }
+
+        try {
+
+            const channel =
+                supabaseClient.channel(
+                    "wfesc-conversations-realtime"
+                );
+
+            channel.on(
+
+                "postgres_changes",
+
+                {
+                    event:
+                        "INSERT",
+
+                    schema:
+                        "public",
+
+                    table:
+                        "messages"
+                },
+
+                payload => {
+
+                    handleRealtimeMessage(
+                        payload
+                    );
+
+                }
+
+            );
+
+            /*
+             * UPDATE مهم إذا صار تعديل على رسالة
+             * ويجب أن يظهر في المعاينة.
+             */
+            channel.on(
+
+                "postgres_changes",
+
+                {
+                    event:
+                        "UPDATE",
+
+                    schema:
+                        "public",
+
+                    table:
+                        "messages"
+                },
+
+                payload => {
+
+                    handleRealtimeMessage(
+                        payload
+                    );
+
+                }
+
+            );
+
+            realtimeChannel =
+                channel;
+
+            channel.subscribe(
+                status => {
+
+                    debug(
+                        "Messages realtime status:",
+                        status
+                    );
+
+                    if (
+                        status ===
+                        "SUBSCRIBED"
+                    ) {
+
+                        realtimeStarting =
+                            false;
+
+                        return;
+                    }
+
+                    if (
+                        status ===
+                            "CHANNEL_ERROR" ||
+                        status ===
+                            "TIMED_OUT" ||
+                        status ===
+                            "CLOSED"
+                    ) {
+
+                        realtimeChannel =
+                            null;
+
+                        realtimeStarting =
+                            false;
+
+                    }
+
+                }
+            );
+
+        } catch (error) {
+
+            realtimeChannel =
+                null;
+
+            realtimeStarting =
+                false;
+
+            console.warn(
+                "[WFESC CONVERSATIONS] realtime:",
+                error
+            );
+        }
+    }
+
+
+    /* =========================================================
+       STOP MESSAGE REALTIME
+       ========================================================= */
+
+    async function stopMessageRealtime() {
+
+        if (!realtimeChannel) {
+            return;
+        }
+
+        const channel =
+            realtimeChannel;
+
+        realtimeChannel =
+            null;
+
+        realtimeStarting =
+            false;
+
+        try {
+
+            const supabaseClient =
+                getSupabaseClient();
+
+            if (
+                supabaseClient &&
+                typeof
+                    supabaseClient.removeChannel ===
+                    "function"
+            ) {
+
+                await supabaseClient.removeChannel(
+                    channel
+                );
+            }
+
+        } catch (_) {}
     }
 
 
@@ -940,13 +1599,6 @@
                     typeof state ===
                         "object"
                 ) {
-
-                    /*
-                     * messages-activity.js
-                     * قد لا يعيد show_activity
-                     * في كل الحالات، لذلك لا نعتمد
-                     * عليه وحده.
-                     */
 
                     const hidden =
                         state.show_activity ===
@@ -1655,64 +2307,6 @@
 
 
     /* =========================================================
-       GET CURRENT CONVERSATIONS
-       ========================================================= */
-
-    function getCurrentConversations() {
-
-        const messagesCore =
-            getCore();
-
-        if (
-            !messagesCore ||
-            typeof
-                messagesCore.getConversations !==
-                "function"
-        ) {
-
-            return [];
-        }
-
-        let data;
-
-        try {
-
-            data =
-                messagesCore.getConversations();
-
-        } catch (error) {
-
-            console.warn(
-                "[WFESC CONVERSATIONS] getConversations:",
-                error
-            );
-
-            return [];
-        }
-
-        if (
-            !Array.isArray(data)
-        ) {
-
-            return [];
-        }
-
-        return sortConversations(
-            uniqueConversations(
-                data.filter(
-                    conversation =>
-                        Boolean(
-                            getConversationId(
-                                conversation
-                            )
-                        )
-                )
-            )
-        );
-    }
-
-
-    /* =========================================================
        RESOLVE CONTACTS
        ========================================================= */
 
@@ -1730,10 +2324,6 @@
             return;
         }
 
-        /*
-         * نجلب فقط المحادثات التي تحتاج
-         * معلومات إضافية.
-         */
         await Promise.all(
 
             conversations.map(
@@ -1749,10 +2339,6 @@
                             conversation
                         );
 
-                    /*
-                     * إذا الاسم والصورة و user_id
-                     * موجودة بالفعل، لا نحتاج RPC.
-                     */
                     const hasName =
                         Boolean(
                             firstValue(
@@ -1914,10 +2500,6 @@
         let conversations =
             getCurrentConversations();
 
-        /*
-         * اجلب معلومات الأشخاص الحقيقية
-         * قبل إنشاء البطاقات.
-         */
         await resolveConversationContacts(
             conversations
         );
@@ -2337,9 +2919,6 @@
                 ? messagesCore.getCurrentUser()
                 : null;
 
-        /*
-         * لا نظهر كتابة المستخدم نفسه.
-         */
         if (
             currentUser?.id &&
             String(
@@ -2390,10 +2969,6 @@
             return;
         }
 
-        /*
-         * الدعم لا يحتاج Typing channel
-         * إذا كان النظام الحالي يعتبره خاصاً.
-         */
         if (
             isSupportConversation(
                 conversation
@@ -2551,10 +3126,6 @@
             }
         );
 
-        /*
-         * أغلق القنوات الخاصة بالمحادثات
-         * التي لم تعد موجودة.
-         */
         for (
             const [
                 key,
@@ -2605,9 +3176,6 @@
             );
         }
 
-        /*
-         * افتح قنوات المحادثات الموجودة فعلياً.
-         */
         for (
             const conversation
             of conversations
@@ -2667,9 +3235,6 @@
             true;
 
 
-        /*
-         * النشاط تغير
-         */
         window.addEventListener(
             "wfesc:activity-sync",
             () => {
@@ -2710,9 +3275,6 @@
         );
 
 
-        /*
-         * أي تحديث للمحادثات
-         */
         window.addEventListener(
             "wfesc:conversations-refresh",
             () => {
@@ -2762,9 +3324,21 @@
 
 
         /*
-         * هذه الأحداث مفيدة إذا أرسلها core
-         * مستقبلاً، لكن لا نعتمد عليها للـ Typing.
+         * Realtime مستقل للقائمة.
          */
+        window.addEventListener(
+            "wfesc:conversation-live-message",
+            () => {
+
+                /*
+                 * الحدث هنا موجود فقط للتكامل
+                 * مع أي ملفات أخرى مستقبلاً.
+                 */
+
+            }
+        );
+
+
         window.addEventListener(
             "wfesc:typing",
             event => {
@@ -2965,6 +3539,12 @@
             true
         );
 
+        /*
+         * تشغيل Realtime الخاص بقائمة المحادثات
+         * بعد جاهزية Core وSupabase.
+         */
+        await startMessageRealtime();
+
         startRefreshTimer();
 
         debug(
@@ -3003,7 +3583,13 @@
 
         syncTypingChannels,
 
-        resolveContact
+        resolveContact,
+
+        startMessageRealtime,
+
+        stopMessageRealtime,
+
+        getCurrentConversations
 
     };
 
