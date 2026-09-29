@@ -114,7 +114,21 @@
     };
 
 
+    /*
+     * Token لمنع تطبيق نتيجة فحص قديم
+     * بعد الانتقال إلى محادثة أخرى.
+     */
+
     let blockCheckToken =
+        0;
+
+
+    /*
+     * يمنع تشغيل أكثر من تحديث Header
+     * متزامن عند كثرة الأحداث.
+     */
+
+    let headerRenderToken =
         0;
 
 
@@ -394,7 +408,7 @@
 
     /* =========================================================
        فحص حالة الحظر
-       
+
        blocked:
        المستخدم الحالي قام بحظر الشخص.
 
@@ -532,6 +546,12 @@
         }
 
 
+        const normalizedUserId =
+            getContactUserId(
+                normalized
+            );
+
+
         const state =
             await getBlockState(
                 normalized
@@ -547,7 +567,31 @@
             token !== blockCheckToken
         ) {
 
-            return currentBlockState;
+            return null;
+
+        }
+
+
+        /*
+         * حماية إضافية:
+         * نتأكد أن النتيجة تخص المستخدم
+         * الموجود حالياً في رأس المحادثة.
+         */
+
+        const currentUserId =
+            getContactUserId(
+                currentContact
+            );
+
+
+        if (
+            currentUserId &&
+            normalizedUserId &&
+            String(currentUserId) !==
+            String(normalizedUserId)
+        ) {
+
+            return null;
 
         }
 
@@ -563,9 +607,9 @@
 
     /* =========================================================
        هل يجب إخفاء هوية المستخدم؟
-       
+
        فقط إذا كان الطرف الآخر هو الذي حظر المستخدم الحالي.
-       
+
        إذا المستخدم الحالي هو الذي حظر الطرف الآخر،
        تبقى بيانات الطرف الآخر ظاهرة عنده.
     ========================================================= */
@@ -582,10 +626,10 @@
 
     /* =========================================================
        الحصول على حالة إظهار النشاط
-       
+
        ملاحظة:
        لا نستخدم هذه القيمة وحدها لتحديد النشاط.
-       
+
        Activity Module هو المصدر الأساسي.
        هذا فقط fallback في حالة عدم وجود Activity.
     ========================================================= */
@@ -1110,6 +1154,16 @@
             );
 
 
+        const renderToken =
+            ++headerRenderToken;
+
+
+        const normalizedUserId =
+            getContactUserId(
+                normalized
+            );
+
+
         currentContact =
             normalized;
 
@@ -1119,9 +1173,52 @@
          * الاسم والصورة.
          */
 
-        await refreshBlockState(
-            normalized
-        );
+        const blockState =
+            await refreshBlockState(
+                normalized
+            );
+
+
+        /*
+         * إذا تغيرت المحادثة أو بدأ تحديث أحدث،
+         * لا نطبق النتيجة القديمة.
+         */
+
+        if (
+            renderToken !==
+            headerRenderToken
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            !blockState
+        ) {
+
+            return;
+
+        }
+
+
+        const latestContactId =
+            getContactUserId(
+                currentContact
+            );
+
+
+        if (
+            normalizedUserId &&
+            latestContactId &&
+            String(normalizedUserId) !==
+            String(latestContactId)
+        ) {
+
+            return;
+
+        }
 
 
         /*
@@ -1134,9 +1231,7 @@
             getContactUserId(
                 currentContact
             ) !==
-            getContactUserId(
-                normalized
-            )
+            normalizedUserId
         ) {
 
             return;
@@ -1182,15 +1277,25 @@
             detail.contact
         ) {
 
+            currentConversationId =
+                detail.conversationId ||
+                null;
+
+
             currentContact =
                 normalizeContact(
                     detail.contact
                 );
 
 
-            currentConversationId =
-                detail.conversationId ||
-                null;
+            /*
+             * إلغاء أي فحص قديم قبل بدء
+             * فحص المحادثة الجديدة.
+             */
+
+            ++blockCheckToken;
+
+            ++headerRenderToken;
 
 
             renderHeader(
@@ -1231,10 +1336,51 @@
 
             if (contact) {
 
-                currentContact =
+                const normalized =
                     normalizeContact(
                         contact
                     );
+
+
+                const newUserId =
+                    getContactUserId(
+                        normalized
+                    );
+
+
+                const oldUserId =
+                    getContactUserId(
+                        currentContact
+                    );
+
+
+                /*
+                 * إذا انتقلنا لمستخدم آخر،
+                 * نلغي الفحوص السابقة فوراً.
+                 */
+
+                if (
+                    String(newUserId || "") !==
+                    String(oldUserId || "")
+                ) {
+
+                    ++blockCheckToken;
+
+                    ++headerRenderToken;
+
+                    currentBlockState = {
+
+                        blocked: false,
+
+                        blockedBy: false
+
+                    };
+
+                }
+
+
+                currentContact =
+                    normalized;
 
 
                 if (
@@ -1377,7 +1523,7 @@
 
     /* =========================================================
        أحداث الحظر
-       
+
        عند الحظر أو إلغاء الحظر:
        - نعيد فحص الحالة
        - نعيد الاسم
@@ -1415,6 +1561,15 @@
             return;
 
         }
+
+
+        /*
+         * إلغاء أي فحص سابق.
+         */
+
+        ++blockCheckToken;
+
+        ++headerRenderToken;
 
 
         currentBlockState = {
@@ -1486,7 +1641,7 @@
 
     /* =========================================================
        زر الشخص في رأس المحادثة
-       
+
        حالياً لا نفتح الملف الشخصي مباشرة.
        فقط نرسل حدثاً للموديول المسؤول مستقبلاً.
     ========================================================= */
@@ -1565,7 +1720,7 @@
 
     /* =========================================================
        تحديث دوري خفيف لرأس المحادثة
-       
+
        لا ينشئ Presence جديد.
        فقط يقرأ الحالة الحالية.
     ========================================================= */
@@ -1758,7 +1913,7 @@
 
     /* =========================================================
        التشغيل الأول
-       
+
        Core قد يكون قد فتح المحادثة قبل تحميل
        هذا الملف، لذلك نحاول قراءة البيانات
        مباشرة بعد تشغيل الموديول.
