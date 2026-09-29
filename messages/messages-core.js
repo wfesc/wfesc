@@ -25,9 +25,10 @@ Soft Delete Support
 Conversation Refresh
 Activity Contact Normalization
 Chat Header Interface
-Block Protection
-Typing Block Protection
-Realtime Block Protection
+
+BLOCK BRIDGE
+DELETE-FOR-ME MESSAGE CUTOFF
+FAST PARALLEL OPEN
 */
 
 /* =========================================================
@@ -109,6 +110,15 @@ const MESSAGE_CACHE_TIME =
 
 const CONVERSATION_REFRESH_DEBOUNCE =
 120;
+
+/*
+هذا المفتاح مستقل عن المفتاح الذي تستخدمه
+messages-chat-actions.js حتى تبقى معلومات
+نقطة "حذف لدي" محفوظة ولا تتعارض مع
+الـ hidden conversation ids القديمة.
+*/
+const DELETE_FOR_ME_META_PREFIX =
+"wfesc_delete_for_me_meta_";
 
 /* =========================================================
 STATE
@@ -210,8 +220,26 @@ document.getElementById(
 );
 
 /* =========================================================
-BLOCK MODULE
+BLOCK MODULE BRIDGE
 ========================================================= */
+
+/*
+الكور لا يملك نظام حظر مستقل.
+كل فحص يمر من خلال messages-block.js.
+
+إذا تم لاحقًا إضافة:
+getBlockState
+canOpenConversation
+shouldIgnoreMessage
+
+داخل messages-block.js
+فالكور سيستخدمها مباشرة.
+
+أما حاليًا فيستخدم:
+isBlocked
+isBlockedBy
+الموجودتين أصلًا في ملف الحظر.
+*/
 
 function getBlockModule() {
 
@@ -219,43 +247,180 @@ return window.WFESC_MESSAGES_BLOCK || null;
 
 }
 
-async function isCurrentUserBlockedBy(
+async function getBlockStateFromModule(
 userId
 ) {
 
 if (!userId) {
-return false;
+
+return {
+
+blocked:
+false,
+
+blockedBy:
+false,
+
+blockedByMe:
+false,
+
+userId:
+null
+
+};
+
 }
 
 const block =
 getBlockModule();
 
-if (
-!block ||
-typeof block.isBlockedBy !==
-"function"
-) {
-return false;
+if (!block) {
+
+return {
+
+blocked:
+false,
+
+blockedBy:
+false,
+
+blockedByMe:
+false,
+
+userId
+
+};
+
 }
 
 try {
 
-return Boolean(
-await block.isBlockedBy(
+/*
+دعم واجهة أحدث مستقبلًا من messages-block.js.
+*/
+
+if (
+typeof block.getBlockState ===
+"function"
+) {
+
+const state =
+await block.getBlockState(
+userId
+);
+
+return {
+
+blocked:
+Boolean(
+state?.blocked
+),
+
+blockedBy:
+Boolean(
+state?.blockedBy
+),
+
+blockedByMe:
+Boolean(
+state?.blockedByMe
+),
+
+userId
+
+};
+
+}
+
+/*
+الواجهة الحالية الموجودة في messages-block.js.
+*/
+
+const blockedByPromise =
+typeof block.isBlockedBy ===
+"function"
+? block.isBlockedBy(
 userId
 )
-);
+: Promise.resolve(false);
+
+const blockedByMePromise =
+typeof block.isBlocked ===
+"function"
+? block.isBlocked(
+userId
+)
+: Promise.resolve(false);
+
+const [
+blockedBy,
+blockedByMe
+] =
+await Promise.all([
+blockedByPromise,
+blockedByMePromise
+]);
+
+return {
+
+blocked:
+Boolean(
+blockedBy ||
+blockedByMe
+),
+
+blockedBy:
+Boolean(
+blockedBy
+),
+
+blockedByMe:
+Boolean(
+blockedByMe
+),
+
+userId
+
+};
 
 } catch (error) {
 
 console.warn(
-"WFESC CORE block check:",
+"WFESC CORE block bridge:",
 error
 );
 
-return false;
+return {
+
+blocked:
+false,
+
+blockedBy:
+false,
+
+blockedByMe:
+false,
+
+userId
+
+};
 
 }
+
+}
+
+async function isCurrentUserBlockedBy(
+userId
+) {
+
+const state =
+await getBlockStateFromModule(
+userId
+);
+
+return Boolean(
+state.blockedBy
+);
 
 }
 
@@ -263,39 +428,14 @@ async function isCurrentUserBlocking(
 userId
 ) {
 
-if (!userId) {
-return false;
-}
-
-const block =
-getBlockModule();
-
-if (
-!block ||
-typeof block.isBlocked !==
-"function"
-) {
-return false;
-}
-
-try {
+const state =
+await getBlockStateFromModule(
+userId
+);
 
 return Boolean(
-await block.isBlocked(
-userId
-)
+state.blockedByMe
 );
-
-} catch (error) {
-
-console.warn(
-"WFESC CORE blocking check:",
-error
-);
-
-return false;
-
-}
 
 }
 
@@ -342,10 +482,17 @@ contact.is_support
 
 return {
 
-blocked: false,
-blockedBy: false,
-blockedByMe: false,
-userId: null
+blocked:
+false,
+
+blockedBy:
+false,
+
+blockedByMe:
+false,
+
+userId:
+null
 
 };
 
@@ -360,62 +507,31 @@ if (!userId) {
 
 return {
 
-blocked: false,
-blockedBy: false,
-blockedByMe: false,
-userId: null
+blocked:
+false,
+
+blockedBy:
+false,
+
+blockedByMe:
+false,
+
+userId:
+null
 
 };
 
 }
 
-const [
-blockedBy,
-blockedByMe
-] = await Promise.all([
-
-isCurrentUserBlockedBy(
+return getBlockStateFromModule(
 userId
-),
-
-isCurrentUserBlocking(
-userId
-)
-
-]);
-
-return {
-
-blocked:
-Boolean(
-blockedBy ||
-blockedByMe
-),
-
-blockedBy:
-Boolean(
-blockedBy
-),
-
-blockedByMe:
-Boolean(
-blockedByMe
-),
-
-userId
-
-};
+);
 
 }
 
 /*
-إذا الطرف الآخر قام بحظر المستخدم الحالي:
-
-لا نسمح للـCore بفتح المحادثة.
-
-أما إذا المستخدم الحالي هو الذي قام بالحظر:
-
-نسمح بفتح المحادثة القديمة.
+هذا مجرد Bridge إلى ملف الحظر.
+لا يوجد هنا نظام حظر مستقل.
 */
 
 async function canOpenConversationByBlock(
@@ -425,76 +541,146 @@ contact
 if (!contact) {
 
 return {
-allowed: true,
-blockedBy: false,
-blockedByMe: false
+allowed:
+true,
+blockedBy:
+false,
+blockedByMe:
+false
 };
 
 }
 
-if (contact.is_support) {
+if (
+contact.is_support
+) {
 
 return {
-allowed: true,
-blockedBy: false,
-blockedByMe: false
+allowed:
+true,
+blockedBy:
+false,
+blockedByMe:
+false
 };
 
 }
 
-const normalized =
+const userId =
+getContactUserId(
 normalizeContact(
 contact
+)
 );
-
-const userId =
-normalized.user_id;
 
 if (!userId) {
 
 return {
-allowed: true,
-blockedBy: false,
-blockedByMe: false
+allowed:
+true,
+blockedBy:
+false,
+blockedByMe:
+false
 };
 
 }
 
-const blockedBy =
-await isCurrentUserBlockedBy(
+const block =
+getBlockModule();
+
+try {
+
+/*
+دعم واجهة أحدث مستقبلًا.
+*/
+
+if (
+block &&
+typeof block.canOpenConversation ===
+"function"
+) {
+
+const result =
+await block.canOpenConversation(
 userId
 );
 
-if (blockedBy) {
-
 return {
-allowed: false,
-blockedBy: true,
-blockedByMe: false
+
+allowed:
+result?.allowed !== false,
+
+blockedBy:
+Boolean(
+result?.blockedBy
+),
+
+blockedByMe:
+Boolean(
+result?.blockedByMe
+)
+
 };
 
 }
 
-const blockedByMe =
-await isCurrentUserBlocking(
+const state =
+await getBlockStateFromModule(
 userId
 );
 
 return {
-allowed: true,
-blockedBy: false,
-blockedByMe
+
+allowed:
+!state.blockedBy,
+
+blockedBy:
+Boolean(
+state.blockedBy
+),
+
+blockedByMe:
+Boolean(
+state.blockedByMe
+)
+
+};
+
+} catch (error) {
+
+console.warn(
+"WFESC CORE block-open bridge:",
+error
+);
+
+return {
+
+allowed:
+true,
+
+blockedBy:
+false,
+
+blockedByMe:
+false
+
 };
 
 }
 
 /*
-يمنع الرسائل الجديدة القادمة من شخص قام
-بحظر المستخدم الحالي أو من شخص قام المستخدم
-الحالي بحظره.
-
+مهم:
 هذا لا يحذف التاريخ القديم.
+وظيفته فقط أن يمنع فتح المحادثة عندما
+يكون الطرف الآخر قد حظر المستخدم الحالي.
 */
+
+}
+
+/* =========================================================
+BLOCK REALTIME BRIDGE
+========================================================= */
 
 async function shouldIgnoreRealtimeMessage(
 message
@@ -526,54 +712,56 @@ return false;
 const block =
 getBlockModule();
 
-if (!block) {
-return false;
-}
-
 try {
 
+/*
+دعم واجهة مخصصة مستقبلًا من messages-block.js.
+*/
+
 if (
-typeof block.isBlockedBy ===
+block &&
+typeof block.shouldIgnoreMessage ===
 "function"
 ) {
 
-const blockedBy =
-await block.isBlockedBy(
+return Boolean(
+await block.shouldIgnoreMessage(
+message
+)
+);
+
+}
+
+/*
+الواجهة الحالية:
+إذا كان أي طرف حاجز الطرف الآخر،
+لا نعرض الرسالة الواردة الجديدة.
+*/
+
+const state =
+await getBlockStateFromModule(
 senderId
 );
 
-if (blockedBy) {
-return true;
-}
-
-}
-
-if (
-typeof block.isBlocked ===
-"function"
-) {
-
-const blockedByMe =
-await block.isBlocked(
-senderId
+return Boolean(
+state.blockedBy ||
+state.blockedByMe
 );
-
-if (blockedByMe) {
-return true;
-}
-
-}
 
 } catch (error) {
 
 console.warn(
-"WFESC CORE realtime block check:",
+"WFESC CORE realtime block bridge:",
 error
 );
 
+return false;
+
 }
 
-return false;
+/* =========================================================
+END BLOCK BRIDGE
+========================================================= */
 
 }
 
@@ -1377,6 +1565,840 @@ message?.message_content ??
 }
 
 /* =========================================================
+DELETE-FOR-ME META
+========================================================= */
+
+function getDeleteMetaStorageKey() {
+
+if (
+!currentUser?.id
+) {
+return null;
+}
+
+return (
+DELETE_FOR_ME_META_PREFIX +
+String(
+currentUser.id
+)
+);
+
+}
+
+function readDeleteForMeMeta() {
+
+const key =
+getDeleteMetaStorageKey();
+
+if (!key) {
+return {};
+}
+
+try {
+
+const raw =
+localStorage.getItem(
+key
+);
+
+if (!raw) {
+return {};
+}
+
+const parsed =
+JSON.parse(
+raw
+);
+
+if (
+!parsed ||
+typeof parsed !==
+"object" ||
+Array.isArray(parsed)
+) {
+
+return {};
+
+}
+
+return parsed;
+
+} catch (error) {
+
+console.warn(
+"WFESC delete-for-me meta read:",
+error
+);
+
+return {};
+
+}
+
+}
+
+function writeDeleteForMeMeta(
+meta
+) {
+
+const key =
+getDeleteMetaStorageKey();
+
+if (!key) {
+return;
+}
+
+try {
+
+localStorage.setItem(
+key,
+JSON.stringify(
+meta ||
+{}
+)
+);
+
+} catch (error) {
+
+console.warn(
+"WFESC delete-for-me meta write:",
+error
+);
+
+}
+
+}
+
+function getDeleteForMeMarker(
+conversationId
+) {
+
+if (!conversationId) {
+return null;
+}
+
+const meta =
+readDeleteForMeMeta();
+
+const marker =
+meta[
+String(
+conversationId
+)
+];
+
+if (
+!marker ||
+typeof marker !==
+"object"
+) {
+
+return null;
+
+}
+
+return marker;
+
+}
+
+function setDeleteForMeMarker(
+conversationId,
+marker
+) {
+
+if (!conversationId) {
+return;
+}
+
+const meta =
+readDeleteForMeMeta();
+
+meta[
+String(
+conversationId
+)
+] = {
+
+hiddenAt:
+marker?.hiddenAt ||
+Date.now(),
+
+cutoffCreatedAt:
+marker?.cutoffCreatedAt ||
+null,
+
+cutoffMessageId:
+marker?.cutoffMessageId ??
+null
+
+};
+
+writeDeleteForMeMeta(
+meta
+);
+
+}
+
+function clearDeleteForMeMarker(
+conversationId
+) {
+
+if (!conversationId) {
+return;
+}
+
+const meta =
+readDeleteForMeMeta();
+
+delete meta[
+String(
+conversationId
+)
+];
+
+writeDeleteForMeMeta(
+meta
+);
+
+}
+
+function getLatestKnownMessageForConversation(
+conversationId
+) {
+
+if (!conversationId) {
+return null;
+}
+
+if (
+currentConversationId &&
+String(
+currentConversationId
+) ===
+String(
+conversationId
+) &&
+Array.isArray(
+currentMessages
+) &&
+currentMessages.length
+) {
+
+const sorted =
+[
+...currentMessages
+];
+
+sortMessages(
+sorted
+);
+
+return (
+sorted[
+sorted.length - 1
+] ||
+null
+);
+
+}
+
+const cached =
+getCachedMessages(
+conversationId
+);
+
+if (
+cached &&
+cached.messages?.length
+) {
+
+const sorted =
+[
+...cached.messages
+];
+
+sortMessages(
+sorted
+);
+
+return (
+sorted[
+sorted.length - 1
+] ||
+null
+);
+
+}
+
+const conversation =
+conversations.find(
+item =>
+String(
+item?.id ??
+item?.conversation_id
+) ===
+String(
+conversationId
+)
+);
+
+if (!conversation) {
+return null;
+}
+
+return {
+
+id:
+conversation.last_message_id ??
+conversation.message_id ??
+null,
+
+created_at:
+conversation.last_message_at ||
+conversation.updated_at ||
+null,
+
+sender_id:
+conversation.last_sender_id ??
+conversation.sender_id ??
+null,
+
+content:
+conversation.last_message ??
+conversation.last_message_text ??
+""
+
+};
+
+}
+
+function captureDeleteForMeMarker(
+conversationId
+) {
+
+if (!conversationId) {
+return;
+}
+
+const latest =
+getLatestKnownMessageForConversation(
+conversationId
+);
+
+const fallbackCreatedAt =
+new Date().toISOString();
+
+const cutoffCreatedAt =
+getMessageTime(
+latest
+) ||
+fallbackCreatedAt;
+
+const cutoffMessageId =
+getMessageId(
+latest
+);
+
+setDeleteForMeMarker(
+conversationId,
+{
+hiddenAt:
+Date.now(),
+
+cutoffCreatedAt,
+
+cutoffMessageId
+}
+);
+
+/*
+نظف الكاش حتى لا تعود الرسائل القديمة
+من الذاكرة بعد الحذف.
+*/
+
+conversationMessagesCache.delete(
+String(
+conversationId
+)
+);
+
+if (
+currentConversationId &&
+String(
+currentConversationId
+) ===
+String(
+conversationId
+)
+) {
+
+currentMessages =
+filterMessagesAfterDeleteForMeCutoff(
+currentMessages,
+conversationId
+);
+
+}
+
+}
+
+function isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
+) {
+
+const marker =
+getDeleteForMeMarker(
+conversationId
+);
+
+if (!marker) {
+return true;
+}
+
+const messageTime =
+getMessageTime(
+message
+);
+
+const cutoffTime =
+marker.cutoffCreatedAt;
+
+if (
+!messageTime ||
+!cutoffTime
+) {
+
+/*
+إذا ما عندنا وقت واضح،
+نسمح بالرسالة بدل ما نخاطر
+بإخفاء رسالة جديدة.
+*/
+
+return true;
+
+}
+
+const messageTimestamp =
+new Date(
+messageTime
+).getTime();
+
+const cutoffTimestamp =
+new Date(
+cutoffTime
+).getTime();
+
+if (
+Number.isNaN(
+messageTimestamp
+) ||
+Number.isNaN(
+cutoffTimestamp
+)
+) {
+
+return true;
+
+}
+
+if (
+messageTimestamp >
+cutoffTimestamp
+) {
+
+return true;
+
+}
+
+if (
+messageTimestamp <
+cutoffTimestamp
+) {
+
+return false;
+
+}
+
+/*
+نفس الوقت:
+نستخدم message id إذا متوفر.
+*/
+
+const cutoffId =
+marker.cutoffMessageId;
+
+const messageId =
+getMessageId(
+message
+);
+
+if (
+cutoffId != null &&
+messageId != null
+) {
+
+return (
+String(
+messageId
+) >
+String(
+cutoffId
+)
+);
+
+}
+
+/*
+إذا نفس الوقت وما عدنا id موثوق،
+نخفيها باعتبارها جزءًا من القديم.
+*/
+
+return false;
+
+}
+
+function filterMessagesAfterDeleteForMeCutoff(
+messages,
+conversationId
+) {
+
+if (
+!Array.isArray(
+messages
+)
+) {
+return [];
+}
+
+const marker =
+getDeleteForMeMarker(
+conversationId
+);
+
+if (!marker) {
+
+return [
+...messages
+];
+
+}
+
+return messages.filter(
+message =>
+isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
+)
+);
+
+}
+
+function shouldShowConversationAfterDeleteForMe(
+conversation
+) {
+
+if (!conversation) {
+return false;
+}
+
+const conversationId =
+conversation.id ??
+conversation.conversation_id;
+
+if (!conversationId) {
+return true;
+}
+
+const marker =
+getDeleteForMeMarker(
+conversationId
+);
+
+if (!marker) {
+return true;
+}
+
+const lastMessageAt =
+conversation.last_message_at ||
+conversation.updated_at ||
+null;
+
+if (!lastMessageAt) {
+return true;
+}
+
+const cutoffAt =
+marker.cutoffCreatedAt;
+
+if (!cutoffAt) {
+return true;
+}
+
+const lastTime =
+new Date(
+lastMessageAt
+).getTime();
+
+const cutoffTime =
+new Date(
+cutoffAt
+).getTime();
+
+if (
+Number.isNaN(lastTime) ||
+Number.isNaN(cutoffTime)
+) {
+
+return true;
+
+}
+
+if (
+lastTime >
+cutoffTime
+) {
+
+return true;
+
+}
+
+if (
+lastTime <
+cutoffTime
+) {
+
+return false;
+
+}
+
+/*
+نفس الوقت:
+إذا last_message_id متوفر نستخدمه.
+*/
+
+const lastId =
+conversation.last_message_id ??
+conversation.message_id ??
+null;
+
+const cutoffId =
+marker.cutoffMessageId;
+
+if (
+lastId != null &&
+cutoffId != null
+) {
+
+return (
+String(
+lastId
+) >
+String(
+cutoffId
+)
+);
+
+}
+
+return false;
+
+}
+
+/* =========================================================
+DELETE EVENTS
+========================================================= */
+
+window.addEventListener(
+"wfesc:conversation-hidden-for-me",
+event => {
+
+try {
+
+const conversationId =
+event?.detail?.conversationId ??
+event?.detail?.conversation_id ??
+event?.detail?.target_conversation_id ??
+null;
+
+if (!conversationId) {
+return;
+}
+
+captureDeleteForMeMarker(
+conversationId
+);
+
+const index =
+conversations.findIndex(
+conversation =>
+String(
+conversation.id ??
+conversation.conversation_id
+) ===
+String(
+conversationId
+)
+);
+
+if (index >= 0) {
+
+conversations.splice(
+index,
+1
+);
+
+renderConversations();
+
+}
+
+if (
+currentConversationId &&
+String(
+currentConversationId
+) ===
+String(
+conversationId
+)
+) {
+
+currentMessages =
+filterMessagesAfterDeleteForMeCutoff(
+currentMessages,
+conversationId
+);
+
+if (chatMessages) {
+
+renderMessages({
+initialLoad:
+true
+});
+
+}
+
+}
+
+} catch (error) {
+
+console.warn(
+"WFESC delete-for-me event:",
+error
+);
+
+}
+
+}
+);
+
+function clearConversationDataAfterEveryoneDelete(
+conversationId
+) {
+
+if (!conversationId) {
+return;
+}
+
+clearDeleteForMeMarker(
+conversationId
+);
+
+conversationMessagesCache.delete(
+String(
+conversationId
+)
+);
+
+backgroundMessageRefreshes.delete(
+String(
+conversationId
+)
+);
+
+if (
+currentConversationId &&
+String(
+currentConversationId
+) ===
+String(
+conversationId
+)
+) {
+
+currentMessages =
+[];
+
+if (chatMessages) {
+
+renderMessages({
+initialLoad:
+true
+});
+
+}
+
+}
+
+}
+
+window.addEventListener(
+"wfesc:conversation-deleted-everyone",
+event => {
+
+const conversationId =
+event?.detail?.conversationId ??
+event?.detail?.conversation_id ??
+event?.detail?.target_conversation_id ??
+null;
+
+clearConversationDataAfterEveryoneDelete(
+conversationId
+);
+
+scheduleConversationListRefresh(
+0
+);
+
+}
+);
+
+window.addEventListener(
+"wfesc:remote-conversation-deleted",
+event => {
+
+const conversationId =
+event?.detail?.conversationId ??
+event?.detail?.conversation_id ??
+event?.detail?.target_conversation_id ??
+null;
+
+clearConversationDataAfterEveryoneDelete(
+conversationId
+);
+
+if (
+currentConversationId &&
+String(
+currentConversationId
+) ===
+String(
+conversationId
+)
+) {
+
+closeConversation().catch(
+() => {}
+);
+
+}
+
+scheduleConversationListRefresh(
+0
+);
+
+}
+);
+
+/* =========================================================
 CACHE HELPERS
 ========================================================= */
 
@@ -1444,7 +2466,10 @@ key,
 {
 messages:
 cloneMessages(
-currentMessages
+filterMessagesAfterDeleteForMeCutoff(
+currentMessages,
+currentConversationId
+)
 ),
 
 hasOlderMessages:
@@ -1493,10 +2518,16 @@ return null;
 
 }
 
+const filteredMessages =
+filterMessagesAfterDeleteForMeCutoff(
+cached.messages,
+conversationId
+);
+
 return {
 messages:
 cloneMessages(
-cached.messages
+filteredMessages
 ),
 
 hasOlderMessages:
@@ -2131,11 +3162,6 @@ event?.detail?.contactId ??
 event?.detail?.blockedId ??
 null;
 
-/*
-امسح حالة جاري الكتابة فورًا من الواجهة،
-حتى لو كان الحدث متعلقًا بالمحادثة الحالية.
-*/
-
 if (
 eventUserId == null ||
 currentContactId == null ||
@@ -2147,27 +3173,19 @@ clearAllRemoteTypingUsers();
 
 }
 
-/*
-أعد التحقق مباشرة من حالة الحظر.
-*/
-
 const state =
 await getCurrentConversationBlockState();
 
-/*
-إذا الطرف الآخر حاجز المستخدم الحالي:
-- أوقف Typing المحلي
-- أغلق قناة Typing
-- امسح أي حالة Typing ظاهرة
-*/
-
 if (
-state.blockedBy
+state.blockedBy ||
+state.blockedByMe
 ) {
 
 clearAllRemoteTypingUsers();
 
-await stopTyping();
+await stopTyping(
+false
+);
 
 await removeTypingChannel(
 false
@@ -2179,8 +3197,21 @@ if (
 messageInput
 ) {
 
+messageInput.dataset.wfescBlocked =
+"true";
+
+if (
+state.blockedBy
+) {
+
 messageInput.dataset.wfescBlockedBy =
 "true";
+
+} else {
+
+delete messageInput.dataset.wfescBlockedBy;
+
+}
 
 }
 
@@ -2188,29 +3219,18 @@ messageInput.dataset.wfescBlockedBy =
 
 } else {
 
-/*
-إذا لم يعد هناك حظر من الطرف الآخر،
-نزيل العلامة.
-*/
-
 try {
 
 if (
 messageInput
 ) {
 
+delete messageInput.dataset.wfescBlocked;
 delete messageInput.dataset.wfescBlockedBy;
 
 }
 
 } catch (_) {}
-
-/*
-إذا المستخدم الحالي هو الذي حظر الطرف الآخر،
-تبقى قناة Typing الخاصة بالمستخدم الحالي
-مسموحًا بها، لكن incoming typing سيتم رفضه
-داخل setupTypingChannel.
-*/
 
 }
 
@@ -2947,7 +3967,8 @@ Array.isArray(data)
 : [];
 
 conversations =
-conversations.map(
+conversations
+.map(
 conversation => {
 
 const contact =
@@ -3029,6 +4050,12 @@ conversation.conversation_id
 return conversation;
 
 }
+)
+.filter(
+conversation =>
+shouldShowConversationAfterDeleteForMe(
+conversation
+)
 );
 
 conversations.sort(
@@ -3634,11 +4661,6 @@ if (!element) {
 return;
 }
 
-/*
-لا نظهر Typing إذا كنا نعرف أن الطرف الآخر
-قام بحظر المستخدم الحالي.
-*/
-
 if (
 messageInput?.dataset?.wfescBlockedBy ===
 "true"
@@ -3913,11 +4935,6 @@ if (
 return;
 }
 
-/*
-إذا المستخدم الحالي محظور من الطرف الآخر،
-لا نرسل Typing إطلاقًا.
-*/
-
 const contactId =
 getContactUserId(
 currentConversationContact
@@ -3928,17 +4945,31 @@ contactId &&
 !currentConversationContact?.is_support
 ) {
 
-const blockedBy =
-await isCurrentUserBlockedBy(
+const blockState =
+await getBlockStateFromModule(
 contactId
 );
 
-if (blockedBy) {
+if (
+blockState.blockedBy ||
+blockState.blockedByMe
+) {
+
+messageInput?.setAttribute(
+"data-wfesc-blocked",
+"true"
+);
+
+if (
+blockState.blockedBy
+) {
 
 messageInput?.setAttribute(
 "data-wfesc-blocked-by",
 "true"
 );
+
+}
 
 clearAllRemoteTypingUsers();
 
@@ -3956,6 +4987,15 @@ messageInput?.dataset?.wfescBlockedBy ===
 ) {
 
 delete messageInput.dataset.wfescBlockedBy;
+
+}
+
+if (
+messageInput?.dataset?.wfescBlocked ===
+"true"
+) {
+
+delete messageInput.dataset.wfescBlocked;
 
 }
 
@@ -4024,11 +5064,6 @@ return;
 
 }
 
-/*
-فحص الحظر مرة أخرى قبل كل heartbeat.
-هذا مهم إذا تم الحظر أثناء الكتابة.
-*/
-
 const currentContactId =
 getContactUserId(
 currentConversationContact
@@ -4039,12 +5074,15 @@ currentContactId &&
 !currentConversationContact?.is_support
 ) {
 
-const blockedBy =
-await isCurrentUserBlockedBy(
+const state =
+await getBlockStateFromModule(
 currentContactId
 );
 
-if (blockedBy) {
+if (
+state.blockedBy ||
+state.blockedByMe
+) {
 
 clearAllRemoteTypingUsers();
 
@@ -4118,10 +5156,6 @@ if (
 return;
 }
 
-/*
-الدعم مستثنى من الحظر.
-*/
-
 if (
 currentConversationContact?.is_support
 ) {
@@ -4135,19 +5169,31 @@ currentConversationContact
 
 if (contactId) {
 
-const blockedBy =
-await isCurrentUserBlockedBy(
+const state =
+await getBlockStateFromModule(
 contactId
 );
 
-if (blockedBy) {
+if (
+state.blockedBy ||
+state.blockedByMe
+) {
 
 clearAllRemoteTypingUsers();
 
 if (messageInput) {
 
+messageInput.dataset.wfescBlocked =
+"true";
+
+if (
+state.blockedBy
+) {
+
 messageInput.dataset.wfescBlockedBy =
 "true";
+
+}
 
 }
 
@@ -4157,6 +5203,7 @@ return;
 
 if (messageInput) {
 
+delete messageInput.dataset.wfescBlocked;
 delete messageInput.dataset.wfescBlockedBy;
 
 }
@@ -4210,11 +5257,6 @@ return;
 
 }
 
-/*
-لا نعتمد على وجود event للحظر.
-نفحص قاعدة الحظر مباشرة عند وصول Typing.
-*/
-
 const block =
 getBlockModule();
 
@@ -4231,7 +5273,8 @@ try {
 const [
 blockedByThem,
 blockedByUs
-] = await Promise.all([
+] =
+await Promise.all([
 
 block.isBlockedBy(
 userId
@@ -4247,11 +5290,6 @@ if (
 blockedByThem ||
 blockedByUs
 ) {
-
-/*
-امسح حالة المستخدم المحظور فورًا
-ولا تسمح له بالظهور في جاري الكتابة.
-*/
 
 clearTypingUser(
 userId
@@ -4423,6 +5461,19 @@ input.addEventListener(
 () => {
 
 if (
+input.dataset.wfescBlocked ===
+"true" ||
+input.dataset.wfescBlockedBy ===
+"true"
+) {
+
+stopTyping();
+
+return;
+
+}
+
+if (
 input.value.trim()
 ) {
 
@@ -4449,6 +5500,17 @@ stopTyping();
 input.addEventListener(
 "focus",
 () => {
+
+if (
+input.dataset.wfescBlocked ===
+"true" ||
+input.dataset.wfescBlockedBy ===
+"true"
+) {
+
+return;
+
+}
 
 if (
 input.value.trim()
@@ -4962,6 +6024,22 @@ if (!message) {
 return false;
 }
 
+const conversationId =
+message.conversation_id ??
+message.target_conversation_id;
+
+if (
+conversationId &&
+!isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
+)
+) {
+
+return false;
+
+}
+
 const messageId =
 getMessageId(
 message
@@ -5083,6 +6161,17 @@ return;
 }
 
 if (
+!isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
+)
+) {
+
+return;
+
+}
+
+if (
 isMessageDeleted(
 message
 )
@@ -5133,6 +6222,19 @@ conversation.last_message_at =
 getMessageTime(
 message
 );
+
+if (
+getMessageId(
+message
+) != null
+) {
+
+conversation.last_message_id =
+getMessageId(
+message
+);
+
+}
 
 conversations.splice(
 index,
@@ -5292,9 +6394,28 @@ const conversationId =
 message.conversation_id ??
 message.target_conversation_id;
 
+if (!conversationId) {
+return;
+}
+
+/*
+أول شيء:
+رسائل ما قبل "حذف لدي" لا تعود إلى الشاشة.
+*/
+if (
+!isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
+)
+) {
+
+return;
+
+}
+
 /*
 إذا الرسالة من طرف قام بالحظر أو محظور
-من المستخدم الحالي، لا نعرضها كرسالة جديدة.
+من المستخدم الحالي، لا نعرضها.
 */
 if (
 await shouldIgnoreRealtimeMessage(
@@ -5463,9 +6584,15 @@ message
 const wasAtBottom =
 isNearBottom();
 
-addRealMessageToState(
+if (
+!addRealMessageToState(
 message
-);
+)
+) {
+
+return;
+
+}
 
 if (chatMessages) {
 
@@ -5640,6 +6767,23 @@ if (!message) {
 return;
 }
 
+const conversationId =
+message.conversation_id ??
+message.target_conversation_id ??
+null;
+
+if (
+conversationId &&
+!isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
+)
+) {
+
+return;
+
+}
+
 if (
 await shouldIgnoreRealtimeMessage(
 message
@@ -5711,9 +6855,15 @@ cacheCurrentMessages();
 
 }
 
+if (
+conversationId
+) {
+
 updateConversationPreview(
 message
 );
+
+}
 
 } catch (error) {
 
@@ -6019,12 +7169,14 @@ Array.isArray(data)
 ? [...data]
 : [];
 
-const olderMessages =
+const orderedOlderMessages =
 rawOlderMessages.reverse();
 
-hasOlderMessages =
-rawOlderMessages.length ===
-MESSAGE_PAGE_SIZE;
+const olderMessages =
+filterMessagesAfterDeleteForMeCutoff(
+orderedOlderMessages,
+requestedConversationId
+);
 
 if (
 olderMessages.length ===
@@ -6039,6 +7191,12 @@ cacheCurrentMessages();
 return false;
 
 }
+
+hasOlderMessages =
+rawOlderMessages.length ===
+MESSAGE_PAGE_SIZE &&
+olderMessages.length ===
+rawOlderMessages.length;
 
 const existingIds =
 new Set(
@@ -6415,160 +7573,20 @@ applyActivityStateToContact(
 currentConversationContact
 );
 
-/*
-حماية Core مباشرة من الحظر.
-إذا الشخص قام بحظر المستخدم الحالي،
-لا نفتح المحادثة.
-*/
-
 if (
-type !==
-"support"
+messageInput
 ) {
 
-const blockResult =
-await canOpenConversationByBlock(
-currentConversationContact
-);
-
-if (
-loadToken !==
-conversationLoadToken
-) {
-
-openingConversation =
-false;
-
-return;
-
-}
-
-if (
-!blockResult.allowed &&
-blockResult.blockedBy
-) {
-
-currentConversationContact = {
-
-...currentConversationContact,
-
-display_name:
-"قام المستخدم بحظرك",
-
-username:
-"user",
-
-avatar_url:
-DEFAULT_AVATAR,
-
-is_online:
-false,
-
-show_activity:
-false,
-
-blocked_by:
-true
-
-};
-
-if (messageInput) {
-
-messageInput.dataset.wfescBlockedBy =
-"true";
-
-}
-
-clearAllRemoteTypingUsers();
-
-chatHeaderInterface.refresh();
-
-if (chatView) {
-
-chatView.classList.remove(
-"open"
-);
-
-chatView.style.visibility =
-"visible";
-
-}
-
-if (chatMessages) {
-
-chatMessages.style.visibility =
-"visible";
-
-}
-
-if (page) {
-
-page.classList.remove(
-"chat-active"
-);
-
-}
-
-openingConversation =
-false;
-
-try {
-
-window.dispatchEvent(
-new CustomEvent(
-"wfesc:conversation-blocked",
-{
-detail: {
-conversationId,
-contact:
-currentConversationContact
-}
-}
-)
-);
-
-} catch (_) {}
-
-return;
-
-}
-
-}
-
-/*
-إذا لم يعد هناك حظر من الطرف الآخر،
-أزل علامة الحظر من الإدخال.
-*/
-
-if (messageInput) {
-
+delete messageInput.dataset.wfescBlocked;
 delete messageInput.dataset.wfescBlockedBy;
 
 }
 
-chatHeaderInterface.refresh();
-
-if (chatView) {
-
-chatView.classList.remove(
-"open"
-);
-
-chatView.classList.remove(
-"wfesc-chat-opening"
-);
-
-chatView.style.visibility =
-"hidden";
-
-}
-
-if (chatMessages) {
-
-chatMessages.style.visibility =
-"hidden";
-
-}
+/*
+فحص الحظر وجلب الرسائل يعملان الآن بالتوازي.
+هذا يقلل زمن فتح المحادثة بشكل ملحوظ مقارنة
+بالنسخة التي كانت تنتظر فحص الحظر ثم تبدأ تحميل الرسائل.
+*/
 
 let contactPromise =
 null;
@@ -6628,7 +7646,13 @@ currentConversationContact
 
 }
 
-const blockResult =
+/*
+فحص خلفي.
+إذا تبين أن المستخدم حاجز الطرف الآخر،
+نغلق القنوات والواجهة المرتبطة بالحظر.
+*/
+
+const fetchedBlock =
 await canOpenConversationByBlock(
 currentConversationContact
 );
@@ -6638,6 +7662,168 @@ loadToken !==
 conversationLoadToken
 ) {
 return;
+}
+
+if (
+!fetchedBlock.allowed &&
+fetchedBlock.blockedBy
+) {
+
+currentConversationContact = {
+
+...currentConversationContact,
+
+display_name:
+"قام المستخدم بحظرك",
+
+username:
+"user",
+
+avatar_url:
+DEFAULT_AVATAR,
+
+is_online:
+false,
+
+show_activity:
+false,
+
+blocked_by:
+true
+
+};
+
+if (messageInput) {
+
+messageInput.dataset.wfescBlockedBy =
+"true";
+
+messageInput.dataset.wfescBlocked =
+"true";
+
+}
+
+clearAllRemoteTypingUsers();
+
+await removeTypingChannel(
+false
+);
+
+chatHeaderInterface.refresh();
+
+try {
+
+window.dispatchEvent(
+new CustomEvent(
+"wfesc:conversation-blocked",
+{
+detail: {
+conversationId,
+contact:
+currentConversationContact
+}
+}
+)
+);
+
+} catch (_) {}
+
+}
+
+}
+
+}
+)
+.catch(
+error => {
+
+console.warn(
+"WFESC contact background fetch:",
+error
+);
+
+}
+);
+
+}
+
+/*
+Parallel open:
+- الرسائل
+- فحص الحظر
+*/
+
+const blockPromise =
+type ===
+"support"
+? Promise.resolve({
+allowed:
+true,
+blockedBy:
+false,
+blockedByMe:
+false
+})
+: canOpenConversationByBlock(
+currentConversationContact
+).catch(
+error => {
+
+console.warn(
+"WFESC open block bridge:",
+error
+);
+
+return {
+
+allowed:
+true,
+
+blockedBy:
+false,
+
+blockedByMe:
+false
+
+};
+
+}
+);
+
+const messagesPromise =
+loadConversationMessages(
+loadToken
+);
+
+const [
+blockResult,
+loaded
+] =
+await Promise.all([
+blockPromise,
+messagesPromise
+]);
+
+if (
+contactPromise
+) {
+
+contactPromise.catch(
+() => {}
+);
+
+}
+
+if (
+loadToken !==
+conversationLoadToken
+) {
+
+openingConversation =
+false;
+
+return;
+
 }
 
 if (
@@ -6674,11 +7860,47 @@ if (messageInput) {
 messageInput.dataset.wfescBlockedBy =
 "true";
 
+messageInput.dataset.wfescBlocked =
+"true";
+
 }
 
 clearAllRemoteTypingUsers();
 
+await removeTypingChannel(
+false
+);
+
 chatHeaderInterface.refresh();
+
+if (chatView) {
+
+chatView.classList.remove(
+"open"
+);
+
+chatView.style.visibility =
+"visible";
+
+}
+
+if (chatMessages) {
+
+chatMessages.style.visibility =
+"visible";
+
+}
+
+if (page) {
+
+page.classList.remove(
+"chat-active"
+);
+
+}
+
+openingConversation =
+false;
 
 try {
 
@@ -6696,58 +7918,6 @@ currentConversationContact
 );
 
 } catch (_) {}
-
-return;
-
-}
-
-if (messageInput) {
-
-delete messageInput.dataset.wfescBlockedBy;
-
-}
-
-chatHeaderInterface.refresh();
-
-}
-
-}
-)
-.catch(
-error => {
-
-console.warn(
-"WFESC contact background fetch:",
-error
-);
-
-}
-);
-
-}
-
-const loaded =
-await loadConversationMessages(
-loadToken
-);
-
-if (
-contactPromise
-) {
-
-contactPromise.catch(
-() => {}
-);
-
-}
-
-if (
-loadToken !==
-conversationLoadToken
-) {
-
-openingConversation =
-false;
 
 return;
 
@@ -6781,64 +7951,36 @@ return;
 }
 
 /*
-فحص أخير قبل تشغيل قناة Typing.
+الحظر من طرفنا لا يمنع فتح التاريخ القديم،
+لكن يتم إيقاف Typing والرسائل الجديدة عبر
+Block Bridge.
 */
 
 if (
-type !==
-"support"
-) {
-
-const finalBlockState =
-await getCurrentConversationBlockState();
-
-if (
-loadToken !==
-conversationLoadToken
-) {
-
-openingConversation =
-false;
-
-return;
-
-}
-
-if (
-finalBlockState.blockedBy
+blockResult.blockedByMe
 ) {
 
 if (messageInput) {
 
-messageInput.dataset.wfescBlockedBy =
+messageInput.dataset.wfescBlocked =
 "true";
-
-}
-
-clearAllRemoteTypingUsers();
-
-if (chatView) {
-
-chatView.classList.remove(
-"open"
-);
-
-}
-
-openingConversation =
-false;
-
-return;
-
-}
-
-}
-
-if (messageInput) {
 
 delete messageInput.dataset.wfescBlockedBy;
 
 }
+
+} else {
+
+if (messageInput) {
+
+delete messageInput.dataset.wfescBlocked;
+delete messageInput.dataset.wfescBlockedBy;
+
+}
+
+}
+
+chatHeaderInterface.refresh();
 
 if (chatView) {
 
@@ -6875,6 +8017,11 @@ searchSection.classList.add(
 }
 
 prepareChatAtBottom();
+
+/*
+هذه العمليات بعد إظهار المحادثة،
+لذلك لا تعطل فتح الواجهة.
+*/
 
 setupTypingChannel(
 conversationId
@@ -7004,13 +8151,22 @@ return;
 
 }
 
-const freshMessages =
+const rawFreshMessages =
 Array.isArray(data)
 ? [...data].reverse()
 : [];
 
+const freshMessages =
+filterMessagesAfterDeleteForMeCutoff(
+rawFreshMessages,
+conversationId
+);
+
 const freshCount =
 freshMessages.length;
+
+const rawFreshCount =
+rawFreshMessages.length;
 
 const currentStillSame =
 expectedLoadToken ===
@@ -7048,8 +8204,12 @@ merged;
 
 hasOlderMessages =
 hasOlderMessages ||
+(
+rawFreshCount ===
+MESSAGE_PAGE_SIZE &&
 freshCount ===
-MESSAGE_PAGE_SIZE;
+rawFreshCount
+);
 
 cacheCurrentMessages();
 
@@ -7105,8 +8265,12 @@ hasOlderMessages:
 Boolean(
 cached?.hasOlderMessages !==
 false ||
+(
+rawFreshCount ===
+MESSAGE_PAGE_SIZE &&
 freshCount ===
-MESSAGE_PAGE_SIZE
+rawFreshCount
+)
 ),
 
 timestamp:
@@ -7298,21 +8462,32 @@ return false;
 
 }
 
-const loadedMessages =
+const rawLoadedMessages =
 Array.isArray(data)
 ? [...data]
 : [];
 
+const orderedLoadedMessages =
+rawLoadedMessages.reverse();
+
+const loadedMessages =
+filterMessagesAfterDeleteForMeCutoff(
+orderedLoadedMessages,
+requestedConversationId
+);
+
 currentMessages =
-loadedMessages.reverse();
+loadedMessages;
 
 sortMessages(
 currentMessages
 );
 
 hasOlderMessages =
+rawLoadedMessages.length ===
+MESSAGE_PAGE_SIZE &&
 loadedMessages.length ===
-MESSAGE_PAGE_SIZE;
+rawLoadedMessages.length;
 
 currentMessages =
 currentMessages.map(
@@ -7727,75 +8902,22 @@ if (!message) {
 return null;
 }
 
+const conversationId =
+message.conversation_id ??
+message.target_conversation_id ??
+options.conversationId ??
+null;
+
 /*
-لا تسمح بإدخال رسالة واردة من مستخدم محظور
-إلى الواجهة عبر أي مسار داخلي.
+لا تسمح بإضافة رسالة قديمة مخفية
+بواسطة "حذف لدي".
 */
 
-const senderId =
-getMessageSenderId(
-message
-);
-
 if (
-senderId &&
-currentUser?.id &&
-String(senderId) !==
-String(currentUser.id)
-) {
-
-const block =
-getBlockModule();
-
-if (block) {
-
-Promise.all([
-
-typeof block.isBlockedBy ===
-"function"
-? block.isBlockedBy(senderId)
-: false,
-
-typeof block.isBlocked ===
-"function"
-? block.isBlocked(senderId)
-: false
-
-])
-.then(
-([
-blockedByThem,
-blockedByUs
-]) => {
-
-if (
-blockedByThem ||
-blockedByUs
-) {
-
-clearTypingUser(
-senderId
-);
-
-}
-
-}
-)
-.catch(
-() => {}
-);
-
-}
-
-}
-
-if (
-options.conversationId &&
-String(
-options.conversationId
-) !==
-String(
-currentConversationId
+conversationId &&
+!isMessageAfterDeleteForMeCutoff(
+message,
+conversationId
 )
 ) {
 
@@ -8023,6 +9145,7 @@ typingUsers.clear();
 
 if (messageInput) {
 
+delete messageInput.dataset.wfescBlocked;
 delete messageInput.dataset.wfescBlockedBy;
 
 }
@@ -8386,6 +9509,8 @@ currentMessages =
 
 conversationContactCache.clear();
 
+conversationMessagesCache.clear();
+
 }
 
 currentUser =
@@ -8578,6 +9703,12 @@ getCurrentConversationBlockState,
 canOpenConversationByBlock,
 
 shouldIgnoreRealtimeMessage,
+
+captureDeleteForMeMarker,
+
+getDeleteForMeMarker,
+
+clearDeleteForMeMarker,
 
 debug(
 title,
