@@ -19,10 +19,21 @@
      * 9. تحديث قائمة المحادثات بشكل فوري عبر Realtime
      *
      * نظام الحظر:
-     * - إخفاء هوية من قام بحظر المستخدم الحالي
-     * - منع فتح المحادثة من قائمة المحادثات
-     * - إبقاء المحادثة والتاريخ موجودين
-     * - إظهار الحظر من جهة المستخدم الذي قام بالحظر فقط
+     *
+     * - المستخدم الذي قام بحظرك:
+     *   لا تظهر هويته الحقيقية في القائمة
+     *   تظهر عبارة: قام المستخدم بحظرك
+     *   لا يمكن فتح المحادثة
+     *
+     * - المستخدم الذي قمت بحظره:
+     *   تبقى هويته ومحادثته وتاريخها ظاهرين لك
+     *   يمكن فتح المحادثة القديمة
+     *   منع الإرسال يتم من messages-send.js
+     *
+     * الأداء:
+     * - القائمة تُرسم فوراً
+     * - بيانات الأشخاص والحظر تُحدّث بالخلفية
+     * - لا يتم ضرب فحص حظر جديد عند كل ضغطة
      *
      * =========================================================
      */
@@ -158,6 +169,8 @@
     let initialized = false;
     let rendering = false;
     let eventBound = false;
+
+    let metadataHydrating = false;
 
     let lastRenderedSignature = "";
 
@@ -648,10 +661,6 @@
                 ? String(avatar)
                 : "";
 
-        /*
-         * الصور SVG الافتراضية التي يولدها
-         * هذا الملف لا تعتبر صورة حقيقية.
-         */
         const isDefaultAvatar =
             !avatarString ||
             avatarString ===
@@ -666,10 +675,6 @@
                     1000
             );
 
-        /*
-         * "مستخدم" وحدها ليست دليلاً
-         * على أن بيانات الشخص الحقيقية وصلت.
-         */
         const genericName =
             String(
                 name || ""
@@ -738,10 +743,6 @@
             return null;
         }
 
-        /*
-         * لا نرجع Cache إذا كان مجرد
-         * placeholder.
-         */
         if (
             !hasRealContactData(
                 cached.contact
@@ -793,7 +794,7 @@
 
         /* =====================================================
            SUPPORT
-        ===================================================== */
+           ===================================================== */
 
         if (
             isSupportConversation(
@@ -826,21 +827,7 @@
 
         /* =====================================================
            EXISTING REAL CONTACT
-        ===================================================== */
-
-        /*
-         * مهم جداً:
-         *
-         * وجود contact + userId وحده لا يعني
-         * أن البيانات الحقيقية موجودة.
-         *
-         * Core قد يرسل:
-         * user_id
-         * display_name = مستخدم
-         * avatar = الصورة الافتراضية
-         *
-         * لذلك يجب التأكد من وجود بيانات حقيقية.
-         */
+           ===================================================== */
 
         if (
             existing &&
@@ -876,7 +863,7 @@
 
         /* =====================================================
            CACHE
-        ===================================================== */
+           ===================================================== */
 
         const cached =
             getCachedContact(
@@ -890,7 +877,7 @@
 
         /* =====================================================
            CORE RPC
-        ===================================================== */
+           ===================================================== */
 
         const messagesCore =
             getCore();
@@ -926,11 +913,6 @@
                         conversation
                     );
 
-                /*
-                 * لا نخزن placeholder على أنه
-                 * contact حقيقي.
-                 */
-
                 if (
                     hasRealContactData(
                         normalized,
@@ -964,15 +946,6 @@
             );
 
         }
-
-
-        /*
-         * إذا فشل RPC أو الشبكة،
-         * نرجع fallback فقط.
-         *
-         * لا نخزنه في Cache حتى لا تبقى
-         * كلمة "مستخدم" عالقة.
-         */
 
         return normalizeContact(
             existing ||
@@ -1125,6 +1098,87 @@
 
 
     /* =========================================================
+       IMMEDIATE BLOCK STATE
+       ========================================================= */
+
+    function getImmediateBlockState(
+        conversation
+    ) {
+
+        const userId =
+            getUserId(
+                conversation
+            );
+
+        const conversationBlocked =
+            conversation?.blocked === true ||
+            conversation?.is_blocked === true ||
+            conversation?.blocked_by_me === true;
+
+        const conversationBlockedBy =
+            conversation?.blockedBy === true ||
+            conversation?.blocked_by === true ||
+            conversation?.is_blocked_by === true ||
+            conversation?.blocked_you === true;
+
+        if (!userId) {
+
+            return {
+
+                blocked:
+                    conversationBlocked,
+
+                blockedBy:
+                    conversationBlockedBy,
+
+                known:
+                    conversationBlocked ||
+                    conversationBlockedBy
+
+            };
+        }
+
+        const cached =
+            blockStatusCache.get(
+                String(
+                    userId
+                )
+            );
+
+        const cacheValid =
+            cached &&
+            Date.now() -
+                cached.timestamp <
+                CONFIG.BLOCK_CACHE_TIME;
+
+        return {
+
+            blocked:
+                conversationBlocked ||
+                (
+                    cacheValid &&
+                    cached.blocked === true
+                ),
+
+            blockedBy:
+                conversationBlockedBy ||
+                (
+                    cacheValid &&
+                    cached.blockedBy === true
+                ),
+
+            known:
+                Boolean(
+                    conversationBlocked ||
+                    conversationBlockedBy ||
+                    cacheValid
+                )
+
+        };
+    }
+
+
+    /* =========================================================
        CLEAR BLOCK CACHE
        ========================================================= */
 
@@ -1148,6 +1202,40 @@
 
 
     /* =========================================================
+       SET BLOCK CACHE DIRECTLY
+       ========================================================= */
+
+    function setBlockCache(
+        userId,
+        blocked,
+        blockedBy
+    ) {
+
+        if (!userId) {
+            return;
+        }
+
+        blockStatusCache.set(
+            String(
+                userId
+            ),
+            {
+
+                blocked:
+                    blocked === true,
+
+                blockedBy:
+                    blockedBy === true,
+
+                timestamp:
+                    Date.now()
+
+            }
+        );
+    }
+
+
+    /* =========================================================
        GET CONVERSATION BLOCK STATUS
        ========================================================= */
 
@@ -1167,31 +1255,41 @@
             };
         }
 
-        const blockedFromConversation =
-            conversation.blocked === true ||
-            conversation.is_blocked === true ||
-            conversation.blocked_by_me === true;
-
-        const blockedByFromConversation =
-            conversation.blockedBy === true ||
-            conversation.blocked_by === true ||
-            conversation.is_blocked_by === true ||
-            conversation.blocked_you === true;
+        const immediate =
+            getImmediateBlockState(
+                conversation
+            );
 
         const userId =
             getUserId(
                 conversation
             );
 
+        if (
+            immediate.known &&
+            !force
+        ) {
+
+            return {
+
+                blocked:
+                    immediate.blocked,
+
+                blockedBy:
+                    immediate.blockedBy
+
+            };
+        }
+
         if (!userId) {
 
             return {
 
                 blocked:
-                    blockedFromConversation,
+                    immediate.blocked,
 
                 blockedBy:
-                    blockedByFromConversation
+                    immediate.blockedBy
 
             };
         }
@@ -1205,11 +1303,11 @@
         return {
 
             blocked:
-                blockedFromConversation ||
+                immediate.blocked ||
                 state.blocked,
 
             blockedBy:
-                blockedByFromConversation ||
+                immediate.blockedBy ||
                 state.blockedBy
 
         };
@@ -2404,6 +2502,68 @@
 
 
     /* =========================================================
+       IMMEDIATE BLOCK STATES FOR RENDER
+       ========================================================= */
+
+    function getImmediateBlockStates(
+        conversations
+    ) {
+
+        const states =
+            new Map();
+
+        if (
+            !Array.isArray(
+                conversations
+            )
+        ) {
+
+            return states;
+        }
+
+        conversations.forEach(
+            conversation => {
+
+                const userId =
+                    getUserId(
+                        conversation
+                    );
+
+                if (!userId) {
+                    return;
+                }
+
+                const immediate =
+                    getImmediateBlockState(
+                        conversation
+                    );
+
+                states.set(
+                    String(
+                        userId
+                    ),
+                    {
+
+                        blocked:
+                            immediate.blocked,
+
+                        blockedBy:
+                            immediate.blockedBy,
+
+                        known:
+                            immediate.known
+
+                    }
+                );
+
+            }
+        );
+
+        return states;
+    }
+
+
+    /* =========================================================
        LOAD BLOCK STATES
        ========================================================= */
 
@@ -2494,6 +2654,56 @@
         );
 
         return states;
+    }
+
+
+    /* =========================================================
+       NORMALIZE STATE MAP
+       ========================================================= */
+
+    function mergeBlockStates(
+        conversations,
+        resolvedStates
+    ) {
+
+        const finalStates =
+            getImmediateBlockStates(
+                conversations
+            );
+
+        if (
+            resolvedStates instanceof Map
+        ) {
+
+            resolvedStates.forEach(
+                (
+                    state,
+                    userId
+                ) => {
+
+                    finalStates.set(
+                        String(
+                            userId
+                        ),
+                        {
+
+                            blocked:
+                                state?.blocked === true,
+
+                            blockedBy:
+                                state?.blockedBy === true,
+
+                            known:
+                                true
+
+                        }
+                    );
+
+                }
+            );
+        }
+
+        return finalStates;
     }
 
 
@@ -2781,6 +2991,40 @@
 
 
     /* =========================================================
+       UPDATE CARD BLOCK ATTRIBUTES
+       ========================================================= */
+
+    function applyBlockStateToCard(
+        card,
+        state
+    ) {
+
+        if (!card) {
+            return;
+        }
+
+        const blocked =
+            state?.blocked === true;
+
+        const blockedBy =
+            state?.blockedBy === true;
+
+        card.dataset.wfescBlocked =
+            blocked
+                ? "true"
+                : "false";
+
+        card.dataset.wfescBlockedBy =
+            blockedBy
+                ? "true"
+                : "false";
+
+        card.dataset.wfescBlockKnown =
+            "true";
+    }
+
+
+    /* =========================================================
        CREATE CARD
        ========================================================= */
 
@@ -2808,7 +3052,9 @@
 
                 blocked: false,
 
-                blockedBy: false
+                blockedBy: false,
+
+                known: false
 
             };
 
@@ -2901,6 +3147,11 @@
 
         card.dataset.wfescBlockedBy =
             blockedBy
+                ? "true"
+                : "false";
+
+        card.dataset.wfescBlockKnown =
+            safeBlockState.known === true
                 ? "true"
                 : "false";
 
@@ -3042,7 +3293,7 @@
 
         /* =====================================================
            OPEN CONVERSATION
-        ===================================================== */
+           ===================================================== */
 
         card.addEventListener(
             "click",
@@ -3057,31 +3308,155 @@
                     return;
                 }
 
-                let latestBlockState =
-                    safeBlockState;
+                /*
+                 * إذا كانت الحالة معروفة من الرسم أو الـCache:
+                 * استخدمها مباشرة.
+                 *
+                 * إذا لم تكن معروفة بعد:
+                 * نعمل طلب واحد فقط هنا.
+                 *
+                 * هذا أفضل من force=true في كل ضغطة.
+                 */
 
-                if (userId) {
+                let blockedByNow =
+                    card.dataset
+                        .wfescBlockedBy ===
+                    "true";
 
-                    latestBlockState =
+                const blockKnown =
+                    card.dataset
+                        .wfescBlockKnown ===
+                    "true";
+
+                if (
+                    userId &&
+                    !blockKnown
+                ) {
+
+                    const latestBlockState =
                         await getBlockStatus(
                             userId,
-                            true
+                            false
                         );
 
-                    card.dataset.wfescBlocked =
-                        latestBlockState.blocked
-                            ? "true"
-                            : "false";
+                    applyBlockStateToCard(
+                        card,
+                        latestBlockState
+                    );
 
-                    card.dataset.wfescBlockedBy =
-                        latestBlockState.blockedBy
-                            ? "true"
-                            : "false";
+                    blockedByNow =
+                        latestBlockState.blockedBy ===
+                        true;
+
+                    if (
+                        blockedByNow
+                    ) {
+
+                        /*
+                         * إعادة بناء شكل البطاقة
+                         * فور معرفة الحظر.
+                         */
+
+                        card.classList.add(
+                            "wfesc-blocked-by"
+                        );
+
+                        const nameElement =
+                            card.querySelector(
+                                ".wfesc-conversation-name"
+                            );
+
+                        if (nameElement) {
+
+                            nameElement.textContent =
+                                "قام المستخدم بحظرك";
+
+                            nameElement.title =
+                                "قام المستخدم بحظرك";
+                        }
+
+                        const preview =
+                            card.querySelector(
+                                ".wfesc-conversation-preview"
+                            );
+
+                        if (preview) {
+
+                            preview.textContent =
+                                "قام المستخدم بحظرك";
+
+                            preview.classList.remove(
+                                "typing"
+                            );
+                        }
+
+                        const avatarElement =
+                            card.querySelector(
+                                ".wfesc-conversation-avatar"
+                            );
+
+                        if (avatarElement) {
+
+                            avatarElement.src =
+                                CONFIG.BLOCKED_AVATAR;
+                        }
+
+                        const dot =
+                            card.querySelector(
+                                ".wfesc-conversation-online"
+                            );
+
+                        if (dot) {
+
+                            dot.classList.remove(
+                                "active"
+                            );
+
+                            dot.style.display =
+                                "none";
+                        }
+
+                        if (
+                            !card.querySelector(
+                                ".wfesc-conversation-block-label"
+                            )
+                        ) {
+
+                            const info =
+                                card.querySelector(
+                                    ".wfesc-conversation-info"
+                                );
+
+                            if (info) {
+
+                                const label =
+                                    document.createElement(
+                                        "div"
+                                    );
+
+                                label.className =
+                                    "wfesc-conversation-block-label";
+
+                                label.textContent =
+                                    "لا يمكنك فتح المحادثة";
+
+                                info.appendChild(
+                                    label
+                                );
+                            }
+                        }
+
+                        showBlockedConversationNotice(
+                            card
+                        );
+
+                        return;
+                    }
+
                 }
 
                 if (
-                    latestBlockState.blockedBy ===
-                    true
+                    blockedByNow
                 ) {
 
                     showBlockedConversationNotice(
@@ -3168,11 +3543,6 @@
                             getUserId(
                                 conversation
                             );
-
-                        /*
-                         * لا نعتبر الاسم "مستخدم"
-                         * والصورة الافتراضية بيانات حقيقية.
-                         */
 
                         const hasRealData =
                             hasRealContactData(
@@ -3300,10 +3670,12 @@
 
 
     /* =========================================================
-       RENDER
+       RENDER NOW
        ========================================================= */
 
-    async function render(
+    function renderNow(
+        conversations,
+        blockStates,
         force = false
     ) {
 
@@ -3318,28 +3690,22 @@
             return;
         }
 
-        let conversations =
-            getCurrentConversations();
+        const safeConversations =
+            Array.isArray(
+                conversations
+            )
+                ? conversations
+                : [];
 
-        await resolveConversationContacts(
-            conversations
-        );
-
-        conversations =
-            mergeCachedContacts(
-                getCurrentConversations()
-            );
-
-        const blockStates =
-            await resolveBlockStates(
-                conversations,
-                force
-            );
+        const safeBlockStates =
+            blockStates instanceof Map
+                ? blockStates
+                : new Map();
 
         const signature =
             buildSignature(
-                conversations,
-                blockStates
+                safeConversations,
+                safeBlockStates
             );
 
         if (
@@ -3360,7 +3726,7 @@
                 document.createDocumentFragment();
 
             if (
-                !conversations.length
+                !safeConversations.length
             ) {
 
                 listElement.innerHTML =
@@ -3368,7 +3734,7 @@
 
             } else {
 
-                conversations.forEach(
+                safeConversations.forEach(
                     conversation => {
 
                         const userId =
@@ -3379,22 +3745,30 @@
                         const blockState =
                             userId
                                 ? (
-                                    blockStates.get(
+                                    safeBlockStates.get(
                                         String(
                                             userId
                                         )
                                     ) || {
                                         blocked:
                                             false,
+
                                         blockedBy:
+                                            false,
+
+                                        known:
                                             false
                                     }
                                 )
                                 : {
                                     blocked:
                                         false,
+
                                     blockedBy:
-                                        false
+                                        false,
+
+                                    known:
+                                        true
                                 };
 
                         const card =
@@ -3422,16 +3796,153 @@
             }
 
             lastRenderedSignature =
-                buildSignature(
-                    conversations,
-                    blockStates
-                );
+                signature;
 
         } finally {
 
             rendering =
                 false;
         }
+    }
+
+
+    /* =========================================================
+       BACKGROUND HYDRATION
+       ========================================================= */
+
+    async function hydrateMetadata(
+        force = false
+    ) {
+
+        if (metadataHydrating) {
+            return;
+        }
+
+        metadataHydrating =
+            true;
+
+        try {
+
+            let conversations =
+                getCurrentConversations();
+
+            if (
+                !conversations.length
+            ) {
+
+                renderNow(
+                    [],
+                    new Map(),
+                    force
+                );
+
+                return;
+            }
+
+
+            /* =================================================
+               CONTACT DATA
+               ================================================= */
+
+            await resolveConversationContacts(
+                conversations
+            );
+
+            conversations =
+                mergeCachedContacts(
+                    getCurrentConversations()
+                );
+
+
+            /* =================================================
+               BLOCK DATA
+               ================================================= */
+
+            const resolvedBlockStates =
+                await resolveBlockStates(
+                    conversations,
+                    force
+                );
+
+            const blockStates =
+                mergeBlockStates(
+                    conversations,
+                    resolvedBlockStates
+                );
+
+
+            /* =================================================
+               FINAL RENDER
+               ================================================= */
+
+            renderNow(
+                conversations,
+                blockStates,
+                false
+            );
+
+            refreshActivity();
+
+        } catch (error) {
+
+            debug(
+                "hydrateMetadata error:",
+                error
+            );
+
+        } finally {
+
+            metadataHydrating =
+                false;
+        }
+    }
+
+
+    /* =========================================================
+       RENDER
+       ========================================================= */
+
+    async function render(
+        force = false
+    ) {
+
+        const listElement =
+            getConversationList();
+
+        if (!listElement) {
+            return;
+        }
+
+        const conversations =
+            mergeCachedContacts(
+                getCurrentConversations()
+            );
+
+        /*
+         * الرسم الفوري:
+         * لا ننتظر RPC الخاص بالجهات والحظر.
+         */
+
+        const immediateStates =
+            getImmediateBlockStates(
+                conversations
+            );
+
+        renderNow(
+            conversations,
+            immediateStates,
+            force
+        );
+
+        /*
+         * جلب البيانات الحقيقية بالخلفية.
+         */
+
+        void hydrateMetadata(
+            force
+        );
+
+        refreshActivity();
     }
 
 
@@ -3509,6 +4020,9 @@
                         dot.classList.remove(
                             "active"
                         );
+
+                        dot.style.display =
+                            "none";
                     }
 
                     const preview =
@@ -3529,17 +4043,20 @@
                     return;
                 }
 
-                const state =
-                    getActivityState(
-                        conversation
-                    );
-
                 const dot =
                     card.querySelector(
                         ".wfesc-conversation-online"
                     );
 
+                const state =
+                    getActivityState(
+                        conversation
+                    );
+
                 if (dot) {
+
+                    dot.style.display =
+                        "";
 
                     dot.classList.toggle(
                         "active",
@@ -3592,13 +4109,16 @@
             return;
         }
 
+        const selector =
+            `[data-wfesc-conversation="${CSS.escape(
+                String(
+                    conversationId
+                )
+            )}"]`;
+
         const card =
             listElement.querySelector(
-                `[data-wfesc-conversation="${CSS.escape(
-                    String(
-                        conversationId
-                    )
-                )}"]`
+                selector
             );
 
         if (!card) {
@@ -4113,24 +4633,44 @@
         const conversations =
             getCurrentConversations();
 
-        await resolveConversationContacts(
-            conversations
-        );
-
         const merged =
             mergeCachedContacts(
-                getCurrentConversations()
+                conversations
             );
+
+        /*
+         * تحديث قنوات الكتابة لا يحتاج
+         * انتظار بيانات الحظر.
+         */
 
         await syncTypingChannels(
             merged
         );
 
-        await render(
+        /*
+         * الرسم الفوري.
+         */
+
+        const immediateStates =
+            getImmediateBlockStates(
+                merged
+            );
+
+        renderNow(
+            merged,
+            immediateStates,
             force
         );
 
         refreshActivity();
+
+        /*
+         * التحديث الحقيقي بالخلفية.
+         */
+
+        void hydrateMetadata(
+            force
+        );
     }
 
 
@@ -4245,9 +4785,75 @@
                     detail.blocked_id ||
                     null;
 
-                clearBlockCache(
-                    userId
-                );
+                const hasBlockedState =
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blockedByMe"
+                    ) ||
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blocked_by_me"
+                    ) ||
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blocked"
+                    );
+
+                const hasBlockedByState =
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blockedMe"
+                    ) ||
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blocked_me"
+                    ) ||
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blockedBy"
+                    ) ||
+                    Object.prototype.hasOwnProperty.call(
+                        detail,
+                        "blocked_by"
+                    );
+
+                /*
+                 * إذا جاء الحدث ومعه الحالة الجديدة:
+                 * خزّنها مباشرة حتى لا تظهر البطاقة
+                 * لحظة واحدة بحالة خاطئة.
+                 */
+
+                if (
+                    userId &&
+                    (
+                        hasBlockedState ||
+                        hasBlockedByState
+                    )
+                ) {
+
+                    const blocked =
+                        detail.blockedByMe === true ||
+                        detail.blocked_by_me === true ||
+                        detail.blocked === true;
+
+                    const blockedBy =
+                        detail.blockedMe === true ||
+                        detail.blocked_me === true ||
+                        detail.blockedBy === true ||
+                        detail.blocked_by === true;
+
+                    setBlockCache(
+                        userId,
+                        blocked,
+                        blockedBy
+                    );
+
+                } else {
+
+                    clearBlockCache(
+                        userId
+                    );
+                }
 
                 refresh(
                     true
@@ -4474,6 +5080,11 @@
 
         bindEvents();
 
+        /*
+         * لا ننتظر resolveContact أو الحظر
+         * حتى تظهر القائمة.
+         */
+
         await refresh(
             true
         );
@@ -4528,7 +5139,13 @@
 
         getBlockStatus,
 
-        clearBlockCache
+        getConversationBlockStatus,
+
+        getImmediateBlockState,
+
+        clearBlockCache,
+
+        setBlockCache
 
     };
 
