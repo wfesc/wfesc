@@ -24,8 +24,6 @@
      * - إبقاء المحادثة والتاريخ موجودين
      * - إظهار الحظر من جهة المستخدم الذي قام بالحظر فقط
      *
-     * لا يعدل messages-core.js
-     * ولا يعدل messages-activity.js
      * =========================================================
      */
 
@@ -146,25 +144,19 @@
        ========================================================= */
 
     let core = null;
-
     let activity = null;
-
     let block = null;
 
     let conversationList = null;
 
     let refreshTimer = null;
-
     let activityTimer = null;
 
     let realtimeChannel = null;
-
     let realtimeStarting = false;
 
     let initialized = false;
-
     let rendering = false;
-
     let eventBound = false;
 
     let lastRenderedSignature = "";
@@ -214,12 +206,6 @@
      *     blockedBy,
      *     timestamp
      * }
-     *
-     * blocked:
-     * المستخدم الحالي حظر هذا الشخص.
-     *
-     * blockedBy:
-     * هذا الشخص حظر المستخدم الحالي.
      */
     const blockStatusCache =
         new Map();
@@ -598,6 +584,126 @@
 
 
     /* =========================================================
+       CONTACT QUALITY
+       ========================================================= */
+
+    function hasRealContactData(
+        contact,
+        conversation = null
+    ) {
+
+        const source =
+            contact ||
+            {};
+
+        const fallback =
+            conversation ||
+            {};
+
+        const name =
+            firstValue(
+
+                source.display_name,
+
+                source.full_name,
+
+                source.name,
+
+                fallback.display_name,
+
+                fallback.full_name,
+
+                fallback.name
+
+            );
+
+        const username =
+            firstValue(
+
+                source.username,
+
+                fallback.username
+
+            );
+
+        const avatar =
+            firstValue(
+
+                source.avatar_url,
+
+                source.avatar,
+
+                source.photo_url,
+
+                fallback.avatar_url,
+
+                fallback.avatar,
+
+                fallback.photo_url
+
+            );
+
+        const avatarString =
+            avatar
+                ? String(avatar)
+                : "";
+
+        /*
+         * الصور SVG الافتراضية التي يولدها
+         * هذا الملف لا تعتبر صورة حقيقية.
+         */
+        const isDefaultAvatar =
+            !avatarString ||
+            avatarString ===
+                CONFIG.DEFAULT_AVATAR ||
+            avatarString ===
+                CONFIG.BLOCKED_AVATAR ||
+            (
+                avatarString.startsWith(
+                    "data:image/svg+xml"
+                ) &&
+                avatarString.length <
+                    1000
+            );
+
+        /*
+         * "مستخدم" وحدها ليست دليلاً
+         * على أن بيانات الشخص الحقيقية وصلت.
+         */
+        const genericName =
+            String(
+                name || ""
+            ).trim() ===
+                CONFIG.DEFAULT_NAME;
+
+        const genericUsername =
+            String(
+                username || ""
+            ).trim() ===
+                CONFIG.DEFAULT_USERNAME;
+
+        return Boolean(
+
+            (
+                name &&
+                !genericName
+            ) ||
+
+            (
+                username &&
+                !genericUsername
+            ) ||
+
+            (
+                avatarString &&
+                !isDefaultAvatar
+            )
+
+        );
+    }
+
+
+    /* =========================================================
        CONTACT FROM CACHE
        ========================================================= */
 
@@ -605,11 +711,14 @@
         conversationId
     ) {
 
+        const key =
+            String(
+                conversationId
+            );
+
         const cached =
             contactCache.get(
-                String(
-                    conversationId
-                )
+                key
             );
 
         if (!cached) {
@@ -623,9 +732,24 @@
         ) {
 
             contactCache.delete(
-                String(
-                    conversationId
-                )
+                key
+            );
+
+            return null;
+        }
+
+        /*
+         * لا نرجع Cache إذا كان مجرد
+         * placeholder.
+         */
+        if (
+            !hasRealContactData(
+                cached.contact
+            )
+        ) {
+
+            contactCache.delete(
+                key
             );
 
             return null;
@@ -666,48 +790,11 @@
                 conversation
             );
 
-        /*
-         * إذا عندنا contact كامل بالفعل
-         */
-        if (
-            existing &&
-            existingId
-        ) {
 
-            const normalized =
-                normalizeContact(
-                    existing,
-                    conversation
-                );
+        /* =====================================================
+           SUPPORT
+        ===================================================== */
 
-            contactCache.set(
-                String(
-                    conversationId
-                ),
-                {
-                    contact:
-                        normalized,
-
-                    timestamp:
-                        Date.now()
-                }
-            );
-
-            return normalized;
-        }
-
-        const cached =
-            getCachedContact(
-                conversationId
-            );
-
-        if (cached) {
-            return cached;
-        }
-
-        /*
-         * Support
-         */
         if (
             isSupportConversation(
                 conversation
@@ -736,6 +823,75 @@
             return supportContact;
         }
 
+
+        /* =====================================================
+           EXISTING REAL CONTACT
+        ===================================================== */
+
+        /*
+         * مهم جداً:
+         *
+         * وجود contact + userId وحده لا يعني
+         * أن البيانات الحقيقية موجودة.
+         *
+         * Core قد يرسل:
+         * user_id
+         * display_name = مستخدم
+         * avatar = الصورة الافتراضية
+         *
+         * لذلك يجب التأكد من وجود بيانات حقيقية.
+         */
+
+        if (
+            existing &&
+            existingId &&
+            hasRealContactData(
+                existing,
+                conversation
+            )
+        ) {
+
+            const normalized =
+                normalizeContact(
+                    existing,
+                    conversation
+                );
+
+            contactCache.set(
+                String(
+                    conversationId
+                ),
+                {
+                    contact:
+                        normalized,
+
+                    timestamp:
+                        Date.now()
+                }
+            );
+
+            return normalized;
+        }
+
+
+        /* =====================================================
+           CACHE
+        ===================================================== */
+
+        const cached =
+            getCachedContact(
+                conversationId
+            );
+
+        if (cached) {
+            return cached;
+        }
+
+
+        /* =====================================================
+           CORE RPC
+        ===================================================== */
+
         const messagesCore =
             getCore();
 
@@ -751,6 +907,7 @@
                 conversation
             );
         }
+
 
         try {
 
@@ -769,18 +926,32 @@
                         conversation
                     );
 
-                contactCache.set(
-                    String(
-                        conversationId
-                    ),
-                    {
-                        contact:
-                            normalized,
+                /*
+                 * لا نخزن placeholder على أنه
+                 * contact حقيقي.
+                 */
 
-                        timestamp:
-                            Date.now()
-                    }
-                );
+                if (
+                    hasRealContactData(
+                        normalized,
+                        conversation
+                    )
+                ) {
+
+                    contactCache.set(
+                        String(
+                            conversationId
+                        ),
+                        {
+                            contact:
+                                normalized,
+
+                            timestamp:
+                                Date.now()
+                        }
+                    );
+
+                }
 
                 return normalized;
             }
@@ -794,10 +965,15 @@
 
         }
 
+
         /*
-         * إذا فشل RPC / الشبكة،
-         * لا نوقف بقية قائمة المحادثات.
+         * إذا فشل RPC أو الشبكة،
+         * نرجع fallback فقط.
+         *
+         * لا نخزنه في Cache حتى لا تبقى
+         * كلمة "مستخدم" عالقة.
          */
+
         return normalizeContact(
             existing ||
             conversation
@@ -857,14 +1033,7 @@
         const blockApi =
             getBlock();
 
-        /*
-         * إذا الموديول غير جاهز،
-         * لا نكشف هوية مخفية بشكل افتراضي.
-         * لكن لا نمنع الاستخدام العادي.
-         */
-        if (
-            !blockApi
-        ) {
+        if (!blockApi) {
 
             return {
 
@@ -893,7 +1062,6 @@
                     await blockApi.isBlocked(
                         userId
                     );
-
             }
 
         } catch (error) {
@@ -902,7 +1070,6 @@
                 "isBlocked error:",
                 error
             );
-
         }
 
         try {
@@ -917,7 +1084,6 @@
                     await blockApi.isBlockedBy(
                         userId
                     );
-
             }
 
         } catch (error) {
@@ -926,7 +1092,6 @@
                 "isBlockedBy error:",
                 error
             );
-
         }
 
         const result = {
@@ -967,9 +1132,7 @@
         userId = null
     ) {
 
-        if (
-            userId
-        ) {
+        if (userId) {
 
             blockStatusCache.delete(
                 String(
@@ -985,7 +1148,7 @@
 
 
     /* =========================================================
-       GET BLOCK STATUS FOR CONVERSATION
+       GET CONVERSATION BLOCK STATUS
        ========================================================= */
 
     async function getConversationBlockStatus(
@@ -993,9 +1156,7 @@
         force = false
     ) {
 
-        if (
-            !conversation
-        ) {
+        if (!conversation) {
 
             return {
 
@@ -1006,10 +1167,6 @@
             };
         }
 
-        /*
-         * دعم المحادثات التي تحمل حالة الحظر
-         * من RPC أو Core مسبقاً.
-         */
         const blockedFromConversation =
             conversation.blocked === true ||
             conversation.is_blocked === true ||
@@ -1089,7 +1246,12 @@
 
             );
 
-        if (name) {
+        if (
+            name &&
+            String(name).trim() !==
+                CONFIG.DEFAULT_NAME
+        ) {
+
             return String(name);
         }
 
@@ -1102,7 +1264,12 @@
 
             );
 
-        if (username) {
+        if (
+            username &&
+            String(username).trim() !==
+                CONFIG.DEFAULT_USERNAME
+        ) {
+
             return String(username);
         }
 
@@ -1238,10 +1405,6 @@
                 )
                 : null;
 
-        /*
-         * إذا وصلت رسالة جديدة عبر Realtime
-         * نعتمد عليها مباشرة.
-         */
         if (live) {
 
             return String(
@@ -1383,10 +1546,6 @@
                 key
             );
 
-        /*
-         * لا نسمح لرسالة قديمة أن تستبدل
-         * رسالة أحدث وصلت قبلها.
-         */
         if (
             old?.created_at &&
             createdAt
@@ -1403,12 +1562,8 @@
                 ).getTime();
 
             if (
-                Number.isFinite(
-                    oldTime
-                ) &&
-                Number.isFinite(
-                    newTime
-                ) &&
+                Number.isFinite(oldTime) &&
+                Number.isFinite(newTime) &&
                 newTime < oldTime
             ) {
 
@@ -1433,12 +1588,6 @@
                     null
 
             }
-        );
-
-        debug(
-            "Live message applied:",
-            key,
-            content
         );
     }
 
@@ -1479,17 +1628,10 @@
             return [];
         }
 
-        if (
-            !Array.isArray(data)
-        ) {
-
+        if (!Array.isArray(data)) {
             return [];
         }
 
-        /*
-         * نضيف تحديثات Realtime إلى نسخة
-         * العرض بدون تعديل الـCore نفسه.
-         */
         const merged =
             data.map(
                 conversation => {
@@ -1534,7 +1676,6 @@
                             live.created_at
 
                     };
-
                 }
             );
 
@@ -1584,9 +1725,6 @@
             return;
         }
 
-        /*
-         * تأكد أن المحادثة موجودة في القائمة الحالية.
-         */
         const conversations =
             getCurrentConversations();
 
@@ -1603,11 +1741,6 @@
                     )
             );
 
-        /*
-         * إذا لم تكن موجودة حالياً،
-         * نطلب من الـCore تحديث قائمته إن كان
-         * يملك أحد هذه الـAPIs.
-         */
         if (!exists) {
 
             const messagesCore =
@@ -1634,7 +1767,7 @@
                     messagesCore &&
                     typeof
                         messagesCore[method] ===
-                        "function"
+                    "function"
                 ) {
 
                     try {
@@ -1650,24 +1783,14 @@
             }
         }
 
-        /*
-         * نخزن آخر رسالة فوراً.
-         */
         applyLiveMessage(
             message
         );
 
-        /*
-         * نحدث القائمة فوراً.
-         */
         await refresh(
             true
         );
 
-        /*
-         * نخلي بقية أجزاء نظام WFESC
-         * تعرف أن هناك رسالة Realtime.
-         */
         try {
 
             window.dispatchEvent(
@@ -1675,11 +1798,13 @@
                     "wfesc:conversation-live-message",
                     {
                         detail: {
+
                             message:
                                 message,
 
                             conversationId:
                                 conversationId
+
                         }
                     }
                 )
@@ -1719,10 +1844,6 @@
             realtimeStarting =
                 false;
 
-            debug(
-                "Supabase client غير جاهز للـ conversations realtime"
-            );
-
             return;
         }
 
@@ -1758,10 +1879,6 @@
 
             );
 
-            /*
-             * UPDATE مهم إذا صار تعديل على رسالة
-             * ويجب أن يظهر في المعاينة.
-             */
             channel.on(
 
                 "postgres_changes",
@@ -1793,11 +1910,6 @@
             channel.subscribe(
                 status => {
 
-                    debug(
-                        "Messages realtime status:",
-                        status
-                    );
-
                     if (
                         status ===
                         "SUBSCRIBED"
@@ -1823,9 +1935,7 @@
 
                         realtimeStarting =
                             false;
-
                     }
-
                 }
             );
 
@@ -2079,24 +2189,13 @@
             return null;
         }
 
-        const state =
-            typingStates.get(
-                String(
-                    conversationId
-                )
-            );
-
-        if (!state) {
-            return null;
-        }
-
-        return state;
+        return typingStates.get(
+            String(
+                conversationId
+            )
+        ) || null;
     }
 
-
-    /* =========================================================
-       IS TYPING
-       ========================================================= */
 
     function isConversationTyping(
         conversation
@@ -2118,10 +2217,6 @@
         );
     }
 
-
-    /* =========================================================
-       TYPING PREVIEW
-       ========================================================= */
 
     function getPreview(
         conversation
@@ -2352,14 +2447,6 @@
                 )
             ];
 
-        /*
-         * مهم:
-         * Promise.all كان ممكن يخلي استثناء واحد
-         * يوقف تحميل كل الحالات.
-         *
-         * allSettled يخلي كل مستخدم ينفحص بشكل
-         * مستقل، وإذا واحد فشل نبقي البقية.
-         */
         const results =
             await Promise.allSettled(
 
@@ -2379,10 +2466,8 @@
                             state
 
                         };
-
                     }
                 )
-
             );
 
         results.forEach(
@@ -2405,7 +2490,6 @@
                     "resolveBlockStates item failed:",
                     result.reason
                 );
-
             }
         );
 
@@ -2658,9 +2742,6 @@
                 "wfesc-blocked-shake"
             );
 
-            /*
-             * إعادة تشغيل الأنيميشن.
-             */
             void card.offsetWidth;
 
             card.classList.add(
@@ -2679,10 +2760,6 @@
             );
         }
 
-        /*
-         * نرسل الحدث حتى تستطيع واجهة الصفحة
-         * إظهار التنبيه بالطريقة الموجودة عندها.
-         */
         try {
 
             window.dispatchEvent(
@@ -2700,7 +2777,6 @@
             );
 
         } catch (_) {}
-
     }
 
 
@@ -2764,10 +2840,6 @@
                 conversation
             );
 
-        /*
-         * لا نعرض النشاط الحقيقي
-         * للشخص الذي حظر المستخدم.
-         */
         const online =
             blockedBy
                 ? false
@@ -2985,13 +3057,6 @@
                     return;
                 }
 
-
-                /*
-                 * فحص مباشر قبل فتح المحادثة.
-                 * هذا يمنع حالة Race Condition
-                 * إذا تغير الحظر بعد آخر Render.
-                 */
-
                 let latestBlockState =
                     safeBlockState;
 
@@ -3014,15 +3079,6 @@
                             : "false";
                 }
 
-
-                /*
-                 * إذا الطرف الآخر حاظر المستخدم:
-                 * لا نفتح محادثة جديدة.
-                 *
-                 * التاريخ يبقى محفوظاً في النظام،
-                 * لكن الدخول من القائمة ممنوع.
-                 */
-
                 if (
                     latestBlockState.blockedBy ===
                     true
@@ -3034,7 +3090,6 @@
 
                     return;
                 }
-
 
                 const messagesCore =
                     getCore();
@@ -3098,12 +3153,6 @@
             return;
         }
 
-        /*
-         * مهم:
-         * لا نستخدم Promise.all هنا لأن أي مشكلة
-         * شبكية أو RPC في محادثة واحدة يجب ألا
-         * توقف باقي المحادثات.
-         */
         const results =
             await Promise.allSettled(
 
@@ -3120,48 +3169,23 @@
                                 conversation
                             );
 
-                        const hasName =
-                            Boolean(
-                                firstValue(
+                        /*
+                         * لا نعتبر الاسم "مستخدم"
+                         * والصورة الافتراضية بيانات حقيقية.
+                         */
 
-                                    conversation?.display_name,
-
-                                    contact?.display_name,
-
-                                    contact?.full_name,
-
-                                    contact?.name,
-
-                                    conversation?.username,
-
-                                    contact?.username
-
-                                )
-                            );
-
-                        const hasAvatar =
-                            Boolean(
-                                firstValue(
-
-                                    conversation?.avatar_url,
-
-                                    conversation?.avatar,
-
-                                    contact?.avatar_url,
-
-                                    contact?.avatar
-
-                                )
+                        const hasRealData =
+                            hasRealContactData(
+                                contact,
+                                conversation
                             );
 
                         if (
                             userId &&
-                            hasName &&
-                            hasAvatar
+                            hasRealData
                         ) {
 
                             return;
-
                         }
 
                         await resolveContact(
@@ -3170,7 +3194,6 @@
 
                     }
                 )
-
             );
 
         results.forEach(
@@ -3185,16 +3208,14 @@
                         "resolveConversationContacts item failed:",
                         result.reason
                     );
-
                 }
-
             }
         );
     }
 
 
     /* =========================================================
-       MERGE CONTACT INTO CONVERSATION
+       MERGE CACHED CONTACTS
        ========================================================= */
 
     function mergeCachedContacts(
@@ -3309,11 +3330,6 @@
                 getCurrentConversations()
             );
 
-        /*
-         * فحص الحظر لكل مستخدم قبل إنشاء
-         * أي بطاقة حتى لا يظهر الاسم الحقيقي
-         * للحظة ثم يختفي.
-         */
         const blockStates =
             await resolveBlockStates(
                 conversations,
@@ -3477,10 +3493,6 @@
                     return;
                 }
 
-                /*
-                 * إذا الشخص حاظر المستخدم،
-                 * لا نعرض Online ولا Typing.
-                 */
                 if (
                     card.dataset
                         .wfescBlockedBy ===
@@ -3516,7 +3528,6 @@
 
                     return;
                 }
-
 
                 const state =
                     getActivityState(
@@ -3594,10 +3605,6 @@
             return;
         }
 
-        /*
-         * الشخص الذي حظر المستخدم
-         * لا نعرض له Typing.
-         */
         if (
             card.dataset
                 .wfescBlockedBy ===
@@ -3725,10 +3732,6 @@
             return;
         }
 
-        /*
-         * لا نعرض Typing إذا الطرف الآخر
-         * حاظر المستخدم الحالي.
-         */
         const card =
             getConversationList()
                 ?.querySelector(
@@ -3819,10 +3822,7 @@
             data.userId ||
             null;
 
-        if (
-            !userId
-        ) {
-
+        if (!userId) {
             return;
         }
 
@@ -3924,10 +3924,6 @@
                 supabaseClient.channel !==
                 "function"
         ) {
-
-            debug(
-                "Supabase client غير جاهز للـ typing"
-            );
 
             return;
         }
@@ -4075,7 +4071,7 @@
                     supabaseClient &&
                     typeof
                         supabaseClient.removeChannel ===
-                        "function"
+                    "function"
                 ) {
 
                     await supabaseClient.removeChannel(
@@ -4102,7 +4098,6 @@
             await subscribeTypingChannel(
                 conversation
             );
-
         }
     }
 
@@ -4155,41 +4150,25 @@
 
         window.addEventListener(
             "wfesc:activity-sync",
-            () => {
-
-                refreshActivity();
-
-            }
+            refreshActivity
         );
 
 
         window.addEventListener(
             "wfesc:activity-response",
-            () => {
-
-                refreshActivity();
-
-            }
+            refreshActivity
         );
 
 
         window.addEventListener(
             "wfesc:activity-state-changed",
-            () => {
-
-                refreshActivity();
-
-            }
+            refreshActivity
         );
 
 
         window.addEventListener(
             "wfesc:chat-header-refresh",
-            () => {
-
-                refreshActivity();
-
-            }
+            refreshActivity
         );
 
 
@@ -4241,19 +4220,9 @@
         );
 
 
-        /*
-         * Realtime مستقل للقائمة.
-         */
         window.addEventListener(
             "wfesc:conversation-live-message",
-            () => {
-
-                /*
-                 * الحدث هنا موجود فقط للتكامل
-                 * مع أي ملفات أخرى مستقبلاً.
-                 */
-
-            }
+            () => {}
         );
 
 
@@ -4276,27 +4245,13 @@
                     detail.blocked_id ||
                     null;
 
-                /*
-                 * إذا تغير حظر مستخدم محدد،
-                 * نمسح كاشه فقط.
-                 *
-                 * إذا لم يرسل الحدث معرفاً،
-                 * نمسح الكاش كله.
-                 */
                 clearBlockCache(
                     userId
                 );
 
-                /*
-                 * إعادة بناء القائمة فوراً.
-                 *
-                 * refresh(true) يجبر فحص حالات
-                 * الحظر من Supabase مرة أخرى.
-                 */
                 refresh(
                     true
                 );
-
             };
 
 
@@ -4318,10 +4273,6 @@
         );
 
 
-        /*
-         * هذه الأحداث هي التي تستخدمها
-         * messages-chat-actions.js حالياً.
-         */
         window.addEventListener(
             "wfesc:user-blocked",
             handleBlockChanged
@@ -4359,7 +4310,6 @@
                         detail
                     );
                 }
-
             }
         );
 
@@ -4389,7 +4339,6 @@
                         }
                     );
                 }
-
             }
         );
 
@@ -4419,7 +4368,6 @@
                         }
                     );
                 }
-
             }
         );
 
@@ -4432,9 +4380,7 @@
 
     function startRefreshTimer() {
 
-        if (
-            refreshTimer
-        ) {
+        if (refreshTimer) {
 
             clearInterval(
                 refreshTimer
@@ -4454,9 +4400,7 @@
             );
 
 
-        if (
-            activityTimer
-        ) {
+        if (activityTimer) {
 
             clearInterval(
                 activityTimer
@@ -4504,7 +4448,6 @@
                     attempt,
                     250
                 );
-
             };
 
         attempt();
@@ -4517,10 +4460,7 @@
 
     async function initialize() {
 
-        if (
-            initialized
-        ) {
-
+        if (initialized) {
             return;
         }
 
@@ -4538,10 +4478,6 @@
             true
         );
 
-        /*
-         * تشغيل Realtime الخاص بقائمة المحادثات
-         * بعد جاهزية Core وSupabase.
-         */
         await startMessageRealtime();
 
         startRefreshTimer();
