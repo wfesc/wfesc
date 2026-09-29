@@ -4,7 +4,7 @@
 /*
 =========================================================
 WFESC MESSAGES CORE
-FINAL STABLE VERSION
+FINAL FAST / STABLE VERSION
 
 Cursor Pagination
 Infinite Message Loading
@@ -26,6 +26,17 @@ Soft Delete Support
 Conversation Refresh
 Activity Contact Normalization
 Chat Header Interface
+
+PERFORMANCE:
+- Fast conversation opening
+- Conversation message cache
+- Background message refresh
+- Contact fetch never blocks message loading
+- No artificial 180ms scroll delay
+- No artificial 250ms / 80ms open delay
+- Realtime message is rendered before heavy conversation refresh
+- Network contact failures do not block chat opening
+- Debounced conversation refresh
 =========================================================
 */
 
@@ -105,6 +116,25 @@ const MESSAGE_TOP_THRESHOLD =
 80;
 
 
+/*
+ * Cache الرسائل:
+ *
+ * يخلي فتح محادثة مفتوحة سابقًا فوري تقريبًا،
+ * وبعدها يجلب آخر البيانات من Supabase
+ * بالخلفية بدون تجميد الواجهة.
+ */
+const MESSAGE_CACHE_TIME =
+5 * 60 * 1000;
+
+
+/*
+ * يمنع تنفيذ refresh للمحادثات
+ * عدة مرات وراء بعض بسبب Realtime.
+ */
+const CONVERSATION_REFRESH_DEBOUNCE =
+120;
+
+
 /* =========================================================
 STATE
 ========================================================= */
@@ -155,6 +185,26 @@ let realtimeConversationId = null;
 let lastRenderedMessageId = null;
 
 let openingConversation = false;
+
+
+/* =========================================================
+PERFORMANCE STATE
+========================================================= */
+
+const conversationMessagesCache =
+new Map();
+
+const conversationContactCache =
+new Map();
+
+let conversationRefreshTimer =
+null;
+
+let conversationRefreshScheduled =
+false;
+
+let backgroundMessageRefreshes =
+new Map();
 
 
 /* =========================================================
@@ -699,7 +749,7 @@ function ensureChatOpenAnimation() {
 
             animation:
                 wfescChatSlideUp
-                .38s
+                .28s
                 cubic-bezier(
                     .16,
                     1,
@@ -877,6 +927,289 @@ function getMessageContent(message) {
         message?.message_content ??
         ""
     );
+
+}
+
+
+/* =========================================================
+CACHE HELPERS
+========================================================= */
+
+function getCacheKey(
+    conversationId
+) {
+
+    return conversationId != null
+        ? String(conversationId)
+        : null;
+
+}
+
+
+function cloneMessages(
+    messages
+) {
+
+    if (
+        !Array.isArray(
+            messages
+        )
+    ) {
+        return [];
+    }
+
+    return messages.map(
+        message => {
+
+            if (
+                !message ||
+                typeof message !==
+                "object"
+            ) {
+                return message;
+            }
+
+            return {
+                ...message
+            };
+
+        }
+    );
+
+}
+
+
+function cacheCurrentMessages() {
+
+    if (
+        !currentConversationId
+    ) {
+        return;
+    }
+
+    const key =
+        getCacheKey(
+            currentConversationId
+        );
+
+    if (!key) {
+        return;
+    }
+
+    conversationMessagesCache.set(
+        key,
+        {
+            messages:
+                cloneMessages(
+                    currentMessages
+                ),
+
+            hasOlderMessages:
+                hasOlderMessages,
+
+            timestamp:
+                Date.now()
+        }
+    );
+
+}
+
+
+function getCachedMessages(
+    conversationId
+) {
+
+    const key =
+        getCacheKey(
+            conversationId
+        );
+
+    if (!key) {
+        return null;
+    }
+
+    const cached =
+        conversationMessagesCache.get(
+            key
+        );
+
+    if (!cached) {
+        return null;
+    }
+
+    if (
+        Date.now() -
+        cached.timestamp >
+        MESSAGE_CACHE_TIME
+    ) {
+
+        conversationMessagesCache.delete(
+            key
+        );
+
+        return null;
+    }
+
+    return {
+
+        messages:
+            cloneMessages(
+                cached.messages
+            ),
+
+        hasOlderMessages:
+            cached.hasOlderMessages !== false
+
+    };
+
+}
+
+
+function cacheConversationContact(
+    conversationId,
+    contact
+) {
+
+    const key =
+        getCacheKey(
+            conversationId
+        );
+
+    if (
+        !key ||
+        !contact
+    ) {
+        return;
+    }
+
+    conversationContactCache.set(
+        key,
+        {
+            contact:
+                normalizeContact(
+                    contact
+                ),
+
+            timestamp:
+                Date.now()
+        }
+    );
+
+}
+
+
+function getCachedConversationContact(
+    conversationId
+) {
+
+    const key =
+        getCacheKey(
+            conversationId
+        );
+
+    if (!key) {
+        return null;
+    }
+
+    const cached =
+        conversationContactCache.get(
+            key
+        );
+
+    if (!cached) {
+        return null;
+    }
+
+    if (
+        Date.now() -
+        cached.timestamp >
+        MESSAGE_CACHE_TIME
+    ) {
+
+        conversationContactCache.delete(
+            key
+        );
+
+        return null;
+    }
+
+    return cached.contact;
+}
+
+
+/* =========================================================
+DEBOUNCED CONVERSATION REFRESH
+========================================================= */
+
+function scheduleConversationListRefresh(
+    delay =
+        CONVERSATION_REFRESH_DEBOUNCE
+) {
+
+    if (
+        conversationRefreshScheduled
+    ) {
+        return;
+    }
+
+    conversationRefreshScheduled =
+        true;
+
+    const run =
+        () => {
+
+            conversationRefreshScheduled =
+                false;
+
+            loadConversations()
+                .catch(error => {
+
+                    console.warn(
+                        "WFESC scheduled conversation refresh:",
+                        error
+                    );
+
+                });
+
+        };
+
+    if (
+        conversationRefreshTimer
+    ) {
+
+        clearTimeout(
+            conversationRefreshTimer
+        );
+    }
+
+    conversationRefreshTimer =
+        setTimeout(
+            () => {
+
+                conversationRefreshTimer =
+                    null;
+
+                if (
+                    typeof requestAnimationFrame ===
+                    "function"
+                ) {
+
+                    requestAnimationFrame(
+                        run
+                    );
+
+                } else {
+
+                    run();
+
+                }
+
+            },
+            Math.max(
+                0,
+                delay
+            )
+        );
 
 }
 
@@ -1183,7 +1516,11 @@ window.addEventListener(
             }
         );
 
-        renderConversations();
+        /*
+         * تأجيل رسم القائمة إلى frame التالي
+         * حتى لا يقطع تحديث الواجهة الحالية.
+         */
+        scheduleConversationListRefresh(0);
 
     }
 );
@@ -1345,38 +1682,18 @@ function prepareChatAtBottom() {
 
     forceScrollToBottom();
 
+    /*
+     * Frame واحد فقط بدل سلسلة
+     * 20 / 80 / 180ms القديمة.
+     */
     requestAnimationFrame(() => {
-
-        forceScrollToBottom();
-
-        requestAnimationFrame(() => {
-
-            forceScrollToBottom();
-
-        });
-
-    });
-
-    setTimeout(() => {
-
-        forceScrollToBottom();
-
-    }, 20);
-
-    setTimeout(() => {
-
-        forceScrollToBottom();
-
-    }, 80);
-
-    setTimeout(() => {
 
         forceScrollToBottom();
 
         chatMessages.style.scrollBehavior =
             oldBehavior || "";
 
-    }, 180);
+    });
 
 }
 
@@ -1430,7 +1747,7 @@ function playChatOpenAnimation() {
 
     setTimeout(
         removeAnimation,
-        500
+        350
     );
 
 }
@@ -1565,20 +1882,6 @@ function getSupportContact() {
 CONTACT FETCH RESILIENCE
 ========================================================= */
 
-/*
- * بعض أخطاء Supabase تكون أخطاء شبكة فعلية مثل:
- *
- * TypeError: Failed to fetch
- *
- * هذه الأخطاء قد تكون مؤقتة بسبب:
- * - انقطاع الشبكة
- * - تأخر الاتصال
- * - فشل مؤقت في fetch
- * - استئناف الاتصال
- *
- * لذلك نعيد المحاولة قبل إظهار أي تشخيص.
- */
-
 function isLikelyNetworkError(
     error
 ) {
@@ -1603,21 +1906,6 @@ function isLikelyNetworkError(
         message.includes("fetch failed") ||
         error?.name ===
         "TypeError"
-    );
-
-}
-
-
-function waitForRetry(
-    milliseconds
-) {
-
-    return new Promise(
-        resolve =>
-            setTimeout(
-                resolve,
-                milliseconds
-            )
     );
 
 }
@@ -1652,6 +1940,23 @@ async function getConversationContact(
         return null;
     }
 
+    /*
+     * Cache محلي سريع.
+     */
+    const cachedContact =
+        getCachedConversationContact(
+            conversationId
+        );
+
+    if (cachedContact) {
+
+        return normalizeContact(
+            cachedContact,
+            fallbackContact
+        );
+
+    }
+
     const normalizedFallback =
         fallbackContact
             ? normalizeContact(
@@ -1659,100 +1964,38 @@ async function getConversationContact(
             )
             : null;
 
-    const maxAttempts = 3;
+    /*
+     * محاولة واحدة فقط.
+     *
+     * لا نعيد المحاولة عدة مرات هنا لأن
+     * جلب جهة الاتصال يجب ألا يؤخر فتح الشات.
+     */
+    try {
 
-    let lastError = null;
-
-    for (
-        let attempt = 1;
-        attempt <= maxAttempts;
-        attempt++
-    ) {
-
-        try {
-
-            const {
-                data,
-                error
-            } = await client.rpc(
-                "get_conversation_contacts",
-                {
-                    target_conversation_id:
-                        conversationId
-                }
-            );
-
-            if (!error) {
-
-                if (!data) {
-
-                    return (
-                        normalizedFallback ||
-                        null
-                    );
-                }
-
-                const rawContact =
-                    Array.isArray(data)
-                        ? data[0]
-                        : data;
-
-                if (!rawContact) {
-
-                    return (
-                        normalizedFallback ||
-                        null
-                    );
-                }
-
-                return normalizeContact(
-                    rawContact,
-                    normalizedFallback
-                );
-
+        const {
+            data,
+            error
+        } = await client.rpc(
+            "get_conversation_contacts",
+            {
+                target_conversation_id:
+                    conversationId
             }
+        );
 
-            lastError =
-                error;
+        if (error) {
 
-            /*
-             * إذا الخطأ يبدو خطأ شبكة،
-             * نعيد المحاولة.
-             */
             if (
                 isLikelyNetworkError(
                     error
                 )
             ) {
 
-                if (
-                    attempt <
-                    maxAttempts
-                ) {
-
-                    await waitForRetry(
-                        350 *
-                        attempt
-                    );
-
-                    continue;
-                }
-
-                /*
-                 * بعد انتهاء المحاولات:
-                 * لا نظهر لوحة تشخيص حمراء
-                 * لأن المشكلة اتصال وليست
-                 * بالضرورة مشكلة في بيانات الحساب.
-                 */
-
                 console.warn(
-                    "WFESC: تعذر جلب جهة الاتصال بسبب مشكلة اتصال مؤقتة. سيتم استخدام البيانات المحلية.",
+                    "WFESC contact fetch network error; using local fallback.",
                     {
                         conversation_id:
-                            conversationId,
-
-                        attempts:
-                            maxAttempts
+                            conversationId
                     }
                 );
 
@@ -1763,77 +2006,65 @@ async function getConversationContact(
             }
 
             /*
-             * خطأ RPC فعلي وليس خطأ شبكة.
+             * خطأ RPC حقيقي:
+             * لا نجعل فتح الشات يفشل.
              */
-            wfescDebugError(
-                "فشل جلب بيانات جهة الاتصال",
-                error,
-                {
-                    rpc:
-                        "get_conversation_contacts",
-
-                    conversation_id:
-                        conversationId
-                }
+            console.warn(
+                "WFESC get_conversation_contacts:",
+                error
             );
 
             return (
                 normalizedFallback ||
                 null
             );
+        }
 
-        } catch (error) {
+        if (!data) {
 
-            lastError =
-                error;
+            return (
+                normalizedFallback ||
+                null
+            );
+        }
 
-            if (
-                isLikelyNetworkError(
-                    error
-                )
-            ) {
+        const rawContact =
+            Array.isArray(data)
+                ? data[0]
+                : data;
 
-                if (
-                    attempt <
-                    maxAttempts
-                ) {
+        if (!rawContact) {
 
-                    await waitForRetry(
-                        350 *
-                        attempt
-                    );
+            return (
+                normalizedFallback ||
+                null
+            );
+        }
 
-                    continue;
-                }
+        const normalized =
+            normalizeContact(
+                rawContact,
+                normalizedFallback
+            );
 
-                console.warn(
-                    "WFESC: فشل الاتصال بـ Supabase أثناء جلب جهة الاتصال. سيتم استخدام البيانات المحلية.",
-                    {
-                        conversation_id:
-                            conversationId,
+        cacheConversationContact(
+            conversationId,
+            normalized
+        );
 
-                        attempts:
-                            maxAttempts,
+        return normalized;
 
-                        error:
-                            error?.message ||
-                            String(error)
-                    }
-                );
+    } catch (error) {
 
-                return (
-                    normalizedFallback ||
-                    null
-                );
-            }
+        if (
+            isLikelyNetworkError(
+                error
+            )
+        ) {
 
-            wfescDebugError(
-                "استثناء أثناء جلب جهة الاتصال",
-                error,
+            console.warn(
+                "WFESC contact network exception; using fallback.",
                 {
-                    rpc:
-                        "get_conversation_contacts",
-
                     conversation_id:
                         conversationId
                 }
@@ -1844,25 +2075,17 @@ async function getConversationContact(
                 null
             );
         }
-    }
-
-    /*
-     * حماية إضافية في حال خرجت الحلقة
-     * لأي سبب غير متوقع.
-     */
-
-    if (lastError) {
 
         console.warn(
-            "WFESC getConversationContact fallback:",
-            lastError
+            "WFESC getConversationContact exception:",
+            error
+        );
+
+        return (
+            normalizedFallback ||
+            null
         );
     }
-
-    return (
-        normalizedFallback ||
-        null
-    );
 
 }
 
@@ -1884,13 +2107,9 @@ async function ensureSupportConversation() {
 
         if (error) {
 
-            wfescDebugError(
-                "فشل إنشاء محادثة الدعم",
-                error,
-                {
-                    rpc:
-                        "get_or_create_support_conversation"
-                }
+            console.warn(
+                "WFESC support conversation:",
+                error
             );
 
             return null;
@@ -1918,13 +2137,9 @@ async function ensureSupportConversation() {
 
     } catch (error) {
 
-        wfescDebugError(
-            "استثناء محادثة الدعم",
-            error,
-            {
-                rpc:
-                    "get_or_create_support_conversation"
-            }
+        console.warn(
+            "WFESC support conversation exception:",
+            error
         );
 
         return null;
@@ -1966,19 +2181,12 @@ async function loadConversations() {
 
         if (error) {
 
-            wfescDebugError(
-                "فشل تحميل المحادثات",
-                error,
-                {
-                    rpc:
-                        "get_my_conversations",
-
-                    user_id:
-                        requestedUserId
-                }
+            console.warn(
+                "WFESC get_my_conversations:",
+                error
             );
 
-            return [];
+            return conversations;
         }
 
         conversations =
@@ -2034,6 +2242,19 @@ async function loadConversations() {
                         } catch (_) {}
                     }
 
+                    if (
+                        conversation.id ||
+                        conversation.conversation_id
+                    ) {
+
+                        cacheConversationContact(
+                            conversation.id ||
+                            conversation.conversation_id,
+                            normalized
+                        );
+
+                    }
+
                     return conversation;
 
                 }
@@ -2067,16 +2288,12 @@ async function loadConversations() {
 
     } catch (error) {
 
-        wfescDebugError(
-            "استثناء أثناء تحميل المحادثات",
-            error,
-            {
-                rpc:
-                    "get_my_conversations"
-            }
+        console.warn(
+            "WFESC load conversations exception:",
+            error
         );
 
-        return [];
+        return conversations;
     }
 
 }
@@ -2721,7 +2938,7 @@ function hideTypingIndicator() {
                 "none";
         }
 
-    }, 180);
+    }, 120);
 
 }
 
@@ -3011,7 +3228,12 @@ async function setupTypingChannel(
     conversationId
 ) {
 
-    await removeTypingChannel();
+    /*
+     * الإزالة أصبحت غير blocking لفتح الشات.
+     */
+    removeTypingChannel(
+        false
+    ).catch(() => {});
 
     if (
         !conversationId ||
@@ -3082,7 +3304,10 @@ async function setupTypingChannel(
         }
     );
 
-    typingChannel.subscribe(
+    const channelReference =
+        typingChannel;
+
+    channelReference.subscribe(
         status => {
 
             if (
@@ -3106,7 +3331,9 @@ async function setupTypingChannel(
 REMOVE TYPING CHANNEL
 ========================================================= */
 
-async function removeTypingChannel() {
+async function removeTypingChannel(
+    waitForRemoval = true
+) {
 
     if (typingTimer) {
 
@@ -3145,19 +3372,33 @@ async function removeTypingChannel() {
         typingChannel =
             null;
 
-        try {
+        const removePromise =
+            (async () => {
 
-            await client.removeChannel(
-                oldChannel
-            );
+                try {
 
-        } catch (error) {
+                    await client.removeChannel(
+                        oldChannel
+                    );
 
-            console.warn(
-                "WFESC remove typing channel:",
-                error
-            );
+                } catch (error) {
+
+                    console.warn(
+                        "WFESC remove typing channel:",
+                        error
+                    );
+                }
+
+            })();
+
+        if (
+            waitForRemoval
+        ) {
+
+            await removePromise;
+
         }
+
     }
 
 }
@@ -3441,29 +3682,55 @@ function findDomMessageById(
         return null;
     }
 
-    const elements =
-        chatMessages.querySelectorAll(
-            "[data-message-id]"
+    /*
+     * querySelector أسرع من جلب كل الرسائل
+     * ثم الدوران عليها.
+     */
+    try {
+
+        const safeId =
+            String(
+                messageId
+            )
+            .replace(
+                /\\/g,
+                "\\\\"
+            )
+            .replace(
+                /"/g,
+                '\\"'
+            );
+
+        return chatMessages.querySelector(
+            `[data-message-id="${safeId}"]`
         );
 
-    for (
-        const element
-        of elements
-    ) {
+    } catch (_) {
 
-        if (
-            String(
-                element.dataset.messageId
-            ) ===
-            String(messageId)
+        const elements =
+            chatMessages.querySelectorAll(
+                "[data-message-id]"
+            );
+
+        for (
+            const element
+            of elements
         ) {
 
-            return element;
+            if (
+                String(
+                    element.dataset.messageId
+                ) ===
+                String(messageId)
+            ) {
+
+                return element;
+            }
+
         }
 
+        return null;
     }
-
-    return null;
 
 }
 
@@ -3764,6 +4031,8 @@ function addRealMessageToState(
                 currentMessages
             );
 
+            cacheCurrentMessages();
+
             return true;
         }
     }
@@ -3775,6 +4044,8 @@ function addRealMessageToState(
     sortMessages(
         currentMessages
     );
+
+    cacheCurrentMessages();
 
     return true;
 
@@ -3808,7 +4079,7 @@ function conversationExists(
 
 
 /* =========================================================
-REFRESH CONVERSATIONS
+REFRESH CONVERSATIONS FROM REALTIME
 ========================================================= */
 
 function refreshConversationsFromRealtime(
@@ -3819,15 +4090,7 @@ function refreshConversationsFromRealtime(
         return;
     }
 
-    loadConversations()
-        .catch(error => {
-
-            console.warn(
-                "WFESC refresh conversations:",
-                error
-            );
-
-        });
+    scheduleConversationListRefresh();
 
 }
 
@@ -3858,15 +4121,10 @@ function updateConversationPreview(
         )
     ) {
 
-        loadConversations()
-            .catch(error => {
-
-                console.warn(
-                    "WFESC refresh conversations after soft delete:",
-                    error
-                );
-
-            });
+        /*
+         * الحذف لا يحتاج إعادة بناء فورية ثقيلة.
+         */
+        scheduleConversationListRefresh();
 
         return;
     }
@@ -3919,7 +4177,137 @@ function updateConversationPreview(
         conversation
     );
 
-    renderConversations();
+    /*
+     * لا نعيد رسم القائمة بشكل blocking.
+     */
+    scheduleConversationListRefresh(
+        0
+    );
+
+}
+
+
+/* =========================================================
+MERGE FRESH MESSAGE SET
+========================================================= */
+
+function mergeMessageLists(
+    oldMessages,
+    freshMessages
+) {
+
+    const result = [];
+    const byId = new Map();
+
+    const oldList =
+        Array.isArray(oldMessages)
+            ? oldMessages
+            : [];
+
+    const freshList =
+        Array.isArray(freshMessages)
+            ? freshMessages
+            : [];
+
+    oldList.forEach(
+        message => {
+
+            const id =
+                getMessageId(
+                    message
+                );
+
+            if (
+                id == null
+            ) {
+
+                result.push(
+                    message
+                );
+
+                return;
+            }
+
+            const key =
+                String(id);
+
+            if (
+                byId.has(
+                    key
+                )
+            ) {
+                return;
+            }
+
+            byId.set(
+                key,
+                result.length
+            );
+
+            result.push(
+                message
+            );
+
+        }
+    );
+
+    freshList.forEach(
+        message => {
+
+            const id =
+                getMessageId(
+                    message
+                );
+
+            if (
+                id == null
+            ) {
+
+                result.push(
+                    message
+                );
+
+                return;
+            }
+
+            const key =
+                String(id);
+
+            if (
+                byId.has(
+                    key
+                )
+            ) {
+
+                const index =
+                    byId.get(
+                        key
+                    );
+
+                result[index] =
+                    message;
+
+            } else {
+
+                byId.set(
+                    key,
+                    result.length
+                );
+
+                result.push(
+                    message
+                );
+
+            }
+
+        }
+    );
+
+    sortMessages(
+        result
+    );
+
+    return result;
 
 }
 
@@ -3945,6 +4333,211 @@ function handleRealtimeMessage(
         message.conversation_id ??
         message.target_conversation_id;
 
+    /*
+     * أولاً عالج الرسالة للمحادثة المفتوحة.
+     *
+     * هذا مهم جداً:
+     * أي refresh لقائمة المحادثات لا يجب
+     * أن يمنع ظهور الرسالة الحالية.
+     */
+    if (
+        messageBelongsToCurrentConversation(
+            message
+        )
+    ) {
+
+        const messageId =
+            getMessageId(
+                message
+            );
+
+        const stateMessage =
+            messageId != null
+                ? findMessageInStateById(
+                    messageId
+                )
+                : null;
+
+        if (stateMessage) {
+
+            const stateIndex =
+                currentMessages.indexOf(
+                    stateMessage
+                );
+
+            if (
+                stateIndex >= 0
+            ) {
+
+                currentMessages[
+                    stateIndex
+                ] =
+                    message;
+
+            }
+
+            const domById =
+                findDomMessageById(
+                    messageId
+                );
+
+            if (domById) {
+
+                reconcileExistingMessage(
+                    domById,
+                    message
+                );
+            }
+
+            cacheCurrentMessages();
+
+            clearTypingUser(
+                getMessageSenderId(
+                    message
+                )
+            );
+
+        } else {
+
+            const optimisticStateMessage =
+                findOptimisticMessageInState(
+                    message
+                );
+
+            if (optimisticStateMessage) {
+
+                const stateIndex =
+                    currentMessages.indexOf(
+                        optimisticStateMessage
+                    );
+
+                if (
+                    stateIndex >= 0
+                ) {
+
+                    currentMessages[
+                        stateIndex
+                    ] =
+                        message;
+                }
+
+                let optimisticElement =
+                    findDomMessageById(
+                        getMessageId(
+                            optimisticStateMessage
+                        )
+                    );
+
+                if (!optimisticElement) {
+
+                    optimisticElement =
+                        findOptimisticMessageElement(
+                            message
+                        );
+                }
+
+                if (optimisticElement) {
+
+                    reconcileExistingMessage(
+                        optimisticElement,
+                        message
+                    );
+                }
+
+                sortMessages(
+                    currentMessages
+                );
+
+                cacheCurrentMessages();
+
+                clearTypingUser(
+                    getMessageSenderId(
+                        message
+                    )
+                );
+
+            } else {
+
+                let existingElement =
+                    messageId != null
+                        ? findDomMessageById(
+                            messageId
+                        )
+                        : null;
+
+                if (!existingElement) {
+
+                    existingElement =
+                        findExistingMessageElement(
+                            message
+                        );
+                }
+
+                if (existingElement) {
+
+                    reconcileExistingMessage(
+                        existingElement,
+                        message
+                    );
+
+                    addRealMessageToState(
+                        message
+                    );
+
+                } else {
+
+                    const wasAtBottom =
+                        isNearBottom();
+
+                    addRealMessageToState(
+                        message
+                    );
+
+                    if (chatMessages) {
+
+                        const element =
+                            createMessageElement(
+                                message
+                            );
+
+                        chatMessages.appendChild(
+                            element
+                        );
+
+                        scheduleMessageSettingsApply();
+
+                        if (wasAtBottom) {
+
+                            requestAnimationFrame(
+                                () => {
+
+                                    scrollChatToBottom(
+                                        "smooth"
+                                    );
+
+                                }
+                            );
+                        }
+                    }
+
+                }
+
+                clearTypingUser(
+                    getMessageSenderId(
+                        message
+                    )
+                );
+
+            }
+
+        }
+
+    }
+
+    /*
+     * بعد ما ظهرت الرسالة بالمحادثة،
+     * حدّث القائمة بالخلفية.
+     */
     if (
         conversationExists(
             conversationId
@@ -3961,194 +4554,6 @@ function handleRealtimeMessage(
             conversationId
         );
     }
-
-    if (
-        !messageBelongsToCurrentConversation(
-            message
-        )
-    ) {
-        return;
-    }
-
-    const messageId =
-        getMessageId(
-            message
-        );
-
-    const stateMessage =
-        messageId != null
-            ? findMessageInStateById(
-                messageId
-            )
-            : null;
-
-    if (stateMessage) {
-
-        const stateIndex =
-            currentMessages.indexOf(
-                stateMessage
-            );
-
-        if (
-            stateIndex >= 0
-        ) {
-
-            currentMessages[
-                stateIndex
-            ] =
-                message;
-        }
-
-        const domById =
-            findDomMessageById(
-                messageId
-            );
-
-        if (domById) {
-
-            reconcileExistingMessage(
-                domById,
-                message
-            );
-        }
-
-        clearTypingUser(
-            getMessageSenderId(
-                message
-            )
-        );
-
-        return;
-    }
-
-    const optimisticStateMessage =
-        findOptimisticMessageInState(
-            message
-        );
-
-    if (optimisticStateMessage) {
-
-        const stateIndex =
-            currentMessages.indexOf(
-                optimisticStateMessage
-            );
-
-        if (
-            stateIndex >= 0
-        ) {
-
-            currentMessages[
-                stateIndex
-            ] =
-                message;
-        }
-
-        let optimisticElement =
-            findDomMessageById(
-                getMessageId(
-                    optimisticStateMessage
-                )
-            );
-
-        if (!optimisticElement) {
-
-            optimisticElement =
-                findOptimisticMessageElement(
-                    message
-                );
-        }
-
-        if (optimisticElement) {
-
-            reconcileExistingMessage(
-                optimisticElement,
-                message
-            );
-        }
-
-        clearTypingUser(
-            getMessageSenderId(
-                message
-            )
-        );
-
-        return;
-    }
-
-    let existingElement =
-        messageId != null
-            ? findDomMessageById(
-                messageId
-            )
-            : null;
-
-    if (!existingElement) {
-
-        existingElement =
-            findExistingMessageElement(
-                message
-            );
-    }
-
-    if (existingElement) {
-
-        reconcileExistingMessage(
-            existingElement,
-            message
-        );
-
-        addRealMessageToState(
-            message
-        );
-
-        clearTypingUser(
-            getMessageSenderId(
-                message
-            )
-        );
-
-        return;
-    }
-
-    const wasAtBottom =
-        isNearBottom();
-
-    addRealMessageToState(
-        message
-    );
-
-    if (chatMessages) {
-
-        const element =
-            createMessageElement(
-                message
-            );
-
-        chatMessages.appendChild(
-            element
-        );
-
-        scheduleMessageSettingsApply();
-
-        if (wasAtBottom) {
-
-            requestAnimationFrame(
-                () => {
-
-                    scrollChatToBottom(
-                        "smooth"
-                    );
-
-                }
-            );
-        }
-    }
-
-    clearTypingUser(
-        getMessageSenderId(
-            message
-        )
-    );
 
 }
 
@@ -4267,65 +4672,79 @@ async function setupMessageRealtime() {
                                 return;
                             }
 
+                            const isCurrent =
+                                messageBelongsToCurrentConversation(
+                                    message
+                                );
+
+                            /*
+                             * إذا الرسالة داخل الشات الحالي،
+                             * نفّذ التحديث أولاً.
+                             */
+                            if (
+                                isCurrent
+                            ) {
+
+                                const messageId =
+                                    getMessageId(
+                                        message
+                                    );
+
+                                if (
+                                    messageId != null
+                                ) {
+
+                                    const stateMessage =
+                                        findMessageInStateById(
+                                            messageId
+                                        );
+
+                                    if (
+                                        stateMessage
+                                    ) {
+
+                                        const stateIndex =
+                                            currentMessages.indexOf(
+                                                stateMessage
+                                            );
+
+                                        if (
+                                            stateIndex >=
+                                            0
+                                        ) {
+
+                                            currentMessages[
+                                                stateIndex
+                                            ] =
+                                                message;
+                                        }
+
+                                        const domElement =
+                                            findDomMessageById(
+                                                messageId
+                                            );
+
+                                        if (
+                                            domElement
+                                        ) {
+
+                                            reconcileExistingMessage(
+                                                domElement,
+                                                message
+                                            );
+                                        }
+
+                                        cacheCurrentMessages();
+
+                                    }
+
+                                }
+
+                            }
+
                             updateConversationPreview(
                                 message
                             );
-
-                            if (
-                                !messageBelongsToCurrentConversation(
-                                    message
-                                )
-                            ) {
-                                return;
-                            }
-
-                            const messageId =
-                                getMessageId(
-                                    message
-                                );
-
-                            if (
-                                messageId == null
-                            ) {
-                                return;
-                            }
-
-                            const stateMessage =
-                                findMessageInStateById(
-                                    messageId
-                                );
-
-                            if (!stateMessage) {
-                                return;
-                            }
-
-                            const stateIndex =
-                                currentMessages.indexOf(
-                                    stateMessage
-                                );
-
-                            if (
-                                stateIndex >= 0
-                            ) {
-
-                                currentMessages[
-                                    stateIndex
-                                ] =
-                                    message;
-                            }
-
-                            const domElement =
-                                findDomMessageById(
-                                    messageId
-                                );
-
-                            if (domElement) {
-
-                                reconcileExistingMessage(
-                                    domElement,
-                                    message
-                                );
-                            }
 
                         } catch (error) {
 
@@ -4638,6 +5057,8 @@ async function loadOlderMessages() {
             hasOlderMessages =
                 false;
 
+            cacheCurrentMessages();
+
             return false;
         }
 
@@ -4703,6 +5124,8 @@ async function loadOlderMessages() {
             hasOlderMessages =
                 false;
 
+            cacheCurrentMessages();
+
             return false;
         }
 
@@ -4746,6 +5169,8 @@ async function loadOlderMessages() {
         chatMessages.scrollTop =
             oldScrollTop +
             heightDifference;
+
+        cacheCurrentMessages();
 
         scheduleMessageSettingsApply();
 
@@ -4920,7 +5345,18 @@ async function openConversationInternal(
     hasOlderMessages =
         true;
 
-    await removeTypingChannel();
+
+    /*
+     * لا ننتظر إزالة قناة Typing القديمة.
+     *
+     * أهم شيء أن typingChannel يصبح null
+     * فورًا، ثم Supabase ينهي إزالة القناة
+     * بالخلفية.
+     */
+    removeTypingChannel(
+        false
+    ).catch(() => {});
+
 
     currentConversationId =
         conversationId;
@@ -4932,12 +5368,29 @@ async function openConversationInternal(
             )
             : null;
 
+    const cachedContact =
+        getCachedConversationContact(
+            conversationId
+        );
+
+    if (
+        !passedContact &&
+        cachedContact
+    ) {
+
+        passedContact =
+            normalizeContact(
+                cachedContact
+            );
+    }
+
     currentConversationContact =
         passedContact;
 
     typingUsers.clear();
 
     hideTypingIndicator();
+
 
     if (
         type === "support"
@@ -4946,64 +5399,34 @@ async function openConversationInternal(
         currentConversationContact =
             getSupportContact();
 
-    } else {
+    } else if (
+        !currentConversationContact
+    ) {
 
-        const fetchedContact =
-            await getConversationContact(
-                conversationId,
-                type,
-                passedContact
-            );
+        currentConversationContact = {
 
-        if (
-            loadToken !==
-            conversationLoadToken
-        ) {
+            user_id:
+                null,
 
-            openingConversation =
-                false;
+            display_name:
+                "مستخدم",
 
-            return;
-        }
+            username:
+                "user",
 
-        if (fetchedContact) {
+            avatar_url:
+                DEFAULT_AVATAR,
 
-            currentConversationContact =
-                normalizeContact(
-                    fetchedContact,
-                    passedContact
-                );
+            is_online:
+                false,
 
-        } else if (passedContact) {
+            show_activity:
+                true
 
-            currentConversationContact =
-                passedContact;
+        };
 
-        } else {
-
-            currentConversationContact = {
-
-                user_id:
-                    null,
-
-                display_name:
-                    "مستخدم",
-
-                username:
-                    "user",
-
-                avatar_url:
-                    DEFAULT_AVATAR,
-
-                is_online:
-                    false,
-
-                show_activity:
-                    true
-
-            };
-        }
     }
+
 
     currentConversationContact =
         applyActivityStateToContact(
@@ -5011,6 +5434,7 @@ async function openConversationInternal(
         );
 
     chatHeaderInterface.refresh();
+
 
     if (chatView) {
 
@@ -5032,10 +5456,92 @@ async function openConversationInternal(
             "hidden";
     }
 
+
+    /*
+     * جلب جهة الاتصال صار بالتوازي مع الرسائل.
+     *
+     * إذا تأخر RPC الخاص بالجهة،
+     * الشات لا ينتظر.
+     */
+    let contactPromise =
+        null;
+
+    if (
+        type !== "support" &&
+        !cachedContact
+    ) {
+
+        contactPromise =
+            getConversationContact(
+                conversationId,
+                type,
+                passedContact
+            )
+            .then(
+                fetchedContact => {
+
+                    if (
+                        loadToken !==
+                        conversationLoadToken
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        fetchedContact
+                    ) {
+
+                        currentConversationContact =
+                            applyActivityStateToContact(
+                                normalizeContact(
+                                    fetchedContact,
+                                    passedContact
+                                )
+                            );
+
+                        chatHeaderInterface.refresh();
+
+                    }
+
+                }
+            )
+            .catch(
+                error => {
+
+                    console.warn(
+                        "WFESC contact background fetch:",
+                        error
+                    );
+
+                }
+            );
+
+    }
+
+
+    /*
+     * يبدأ تحميل الرسائل فورًا.
+     */
     const loaded =
         await loadConversationMessages(
             loadToken
         );
+
+
+    /*
+     * إذا جلب contact انتهى، لا ننتظره قبل
+     * إظهار الشات.
+     */
+    if (
+        contactPromise
+    ) {
+
+        contactPromise.catch(
+            () => {}
+        );
+
+    }
+
 
     if (
         loadToken !==
@@ -5072,6 +5578,7 @@ async function openConversationInternal(
         return;
     }
 
+
     if (chatView) {
 
         chatView.classList.add(
@@ -5079,53 +5586,12 @@ async function openConversationInternal(
         );
 
         chatView.style.visibility =
-            "hidden";
-    }
-
-    if (chatMessages) {
-
-        chatMessages.style.visibility =
-            "hidden";
-    }
-
-    prepareChatAtBottom();
-
-    await new Promise(
-        resolve =>
-            requestAnimationFrame(
-                resolve
-            )
-    );
-
-    prepareChatAtBottom();
-
-    await new Promise(
-        resolve =>
-            requestAnimationFrame(
-                resolve
-            )
-    );
-
-    forceScrollToBottom();
-
-    await new Promise(
-        resolve =>
-            requestAnimationFrame(
-                resolve
-            )
-    );
-
-    forceScrollToBottom();
-
-    if (chatMessages) {
-
-        chatMessages.style.visibility =
             "visible";
     }
 
-    if (chatView) {
+    if (chatMessages) {
 
-        chatView.style.visibility =
+        chatMessages.style.visibility =
             "visible";
     }
 
@@ -5143,22 +5609,24 @@ async function openConversationInternal(
         );
     }
 
+
+    /*
+     * Scroll فوري ثم frame واحد فقط.
+     */
     prepareChatAtBottom();
+
 
     setupTypingChannel(
         conversationId
     ).catch(error => {
 
-        wfescDebugError(
-            "فشل تشغيل Typing Channel",
-            error,
-            {
-                conversation_id:
-                    conversationId
-            }
+        console.warn(
+            "WFESC typing channel:",
+            error
         );
 
     });
+
 
     markConversationRead(
         conversationId
@@ -5171,6 +5639,7 @@ async function openConversationInternal(
 
     });
 
+
     requestAnimationFrame(() => {
 
         forceScrollToBottom();
@@ -5181,28 +5650,239 @@ async function openConversationInternal(
 
     });
 
-    setTimeout(
-        () => {
-
-            forceScrollToBottom();
-
-            updateTypingIndicatorPosition();
-
-        },
-        80
-    );
-
-    setTimeout(
-        () => {
-
-            updateTypingIndicatorPosition();
-
-        },
-        250
-    );
 
     openingConversation =
         false;
+
+}
+
+
+/* =========================================================
+FETCH MESSAGE PAGE
+========================================================= */
+
+async function fetchConversationMessagePage(
+    conversationId
+) {
+
+    const {
+        data,
+        error
+    } = await client.rpc(
+        "get_conversation_messages",
+        {
+            target_conversation_id:
+                conversationId,
+
+            message_limit:
+                MESSAGE_PAGE_SIZE,
+
+            before_created_at:
+                null,
+
+            before_message_id:
+                null
+        }
+    );
+
+    return {
+        data,
+        error
+    };
+
+}
+
+
+/* =========================================================
+BACKGROUND MESSAGE REFRESH
+========================================================= */
+
+async function refreshConversationMessagesInBackground(
+    conversationId,
+    expectedLoadToken
+) {
+
+    const key =
+        getCacheKey(
+            conversationId
+        );
+
+    if (!key) {
+        return;
+    }
+
+    if (
+        backgroundMessageRefreshes.has(
+            key
+        )
+    ) {
+
+        return;
+    }
+
+    const task =
+        (async () => {
+
+            try {
+
+                const {
+                    data,
+                    error
+                } =
+                    await fetchConversationMessagePage(
+                        conversationId
+                    );
+
+                if (error) {
+
+                    console.warn(
+                        "WFESC background messages refresh:",
+                        error
+                    );
+
+                    return;
+                }
+
+                const freshMessages =
+                    Array.isArray(data)
+                        ? [...data].reverse()
+                        : [];
+
+                const freshCount =
+                    freshMessages.length;
+
+                const currentStillSame =
+                    expectedLoadToken ===
+                    conversationLoadToken &&
+                    String(
+                        currentConversationId
+                    ) ===
+                    String(
+                        conversationId
+                    );
+
+                if (
+                    currentStillSame
+                ) {
+
+                    const oldMessages =
+                        currentMessages;
+
+                    const merged =
+                        mergeMessageLists(
+                            oldMessages,
+                            freshMessages
+                        );
+
+                    const changed =
+                        JSON.stringify(
+                            merged
+                        ) !==
+                        JSON.stringify(
+                            oldMessages
+                        );
+
+                    currentMessages =
+                        merged;
+
+                    /*
+                     * إذا كانت لدينا رسائل أقدم بالفعل
+                     * فلا نقلب hasOlder إلى false.
+                     */
+                    hasOlderMessages =
+                        hasOlderMessages ||
+                        freshCount ===
+                        MESSAGE_PAGE_SIZE;
+
+                    cacheCurrentMessages();
+
+                    if (
+                        changed
+                    ) {
+
+                        const wasNear =
+                            isNearBottom();
+
+                        renderMessages({
+                            initialLoad:
+                                false
+                        });
+
+                        if (
+                            wasNear
+                        ) {
+
+                            requestAnimationFrame(
+                                () => {
+
+                                    forceScrollToBottom();
+
+                                }
+                            );
+
+                        }
+
+                    }
+
+                } else {
+
+                    /*
+                     * المحادثة ليست مفتوحة،
+                     * خزّنها فقط للمرة القادمة.
+                     */
+                    const cached =
+                        getCachedMessages(
+                            conversationId
+                        );
+
+                    const merged =
+                        mergeMessageLists(
+                            cached?.messages || [],
+                            freshMessages
+                        );
+
+                    conversationMessagesCache.set(
+                        key,
+                        {
+                            messages:
+                                merged,
+
+                            hasOlderMessages:
+                                Boolean(
+                                    cached?.hasOlderMessages !== false ||
+                                    freshCount === MESSAGE_PAGE_SIZE
+                                ),
+
+                            timestamp:
+                                Date.now()
+                        }
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC background message refresh exception:",
+                    error
+                );
+
+            } finally {
+
+                backgroundMessageRefreshes.delete(
+                    key
+                );
+
+            }
+
+        })();
+
+    backgroundMessageRefreshes.set(
+        key,
+        task
+    );
+
+    return task;
 
 }
 
@@ -5222,6 +5902,67 @@ async function loadConversationMessages(
 
     const requestedConversationId =
         currentConversationId;
+
+    const cached =
+        getCachedMessages(
+            requestedConversationId
+        );
+
+
+    /*
+     * =====================================================
+     * CACHE PATH
+     * =====================================================
+     *
+     * إذا الشات مفتوح سابقًا:
+     * اعرض الرسائل فورًا ثم حدّثها بالخلفية.
+     */
+    if (
+        cached &&
+        cached.messages.length
+    ) {
+
+        currentMessages =
+            cached.messages;
+
+        hasOlderMessages =
+            cached.hasOlderMessages;
+
+        sortMessages(
+            currentMessages
+        );
+
+        if (chatMessages) {
+
+            chatMessages.style.visibility =
+                "hidden";
+
+        }
+
+        renderMessages({
+            initialLoad:
+                true
+        });
+
+        /*
+         * تحديث بالخلفية بدون أي انتظار.
+         */
+        refreshConversationMessagesInBackground(
+            requestedConversationId,
+            expectedLoadToken
+        ).catch(
+            () => {}
+        );
+
+        return true;
+    }
+
+
+    /*
+     * =====================================================
+     * FIRST LOAD
+     * =====================================================
+     */
 
     hasOlderMessages =
         true;
@@ -5245,22 +5986,10 @@ async function loadConversationMessages(
         const {
             data,
             error
-        } = await client.rpc(
-            "get_conversation_messages",
-            {
-                target_conversation_id:
-                    requestedConversationId,
-
-                message_limit:
-                    MESSAGE_PAGE_SIZE,
-
-                before_created_at:
-                    null,
-
-                before_message_id:
-                    null
-            }
-        );
+        } =
+            await fetchConversationMessagePage(
+                requestedConversationId
+            );
 
         if (
             expectedLoadToken !==
@@ -5367,6 +6096,8 @@ async function loadConversationMessages(
 
                 }
             );
+
+        cacheCurrentMessages();
 
         renderMessages({
             initialLoad:
@@ -5542,34 +6273,10 @@ function renderMessages(
 
             forceScrollToBottom();
 
-            requestAnimationFrame(() => {
-
-                forceScrollToBottom();
-
-            });
-
-        });
-
-        setTimeout(() => {
-
-            forceScrollToBottom();
-
-        }, 20);
-
-        setTimeout(() => {
-
-            forceScrollToBottom();
-
-        }, 80);
-
-        setTimeout(() => {
-
-            forceScrollToBottom();
-
             chatMessages.style.scrollBehavior =
                 oldBehavior || "";
 
-        }, 180);
+        });
 
         return;
     }
@@ -5813,6 +6520,8 @@ function addMessageToCurrentConversation(
                 currentMessages
             );
 
+            cacheCurrentMessages();
+
             const element =
                 findOptimisticMessageElement(
                     message
@@ -5842,6 +6551,8 @@ function addMessageToCurrentConversation(
     sortMessages(
         currentMessages
     );
+
+    cacheCurrentMessages();
 
     if (
         options.appendOnly &&
@@ -5963,7 +6674,21 @@ async function closeConversation() {
     openingConversation =
         false;
 
-    await removeTypingChannel();
+
+    /*
+     * لا نجعل إغلاق الشات ينتظر إزالة
+     * قناة Typing من الشبكة.
+     */
+    removeTypingChannel(
+        false
+    ).catch(() => {});
+
+
+    /*
+     * خزّن آخر حالة للعودة السريعة.
+     */
+    cacheCurrentMessages();
+
 
     currentConversationId =
         null;
@@ -6017,7 +6742,10 @@ async function closeConversation() {
 
     if (currentUser) {
 
-        await loadConversations();
+        scheduleConversationListRefresh(
+            0
+        );
+
     }
 
 }
@@ -6126,29 +6854,71 @@ async function initializeAuth() {
                     return;
                 }
 
+
+                /*
+                 * تحميل القائمة أولاً.
+                 */
                 await loadConversations();
+
 
                 if (!currentUser) {
                     return;
                 }
 
-                const supportId =
-                    await ensureSupportConversation();
 
-                if (
-                    supportId &&
-                    currentUser
-                ) {
+                /*
+                 * تشغيل Realtime مباشرة
+                 * حتى لا ننتظر دعم WFESC.
+                 */
+                setupMessageRealtime()
+                    .catch(error => {
 
-                    await loadConversations();
-                }
+                        console.warn(
+                            "WFESC realtime startup:",
+                            error
+                        );
 
-                if (
-                    currentUser
-                ) {
+                    });
 
-                    await setupMessageRealtime();
-                }
+
+                /*
+                 * إنشاء محادثة الدعم بالخلفية.
+                 *
+                 * سابقاً كان هذا يمنع اكتمال
+                 * التهيئة ثم يعيد تحميل القائمة
+                 * مرتين.
+                 */
+                ensureSupportConversation()
+                    .then(
+                        supportId => {
+
+                            if (
+                                supportId &&
+                                currentUser &&
+                                !conversationExists(
+                                    supportId
+                                )
+                            ) {
+
+                                scheduleConversationListRefresh(
+                                    0
+                                );
+
+                            }
+
+                        }
+                    )
+                    .catch(
+                        error => {
+
+                            console.warn(
+                                "WFESC support background:",
+                                error
+                            );
+
+                        }
+                    );
+
 
                 initialized =
                     true;
@@ -6315,29 +7085,58 @@ client.auth.onAuthStateChange(
                 event === "USER_UPDATED"
             ) {
 
+                /*
+                 * لا ننتظر support RPC قبل تشغيل
+                 * Realtime والقائمة.
+                 */
                 await loadConversations();
 
                 if (!currentUser) {
                     return;
                 }
 
-                const supportId =
-                    await ensureSupportConversation();
+                setupMessageRealtime()
+                    .catch(error => {
 
-                if (
-                    supportId &&
-                    currentUser
-                ) {
+                        console.warn(
+                            "WFESC realtime auth startup:",
+                            error
+                        );
 
-                    await loadConversations();
-                }
+                    });
 
-                if (
-                    currentUser
-                ) {
 
-                    await setupMessageRealtime();
-                }
+                ensureSupportConversation()
+                    .then(
+                        supportId => {
+
+                            if (
+                                supportId &&
+                                currentUser &&
+                                !conversationExists(
+                                    supportId
+                                )
+                            ) {
+
+                                scheduleConversationListRefresh(
+                                    0
+                                );
+
+                            }
+
+                        }
+                    )
+                    .catch(
+                        error => {
+
+                            console.warn(
+                                "WFESC support auth background:",
+                                error
+                            );
+
+                        }
+                    );
+
 
                 initialized =
                     true;
@@ -6483,6 +7282,51 @@ window.WFESC_MESSAGES_CORE = {
             title,
             error,
             extra
+        );
+
+    },
+
+    /*
+     * أدوات Cache اختيارية للملفات الأخرى.
+     */
+    clearMessageCache(
+        conversationId = null
+    ) {
+
+        if (
+            conversationId == null
+        ) {
+
+            conversationMessagesCache.clear();
+
+            return;
+        }
+
+        conversationMessagesCache.delete(
+            String(
+                conversationId
+            )
+        );
+
+    },
+
+    clearContactCache(
+        conversationId = null
+    ) {
+
+        if (
+            conversationId == null
+        ) {
+
+            conversationContactCache.clear();
+
+            return;
+        }
+
+        conversationContactCache.delete(
+            String(
+                conversationId
+            )
         );
 
     }
