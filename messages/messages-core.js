@@ -162,7 +162,13 @@ let currentMessages = [];
 let messageChannel = null;
 let typingChannel = null;
 let presenceChannel = null;
-let notificationChannel = null;
+
+/*
+ * لا يوجد notificationChannel هنا.
+ *
+ * الإشعارات مسؤولية:
+ * messages-notifications.js
+ */
 
 let initialized = false;
 
@@ -175,6 +181,17 @@ let typingUsers = new Set();
 let typingUserTimers = new Map();
 
 let realtimeStarted = false;
+
+/*
+ * يمنع تشغيل setupMessageRealtime()
+ * أكثر من مرة بنفس الوقت.
+ *
+ * مهم لأن initializeAuth()
+ * و INITIAL_SESSION
+ * قد يعملان في نفس الفترة.
+ */
+let realtimeStarting = false;
+
 let realtimeConversationId = null;
 
 let lastRenderedMessageId = null;
@@ -3607,21 +3624,6 @@ if (!conversationId) {
     return;
 }
 
-
-/*
- * SOFT DELETE
- *
- * إذا تغيرت deleted_at فلا نعرض
- * محتوى الرسالة ولا نضع عبارة
- * "تم حذف هذه الرسالة" كـ preview.
- *
- * السبب:
- * get_my_conversations() في Supabase
- * يستبعد الرسائل التي deleted_at IS NOT NULL
- * لذلك يجب إعادة جلب القائمة من المصدر
- * بدل إبقاء preview قديم أو اصطناعي.
- */
-
 if (
     isMessageDeleted(
         message
@@ -3930,164 +3932,306 @@ MESSAGE REALTIME
 
 async function setupMessageRealtime() {
 
-if (
-    realtimeStarted &&
-    messageChannel
-) {
-    return;
-}
+    /*
+     * القناة شغالة بالفعل.
+     * لا تنشئ قناة أخرى.
+     */
+    if (
+        realtimeStarted &&
+        messageChannel
+    ) {
+        return;
+    }
 
-if (messageChannel) {
+    /*
+     * توجد عملية اشتراك جارية.
+     * لا تنشئ قناة ثانية.
+     */
+    if (
+        realtimeStarting
+    ) {
+        return;
+    }
+
+    realtimeStarting =
+        true;
 
     try {
 
-        await client.removeChannel(
-            messageChannel
-        );
+        /*
+         * إزالة أي قناة قديمة قبل إنشاء الجديدة.
+         */
+        if (messageChannel) {
 
-    } catch (_) {}
-}
+            try {
 
-messageChannel =
-    client
-        .channel(
-            "wfesc-messages-realtime"
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:
-                    "INSERT",
-                schema:
-                    "public",
-                table:
-                    "messages"
-            },
-            payload => {
-
-                handleRealtimeMessage(
-                    payload
+                await client.removeChannel(
+                    messageChannel
                 );
-            }
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:
-                    "UPDATE",
-                schema:
-                    "public",
-                table:
-                    "messages"
-            },
-            payload => {
 
-                const message =
-                    normalizeRealtimeMessage(
-                        payload
+            } catch (_) {}
+
+            messageChannel =
+                null;
+        }
+
+        /*
+         * قناة الرسائل الوحيدة.
+         *
+         * هذا الملف لا ينشئ Notification UI
+         * ولا يشغل صوت الإشعار.
+         *
+         * messages-notifications.js
+         * هو المسؤول عن الإشعارات.
+         */
+        messageChannel =
+            client
+                .channel(
+                    "wfesc-messages-realtime"
+                )
+
+                /*
+                 * INSERT
+                 */
+                .on(
+                    "postgres_changes",
+                    {
+                        event:
+                            "INSERT",
+
+                        schema:
+                            "public",
+
+                        table:
+                            "messages"
+                    },
+
+                    payload => {
+
+                        try {
+
+                            handleRealtimeMessage(
+                                payload
+                            );
+
+                        } catch (error) {
+
+                            wfescDebugError(
+                                "خطأ أثناء معالجة رسالة Realtime",
+                                error,
+                                {
+                                    event:
+                                        "INSERT"
+                                }
+                            );
+
+                        }
+
+                    }
+                )
+
+                /*
+                 * UPDATE
+                 *
+                 * يستخدم للـ soft delete
+                 * وتحديث الرسائل الموجودة.
+                 */
+                .on(
+                    "postgres_changes",
+                    {
+                        event:
+                            "UPDATE",
+
+                        schema:
+                            "public",
+
+                        table:
+                            "messages"
+                    },
+
+                    payload => {
+
+                        try {
+
+                            const message =
+                                normalizeRealtimeMessage(
+                                    payload
+                                );
+
+                            if (!message) {
+                                return;
+                            }
+
+                            updateConversationPreview(
+                                message
+                            );
+
+                            if (
+                                !messageBelongsToCurrentConversation(
+                                    message
+                                )
+                            ) {
+                                return;
+                            }
+
+                            const messageId =
+                                getMessageId(
+                                    message
+                                );
+
+                            if (
+                                messageId == null
+                            ) {
+                                return;
+                            }
+
+                            const stateMessage =
+                                findMessageInStateById(
+                                    messageId
+                                );
+
+                            /*
+                             * UPDATE لا ينشئ
+                             * رسالة جديدة.
+                             */
+                            if (!stateMessage) {
+                                return;
+                            }
+
+                            const stateIndex =
+                                currentMessages.indexOf(
+                                    stateMessage
+                                );
+
+                            if (
+                                stateIndex >= 0
+                            ) {
+
+                                currentMessages[
+                                    stateIndex
+                                ] =
+                                    message;
+                            }
+
+                            const domElement =
+                                findDomMessageById(
+                                    messageId
+                                );
+
+                            if (domElement) {
+
+                                reconcileExistingMessage(
+                                    domElement,
+                                    message
+                                );
+                            }
+
+                        } catch (error) {
+
+                            wfescDebugError(
+                                "خطأ أثناء معالجة تحديث رسالة Realtime",
+                                error,
+                                {
+                                    event:
+                                        "UPDATE"
+                                }
+                            );
+
+                        }
+
+                    }
+                );
+
+        /*
+         * بدء الاشتراك.
+         */
+        messageChannel.subscribe(
+            status => {
+
+                if (
+                    status ===
+                    "SUBSCRIBED"
+                ) {
+
+                    realtimeStarted =
+                        true;
+
+                    realtimeStarting =
+                        false;
+
+                    console.log(
+                        "WFESC: Messages Realtime connected"
                     );
 
-                if (!message) {
                     return;
                 }
 
                 /*
-                 * UPDATE مهم جداً للـ soft delete.
-                 *
-                 * الرسالة لا تُحذف من قاعدة البيانات.
-                 * الذي يتغير هو deleted_at فقط.
+                 * إذا فشل الاتصال أو انتهت المهلة،
+                 * نسمح بمحاولة جديدة.
                  */
-
-                updateConversationPreview(
-                    message
-                );
-
                 if (
-                    messageBelongsToCurrentConversation(
-                        message
-                    )
+                    status ===
+                    "CHANNEL_ERROR" ||
+                    status ===
+                    "TIMED_OUT" ||
+                    status ===
+                    "CLOSED"
                 ) {
 
-                    const messageId =
-                        getMessageId(
-                            message
-                        );
+                    realtimeStarted =
+                        false;
 
-                    const stateMessage =
-                        messageId != null
-                            ? findMessageInStateById(
-                                messageId
-                            )
-                            : null;
+                    realtimeStarting =
+                        false;
 
-                    if (stateMessage) {
+                    console.warn(
+                        "WFESC Messages Realtime:",
+                        status
+                    );
 
-                        const stateIndex =
-                            currentMessages.indexOf(
-                                stateMessage
-                            );
-
-                        if (
-                            stateIndex >= 0
-                        ) {
-
-                            currentMessages[
-                                stateIndex
-                            ] =
-                                message;
-                        }
-
-                        const domElement =
-                            findDomMessageById(
-                                messageId
-                            );
-
-                        if (domElement) {
-
-                            reconcileExistingMessage(
-                                domElement,
-                                message
-                            );
-                        }
-
-                    } else if (
-                        messageId != null
-                    ) {
-
-                        /*
-                         * لا ننشئ رسالة جديدة من UPDATE.
-                         */
-
-                    }
+                    return;
                 }
+
+                console.warn(
+                    "WFESC Messages Realtime:",
+                    status
+                );
 
             }
         );
 
-messageChannel.subscribe(
-    status => {
+    } catch (error) {
 
-        if (
-            status ===
-            "SUBSCRIBED"
-        ) {
+        realtimeStarted =
+            false;
 
-            realtimeStarted =
-                true;
+        realtimeStarting =
+            false;
 
-            console.log(
-                "WFESC: Messages Realtime connected"
-            );
+        messageChannel =
+            null;
 
-        } else {
+        wfescDebugError(
+            "WFESC setupMessageRealtime error",
+            error,
+            {
+                current_user:
+                    currentUser?.id ||
+                    null,
 
-            console.warn(
-                "WFESC Messages Realtime:",
-                status
-            );
-        }
+                current_conversation:
+                    currentConversationId ||
+                    null
+            }
+        );
+
+        console.error(
+            "WFESC setupMessageRealtime error:",
+            error
+        );
+
     }
-);
 
 }
 
@@ -5771,6 +5915,31 @@ try {
         null;
 
     if (!currentUser) {
+
+        /*
+         * عند تسجيل الخروج:
+         * نغلق Realtime حتى لا تبقى
+         * قناة قديمة مرتبطة بالمستخدم السابق.
+         */
+        realtimeStarted =
+            false;
+
+        realtimeStarting =
+            false;
+
+        if (messageChannel) {
+
+            try {
+
+                await client.removeChannel(
+                    messageChannel
+                );
+
+            } catch (_) {}
+
+            messageChannel =
+                null;
+        }
 
         await closeConversation();
 
