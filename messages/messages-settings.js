@@ -90,6 +90,10 @@
 
     let successTimer = null;
 
+    let blockRefreshToken = 0;
+
+    let blockToastTimer = null;
+
 
     /* =====================================================
        HELPERS
@@ -97,7 +101,55 @@
 
     function $(id) {
 
-        return document.getElementById(id);
+        const direct =
+            document.getElementById(
+                id
+            );
+
+
+        if (direct) {
+
+            return direct;
+
+        }
+
+
+        /*
+         * توافق مع IDs الموجودة فعلياً
+         * في messages.html والنسخ السابقة.
+         */
+
+        const aliases = {
+
+            messageBubbleWidthRange:
+                "messageBubbleWidth",
+
+            messageBubbleHeightRange:
+                "messageBubbleHeight",
+
+            messageBubbleEdgeRange:
+                "messageBubbleEdgeGap",
+
+            messageBubbleEdgeValue:
+                "messageBubbleEdgeGapValue"
+
+        };
+
+
+        const alias =
+            aliases[id];
+
+
+        if (alias) {
+
+            return document.getElementById(
+                alias
+            );
+
+        }
+
+
+        return null;
 
     }
 
@@ -180,6 +232,35 @@
         }
 
         return hex.toLowerCase();
+
+    }
+
+
+    function escapeHTML(value) {
+
+        return String(
+            value ?? ""
+        )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
     }
 
@@ -431,7 +512,8 @@
 
             if (
                 core &&
-                typeof core.getCurrentUser === "function"
+                typeof core.getCurrentUser ===
+                "function"
             ) {
 
                 const user =
@@ -657,24 +739,11 @@
         );
 
 
-        /*
-         * مهم:
-         * لا نستخدم scale لتكبير الفقاعة.
-         */
-
         root.style.setProperty(
             "--message-bubble-scale",
             "1"
         );
 
-
-        /*
-         * عرض الفقاعة = الحد الأقصى
-         * وليس عرضاً إجبارياً.
-         *
-         * لذلك "هلو" تبقى صغيرة
-         * والرسالة الطويلة تتمدد حتى النسبة المحددة.
-         */
 
         root.style.setProperty(
             "--message-bubble-width",
@@ -682,19 +751,11 @@
         );
 
 
-        /*
-         * الارتفاع العمودي.
-         */
-
         root.style.setProperty(
             "--message-bubble-vertical-padding",
             safe.messageBubbleVerticalPadding + "px"
         );
 
-
-        /*
-         * المسافة عن إطار الشاشة.
-         */
 
         root.style.setProperty(
             "--message-bubble-edge-gap",
@@ -839,12 +900,6 @@
             #chatView > #chatMessages
             .message-row
             .message-bubble {
-
-                /*
-                 * مهم جداً:
-                 * width:auto يجعل الفقاعة
-                 * بحجم محتواها في الرسائل القصيرة.
-                 */
 
                 width:
                     auto
@@ -1028,11 +1083,6 @@
         `;
 
 
-        /*
-         * تطبيق فوري إضافي على الفقاعات الموجودة.
-         * يفيد إذا تم إنشاء الفقاعات قبل تشغيل الإعدادات.
-         */
-
         applyDirectBubbleStyles(
             safe
         );
@@ -1042,7 +1092,7 @@
 
     /* =====================================================
        DIRECT BUBBLE STYLES
-       ===================================================== */
+    ===================================================== */
 
     function applyDirectBubbleStyles(settings) {
 
@@ -1115,7 +1165,7 @@
 
     /* =====================================================
        APPLY DATA ATTRIBUTES
-       ===================================================== */
+    ===================================================== */
 
     function applyBubbleAttributes(settings) {
 
@@ -1185,7 +1235,7 @@
 
     /* =====================================================
        SYNC UI
-       ===================================================== */
+    ===================================================== */
 
     function syncSettingsUI(settings) {
 
@@ -1231,11 +1281,6 @@
            عرض الفقاعة
            ------------------------------------------------- */
 
-        /*
-         * الاسم الصحيح في HTML:
-         * messageBubbleWidthRange
-         */
-
         const bubbleWidth =
             $("messageBubbleWidthRange");
 
@@ -1264,11 +1309,6 @@
            ارتفاع الفقاعة
            ------------------------------------------------- */
 
-        /*
-         * الاسم الصحيح في HTML:
-         * messageBubbleHeightRange
-         */
-
         const bubbleHeight =
             $("messageBubbleHeightRange");
 
@@ -1296,11 +1336,6 @@
         /* -------------------------------------------------
            المسافة عن الإطار
            ------------------------------------------------- */
-
-        /*
-         * الاسم الصحيح في HTML:
-         * messageBubbleEdgeRange
-         */
 
         const bubbleEdgeGap =
             $("messageBubbleEdgeRange");
@@ -1570,7 +1605,7 @@
 
     /* =====================================================
        READ UI
-       ===================================================== */
+    ===================================================== */
 
     function readDraftFromUI() {
 
@@ -2244,6 +2279,2338 @@
 
 
     /* =====================================================
+       BLOCK SYSTEM - HELPERS
+    ===================================================== */
+
+    function getCore() {
+
+        return (
+            window.WFESC_MESSAGES_CORE ||
+            null
+        );
+
+    }
+
+
+    function getBlockModule() {
+
+        return (
+            window.WFESC_MESSAGES_BLOCK ||
+            null
+        );
+
+    }
+
+
+    function getCurrentContact() {
+
+        const core =
+            getCore();
+
+
+        if (
+            !core ||
+            typeof core.getCurrentContact !==
+            "function"
+        ) {
+
+            return null;
+
+        }
+
+
+        try {
+
+            return (
+                core.getCurrentContact() ||
+                null
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SETTINGS BLOCK] contact lookup failed",
+                error
+            );
+
+            return null;
+
+        }
+
+    }
+
+
+    function getContactUserId(contact) {
+
+        if (!contact) {
+
+            return null;
+
+        }
+
+
+        return (
+            contact.user_id ||
+            contact.userId ||
+            contact.profile_id ||
+            contact.profileId ||
+            contact.id ||
+            null
+        );
+
+    }
+
+
+    function getContactName(contact) {
+
+        if (!contact) {
+
+            return "المستخدم";
+
+        }
+
+
+        return (
+            contact.display_name ||
+            contact.full_name ||
+            contact.name ||
+            contact.username ||
+            "المستخدم"
+        );
+
+    }
+
+
+    function getContactUsername(contact) {
+
+        if (!contact) {
+
+            return "";
+
+        }
+
+
+        const username =
+            contact.username ||
+            "";
+
+
+        if (!username) {
+
+            return "";
+
+        }
+
+
+        const clean =
+            String(
+                username
+            )
+            .replace(
+                /^@+/,
+                ""
+            );
+
+
+        return clean
+            ? "@" + clean
+            : "";
+
+    }
+
+
+    function getContactAvatar(contact) {
+
+        if (!contact) {
+
+            return "";
+
+        }
+
+
+        return (
+            contact.avatar_url ||
+            contact.avatar ||
+            contact.photo_url ||
+            ""
+        );
+
+    }
+
+
+    function formatBlockDate(value) {
+
+        if (!value) {
+
+            return "غير معروف";
+
+        }
+
+
+        const date =
+            new Date(
+                value
+            );
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return "غير معروف";
+
+        }
+
+
+        try {
+
+            return new Intl.DateTimeFormat(
+                "ar-IQ",
+                {
+                    year:"numeric",
+                    month:"long",
+                    day:"numeric",
+                    hour:"2-digit",
+                    minute:"2-digit"
+                }
+            ).format(
+                date
+            );
+
+        } catch (error) {
+
+            return date.toLocaleString(
+                "ar-IQ"
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       BLOCK CSS
+    ===================================================== */
+
+    function ensureBlockStyle() {
+
+        const styleId =
+            "wfesc-message-settings-block-style";
+
+
+        if (
+            document.getElementById(
+                styleId
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const style =
+            document.createElement(
+                "style"
+            );
+
+
+        style.id =
+            styleId;
+
+
+        style.textContent = `
+
+            /* =========================================
+               BLOCK SECTION
+            ========================================= */
+
+            #wfescSettingsBlockSection {
+
+                margin-top:20px;
+
+                padding:15px;
+
+                border-radius:20px;
+
+                background:
+                    linear-gradient(
+                        145deg,
+                        rgba(255,255,255,.048),
+                        rgba(255,255,255,.020)
+                    );
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.09);
+
+                box-shadow:
+                    inset
+                    0 1px 0
+                    rgba(255,255,255,.035);
+
+                backdrop-filter:
+                    blur(20px)
+                    saturate(140%);
+
+                -webkit-backdrop-filter:
+                    blur(20px)
+                    saturate(140%);
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-title {
+
+                font-size:15px;
+
+                font-weight:800;
+
+                color:#fff;
+
+                margin-bottom:5px;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-description {
+
+                color:#929292;
+
+                font-size:12px;
+
+                line-height:1.75;
+
+                margin-bottom:13px;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-user {
+
+                display:flex;
+
+                align-items:center;
+
+                gap:11px;
+
+                min-width:0;
+
+                padding:11px;
+
+                border-radius:16px;
+
+                background:
+                    rgba(255,255,255,.035);
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.075);
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-avatar {
+
+                width:48px;
+
+                height:48px;
+
+                flex:none;
+
+                border-radius:50%;
+
+                object-fit:cover;
+
+                background:#111;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.10);
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-info {
+
+                min-width:0;
+
+                flex:1;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-name {
+
+                color:#fff;
+
+                font-size:14px;
+
+                font-weight:800;
+
+                white-space:nowrap;
+
+                overflow:hidden;
+
+                text-overflow:ellipsis;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-username {
+
+                margin-top:3px;
+
+                color:#929292;
+
+                font-size:11px;
+
+                direction:ltr;
+
+                text-align:right;
+
+                white-space:nowrap;
+
+                overflow:hidden;
+
+                text-overflow:ellipsis;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-status {
+
+                margin-top:4px;
+
+                color:#929292;
+
+                font-size:11px;
+
+                line-height:1.7;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-date {
+
+                margin-top:8px;
+
+                padding-top:8px;
+
+                border-top:
+                    1px solid
+                    rgba(255,255,255,.06);
+
+                color:#aaa;
+
+                font-size:11px;
+
+                line-height:1.7;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-action {
+
+                width:100%;
+
+                min-height:44px;
+
+                margin-top:11px;
+
+                padding:10px 13px;
+
+                border-radius:14px;
+
+                font-size:13px;
+
+                font-weight:800;
+
+                transition:
+                    transform .18s ease,
+                    background .18s ease,
+                    border-color .18s ease,
+                    opacity .18s ease;
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-action:active {
+
+                transform:
+                    scale(.97);
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-action.block {
+
+                color:#ffb4b4;
+
+                background:
+                    rgba(180,40,40,.10);
+
+                border:
+                    1px solid
+                    rgba(255,100,100,.16);
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-action.unblock {
+
+                color:#baffcf;
+
+                background:
+                    rgba(54,226,123,.08);
+
+                border:
+                    1px solid
+                    rgba(54,226,123,.16);
+
+            }
+
+
+            #wfescSettingsBlockSection
+            .wfesc-block-empty {
+
+                padding:12px;
+
+                border-radius:14px;
+
+                background:
+                    rgba(255,255,255,.03);
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.06);
+
+                color:#929292;
+
+                font-size:12px;
+
+                line-height:1.8;
+
+            }
+
+
+            /* =========================================
+               CONFIRM OVERLAY
+            ========================================= */
+
+            #wfescSettingsBlockOverlay {
+
+                position:fixed;
+
+                inset:0;
+
+                z-index:99999999;
+
+                display:flex;
+
+                align-items:center;
+
+                justify-content:center;
+
+                padding:20px;
+
+                background:
+                    rgba(0,0,0,.72);
+
+                backdrop-filter:
+                    blur(14px)
+                    saturate(130%);
+
+                -webkit-backdrop-filter:
+                    blur(14px)
+                    saturate(130%);
+
+                animation:
+                    wfescBlockOverlayIn
+                    .18s
+                    ease
+                    both;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-dialog {
+
+                width:
+                    min(
+                        430px,
+                        100%
+                    );
+
+                padding:22px;
+
+                border-radius:22px;
+
+                background:
+                    linear-gradient(
+                        145deg,
+                        rgba(28,28,28,.97),
+                        rgba(11,11,11,.97)
+                    );
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.11);
+
+                box-shadow:
+                    0 25px 80px
+                    rgba(0,0,0,.72),
+                    inset
+                    0 1px 0
+                    rgba(255,255,255,.045);
+
+                text-align:center;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-icon {
+
+                width:58px;
+
+                height:58px;
+
+                margin:
+                    0 auto 13px;
+
+                display:flex;
+
+                align-items:center;
+
+                justify-content:center;
+
+                border-radius:50%;
+
+                background:
+                    rgba(184,43,43,.13);
+
+                border:
+                    1px solid
+                    rgba(255,100,100,.14);
+
+                font-size:25px;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-dialog-title {
+
+                color:#fff;
+
+                font-size:18px;
+
+                font-weight:800;
+
+                line-height:1.6;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-dialog-text {
+
+                margin-top:9px;
+
+                color:#aaa;
+
+                font-size:13px;
+
+                line-height:1.9;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-dialog-note {
+
+                margin-top:9px;
+
+                color:#777;
+
+                font-size:11px;
+
+                line-height:1.9;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-buttons {
+
+                display:flex;
+
+                flex-direction:column;
+
+                gap:8px;
+
+                margin-top:19px;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-button {
+
+                width:100%;
+
+                min-height:44px;
+
+                padding:11px;
+
+                border-radius:14px;
+
+                font-size:13px;
+
+                font-weight:800;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.09);
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-confirm {
+
+                color:#fff;
+
+                background:#a52f2f;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-unblock {
+
+                color:#07150d;
+
+                background:#70e49c;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-cancel {
+
+                color:#ddd;
+
+                background:
+                    rgba(255,255,255,.045);
+
+            }
+
+
+            #wfescSettingsBlockOverlay
+            .wfesc-block-button:disabled {
+
+                opacity:.55;
+
+                cursor:wait;
+
+            }
+
+
+            /* =========================================
+               TOAST
+            ========================================= */
+
+            #wfescSettingsBlockToast {
+
+                position:fixed;
+
+                left:50%;
+
+                bottom:
+                    calc(
+                        var(--navigation-height,82px)
+                        + 22px
+                    );
+
+                transform:
+                    translateX(-50%)
+                    translateY(15px);
+
+                z-index:100000000;
+
+                max-width:
+                    calc(100vw - 30px);
+
+                padding:
+                    11px 17px;
+
+                border-radius:14px;
+
+                background:
+                    rgba(18,18,18,.97);
+
+                color:#fff;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.10);
+
+                box-shadow:
+                    0 15px 45px
+                    rgba(0,0,0,.55);
+
+                font-size:12px;
+
+                font-weight:700;
+
+                text-align:center;
+
+                opacity:0;
+
+                pointer-events:none;
+
+                transition:
+                    opacity .18s ease,
+                    transform .18s ease;
+
+                backdrop-filter:
+                    blur(18px);
+
+                -webkit-backdrop-filter:
+                    blur(18px);
+
+            }
+
+
+            #wfescSettingsBlockToast.show {
+
+                opacity:1;
+
+                transform:
+                    translateX(-50%)
+                    translateY(0);
+
+            }
+
+
+            @keyframes wfescBlockOverlayIn {
+
+                from {
+
+                    opacity:0;
+
+                }
+
+                to {
+
+                    opacity:1;
+
+                }
+
+            }
+
+        `;
+
+
+        document.head.appendChild(
+            style
+        );
+
+    }
+
+
+    /* =====================================================
+       BLOCK TOAST
+    ===================================================== */
+
+    function showBlockToast(
+        message
+    ) {
+
+        let toast =
+            document.getElementById(
+                "wfescSettingsBlockToast"
+            );
+
+
+        if (!toast) {
+
+            toast =
+                document.createElement(
+                    "div"
+                );
+
+
+            toast.id =
+                "wfescSettingsBlockToast";
+
+
+            document.body.appendChild(
+                toast
+            );
+
+        }
+
+
+        toast.textContent =
+            String(
+                message || ""
+            );
+
+
+        toast.classList.add(
+            "show"
+        );
+
+
+        clearTimeout(
+            blockToastTimer
+        );
+
+
+        blockToastTimer =
+            setTimeout(
+                function () {
+
+                    toast.classList.remove(
+                        "show"
+                    );
+
+                },
+                2400
+            );
+
+    }
+
+
+    /* =====================================================
+       BLOCK CONFIRM CLOSE
+    ===================================================== */
+
+    function closeBlockConfirmation() {
+
+        const overlay =
+            document.getElementById(
+                "wfescSettingsBlockOverlay"
+            );
+
+
+        if (overlay) {
+
+            overlay.remove();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       BLOCK CONFIRMATION
+    ===================================================== */
+
+    function openBlockConfirmation(
+        mode,
+        userId,
+        userName
+    ) {
+
+        closeBlockConfirmation();
+
+
+        const overlay =
+            document.createElement(
+                "div"
+            );
+
+
+        overlay.id =
+            "wfescSettingsBlockOverlay";
+
+
+        const dialog =
+            document.createElement(
+                "div"
+            );
+
+
+        dialog.className =
+            "wfesc-block-dialog";
+
+
+        const isUnblock =
+            mode === "unblock";
+
+
+        const title =
+            isUnblock
+                ? "إلغاء الحظر"
+                : "حظر المستخدم";
+
+
+        const message =
+            isUnblock
+                ? "هل تريد إلغاء حظر المستخدم؟"
+                : "هل تريد حظر المستخدم؟";
+
+
+        const note =
+            "لماذا قمت بالحظر؟ فلا يوجد داعي للحظر، كن إنسانًا طيب القلب وراضي";
+
+
+        dialog.innerHTML = `
+
+            <div
+                class="wfesc-block-icon"
+            >
+                ${
+                    isUnblock
+                        ? "🔓"
+                        : "🚫"
+                }
+            </div>
+
+
+            <div
+                class="wfesc-block-dialog-title"
+            >
+                ${escapeHTML(
+                    title
+                )}
+            </div>
+
+
+            <div
+                class="wfesc-block-dialog-text"
+            >
+                ${escapeHTML(
+                    message
+                )}
+            </div>
+
+
+            <div
+                class="wfesc-block-dialog-note"
+            >
+                ${escapeHTML(
+                    note
+                )}
+            </div>
+
+
+            <div
+                class="wfesc-block-buttons"
+            >
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-block-button
+                        ${
+                            isUnblock
+                                ? "wfesc-block-unblock"
+                                : "wfesc-block-confirm"
+                        }
+                    "
+                    data-action="continue"
+                >
+                    متابعة
+                </button>
+
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-block-button
+                        wfesc-block-cancel
+                    "
+                    data-action="cancel"
+                >
+                    إلغاء
+                </button>
+
+            </div>
+
+        `;
+
+
+        overlay.appendChild(
+            dialog
+        );
+
+
+        document.body.appendChild(
+            overlay
+        );
+
+
+        const cancel =
+            dialog.querySelector(
+                '[data-action="cancel"]'
+            );
+
+
+        if (cancel) {
+
+            cancel.addEventListener(
+                "click",
+                closeBlockConfirmation
+            );
+
+        }
+
+
+        const continueButton =
+            dialog.querySelector(
+                '[data-action="continue"]'
+            );
+
+
+        if (continueButton) {
+
+            continueButton.addEventListener(
+                "click",
+                function () {
+
+                    openFinalBlockConfirmation(
+                        mode,
+                        userId,
+                        userName
+                    );
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FINAL CONFIRMATION
+    ===================================================== */
+
+    function openFinalBlockConfirmation(
+        mode,
+        userId,
+        userName
+    ) {
+
+        closeBlockConfirmation();
+
+
+        const overlay =
+            document.createElement(
+                "div"
+            );
+
+
+        overlay.id =
+            "wfescSettingsBlockOverlay";
+
+
+        const dialog =
+            document.createElement(
+                "div"
+            );
+
+
+        dialog.className =
+            "wfesc-block-dialog";
+
+
+        const isUnblock =
+            mode === "unblock";
+
+
+        const title =
+            isUnblock
+                ? "تأكيد إلغاء الحظر"
+                : "تأكيد الحظر";
+
+
+        const message =
+            isUnblock
+                ? (
+                    "سيتم إلغاء الحظر عن المستخدم " +
+                    userName
+                )
+                : (
+                    "سيتم حظر المستخدم " +
+                    userName
+                );
+
+
+        dialog.innerHTML = `
+
+            <div
+                class="wfesc-block-icon"
+            >
+                ${
+                    isUnblock
+                        ? "🔓"
+                        : "🚫"
+                }
+            </div>
+
+
+            <div
+                class="wfesc-block-dialog-title"
+            >
+                ${escapeHTML(
+                    title
+                )}
+            </div>
+
+
+            <div
+                class="wfesc-block-dialog-text"
+            >
+                ${escapeHTML(
+                    message
+                )}
+            </div>
+
+
+            <div
+                class="wfesc-block-buttons"
+            >
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-block-button
+                        ${
+                            isUnblock
+                                ? "wfesc-block-unblock"
+                                : "wfesc-block-confirm"
+                        }
+                    "
+                    data-action="confirm"
+                >
+                    ${
+                        isUnblock
+                            ? "تأكيد إلغاء الحظر"
+                            : "تأكيد الحظر"
+                    }
+                </button>
+
+
+                <button
+                    type="button"
+                    class="
+                        wfesc-block-button
+                        wfesc-block-cancel
+                    "
+                    data-action="cancel"
+                >
+                    إلغاء
+                </button>
+
+            </div>
+
+        `;
+
+
+        overlay.appendChild(
+            dialog
+        );
+
+
+        document.body.appendChild(
+            overlay
+        );
+
+
+        const cancel =
+            dialog.querySelector(
+                '[data-action="cancel"]'
+            );
+
+
+        if (cancel) {
+
+            cancel.addEventListener(
+                "click",
+                closeBlockConfirmation
+            );
+
+        }
+
+
+        const confirm =
+            dialog.querySelector(
+                '[data-action="confirm"]'
+            );
+
+
+        if (confirm) {
+
+            confirm.addEventListener(
+                "click",
+                async function () {
+
+                    await executeBlockAction(
+                        mode,
+                        userId,
+                        userName,
+                        dialog
+                    );
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       DISPATCH BLOCK EVENTS
+    ===================================================== */
+
+    function dispatchBlockEvent(
+        eventName,
+        userId
+    ) {
+
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    eventName,
+                    {
+                        detail: {
+                            userId:
+                                userId
+                        }
+                    }
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SETTINGS BLOCK] event dispatch failed",
+                error
+            );
+
+        }
+
+
+        try {
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "wfesc:block-changed",
+                    {
+                        detail: {
+                            userId:
+                                userId
+                        }
+                    }
+                )
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SETTINGS BLOCK] generic event failed",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       EXECUTE BLOCK ACTION
+    ===================================================== */
+
+    async function executeBlockAction(
+        mode,
+        userId,
+        userName,
+        dialog
+    ) {
+
+        const block =
+            getBlockModule();
+
+
+        if (!block) {
+
+            showBlockToast(
+                "نظام الحظر غير متوفر حالياً"
+            );
+
+            return;
+
+        }
+
+
+        const button =
+            dialog?.querySelector(
+                '[data-action="confirm"]'
+            );
+
+
+        if (button) {
+
+            button.disabled =
+                true;
+
+            button.textContent =
+                "جاري التنفيذ...";
+
+        }
+
+
+        try {
+
+            /* -----------------------------------------
+               UNBLOCK
+            ----------------------------------------- */
+
+            if (
+                mode === "unblock"
+            ) {
+
+                if (
+                    typeof block.unblockUser !==
+                    "function"
+                ) {
+
+                    throw new Error(
+                        "دالة إلغاء الحظر غير متوفرة"
+                    );
+
+                }
+
+
+                await block.unblockUser(
+                    userId
+                );
+
+
+                closeBlockConfirmation();
+
+
+                showBlockToast(
+                    "تم إلغاء حظر المستخدم"
+                );
+
+
+                dispatchBlockEvent(
+                    "wfesc:user-unblocked",
+                    userId
+                );
+
+
+                await refreshBlockSection();
+
+
+                return;
+
+            }
+
+
+            /* -----------------------------------------
+               BLOCK
+            ----------------------------------------- */
+
+            if (
+                typeof block.blockUser !==
+                "function"
+            ) {
+
+                throw new Error(
+                    "دالة الحظر غير متوفرة"
+                );
+
+            }
+
+
+            await block.blockUser(
+                userId
+            );
+
+
+            closeBlockConfirmation();
+
+
+            showBlockToast(
+                "تم حظر المستخدم"
+            );
+
+
+            dispatchBlockEvent(
+                "wfesc:user-blocked",
+                userId
+            );
+
+
+            /*
+             * الحظر لا يحذف الرسائل.
+             * يغلق المحادثة فقط من الواجهة.
+             */
+
+            const core =
+                getCore();
+
+
+            if (
+                core &&
+                typeof core.closeConversation ===
+                "function"
+            ) {
+
+                try {
+
+                    await core.closeConversation();
+
+                } catch (error) {
+
+                    console.warn(
+                        "[WFESC SETTINGS BLOCK] close conversation failed",
+                        error
+                    );
+
+                }
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "[WFESC SETTINGS BLOCK]",
+                error
+            );
+
+
+            closeBlockConfirmation();
+
+
+            showBlockToast(
+                error?.message ||
+                (
+                    mode === "unblock"
+                        ? "تعذر إلغاء حظر المستخدم"
+                        : "تعذر حظر المستخدم"
+                )
+            );
+
+
+            await refreshBlockSection();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       ENSURE BLOCK SECTION
+    ===================================================== */
+
+    function ensureBlockSection() {
+
+        const modal =
+            $("messageViewSettingsModal");
+
+
+        if (!modal) {
+
+            return null;
+
+        }
+
+
+        const card =
+            modal.querySelector(
+                ".modal-card"
+            );
+
+
+        if (!card) {
+
+            return null;
+
+        }
+
+
+        let section =
+            document.getElementById(
+                "wfescSettingsBlockSection"
+            );
+
+
+        if (
+            section &&
+            !card.contains(
+                section
+            )
+        ) {
+
+            section = null;
+
+        }
+
+
+        if (!section) {
+
+            section =
+                document.createElement(
+                    "div"
+                );
+
+
+            section.id =
+                "wfescSettingsBlockSection";
+
+
+            const saveButton =
+                document.getElementById(
+                    "messageViewSettingsSave"
+                );
+
+
+            const actionContainer =
+                saveButton
+                    ? saveButton.closest(
+                        ".modal-actions"
+                    )
+                    : null;
+
+
+            if (actionContainer) {
+
+                card.insertBefore(
+                    section,
+                    actionContainer
+                );
+
+            } else {
+
+                card.appendChild(
+                    section
+                );
+
+            }
+
+        }
+
+
+        return section;
+
+    }
+
+
+    /* =====================================================
+       BLOCK SECTION - LOADING
+    ===================================================== */
+
+    function renderBlockLoading(
+        section
+    ) {
+
+        if (!section) {
+
+            return;
+
+        }
+
+
+        section.innerHTML = `
+
+            <div
+                class="wfesc-block-title"
+            >
+                🚫 الحظر
+            </div>
+
+
+            <div
+                class="wfesc-block-description"
+            >
+                إدارة حظر المستخدم المرتبط بهذه المحادثة.
+            </div>
+
+
+            <div
+                class="wfesc-block-empty"
+            >
+                جاري تحميل بيانات الحظر...
+            </div>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       BLOCK SECTION - RENDER
+    ===================================================== */
+
+    function renderBlockSection(
+        section,
+        data
+    ) {
+
+        if (!section) {
+
+            return;
+
+        }
+
+
+        const contact =
+            data?.contact ||
+            null;
+
+
+        const userId =
+            data?.userId ||
+            null;
+
+
+        const blockedByMe =
+            Boolean(
+                data?.blockedByMe
+            );
+
+
+        const blockedMe =
+            Boolean(
+                data?.blockedMe
+            );
+
+
+        const blockInfo =
+            data?.blockInfo ||
+            null;
+
+
+        if (
+            !contact ||
+            !userId
+        ) {
+
+            section.innerHTML = `
+
+                <div
+                    class="wfesc-block-title"
+                >
+                    🚫 الحظر
+                </div>
+
+
+                <div
+                    class="wfesc-block-description"
+                >
+                    إدارة حظر المستخدم المرتبط بهذه المحادثة.
+                </div>
+
+
+                <div
+                    class="wfesc-block-empty"
+                >
+                    ${
+                        contact?.is_support
+                            ? "هذه محادثة الدعم، ولا يمكن حظر حساب الدعم."
+                            : "لا توجد جهة اتصال صالحة في المحادثة الحالية."
+                    }
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        const name =
+            getContactName(
+                contact
+            );
+
+
+        const username =
+            getContactUsername(
+                contact
+            );
+
+
+        const avatar =
+            getContactAvatar(
+                contact
+            );
+
+
+        let statusText =
+            "المستخدم غير محظور";
+
+
+        if (blockedByMe) {
+
+            statusText =
+                "أنت قمت بحظر هذا المستخدم";
+
+        } else if (blockedMe) {
+
+            statusText =
+                "قام المستخدم بحظرك";
+
+        }
+
+
+        const dateText =
+            blockedByMe &&
+            blockInfo?.created_at
+                ? formatBlockDate(
+                    blockInfo.created_at
+                )
+                : "";
+
+
+        section.innerHTML = `
+
+            <div
+                class="wfesc-block-title"
+            >
+                🚫 الحظر
+            </div>
+
+
+            <div
+                class="wfesc-block-description"
+            >
+                إدارة حظر المستخدم المرتبط بهذه المحادثة.
+            </div>
+
+
+            <div
+                class="wfesc-block-user"
+            >
+
+                <img
+                    class="wfesc-block-avatar"
+                    src="${escapeHTML(
+                        avatar
+                    )}"
+                    alt=""
+                    draggable="false"
+                >
+
+
+                <div
+                    class="wfesc-block-info"
+                >
+
+                    <div
+                        class="wfesc-block-name"
+                    >
+                        ${escapeHTML(
+                            name
+                        )}
+                    </div>
+
+
+                    ${
+                        username
+                            ? `
+                                <div
+                                    class="wfesc-block-username"
+                                >
+                                    ${escapeHTML(
+                                        username
+                                    )}
+                                </div>
+                            `
+                            : ""
+                    }
+
+
+                    <div
+                        class="wfesc-block-status"
+                    >
+                        ${escapeHTML(
+                            statusText
+                        )}
+                    </div>
+
+
+                    ${
+                        dateText
+                            ? `
+                                <div
+                                    class="wfesc-block-date"
+                                >
+                                    تاريخ ووقت الحظر:
+                                    ${escapeHTML(
+                                        dateText
+                                    )}
+                                </div>
+                            `
+                            : ""
+                    }
+
+                </div>
+
+            </div>
+
+
+            ${
+                blockedByMe
+                    ? `
+                        <button
+                            type="button"
+                            class="
+                                wfesc-block-action
+                                unblock
+                            "
+                            id="wfescSettingsUnblockButton"
+                        >
+                            🔓 فتح الحظر
+                        </button>
+                    `
+                    : blockedMe
+                        ? `
+                            <div
+                                class="
+                                    wfesc-block-empty
+                                "
+                                style="margin-top:11px;"
+                            >
+                                لا يمكنك إدارة حظر هذا المستخدم لأنه قام بحظرك.
+                            </div>
+                        `
+                        : `
+                            <button
+                                type="button"
+                                class="
+                                    wfesc-block-action
+                                    block
+                                "
+                                id="wfescSettingsBlockButton"
+                            >
+                                🚫 حظر المستخدم
+                            </button>
+                        `
+            }
+
+        `;
+
+
+        /* -----------------------------------------
+           UNBLOCK BUTTON
+        ----------------------------------------- */
+
+        const unblockButton =
+            section.querySelector(
+                "#wfescSettingsUnblockButton"
+            );
+
+
+        if (unblockButton) {
+
+            unblockButton.addEventListener(
+                "click",
+                function () {
+
+                    openBlockConfirmation(
+                        "unblock",
+                        userId,
+                        name
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* -----------------------------------------
+           BLOCK BUTTON
+        ----------------------------------------- */
+
+        const blockButton =
+            section.querySelector(
+                "#wfescSettingsBlockButton"
+            );
+
+
+        if (blockButton) {
+
+            blockButton.addEventListener(
+                "click",
+                function () {
+
+                    openBlockConfirmation(
+                        "block",
+                        userId,
+                        name
+                    );
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       REFRESH BLOCK SECTION
+    ===================================================== */
+
+    async function refreshBlockSection() {
+
+        const token =
+            ++blockRefreshToken;
+
+
+        const section =
+            ensureBlockSection();
+
+
+        if (!section) {
+
+            return;
+
+        }
+
+
+        renderBlockLoading(
+            section
+        );
+
+
+        const contact =
+            getCurrentContact();
+
+
+        const userId =
+            getContactUserId(
+                contact
+            );
+
+
+        if (
+            !contact ||
+            !userId ||
+            contact.is_support === true
+        ) {
+
+            if (
+                token ===
+                blockRefreshToken
+            ) {
+
+                renderBlockSection(
+                    section,
+                    {
+                        contact,
+                        userId,
+                        blockedByMe:false,
+                        blockedMe:false,
+                        blockInfo:null
+                    }
+                );
+
+            }
+
+            return;
+
+        }
+
+
+        const block =
+            getBlockModule();
+
+
+        if (!block) {
+
+            /*
+             * messages-settings.js يتم تحميله
+             * قبل messages-block.js، لذلك لا نعتبر
+             * عدم وجود الموديول في البداية خطأ نهائياً.
+             */
+
+            if (
+                token ===
+                blockRefreshToken
+            ) {
+
+                section.innerHTML = `
+
+                    <div
+                        class="wfesc-block-title"
+                    >
+                        🚫 الحظر
+                    </div>
+
+
+                    <div
+                        class="wfesc-block-description"
+                    >
+                        إدارة حظر المستخدم المرتبط بهذه المحادثة.
+                    </div>
+
+
+                    <div
+                        class="wfesc-block-empty"
+                    >
+                        نظام الحظر لم يتم تحميله بعد.
+                    </div>
+
+                `;
+
+            }
+
+            return;
+
+        }
+
+
+        try {
+
+            const blockedByMePromise =
+                typeof block.isBlocked ===
+                "function"
+                    ? block.isBlocked(
+                        userId
+                    )
+                    : Promise.resolve(
+                        false
+                    );
+
+
+            const blockedMePromise =
+                typeof block.isBlockedBy ===
+                "function"
+                    ? block.isBlockedBy(
+                        userId
+                    )
+                    : Promise.resolve(
+                        false
+                    );
+
+
+            const blockInfoPromise =
+                typeof block.getBlockInfo ===
+                "function"
+                    ? block.getBlockInfo(
+                        userId
+                    )
+                    : Promise.resolve(
+                        null
+                    );
+
+
+            const [
+                blockedByMeResult,
+                blockedMeResult,
+                blockInfoResult
+            ] =
+                await Promise.all([
+                    blockedByMePromise,
+                    blockedMePromise,
+                    blockInfoPromise
+                ]);
+
+
+            if (
+                token !==
+                blockRefreshToken
+            ) {
+
+                return;
+
+            }
+
+
+            renderBlockSection(
+                section,
+                {
+                    contact,
+                    userId,
+                    blockedByMe:
+                        Boolean(
+                            blockedByMeResult
+                        ),
+                    blockedMe:
+                        Boolean(
+                            blockedMeResult
+                        ),
+                    blockInfo:
+                        blockInfoResult ||
+                        null
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "[WFESC SETTINGS BLOCK] refresh failed",
+                error
+            );
+
+
+            if (
+                token ===
+                blockRefreshToken
+            ) {
+
+                section.innerHTML = `
+
+                    <div
+                        class="wfesc-block-title"
+                    >
+                        🚫 الحظر
+                    </div>
+
+
+                    <div
+                        class="wfesc-block-description"
+                    >
+                        إدارة حظر المستخدم المرتبط بهذه المحادثة.
+                    </div>
+
+
+                    <div
+                        class="wfesc-block-empty"
+                    >
+                        تعذر جلب حالة الحظر حالياً.
+                    </div>
+
+                `;
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       BLOCK EVENTS
+    ===================================================== */
+
+    window.addEventListener(
+        "wfesc:user-blocked",
+        function () {
+
+            const modal =
+                $("messageViewSettingsModal");
+
+
+            if (
+                modal &&
+                modal.classList.contains(
+                    "show"
+                )
+            ) {
+
+                refreshBlockSection();
+
+            }
+
+        }
+    );
+
+
+    window.addEventListener(
+        "wfesc:user-unblocked",
+        function () {
+
+            const modal =
+                $("messageViewSettingsModal");
+
+
+            if (
+                modal &&
+                modal.classList.contains(
+                    "show"
+                )
+            ) {
+
+                refreshBlockSection();
+
+            }
+
+        }
+    );
+
+
+    window.addEventListener(
+        "wfesc:block-changed",
+        function () {
+
+            const modal =
+                $("messageViewSettingsModal");
+
+
+            if (
+                modal &&
+                modal.classList.contains(
+                    "show"
+                )
+            ) {
+
+                refreshBlockSection();
+
+            }
+
+        }
+    );
+
+
+    window.addEventListener(
+        "wfesc:chat-header-refresh",
+        function () {
+
+            const modal =
+                $("messageViewSettingsModal");
+
+
+            if (
+                modal &&
+                modal.classList.contains(
+                    "show"
+                )
+            ) {
+
+                setTimeout(
+                    refreshBlockSection,
+                    0
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
        OPEN
     ===================================================== */
 
@@ -2289,6 +4656,11 @@
         );
 
 
+        ensureBlockStyle();
+
+        ensureBlockSection();
+
+
         modal.classList.add(
             "show"
         );
@@ -2296,6 +4668,21 @@
 
         document.body.classList.add(
             "modal-open"
+        );
+
+
+        /*
+         * يتم التنفيذ بعد فتح المودال
+         * حتى تكون المحادثة الحالية مستقرة.
+         */
+
+        setTimeout(
+            function () {
+
+                refreshBlockSection();
+
+            },
+            0
         );
 
     }
@@ -2330,6 +4717,9 @@
         updatePreview(
             currentSettings
         );
+
+
+        closeBlockConfirmation();
 
 
         if (modal) {
@@ -2634,11 +5024,6 @@
            عرض الفقاعة
            ------------------------------------------------- */
 
-        /*
-         * ID الصحيح:
-         * messageBubbleWidthRange
-         */
-
         const bubbleWidth =
             $("messageBubbleWidthRange");
 
@@ -2672,11 +5057,6 @@
            ارتفاع الفقاعة
            ------------------------------------------------- */
 
-        /*
-         * ID الصحيح:
-         * messageBubbleHeightRange
-         */
-
         const bubbleHeight =
             $("messageBubbleHeightRange");
 
@@ -2709,11 +5089,6 @@
         /* -------------------------------------------------
            المسافة عن الإطار
            ------------------------------------------------- */
-
-        /*
-         * ID الصحيح:
-         * messageBubbleEdgeRange
-         */
 
         const bubbleEdgeGap =
             $("messageBubbleEdgeRange");
@@ -3016,6 +5391,9 @@
             );
 
 
+        ensureBlockStyle();
+
+
         createColorGrid(
             "ownMessageColors",
             "own"
@@ -3041,6 +5419,15 @@
         updatePreview(
             currentSettings
         );
+
+
+        /*
+         * إنشاء القسم فقط.
+         * لا نعتمد على messages-block.js هنا
+         * لأنه يتم تحميله بعد هذا الملف.
+         */
+
+        ensureBlockSection();
 
 
         bindEvents();
@@ -3123,7 +5510,10 @@
         },
 
 
-        reset:resetSettings
+        reset:resetSettings,
+
+        refreshBlockSection:
+            refreshBlockSection
 
     };
 
