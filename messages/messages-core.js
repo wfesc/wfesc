@@ -26,6 +26,8 @@ Conversation Refresh
 Activity Contact Normalization
 Chat Header Interface
 Block Protection
+Typing Block Protection
+Realtime Block Protection
 */
 
 /* =========================================================
@@ -46,10 +48,13 @@ SUPABASE_KEY
 );
 
 if (!client) {
+
 console.error(
 "WFESC: Supabase client لم يتم تحميله."
 );
+
 return;
+
 }
 
 /* =========================================================
@@ -209,7 +214,9 @@ BLOCK MODULE
 ========================================================= */
 
 function getBlockModule() {
+
 return window.WFESC_MESSAGES_BLOCK || null;
+
 }
 
 async function isCurrentUserBlockedBy(
@@ -247,6 +254,7 @@ error
 );
 
 return false;
+
 }
 
 }
@@ -286,7 +294,117 @@ error
 );
 
 return false;
+
 }
+
+}
+
+/* =========================================================
+BLOCK USER ID HELPER
+========================================================= */
+
+function getContactUserId(
+contact
+) {
+
+if (!contact) {
+return null;
+}
+
+return (
+contact.user_id ??
+contact.userId ??
+contact.profile_id ??
+contact.profileId ??
+contact.contact_id ??
+contact.contactId ??
+contact.id ??
+contact.user?.id ??
+contact.profile?.id ??
+null
+);
+
+}
+
+/* =========================================================
+CURRENT CONVERSATION BLOCK STATE
+========================================================= */
+
+async function getCurrentConversationBlockState() {
+
+const contact =
+currentConversationContact;
+
+if (
+!contact ||
+contact.is_support
+) {
+
+return {
+
+blocked: false,
+blockedBy: false,
+blockedByMe: false,
+userId: null
+
+};
+
+}
+
+const userId =
+getContactUserId(
+contact
+);
+
+if (!userId) {
+
+return {
+
+blocked: false,
+blockedBy: false,
+blockedByMe: false,
+userId: null
+
+};
+
+}
+
+const [
+blockedBy,
+blockedByMe
+] = await Promise.all([
+
+isCurrentUserBlockedBy(
+userId
+),
+
+isCurrentUserBlocking(
+userId
+)
+
+]);
+
+return {
+
+blocked:
+Boolean(
+blockedBy ||
+blockedByMe
+),
+
+blockedBy:
+Boolean(
+blockedBy
+),
+
+blockedByMe:
+Boolean(
+blockedByMe
+),
+
+userId
+
+};
 
 }
 
@@ -299,24 +417,29 @@ return false;
 
 نسمح بفتح المحادثة القديمة.
 */
+
 async function canOpenConversationByBlock(
 contact
 ) {
 
 if (!contact) {
+
 return {
 allowed: true,
 blockedBy: false,
 blockedByMe: false
 };
+
 }
 
 if (contact.is_support) {
+
 return {
 allowed: true,
 blockedBy: false,
 blockedByMe: false
 };
+
 }
 
 const normalized =
@@ -328,11 +451,13 @@ const userId =
 normalized.user_id;
 
 if (!userId) {
+
 return {
 allowed: true,
 blockedBy: false,
 blockedByMe: false
 };
+
 }
 
 const blockedBy =
@@ -370,6 +495,7 @@ blockedByMe
 
 هذا لا يحذف التاريخ القديم.
 */
+
 async function shouldIgnoreRealtimeMessage(
 message
 ) {
@@ -392,7 +518,9 @@ currentUser?.id &&
 String(senderId) ===
 String(currentUser.id)
 ) {
+
 return false;
+
 }
 
 const block =
@@ -446,6 +574,7 @@ error
 }
 
 return false;
+
 }
 
 /* =========================================================
@@ -483,26 +612,15 @@ left:10px;
 right:10px;
 bottom:10px;
 z-index:999999;
-
 background:#080808;
 color:#fff;
-
 border:1px solid #ff4444;
 border-radius:14px;
-
 padding:14px;
-
-box-shadow:
-0 10px 40px rgba(0,0,0,.8);
-
-font-family:
-Arial,
-Tahoma,
-sans-serif;
-
+box-shadow:0 10px 40px rgba(0,0,0,.8);
+font-family:Arial,Tahoma,sans-serif;
 max-height:70vh;
 overflow:auto;
-
 direction:rtl;
 `;
 
@@ -565,24 +683,17 @@ id="wfescDebugText"
 style="
 white-space:pre-wrap;
 word-break:break-word;
-
 direction:ltr;
 text-align:left;
-
 background:#111;
 color:#ddd;
-
 border:1px solid #292929;
 border-radius:10px;
-
 padding:10px;
-
 font-size:12px;
 line-height:1.6;
-
 max-height:40vh;
 overflow:auto;
-
 margin:0;
 "
 >${safeDetails}</pre>
@@ -593,15 +704,11 @@ type="button"
 style="
 width:100%;
 margin-top:10px;
-
 border:0;
 border-radius:10px;
-
 padding:10px;
-
 background:#fff;
 color:#000;
-
 font-weight:bold;
 cursor:pointer;
 ">
@@ -646,8 +753,10 @@ setTimeout(
 () => {
 
 if (copyButton) {
+
 copyButton.textContent =
 "نسخ الخطأ";
+
 }
 
 },
@@ -1066,7 +1175,9 @@ avatar.includes(
 'cx="100"'
 )
 ) {
+
 return true;
+
 }
 
 return false;
@@ -1432,6 +1543,7 @@ key
 );
 
 return;
+
 }
 
 conversationContactCache.set(
@@ -1499,6 +1611,7 @@ key
 );
 
 return null;
+
 }
 
 return normalized;
@@ -1757,6 +1870,7 @@ fallbackSource.online ??
 false;
 
 return {
+
 ...fallbackSource,
 ...source,
 
@@ -1960,31 +2074,143 @@ refreshCurrentContactActivity();
 );
 
 /* =========================================================
-BLOCK EVENTS
+TYPING BLOCK CLEANUP
 ========================================================= */
 
-window.addEventListener(
-"wfesc:block-changed",
-event => {
+function clearAllRemoteTypingUsers() {
 
 try {
 
-const userId =
+typingUsers.clear();
+
+} catch (_) {}
+
+try {
+
+typingUserTimers.forEach(
+timer => {
+
+try {
+
+clearTimeout(
+timer
+);
+
+} catch (_) {}
+
+}
+);
+
+typingUserTimers.clear();
+
+} catch (_) {}
+
+updateTypingIndicator();
+
+}
+
+/* =========================================================
+BLOCK EVENTS
+========================================================= */
+
+async function handleCoreBlockChange(
+event
+) {
+
+try {
+
+const currentContactId =
+getContactUserId(
+currentConversationContact
+);
+
+const eventUserId =
 event?.detail?.userId ??
 event?.detail?.blocked_id ??
 event?.detail?.contactId ??
+event?.detail?.blockedId ??
 null;
 
+/*
+امسح حالة جاري الكتابة فورًا من الواجهة،
+حتى لو كان الحدث متعلقًا بالمحادثة الحالية.
+*/
+
 if (
-userId != null
+eventUserId == null ||
+currentContactId == null ||
+String(eventUserId) ===
+String(currentContactId)
 ) {
 
-conversationMessagesCache.forEach(
-(value, key) => {
-void value;
-void key;
+clearAllRemoteTypingUsers();
+
 }
+
+/*
+أعد التحقق مباشرة من حالة الحظر.
+*/
+
+const state =
+await getCurrentConversationBlockState();
+
+/*
+إذا الطرف الآخر حاجز المستخدم الحالي:
+- أوقف Typing المحلي
+- أغلق قناة Typing
+- امسح أي حالة Typing ظاهرة
+*/
+
+if (
+state.blockedBy
+) {
+
+clearAllRemoteTypingUsers();
+
+await stopTyping();
+
+await removeTypingChannel(
+false
 );
+
+try {
+
+if (
+messageInput
+) {
+
+messageInput.dataset.wfescBlockedBy =
+"true";
+
+}
+
+} catch (_) {}
+
+} else {
+
+/*
+إذا لم يعد هناك حظر من الطرف الآخر،
+نزيل العلامة.
+*/
+
+try {
+
+if (
+messageInput
+) {
+
+delete messageInput.dataset.wfescBlockedBy;
+
+}
+
+} catch (_) {}
+
+/*
+إذا المستخدم الحالي هو الذي حظر الطرف الآخر،
+تبقى قناة Typing الخاصة بالمستخدم الحالي
+مسموحًا بها، لكن incoming typing سيتم رفضه
+داخل setupTypingChannel.
+*/
 
 }
 
@@ -1994,36 +2220,55 @@ scheduleConversationListRefresh(
 0
 );
 
+try {
+
+window.dispatchEvent(
+new CustomEvent(
+"wfesc:chat-block-state-updated",
+{
+detail: {
+state
+}
+}
+)
+);
+
+} catch (_) {}
+
 } catch (error) {
 
 console.warn(
-"WFESC core block refresh:",
+"WFESC core block state refresh:",
 error
 );
 
 }
 
 }
+
+window.addEventListener(
+"wfesc:block-changed",
+handleCoreBlockChange
 );
 
 window.addEventListener(
 "wfesc:blocked",
-() => {
-
-chatHeaderInterface.refresh();
-scheduleConversationListRefresh(0);
-
-}
+handleCoreBlockChange
 );
 
 window.addEventListener(
 "wfesc:unblocked",
-() => {
+handleCoreBlockChange
+);
 
-chatHeaderInterface.refresh();
-scheduleConversationListRefresh(0);
+window.addEventListener(
+"wfesc:user-blocked",
+handleCoreBlockChange
+);
 
-}
+window.addEventListener(
+"wfesc:user-unblocked",
+handleCoreBlockChange
 );
 
 /* =========================================================
@@ -3217,25 +3462,17 @@ bottom:calc(
 var(--composer-bottom, 82px) + 62px
 );
 z-index:25;
-
 display:none;
-
 align-items:center;
 justify-content:flex-start;
 gap:8px;
-
 min-height:34px;
 padding:4px;
-
 color:#999;
 font-size:12px;
-
 direction:rtl;
-
 pointer-events:none;
-
 opacity:0;
-
 transition:
 bottom .10s linear,
 opacity .18s ease,
@@ -3285,28 +3522,12 @@ display:flex;
 align-items:center;
 justify-content:center;
 gap:3px;
-
 min-width:34px;
 height:28px;
-
 padding:0 8px;
-
 border-radius:14px;
-
-background:rgba(
-255,
-255,
-255,
-.07
-);
-
-border:1px solid rgba(
-255,
-255,
-255,
-.08
-);
-
+background:rgba(255,255,255,.07);
+border:1px solid rgba(255,255,255,.08);
 backdrop-filter:blur(10px);
 -webkit-backdrop-filter:blur(10px);
 }
@@ -3315,11 +3536,8 @@ backdrop-filter:blur(10px);
 
 width:5px;
 height:5px;
-
 border-radius:50%;
-
 background:#aaa;
-
 animation:
 wfescTypingDot
 1.1s
@@ -3416,6 +3634,26 @@ if (!element) {
 return;
 }
 
+/*
+لا نظهر Typing إذا كنا نعرف أن الطرف الآخر
+قام بحظر المستخدم الحالي.
+*/
+
+if (
+messageInput?.dataset?.wfescBlockedBy ===
+"true"
+) {
+
+element.style.display =
+"none";
+
+element.style.opacity =
+"0";
+
+return;
+
+}
+
 updateTypingIndicatorPosition();
 
 element.style.display =
@@ -3472,6 +3710,17 @@ element.style.display =
 }
 
 function updateTypingIndicator() {
+
+if (
+messageInput?.dataset?.wfescBlockedBy ===
+"true"
+) {
+
+hideTypingIndicator();
+
+return;
+
+}
 
 if (
 typingUsers.size > 0
@@ -3584,7 +3833,9 @@ updateTypingIndicator();
 STOP LOCAL TYPING
 ========================================================= */
 
-async function stopTyping() {
+async function stopTyping(
+sendStopSignal = true
+) {
 
 if (typingTimer) {
 
@@ -3603,6 +3854,10 @@ return;
 
 isTyping =
 false;
+
+if (!sendStopSignal) {
+return;
+}
 
 try {
 
@@ -3656,6 +3911,54 @@ if (
 !currentConversationId
 ) {
 return;
+}
+
+/*
+إذا المستخدم الحالي محظور من الطرف الآخر،
+لا نرسل Typing إطلاقًا.
+*/
+
+const contactId =
+getContactUserId(
+currentConversationContact
+);
+
+if (
+contactId &&
+!currentConversationContact?.is_support
+) {
+
+const blockedBy =
+await isCurrentUserBlockedBy(
+contactId
+);
+
+if (blockedBy) {
+
+messageInput?.setAttribute(
+"data-wfesc-blocked-by",
+"true"
+);
+
+clearAllRemoteTypingUsers();
+
+await stopTyping(
+false
+);
+
+return;
+
+}
+
+if (
+messageInput?.dataset?.wfescBlockedBy ===
+"true"
+) {
+
+delete messageInput.dataset.wfescBlockedBy;
+
+}
+
 }
 
 if (typingTimer) {
@@ -3721,6 +4024,40 @@ return;
 
 }
 
+/*
+فحص الحظر مرة أخرى قبل كل heartbeat.
+هذا مهم إذا تم الحظر أثناء الكتابة.
+*/
+
+const currentContactId =
+getContactUserId(
+currentConversationContact
+);
+
+if (
+currentContactId &&
+!currentConversationContact?.is_support
+) {
+
+const blockedBy =
+await isCurrentUserBlockedBy(
+currentContactId
+);
+
+if (blockedBy) {
+
+clearAllRemoteTypingUsers();
+
+await stopTyping(
+false
+);
+
+return;
+
+}
+
+}
+
 try {
 
 await typingChannel.send({
@@ -3768,7 +4105,7 @@ async function setupTypingChannel(
 conversationId
 ) {
 
-removeTypingChannel(
+await removeTypingChannel(
 false
 ).catch(
 () => {}
@@ -3779,6 +4116,53 @@ if (
 !currentUser
 ) {
 return;
+}
+
+/*
+الدعم مستثنى من الحظر.
+*/
+
+if (
+currentConversationContact?.is_support
+) {
+
+} else {
+
+const contactId =
+getContactUserId(
+currentConversationContact
+);
+
+if (contactId) {
+
+const blockedBy =
+await isCurrentUserBlockedBy(
+contactId
+);
+
+if (blockedBy) {
+
+clearAllRemoteTypingUsers();
+
+if (messageInput) {
+
+messageInput.dataset.wfescBlockedBy =
+"true";
+
+}
+
+return;
+
+}
+
+if (messageInput) {
+
+delete messageInput.dataset.wfescBlockedBy;
+
+}
+
+}
+
 }
 
 const channelName =
@@ -3806,7 +4190,7 @@ typingChannel.on(
 event:
 "typing"
 },
-payload => {
+async payload => {
 
 const data =
 payload?.payload ||
@@ -3823,6 +4207,68 @@ String(currentUser.id)
 ) {
 
 return;
+
+}
+
+/*
+لا نعتمد على وجود event للحظر.
+نفحص قاعدة الحظر مباشرة عند وصول Typing.
+*/
+
+const block =
+getBlockModule();
+
+if (
+block &&
+typeof block.isBlockedBy ===
+"function" &&
+typeof block.isBlocked ===
+"function"
+) {
+
+try {
+
+const [
+blockedByThem,
+blockedByUs
+] = await Promise.all([
+
+block.isBlockedBy(
+userId
+),
+
+block.isBlocked(
+userId
+)
+
+]);
+
+if (
+blockedByThem ||
+blockedByUs
+) {
+
+/*
+امسح حالة المستخدم المحظور فورًا
+ولا تسمح له بالظهور في جاري الكتابة.
+*/
+
+clearTypingUser(
+userId
+);
+
+return;
+
+}
+
+} catch (error) {
+
+console.warn(
+"WFESC typing block check:",
+error
+);
+
+}
 
 }
 
@@ -4223,10 +4669,6 @@ messageId == null
 return null;
 }
 
-/*
-بدل بناء CSS selector من messageId،
-نبحث في data-message-id بشكل آمن.
-*/
 const elements =
 chatMessages.querySelectorAll(
 "[data-message-id]"
@@ -5155,13 +5597,11 @@ table:
 },
 payload => {
 
-try {
-
 handleRealtimeMessage(
 payload
-);
-
-} catch (error) {
+)
+.catch(
+error => {
 
 wfescDebugError(
 "خطأ أثناء معالجة رسالة Realtime",
@@ -5173,6 +5613,7 @@ event:
 );
 
 }
+);
 
 }
 )
@@ -5313,6 +5754,9 @@ true;
 
 realtimeStarting =
 false;
+
+realtimeConversationId =
+null;
 
 console.log(
 "WFESC: Messages Realtime connected"
@@ -5976,6 +6420,7 @@ currentConversationContact
 إذا الشخص قام بحظر المستخدم الحالي،
 لا نفتح المحادثة.
 */
+
 if (
 type !==
 "support"
@@ -6026,6 +6471,15 @@ blocked_by:
 true
 
 };
+
+if (messageInput) {
+
+messageInput.dataset.wfescBlockedBy =
+"true";
+
+}
+
+clearAllRemoteTypingUsers();
 
 chatHeaderInterface.refresh();
 
@@ -6081,6 +6535,17 @@ return;
 
 }
 
+/*
+إذا لم يعد هناك حظر من الطرف الآخر،
+أزل علامة الحظر من الإدخال.
+*/
+
+if (messageInput) {
+
+delete messageInput.dataset.wfescBlockedBy;
+
+}
+
 chatHeaderInterface.refresh();
 
 if (chatView) {
@@ -6126,7 +6591,7 @@ type,
 currentConversationContact
 )
 .then(
-fetchedContact => {
+async fetchedContact => {
 
 if (
 loadToken !==
@@ -6160,6 +6625,85 @@ cacheConversationContact(
 conversationId,
 currentConversationContact
 );
+
+}
+
+const blockResult =
+await canOpenConversationByBlock(
+currentConversationContact
+);
+
+if (
+loadToken !==
+conversationLoadToken
+) {
+return;
+}
+
+if (
+!blockResult.allowed &&
+blockResult.blockedBy
+) {
+
+currentConversationContact = {
+
+...currentConversationContact,
+
+display_name:
+"قام المستخدم بحظرك",
+
+username:
+"user",
+
+avatar_url:
+DEFAULT_AVATAR,
+
+is_online:
+false,
+
+show_activity:
+false,
+
+blocked_by:
+true
+
+};
+
+if (messageInput) {
+
+messageInput.dataset.wfescBlockedBy =
+"true";
+
+}
+
+clearAllRemoteTypingUsers();
+
+chatHeaderInterface.refresh();
+
+try {
+
+window.dispatchEvent(
+new CustomEvent(
+"wfesc:conversation-blocked",
+{
+detail: {
+conversationId,
+contact:
+currentConversationContact
+}
+}
+)
+);
+
+} catch (_) {}
+
+return;
+
+}
+
+if (messageInput) {
+
+delete messageInput.dataset.wfescBlockedBy;
 
 }
 
@@ -6233,6 +6777,66 @@ openingConversation =
 false;
 
 return;
+
+}
+
+/*
+فحص أخير قبل تشغيل قناة Typing.
+*/
+
+if (
+type !==
+"support"
+) {
+
+const finalBlockState =
+await getCurrentConversationBlockState();
+
+if (
+loadToken !==
+conversationLoadToken
+) {
+
+openingConversation =
+false;
+
+return;
+
+}
+
+if (
+finalBlockState.blockedBy
+) {
+
+if (messageInput) {
+
+messageInput.dataset.wfescBlockedBy =
+"true";
+
+}
+
+clearAllRemoteTypingUsers();
+
+if (chatView) {
+
+chatView.classList.remove(
+"open"
+);
+
+}
+
+openingConversation =
+false;
+
+return;
+
+}
+
+}
+
+if (messageInput) {
+
+delete messageInput.dataset.wfescBlockedBy;
 
 }
 
@@ -7123,6 +7727,68 @@ if (!message) {
 return null;
 }
 
+/*
+لا تسمح بإدخال رسالة واردة من مستخدم محظور
+إلى الواجهة عبر أي مسار داخلي.
+*/
+
+const senderId =
+getMessageSenderId(
+message
+);
+
+if (
+senderId &&
+currentUser?.id &&
+String(senderId) !==
+String(currentUser.id)
+) {
+
+const block =
+getBlockModule();
+
+if (block) {
+
+Promise.all([
+
+typeof block.isBlockedBy ===
+"function"
+? block.isBlockedBy(senderId)
+: false,
+
+typeof block.isBlocked ===
+"function"
+? block.isBlocked(senderId)
+: false
+
+])
+.then(
+([
+blockedByThem,
+blockedByUs
+]) => {
+
+if (
+blockedByThem ||
+blockedByUs
+) {
+
+clearTypingUser(
+senderId
+);
+
+}
+
+}
+)
+.catch(
+() => {}
+);
+
+}
+
+}
+
 if (
 options.conversationId &&
 String(
@@ -7354,6 +8020,12 @@ currentMessages =
 [];
 
 typingUsers.clear();
+
+if (messageInput) {
+
+delete messageInput.dataset.wfescBlockedBy;
+
+}
 
 chatHeaderInterface.refresh();
 
@@ -7900,6 +8572,12 @@ refreshCurrentContactActivity,
 isMessageDeleted,
 
 getMessageDisplayContent,
+
+getCurrentConversationBlockState,
+
+canOpenConversationByBlock,
+
+shouldIgnoreRealtimeMessage,
 
 debug(
 title,
