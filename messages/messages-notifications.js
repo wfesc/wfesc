@@ -293,6 +293,31 @@
         }
 
 
+        /*
+         * دعم messages-core الجديد.
+         */
+
+        if (
+            core &&
+            typeof core.getCurrentConversation === "function"
+        ) {
+
+            try {
+
+                const id =
+                    core.getCurrentConversation();
+
+                if (id) {
+
+                    return id;
+
+                }
+
+            } catch (error) {}
+
+        }
+
+
         if (
             core &&
             typeof core.getCurrentConversationId === "function"
@@ -841,10 +866,6 @@
                 !oldMuted;
 
 
-            /*
-             * تحديث فوري للواجهة والكاش.
-             */
-
             setCachedMute(
                 conversationId,
                 newMuted
@@ -1239,10 +1260,6 @@
             "true";
 
 
-        /*
-         * إزالة من الذاكرة.
-         */
-
         notifications =
             notifications.filter(
                 function (item) {
@@ -1255,10 +1272,6 @@
                 }
             );
 
-
-        /*
-         * Animation
-         */
 
         card.style.transition =
             "transform .22s ease, opacity .22s ease";
@@ -1727,18 +1740,10 @@
         );
 
 
-        /*
-         * إضافة إلى أعلى القائمة.
-         */
-
         panel.prepend(
             card
         );
 
-
-        /*
-         * Animation الدخول.
-         */
 
         requestAnimationFrame(
             function () {
@@ -1758,10 +1763,6 @@
             }
         );
 
-
-        /*
-         * إزالة تلقائية بعد ثانيتين.
-         */
 
         const autoRemoveTimer =
             setTimeout(
@@ -1853,10 +1854,6 @@
                     startX;
 
 
-                /*
-                 * السماح بالسحب يمين ويسار.
-                 */
-
                 if (
                     Math.abs(delta) >
                     8
@@ -1939,9 +1936,9 @@
         );
 
 
-        /*
-         * الماوس أيضًا للسحب على الأجهزة التي تدعم pointer.
-         */
+        /* =================================================
+           MOUSE / POINTER SWIPE
+        ================================================= */
 
         let pointerStartX =
             null;
@@ -2003,10 +2000,6 @@
             }
         );
 
-
-        /*
-         * إبقاء عدد الكروت الظاهرة محدود.
-         */
 
         trimVisibleNotifications();
 
@@ -2429,10 +2422,9 @@
         }
 
 
-        /*
-         * رسالتي أنا:
-         * ممنوع إشعار أو صوت.
-         */
+        /* =================================================
+           رسالتي أنا
+           ================================================= */
 
         if (
             String(message.sender_id) ===
@@ -2444,9 +2436,47 @@
         }
 
 
+        /* =================================================
+           معرفة المحادثة المفتوحة
+           يجب فحصها قبل تشغيل الصوت.
+           ================================================= */
+
+        const currentConversationId =
+            getConversationId();
+
+
+        const insideSameConversation =
+            !!(
+                currentConversationId &&
+                String(currentConversationId) ===
+                String(message.conversation_id)
+            );
+
+
         /*
-         * الكتم.
+         * إذا المستخدم داخل نفس المحادثة:
+         *
+         * لا صوت
+         * لا Popup
+         * لا إشعار إضافي
+         *
+         * لأن الرسالة موجودة أمامه أصلًا.
          */
+
+        if (insideSameConversation) {
+
+            console.log(
+                "WFESC NOTIFICATIONS: same conversation - silent"
+            );
+
+            return;
+
+        }
+
+
+        /* =================================================
+           الكتم
+           ================================================= */
 
         let muted =
             getCachedMute(
@@ -2472,54 +2502,17 @@
         }
 
 
-        /*
-         * الصوت فورًا.
-         */
+        /* =================================================
+           الصوت
+           فقط إذا كانت المحادثة مختلفة أو لا توجد محادثة مفتوحة.
+           ================================================= */
 
         playSound();
 
 
-        /*
-         * معرفة المحادثة المفتوحة.
-         */
-
-        const currentConversationId =
-            getConversationId();
-
-
-        const insideSameConversation =
-            !!(
-                currentConversationId &&
-                String(currentConversationId) ===
-                String(message.conversation_id)
-            );
-
-
-        /*
-         * إذا المستخدم داخل نفس المحادثة:
-         *
-         * لا نضيف notification card.
-         *
-         * الرسالة نفسها تظهر من messages-core.
-         *
-         * هذا يمنع تكرار الرسالة بصندوق فوق الشاشة.
-         */
-
-        if (insideSameConversation) {
-
-            console.log(
-                "WFESC NOTIFICATIONS: same conversation - no popup"
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * فقط للمحادثة الأخرى:
-         * نبني الإشعار.
-         */
+        /* =================================================
+           بناء الإشعار
+           ================================================= */
 
         const item =
             await buildNotification(
