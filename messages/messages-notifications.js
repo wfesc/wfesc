@@ -19,6 +19,8 @@
 
     const MAX_NOTIFICATIONS = 50;
 
+    const MUTE_CACHE_TTL = 30000;
+
 
     /* =====================================================
        STATE
@@ -26,17 +28,33 @@
 
     let audio = null;
 
+    let audioUnlocked = false;
+
     let realtimeChannel = null;
 
     let realtimeStarted = false;
-
-    let audioUnlocked = false;
 
     let notifications = [];
 
     let notificationPanel = null;
 
     let conversationNotice = null;
+
+    let cachedUser = null;
+
+    let cachedUserPromise = null;
+
+    /*
+     * conversationId -> {
+     *   muted: boolean,
+     *   loadedAt: number
+     * }
+     */
+    const muteCache = new Map();
+
+    let buttonDelegationStarted = false;
+
+    let bootStarted = false;
 
 
     /* =====================================================
@@ -80,8 +98,23 @@
 
     async function getUser() {
 
+        if (cachedUser) {
+
+            return cachedUser;
+
+        }
+
+
+        if (cachedUserPromise) {
+
+            return cachedUserPromise;
+
+        }
+
+
         const client =
             getClient();
+
 
         if (!client) {
 
@@ -89,31 +122,117 @@
 
         }
 
+
+        cachedUserPromise =
+            (async function () {
+
+                try {
+
+                    const result =
+                        await client.auth.getUser();
+
+
+                    if (
+                        result &&
+                        result.data &&
+                        result.data.user
+                    ) {
+
+                        cachedUser =
+                            result.data.user;
+
+                        return cachedUser;
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "WFESC NOTIFICATIONS: getUser error",
+                        error
+                    );
+
+                }
+
+
+                return null;
+
+            })();
+
+
         try {
 
-            const result =
-                await client.auth.getUser();
+            return await cachedUserPromise;
 
-            if (
-                result &&
-                result.data &&
-                result.data.user
-            ) {
+        } finally {
 
-                return result.data.user;
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "WFESC NOTIFICATIONS: getUser error",
-                error
-            );
+            cachedUserPromise =
+                null;
 
         }
 
-        return null;
+    }
+
+
+    /* =====================================================
+       AUTH CHANGE
+    ===================================================== */
+
+    function setupAuthListener() {
+
+        const client =
+            getClient();
+
+
+        if (
+            !client ||
+            !client.auth ||
+            typeof client.auth.onAuthStateChange !== "function"
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            window.__WFESC_NOTIFICATIONS_AUTH_LISTENER__
+        ) {
+
+            return;
+
+        }
+
+
+        window.__WFESC_NOTIFICATIONS_AUTH_LISTENER__ =
+            true;
+
+
+        client.auth.onAuthStateChange(
+            function (
+                event,
+                session
+            ) {
+
+                if (
+                    session &&
+                    session.user
+                ) {
+
+                    cachedUser =
+                        session.user;
+
+                } else {
+
+                    cachedUser =
+                        null;
+
+                    muteCache.clear();
+
+                }
+
+            }
+        );
 
     }
 
@@ -128,24 +247,36 @@
             window.WFESC_MESSAGES_CORE;
 
 
-        /*
-         * Chat Header
-         */
-
         const header =
             window.WFESC_MESSAGES_CHAT_HEADER;
+
+
+        /*
+         * أولاً من chat header
+         */
 
         if (
             header &&
             typeof header.getConversationId === "function"
         ) {
 
-            const id =
-                header.getConversationId();
+            try {
 
-            if (id) {
+                const id =
+                    header.getConversationId();
 
-                return id;
+                if (id) {
+
+                    return id;
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "WFESC NOTIFICATIONS: header conversation error",
+                    error
+                );
 
             }
 
@@ -153,7 +284,7 @@
 
 
         /*
-         * Core chatHeader
+         * من core chatHeader
          */
 
         if (
@@ -162,20 +293,24 @@
             typeof core.chatHeader.getConversationId === "function"
         ) {
 
-            const id =
-                core.chatHeader.getConversationId();
+            try {
 
-            if (id) {
+                const id =
+                    core.chatHeader.getConversationId();
 
-                return id;
+                if (id) {
 
-            }
+                    return id;
+
+                }
+
+            } catch (error) {}
 
         }
 
 
         /*
-         * Core getter
+         * من getter
          */
 
         if (
@@ -183,20 +318,24 @@
             typeof core.getCurrentConversationId === "function"
         ) {
 
-            const id =
-                core.getCurrentConversationId();
+            try {
 
-            if (id) {
+                const id =
+                    core.getCurrentConversationId();
 
-                return id;
+                if (id) {
 
-            }
+                    return id;
+
+                }
+
+            } catch (error) {}
 
         }
 
 
         /*
-         * Core property
+         * من property
          */
 
         if (
@@ -263,6 +402,7 @@
 
         const sound =
             createAudio();
+
 
         if (!sound) {
 
@@ -335,6 +475,7 @@
         const sound =
             createAudio();
 
+
         if (!sound) {
 
             return;
@@ -368,7 +509,7 @@
                 promise.catch(function (error) {
 
                     console.warn(
-                        "WFESC NOTIFICATIONS: browser blocked notification sound",
+                        "WFESC NOTIFICATIONS: sound blocked by browser",
                         error
                     );
 
@@ -379,7 +520,7 @@
         } catch (error) {
 
             console.error(
-                "WFESC NOTIFICATIONS: sound error",
+                "WFESC NOTIFICATIONS: playSound error",
                 error
             );
 
@@ -389,16 +530,87 @@
 
 
     /* =====================================================
-       MUTE
+       MUTE CACHE
     ===================================================== */
 
-    async function getMuted(
+    function getCachedMute(
+        conversationId
+    ) {
+
+        if (!conversationId) {
+
+            return null;
+
+        }
+
+
+        const item =
+            muteCache.get(
+                String(conversationId)
+            );
+
+
+        if (!item) {
+
+            return null;
+
+        }
+
+
+        if (
+            Date.now() -
+            item.loadedAt >
+            MUTE_CACHE_TTL
+        ) {
+
+            muteCache.delete(
+                String(conversationId)
+            );
+
+            return null;
+
+        }
+
+
+        return item.muted === true;
+
+    }
+
+
+    function setCachedMute(
+        conversationId,
+        muted
+    ) {
+
+        if (!conversationId) {
+
+            return;
+
+        }
+
+
+        muteCache.set(
+            String(conversationId),
+            {
+                muted:
+                    muted === true,
+
+                loadedAt:
+                    Date.now()
+            }
+        );
+
+    }
+
+
+    async function loadMuteFromDatabase(
         conversationId,
         userId
     ) {
 
         const client =
             getClient();
+
 
         if (
             !client ||
@@ -440,10 +652,20 @@
             }
 
 
-            return !!(
-                result.data &&
-                result.data.muted === true
+            const muted =
+                !!(
+                    result.data &&
+                    result.data.muted === true
+                );
+
+
+            setCachedMute(
+                conversationId,
+                muted
             );
+
+
+            return muted;
 
         } catch (error) {
 
@@ -458,6 +680,36 @@
 
     }
 
+
+    async function getMuted(
+        conversationId,
+        userId
+    ) {
+
+        const cached =
+            getCachedMute(
+                conversationId
+            );
+
+
+        if (cached !== null) {
+
+            return cached;
+
+        }
+
+
+        return await loadMuteFromDatabase(
+            conversationId,
+            userId
+        );
+
+    }
+
+
+    /* =====================================================
+       MUTE BUTTON
+    ===================================================== */
 
     function updateMuteButton(
         muted
@@ -524,6 +776,7 @@
         const user =
             await getUser();
 
+
         const conversationId =
             getConversationId();
 
@@ -539,7 +792,7 @@
 
 
         const muted =
-            await getMuted(
+            await loadMuteFromDatabase(
                 conversationId,
                 user.id
             );
@@ -573,8 +826,12 @@
             console.warn(
                 "WFESC NOTIFICATIONS: cannot toggle mute",
                 {
-                    client: !!client,
-                    user: !!user,
+                    client:
+                        !!client,
+
+                    user:
+                        !!user,
+
                     conversationId
                 }
             );
@@ -621,6 +878,25 @@
                 !oldMuted;
 
 
+            /*
+             * نحدث الواجهة والكاش فورًا.
+             */
+
+            setCachedMute(
+                conversationId,
+                newMuted
+            );
+
+
+            updateMuteButton(
+                newMuted
+            );
+
+
+            /*
+             * ثم نحفظ في Supabase.
+             */
+
             const result =
                 await client
                     .from("conversation_members")
@@ -640,19 +916,30 @@
 
             if (result.error) {
 
+                /*
+                 * إذا فشل الحفظ نرجع الحالة القديمة.
+                 */
+
+                setCachedMute(
+                    conversationId,
+                    oldMuted
+                );
+
+
+                updateMuteButton(
+                    oldMuted
+                );
+
+
                 console.error(
                     "WFESC NOTIFICATIONS: mute update failed",
                     result.error
                 );
 
+
                 return;
 
             }
-
-
-            updateMuteButton(
-                newMuted
-            );
 
 
             console.log(
@@ -669,9 +956,15 @@
 
         } finally {
 
-            if (button) {
+            const currentButton =
+                document.getElementById(
+                    "chatNotificationButton"
+                );
 
-                button.dataset.wfescBusy =
+
+            if (currentButton) {
+
+                currentButton.dataset.wfescBusy =
                     "false";
 
             }
@@ -682,23 +975,19 @@
 
 
     /* =====================================================
-       BUTTON
-       Delegated event:
-       يعمل حتى إذا الواجهة أعادت إنشاء الزر.
+       BUTTON DELEGATION
     ===================================================== */
 
     function setupButtonDelegation() {
 
-        if (
-            window.__WFESC_NOTIFICATION_BUTTON_DELEGATED__
-        ) {
+        if (buttonDelegationStarted) {
 
             return;
 
         }
 
 
-        window.__WFESC_NOTIFICATION_BUTTON_DELEGATED__ =
+        buttonDelegationStarted =
             true;
 
 
@@ -706,8 +995,22 @@
             "click",
             function (event) {
 
+                let target =
+                    event.target;
+
+
+                if (
+                    !target ||
+                    typeof target.closest !== "function"
+                ) {
+
+                    return;
+
+                }
+
+
                 const button =
-                    event.target.closest(
+                    target.closest(
                         "#chatNotificationButton"
                     );
 
@@ -722,6 +1025,8 @@
                 event.preventDefault();
 
                 event.stopPropagation();
+
+                event.stopImmediatePropagation();
 
 
                 unlockAudio();
@@ -759,11 +1064,6 @@
 
         try {
 
-            /*
-             * نستخدم * حتى لا نعتمد على اسم عمود
-             * معين للاسم داخل profiles.
-             */
-
             const result =
                 await client
                     .from("profiles")
@@ -791,7 +1091,7 @@
 
         } catch (error) {
 
-            console.error(
+            console.warn(
                 "WFESC NOTIFICATIONS: profile exception",
                 error
             );
@@ -856,10 +1156,27 @@
         message
     ) {
 
-        const profile =
-            await getSenderProfile(
-                message.sender_id
-            );
+        /*
+         * الملف الشخصي ليس شرطًا لوصول الإشعار.
+         */
+
+        let profile =
+            null;
+
+
+        try {
+
+            profile =
+                await getSenderProfile(
+                    message.sender_id
+                );
+
+        } catch (error) {
+
+            profile =
+                null;
+
+        }
 
 
         return {
@@ -902,7 +1219,12 @@
 
     function ensureNotificationPanel() {
 
-        if (notificationPanel) {
+        if (
+            notificationPanel &&
+            document.body.contains(
+                notificationPanel
+            )
+        ) {
 
             return notificationPanel;
 
@@ -952,31 +1274,13 @@
         notificationPanel.style.gap =
             "10px";
 
+
         document.body.appendChild(
             notificationPanel
         );
 
 
         return notificationPanel;
-
-    }
-
-
-    function escapeHTML(
-        value
-    ) {
-
-        const div =
-            document.createElement(
-                "div"
-            );
-
-        div.textContent =
-            value == null
-                ? ""
-                : String(value);
-
-        return div.innerHTML;
 
     }
 
@@ -1072,11 +1376,13 @@
                     "img"
                 );
 
+
             img.src =
                 item.avatar;
 
             img.alt =
                 item.name;
+
 
             img.style.width =
                 "100%";
@@ -1133,7 +1439,6 @@
         name.textContent =
             item.name;
 
-
         name.style.fontWeight =
             "700";
 
@@ -1149,7 +1454,6 @@
 
         text.textContent =
             item.content;
-
 
         text.style.fontSize =
             "14px";
@@ -1260,6 +1564,30 @@
         item
     ) {
 
+        /*
+         * منع التكرار إذا Realtime أعاد نفس الرسالة.
+         */
+
+        const alreadyExists =
+            notifications.some(
+                function (existing) {
+
+                    return (
+                        String(existing.id) ===
+                        String(item.id)
+                    );
+
+                }
+            );
+
+
+        if (alreadyExists) {
+
+            return;
+
+        }
+
+
         notifications.unshift(
             item
         );
@@ -1288,8 +1616,6 @@
 
     /* =====================================================
        IN-CHAT NOTICE
-       يظهر فوق الرسالة عند وجود المستخدم داخل
-       نفس المحادثة.
     ===================================================== */
 
     function showConversationNotice(
@@ -1299,6 +1625,9 @@
         if (conversationNotice) {
 
             conversationNotice.remove();
+
+            conversationNotice =
+                null;
 
         }
 
@@ -1377,7 +1706,6 @@
         content.textContent =
             item.content;
 
-
         content.style.marginTop =
             "4px";
 
@@ -1405,36 +1733,37 @@
         setTimeout(
             function () {
 
-                if (
-                    conversationNotice
-                ) {
+                if (!conversationNotice) {
 
-                    conversationNotice.style.opacity =
-                        "0";
-
-                    conversationNotice.style.transition =
-                        "opacity .2s ease";
-
-
-                    setTimeout(
-                        function () {
-
-                            if (
-                                conversationNotice
-                            ) {
-
-                                conversationNotice.remove();
-
-                                conversationNotice =
-                                    null;
-
-                            }
-
-                        },
-                        250
-                    );
+                    return;
 
                 }
+
+
+                conversationNotice.style.opacity =
+                    "0";
+
+                conversationNotice.style.transition =
+                    "opacity .2s ease";
+
+
+                setTimeout(
+                    function () {
+
+                        if (
+                            conversationNotice
+                        ) {
+
+                            conversationNotice.remove();
+
+                            conversationNotice =
+                                null;
+
+                        }
+
+                    },
+                    250
+                );
 
             },
             4000
@@ -1462,10 +1791,6 @@
             window.WFESC_MESSAGES_CORE;
 
 
-        /*
-         * نحاول استخدام API الأساسي للمحادثات.
-         */
-
         if (
             core &&
             typeof core.openConversation === "function"
@@ -1491,10 +1816,6 @@
         }
 
 
-        /*
-         * بعض النسخ تستخدم openConversationInternal.
-         */
-
         if (
             core &&
             typeof core.openConversationInternal === "function"
@@ -1519,11 +1840,6 @@
 
         }
 
-
-        /*
-         * نرسل حدثًا حتى يستطيع messages-core
-         * التعامل معه إذا كان لديه مستمع.
-         */
 
         document.dispatchEvent(
             new CustomEvent(
@@ -1562,10 +1878,6 @@
         }
 
 
-        /*
-         * نتأكد أن الرسالة جديدة فعلًا.
-         */
-
         if (!message.id) {
 
             return;
@@ -1600,14 +1912,31 @@
 
 
         /*
-         * الكتم.
+         * نفحص الكتم.
+         *
+         * إذا موجود بالكاش:
+         * لا يوجد انتظار.
          */
 
-        const muted =
-            await getMuted(
-                message.conversation_id,
-                user.id
+        let muted =
+            getCachedMute(
+                message.conversation_id
             );
+
+
+        /*
+         * إذا غير موجود، نقرأه مرة واحدة فقط.
+         */
+
+        if (muted === null) {
+
+            muted =
+                await loadMuteFromDatabase(
+                    message.conversation_id,
+                    user.id
+                );
+
+        }
 
 
         if (muted) {
@@ -1622,6 +1951,31 @@
 
 
         /*
+         * =================================================
+         * الصوت هنا قبل قراءة profile.
+         * =================================================
+         */
+
+        playSound();
+
+
+        /*
+         * تحديد المحادثة الحالية.
+         */
+
+        const currentConversationId =
+            getConversationId();
+
+
+        const insideSameConversation =
+            !!(
+                currentConversationId &&
+                String(currentConversationId) ===
+                String(message.conversation_id)
+            );
+
+
+        /*
          * نبني بيانات الإشعار.
          */
 
@@ -1632,29 +1986,7 @@
 
 
         /*
-         * الصوت أول شيء.
-         * لا ننتظر رسم الواجهة.
-         */
-
-        playSound();
-
-
-        /*
-         * نحدد هل المستخدم داخل نفس المحادثة.
-         */
-
-        const currentConversationId =
-            getConversationId();
-
-
-        const insideSameConversation =
-            currentConversationId &&
-            String(currentConversationId) ===
-            String(message.conversation_id);
-
-
-        /*
-         * الإشعار دائمًا يُحفظ في القائمة.
+         * الإشعار يحفظ دائمًا.
          */
 
         addNotification(
@@ -1663,8 +1995,7 @@
 
 
         /*
-         * إذا كان داخل نفس المحادثة:
-         * إشعار فوق المحتوى أيضًا.
+         * إذا كان داخل نفس المحادثة.
          */
 
         if (insideSameConversation) {
@@ -1677,14 +2008,15 @@
 
 
         /*
-         * إشعار مخصص للتكامل مع بقية واجهة WFESC.
+         * حدث عام لأي جزء آخر بالموقع.
          */
 
         document.dispatchEvent(
             new CustomEvent(
                 "wfesc:incoming-message-notification",
                 {
-                    detail: item
+                    detail:
+                        item
                 }
             )
         );
@@ -1719,7 +2051,10 @@
         }
 
 
-        if (realtimeStarted) {
+        if (
+            realtimeStarted &&
+            realtimeChannel
+        ) {
 
             return true;
 
@@ -1755,8 +2090,7 @@
                     function (payload) {
 
                         /*
-                         * لا ننتظر أي شيء هنا.
-                         * المعالجة تبدأ فور وصول Realtime.
+                         * لا ننتظر.
                          */
 
                         handleMessage(
@@ -1781,6 +2115,21 @@
 
                             console.log(
                                 "WFESC NOTIFICATIONS: REALTIME CONNECTED"
+                            );
+
+                        }
+
+
+                        if (
+                            status ===
+                            "CHANNEL_ERROR" ||
+                            status ===
+                            "TIMED_OUT"
+                        ) {
+
+                            console.error(
+                                "WFESC NOTIFICATIONS: REALTIME FAILED",
+                                status
                             );
 
                         }
@@ -1854,9 +2203,22 @@
 
     function boot() {
 
+        if (bootStarted) {
+
+            return;
+
+        }
+
+
+        bootStarted =
+            true;
+
+
         createAudio();
 
         setupButtonDelegation();
+
+        setupAuthListener();
 
         startRealtime();
 
@@ -1864,15 +2226,16 @@
 
 
         /*
-         * إذا كان messages-core لم يجهز بعد،
-         * نحاول مرة أخرى بدون الحاجة إلى Refresh.
+         * إعادة المحاولة إذا Supabase/Core
+         * لم يكن جاهزًا في لحظة تحميل الملف.
          */
 
         const retryTimes = [
             300,
             800,
             1500,
-            3000
+            3000,
+            5000
         ];
 
 
@@ -1882,7 +2245,7 @@
                 setTimeout(
                     function () {
 
-                        setupButtonDelegation();
+                        setupAuthListener();
 
                         startRealtime();
 
@@ -1953,7 +2316,9 @@
         clearNotifications:
             function () {
 
-                notifications = [];
+                notifications =
+                    [];
+
 
                 if (
                     notificationPanel
