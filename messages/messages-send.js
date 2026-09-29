@@ -1,30 +1,30 @@
+/* =========================================================
+   WFESC MESSAGES SEND
+   File: messages/messages-send.js
+
+   مسؤول عن:
+   - إرسال الرسائل
+   - ظهور الرسالة فوراً
+   - منع الإرسال المكرر
+   - منع إعادة تحميل الصفحة
+   - Enter للإرسال
+   - Shift + Enter لسطر جديد
+   - الحفاظ على الكيبورد مفتوحاً
+   - تحديث الرسالة المؤقتة بعد نجاح الإرسال
+   - إيقاف جاري الكتابة عند الإرسال
+   - حماية RPC + Realtime من التكرار
+   - منع إعادة optimistic بعد تأكيد الرسالة
+   - منع الإرسال عند وجود حظر
+   - إظهار خطأ الحظر بجانب الرسالة
+   ========================================================= */
+
 (() => {
     "use strict";
-
-    /*
-    ============================================================
-       WFESC MESSAGES SEND
-       FINAL FIXED VERSION
-
-       مسؤول عن:
-       - إرسال الرسائل
-       - ظهور الرسالة فوراً
-       - منع الإرسال المكرر
-       - منع إعادة تحميل الصفحة
-       - Enter للإرسال
-       - Shift + Enter لسطر جديد
-       - الحفاظ على الكيبورد مفتوحاً
-       - تحديث الرسالة المؤقتة بعد نجاح الإرسال
-       - إيقاف جاري الكتابة عند الإرسال
-       - حماية RPC + Realtime من التكرار
-       - منع إعادة optimistic بعد تأكيد الرسالة
-       ============================================================
-    */
 
 
     /* =========================================================
        CORE
-    ========================================================= */
+       ========================================================= */
 
     const core =
         window.WFESC_MESSAGES_CORE;
@@ -41,8 +41,16 @@
 
 
     /* =========================================================
+       BLOCK MODULE
+       ========================================================= */
+
+    const block =
+        window.WFESC_MESSAGES_BLOCK;
+
+
+    /* =========================================================
        DOM
-    ========================================================= */
+       ========================================================= */
 
     const messageForm =
         document.getElementById(
@@ -70,20 +78,24 @@
 
     /* =========================================================
        STATE
-    ========================================================= */
+       ========================================================= */
 
     let isSending = false;
 
-    /*
-       يمنع تنفيذ أكثر من عملية إرسال
-       في نفس اللحظة.
-    */
     let sendLock = false;
 
 
     /* =========================================================
+       BLOCK ERROR TIMERS
+       ========================================================= */
+
+    const blockErrorTimers =
+        new WeakMap();
+
+
+    /* =========================================================
        KEYBOARD
-    ========================================================= */
+       ========================================================= */
 
     function keepKeyboardOpen() {
 
@@ -146,7 +158,7 @@
 
     /* =========================================================
        SCROLL
-    ========================================================= */
+       ========================================================= */
 
     function scrollToBottom(
         behavior = "smooth"
@@ -189,7 +201,7 @@
 
     /* =========================================================
        TEXTAREA
-    ========================================================= */
+       ========================================================= */
 
     function resizeTextarea() {
 
@@ -220,7 +232,7 @@
 
     /* =========================================================
        SENDING STATE
-    ========================================================= */
+       ========================================================= */
 
     function setSendingState(
         state
@@ -260,8 +272,154 @@
 
 
     /* =========================================================
-       OPTIMISTIC MESSAGE
-    ========================================================= */
+       GET CURRENT CONTACT ID
+       ========================================================= */
+
+    function getCurrentContactId() {
+
+        try {
+
+            if (
+                typeof core.getCurrentContact ===
+                "function"
+            ) {
+
+                const contact =
+                    core.getCurrentContact();
+
+
+                if (contact) {
+
+                    return (
+                        contact.id ??
+                        contact.user_id ??
+                        contact.uid ??
+                        null
+                    );
+                }
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC SEND: getCurrentContact error:",
+                error
+            );
+        }
+
+
+        return null;
+    }
+
+
+    /* =========================================================
+       BLOCK STATUS
+       ========================================================= */
+
+    async function getBlockState(
+        contactId
+    ) {
+
+        if (
+            !block ||
+            !contactId
+        ) {
+
+            return {
+                blocked: false,
+                blockedBy: false
+            };
+        }
+
+
+        let blocked = false;
+        let blockedBy = false;
+
+
+        try {
+
+            if (
+                typeof block.isBlocked ===
+                "function"
+            ) {
+
+                blocked =
+                    await block.isBlocked(
+                        contactId
+                    );
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC SEND: isBlocked error:",
+                error
+            );
+        }
+
+
+        try {
+
+            if (
+                typeof block.isBlockedBy ===
+                "function"
+            ) {
+
+                blockedBy =
+                    await block.isBlockedBy(
+                        contactId
+                    );
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "WFESC SEND: isBlockedBy error:",
+                error
+            );
+        }
+
+
+        return {
+            blocked: Boolean(blocked),
+            blockedBy: Boolean(blockedBy)
+        };
+    }
+
+
+    /* =========================================================
+       BLOCK ERROR TEXT
+       ========================================================= */
+
+    function getBlockErrorText(
+        state
+    ) {
+
+        if (
+            state &&
+            state.blockedBy
+        ) {
+
+            return "تعذر الإرسال لأن المستخدم قام بحظرك";
+        }
+
+
+        if (
+            state &&
+            state.blocked
+        ) {
+
+            return "تعذر الإرسال لأنك قمت بحظر المستخدم";
+        }
+
+
+        return "تعذر إرسال الرسالة";
+    }
+
+
+    /* =========================================================
+       CREATE OPTIMISTIC MESSAGE
+       ========================================================= */
 
     function createOptimisticMessage(
         content,
@@ -271,7 +429,7 @@
         return {
 
             /*
-               هذا ID مؤقت فقط للواجهة.
+               هذا ID مؤقت للواجهة فقط.
                لا نرسله إلى Supabase.
             */
             id:
@@ -296,7 +454,7 @@
 
     /* =========================================================
        RENDER OPTIMISTIC MESSAGE
-    ========================================================= */
+       ========================================================= */
 
     function renderTemporaryMessage(
         message
@@ -307,9 +465,6 @@
         }
 
 
-        /*
-           إزالة رسالة "لا توجد رسائل".
-        */
         const emptyState =
             chatMessages.querySelector(
                 ".empty-state"
@@ -324,12 +479,6 @@
         let row = null;
 
 
-        /*
-           إذا كان Core الجديد يوفر
-           addMessageToCurrentConversation
-           نستخدمه حتى تبقى الرسالة المؤقتة
-           داخل حالة المحادثة أيضاً.
-        */
         if (
             typeof core.addMessageToCurrentConversation ===
             "function"
@@ -348,9 +497,6 @@
                     );
 
 
-                /*
-                   بعض نسخ Core قد ترجع العنصر.
-                */
                 if (
                     result &&
                     result.nodeType === 1
@@ -369,10 +515,6 @@
         }
 
 
-        /*
-           إذا لم يرجع Core العنصر،
-           ننشئه بالطريقة القديمة.
-        */
         if (!row) {
 
             if (
@@ -380,10 +522,20 @@
                 "function"
             ) {
 
-                row =
-                    core.createMessageElement(
-                        message
+                try {
+
+                    row =
+                        core.createMessageElement(
+                            message
+                        );
+
+                } catch (error) {
+
+                    console.warn(
+                        "WFESC createMessageElement:",
+                        error
                     );
+                }
             }
         }
 
@@ -398,9 +550,6 @@
         }
 
 
-        /*
-           تأكيد أن الرسالة مؤقتة.
-        */
         row.classList.add(
             "message-new",
             "optimistic"
@@ -442,9 +591,6 @@
         }
 
 
-        /*
-           Animation بسيطة للرسالة الجديدة.
-        */
         try {
 
             row.animate(
@@ -470,10 +616,6 @@
         } catch (_) {}
 
 
-        /*
-           إذا لم يكن العنصر موجوداً داخل DOM
-           نضيفه الآن.
-        */
         if (
             !row.parentElement
         ) {
@@ -484,9 +626,6 @@
         }
 
 
-        /*
-           تطبيق إعدادات الفقاعات.
-        */
         try {
 
             const settings =
@@ -526,8 +665,425 @@
 
 
     /* =========================================================
+       BLOCK ERROR INDICATOR
+       ========================================================= */
+
+    function addBlockErrorIndicator(
+        row,
+        errorText
+    ) {
+
+        if (!row) {
+            return;
+        }
+
+
+        /*
+           إزالة خطأ قديم من نفس الرسالة.
+        */
+        const oldError =
+            row.querySelector(
+                ".wfesc-message-send-error"
+            );
+
+
+        if (oldError) {
+            oldError.remove();
+        }
+
+
+        row.classList.add(
+            "wfesc-message-send-failed"
+        );
+
+
+        row.dataset.sendFailed =
+            "true";
+
+
+        row.dataset.sendError =
+            errorText;
+
+
+        /*
+        ========================================================
+           الحاوية الرئيسية
+        ========================================================
+        */
+
+        const errorContainer =
+            document.createElement(
+                "div"
+            );
+
+
+        errorContainer.className =
+            "wfesc-message-send-error";
+
+
+        errorContainer.setAttribute(
+            "role",
+            "alert"
+        );
+
+
+        /*
+        ========================================================
+           الدائرة الحمراء
+        ========================================================
+        */
+
+        const errorIcon =
+            document.createElement(
+                "span"
+            );
+
+
+        errorIcon.className =
+            "wfesc-message-send-error-icon";
+
+
+        errorIcon.textContent =
+            "!";
+
+
+        /*
+        ========================================================
+           نص الخطأ
+        ========================================================
+        */
+
+        const errorTextElement =
+            document.createElement(
+                "span"
+            );
+
+
+        errorTextElement.className =
+            "wfesc-message-send-error-text";
+
+
+        errorTextElement.textContent =
+            errorText;
+
+
+        errorContainer.appendChild(
+            errorIcon
+        );
+
+
+        errorContainer.appendChild(
+            errorTextElement
+        );
+
+
+        /*
+        ========================================================
+           محاولة وضع الخطأ أسفل/بجانب الرسالة
+        ========================================================
+        */
+
+        const messageBubble =
+            row.querySelector(
+                ".message-bubble, .bubble, .message-content"
+            );
+
+
+        if (messageBubble) {
+
+            messageBubble.appendChild(
+                errorContainer
+            );
+
+        } else {
+
+            row.appendChild(
+                errorContainer
+            );
+        }
+
+
+        /*
+        ========================================================
+           CSS مباشر حتى تعمل الميزة حتى بدون
+           تعديل CSS الأساسي.
+        ========================================================
+        */
+
+        Object.assign(
+            errorContainer.style,
+            {
+                display: "flex",
+                alignItems: "center",
+                gap: "7px",
+                marginTop: "7px",
+                direction: "rtl",
+                fontSize: "12px",
+                lineHeight: "1.4",
+                maxWidth: "100%",
+                opacity: "1",
+                transition:
+                    "opacity .25s ease, transform .25s ease"
+            }
+        );
+
+
+        Object.assign(
+            errorIcon.style,
+            {
+                width: "22px",
+                height: "22px",
+                minWidth: "22px",
+                borderRadius: "50%",
+                background: "#e53935",
+                color: "#fff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "900",
+                fontSize: "14px",
+                lineHeight: "1",
+                boxSizing: "border-box",
+                boxShadow:
+                    "0 0 0 2px rgba(229,57,53,.14)"
+            }
+        );
+
+
+        Object.assign(
+            errorTextElement.style,
+            {
+                color: "#ff6b6b",
+                fontWeight: "600",
+                wordBreak: "break-word"
+            }
+        );
+
+
+        /*
+        ========================================================
+           ظهور سريع
+        ========================================================
+        */
+
+        try {
+
+            errorContainer.animate(
+                [
+                    {
+                        opacity: 0,
+                        transform:
+                            "translateY(4px)"
+                    },
+                    {
+                        opacity: 1,
+                        transform:
+                            "translateY(0)"
+                    }
+                ],
+                {
+                    duration: 180,
+                    easing: "ease-out"
+                }
+            );
+
+        } catch (_) {}
+
+
+        /*
+        ========================================================
+           إزالة الخطأ بعد 3 ثواني
+        ========================================================
+        */
+
+        const previousTimer =
+            blockErrorTimers.get(
+                row
+            );
+
+
+        if (previousTimer) {
+
+            clearTimeout(
+                previousTimer
+            );
+        }
+
+
+        const timer =
+            setTimeout(
+                () => {
+
+                    if (
+                        !errorContainer ||
+                        !errorContainer.isConnected
+                    ) {
+
+                        return;
+                    }
+
+
+                    errorContainer.style.opacity =
+                        "0";
+
+
+                    errorContainer.style.transform =
+                        "translateY(4px)";
+
+
+                    setTimeout(
+                        () => {
+
+                            if (
+                                errorContainer &&
+                                errorContainer.isConnected
+                            ) {
+
+                                errorContainer.remove();
+                            }
+
+
+                            /*
+                               نترك الرسالة نفسها ظاهرة
+                               داخل المحادثة.
+                            */
+
+                            row.classList.remove(
+                                "wfesc-message-send-failed"
+                            );
+
+
+                            row.dataset.sendFailed =
+                                "false";
+
+
+                            row.removeAttribute(
+                                "data-send-error"
+                            );
+
+                        },
+                        250
+                    );
+
+                },
+                3000
+            );
+
+
+        blockErrorTimers.set(
+            row,
+            timer
+        );
+
+
+        /*
+        ========================================================
+           اهتزاز خفيف للرسالة
+        ========================================================
+        */
+
+        try {
+
+            row.animate(
+                [
+                    {
+                        transform:
+                            "translateX(0)"
+                    },
+                    {
+                        transform:
+                            "translateX(-3px)"
+                    },
+                    {
+                        transform:
+                            "translateX(3px)"
+                    },
+                    {
+                        transform:
+                            "translateX(-2px)"
+                    },
+                    {
+                        transform:
+                            "translateX(0)"
+                    }
+                ],
+                {
+                    duration: 220
+                }
+            );
+
+        } catch (_) {}
+
+
+        scrollToBottom(
+            "smooth"
+        );
+    }
+
+
+    /* =========================================================
+       SHOW BLOCKED MESSAGE
+       ========================================================= */
+
+    function showBlockedSendMessage(
+        content,
+        userId,
+        errorText
+    ) {
+
+        const failedMessage =
+            createOptimisticMessage(
+                content,
+                userId
+            );
+
+
+        failedMessage.send_failed =
+            true;
+
+
+        failedMessage.blocked =
+            true;
+
+
+        const row =
+            renderTemporaryMessage(
+                failedMessage
+            );
+
+
+        if (!row) {
+            return null;
+        }
+
+
+        row.classList.add(
+            "send-failed",
+            "blocked-send"
+        );
+
+
+        row.dataset.sendFailed =
+            "true";
+
+
+        row.dataset.blocked =
+            "true";
+
+
+        addBlockErrorIndicator(
+            row,
+            errorText
+        );
+
+
+        return row;
+    }
+
+
+    /* =========================================================
        EXTRACT SENT MESSAGE
-    ========================================================= */
+       ========================================================= */
 
     function extractSentMessage(
         data
@@ -607,7 +1163,7 @@
 
     /* =========================================================
        CONFIRM OPTIMISTIC MESSAGE
-    ========================================================= */
+       ========================================================= */
 
     function confirmTemporaryMessage(
         temporaryRow,
@@ -620,25 +1176,8 @@
 
 
         /*
-        ========================================================
-           FIX مهم جداً لمنع التكرار
-
-           ممكن يصير هذا التسلسل:
-
-           1. الرسالة تظهر Optimistic.
-           2. RPC يرسل الرسالة إلى Supabase.
-           3. Realtime INSERT يصل بسرعة.
-           4. messages-core.js يطابق الرسالة.
-           5. Core يحذف optimistic ويضع:
-              data-confirmed="true"
-           6. بعد ذلك يرجع RPC.
-
-           بدون هذا الفحص كان messages-send.js
-           يعيد إضافة optimistic مرة ثانية.
-
-           لذلك إذا Core أكد الرسالة بالفعل:
-           لا نلمس العنصر إطلاقاً.
-        ========================================================
+           إذا Core أكد الرسالة بالفعل،
+           لا نلمس العنصر.
         */
 
         if (
@@ -650,19 +1189,6 @@
         }
 
 
-        /*
-        ========================================================
-           لا نحذف optimistic هنا.
-
-           إذا RPC رجع قبل Realtime،
-           نخلي الرسالة Optimistic مؤقتاً.
-
-           عندما يصل Realtime:
-           messages-core.js هو الذي يقوم
-           بعملية reconciliation النهائية.
-        ========================================================
-        */
-
         temporaryRow.classList.add(
             "optimistic"
         );
@@ -672,14 +1198,6 @@
             "true";
 
 
-        /*
-           إذا رجعت الرسالة الحقيقية من RPC
-           نربط العنصر بالـ ID الحقيقي.
-
-           لكن لا نعتبرها confirmed نهائياً
-           هنا، لأن Realtime هو المسؤول عن
-           التأكيد النهائي.
-        */
         if (sentMessage) {
 
             const realId =
@@ -728,47 +1246,42 @@
 
                 temporaryRow.dataset.messageTime =
                     String(createdAt);
-            }
 
 
-            /*
-               تحديث الوقت فقط.
-               لا نزيل optimistic.
-            */
-            const timeElement =
-                temporaryRow.querySelector(
-                    ".message-time"
-                );
-
-
-            if (
-                timeElement &&
-                createdAt
-            ) {
-
-                const date =
-                    new Date(
-                        createdAt
+                const timeElement =
+                    temporaryRow.querySelector(
+                        ".message-time"
                     );
 
 
                 if (
-                    !Number.isNaN(
-                        date.getTime()
-                    )
+                    timeElement
                 ) {
 
-                    timeElement.textContent =
-                        date.toLocaleTimeString(
-                            "ar-IQ",
-                            {
-                                hour:
-                                    "2-digit",
-
-                                minute:
-                                    "2-digit"
-                            }
+                    const date =
+                        new Date(
+                            createdAt
                         );
+
+
+                    if (
+                        !Number.isNaN(
+                            date.getTime()
+                        )
+                    ) {
+
+                        timeElement.textContent =
+                            date.toLocaleTimeString(
+                                "ar-IQ",
+                                {
+                                    hour:
+                                        "2-digit",
+
+                                    minute:
+                                        "2-digit"
+                                }
+                            );
+                    }
                 }
             }
         }
@@ -777,7 +1290,7 @@
 
     /* =========================================================
        REMOVE TYPING
-    ========================================================= */
+       ========================================================= */
 
     function stopTyping() {
 
@@ -803,7 +1316,7 @@
 
     /* =========================================================
        REMOVE FAILED MESSAGE
-    ========================================================= */
+       ========================================================= */
 
     function removeTemporaryMessage(
         temporaryRow
@@ -882,13 +1395,14 @@
 
     /* =========================================================
        SEND
-    ========================================================= */
+       ========================================================= */
 
     async function sendCurrentMessage() {
 
         /*
-           حماية إضافية ضد الإرسال المكرر.
+           حماية من الإرسال المكرر.
         */
+
         if (
             isSending ||
             sendLock
@@ -946,17 +1460,17 @@
             conversationId;
 
 
-        /*
-           هل كان المستخدم داخل حقل الكتابة؟
-        */
         const hadFocus =
             document.activeElement ===
             messageInput;
 
 
         /*
-           قفل الإرسال.
+        ========================================================
+           قفل الإرسال
+        ========================================================
         */
+
         sendLock =
             true;
 
@@ -966,16 +1480,111 @@
         );
 
 
-        /* =====================================================
-           1. إيقاف جاري الكتابة
-        ===================================================== */
+        /*
+        ========================================================
+           إيقاف جاري الكتابة
+        ========================================================
+        */
 
         stopTyping();
 
 
-        /* =====================================================
-           2. إنشاء الرسالة المؤقتة
-        ===================================================== */
+        /*
+        ========================================================
+           فحص الحظر قبل إنشاء Optimistic عادي
+        ========================================================
+        */
+
+        try {
+
+            const contactId =
+                getCurrentContactId();
+
+
+            if (
+                block &&
+                contactId
+            {
+
+                const blockState =
+                    await getBlockState(
+                        contactId
+                    );
+
+
+                /*
+                ==================================================
+                   المستخدم قام بحظر الطرف الآخر
+                ==================================================
+                */
+
+                if (
+                    blockState.blocked ||
+                    blockState.blockedBy
+                ) {
+
+                    const errorText =
+                        getBlockErrorText(
+                            blockState
+                        );
+
+
+                    /*
+                       نظهر الرسالة داخل المحادثة
+                       لكن لا نرسلها إلى Supabase.
+                    */
+
+                    showBlockedSendMessage(
+                        originalContent,
+                        user.id,
+                        errorText
+                    );
+
+
+                    /*
+                       نفرغ الحقل لأن محاولة الإرسال
+                       تمت بالفعل.
+                    */
+
+                    messageInput.value =
+                        "";
+
+
+                    resizeTextarea();
+
+
+                    /*
+                       لا يوجد RPC هنا.
+                       لا يتم حفظ محاولة الإرسال
+                       كرسالة حقيقية.
+                    */
+
+                    return;
+                }
+            }
+
+        } catch (error) {
+
+            /*
+            ====================================================
+               إذا فشل فحص الحظر بسبب مشكلة تقنية،
+               لا نمنع الرسالة من الإرسال بشكل عشوائي.
+               نترك RPC يقوم بالتحقق النهائي أيضاً.
+            ====================================================
+            */
+
+            console.warn(
+                "WFESC SEND: block check failed:",
+                error
+            );
+        }
+
+
+        /*
+        ========================================================
+           إنشاء الرسالة المؤقتة
+        ========================================================
+        */
 
         const optimistic =
             createOptimisticMessage(
@@ -990,9 +1599,11 @@
             );
 
 
-        /* =====================================================
-           3. تفريغ الحقل فوراً
-        ===================================================== */
+        /*
+        ========================================================
+           تفريغ الحقل فوراً
+        ========================================================
+        */
 
         messageInput.value =
             "";
@@ -1001,9 +1612,11 @@
         resizeTextarea();
 
 
-        /* =====================================================
-           4. إرسال إلى Supabase
-        ===================================================== */
+        /*
+        ========================================================
+           إرسال إلى Supabase
+        ========================================================
+        */
 
         try {
 
@@ -1023,13 +1636,101 @@
 
 
             if (error) {
+
+                /*
+                ==================================================
+                   حماية إضافية:
+                   إذا رفض RPC الإرسال بسبب الحظر،
+                   نعرض نفس واجهة الخطأ.
+                ==================================================
+                */
+
+                const errorString =
+                    String(
+                        error.message ||
+                        error.details ||
+                        error.hint ||
+                        ""
+                    ).toLowerCase();
+
+
+                const isBlockError =
+                    errorString.includes(
+                        "block"
+                    ) ||
+                    errorString.includes(
+                        "blocked"
+                    ) ||
+                    errorString.includes(
+                        "حظر"
+                    ) ||
+                    errorString.includes(
+                        "محظور"
+                    );
+
+
+                if (
+                    isBlockError
+                ) {
+
+                    const blockErrorText =
+                        errorString.includes(
+                            "حظر"
+                        ) ||
+                        errorString.includes(
+                            "محظور"
+                        ) ||
+                        errorString.includes(
+                            "blocked"
+                        )
+                            ? "تعذر الإرسال لأن المستخدم قام بحظرك"
+                            : "تعذر إرسال الرسالة";
+
+
+                    /*
+                       إزالة optimistic الفاشلة
+                       واستبدالها برسالة فشل واضحة.
+                    */
+
+                    removeTemporaryMessage(
+                        temporaryRow
+                    );
+
+
+                    setTimeout(
+                        () => {
+
+                            showBlockedSendMessage(
+                                originalContent,
+                                user.id,
+                                blockErrorText
+                            );
+
+                        },
+                        160
+                    );
+
+
+                    messageInput.value =
+                        "";
+
+
+                    resizeTextarea();
+
+
+                    return;
+                }
+
+
                 throw error;
             }
 
 
-            /* =================================================
-               التأكد أن المستخدم ما زال في نفس المحادثة
-            ================================================= */
+            /*
+            =====================================================
+               التأكد أن المستخدم ما زال داخل نفس المحادثة
+            =====================================================
+            */
 
             const currentConversation =
                 core.getCurrentConversation();
@@ -1044,20 +1745,15 @@
                 )
             ) {
 
-                /*
-                   لا نعيد رسم المحادثة
-                   إذا المستخدم غادرها أثناء الإرسال.
-
-                   الرسالة أصبحت محفوظة في Supabase
-                   وستظهر عند فتح المحادثة من جديد.
-                */
                 return;
             }
 
 
-            /* =================================================
+            /*
+            =====================================================
                استخراج الرسالة الحقيقية
-            ================================================= */
+            =====================================================
+            */
 
             const sentMessage =
                 extractSentMessage(
@@ -1065,14 +1761,11 @@
                 );
 
 
-            /* =================================================
+            /*
+            =====================================================
                تأكيد الرسالة المؤقتة
-
-               إذا كان Realtime قد وصل قبل RPC:
-               confirmTemporaryMessage()
-               سيكتشف data-confirmed="true"
-               ولن يعيد optimistic.
-            ================================================= */
+            =====================================================
+            */
 
             confirmTemporaryMessage(
                 temporaryRow,
@@ -1080,9 +1773,11 @@
             );
 
 
-            /* =================================================
+            /*
+            =====================================================
                التمرير
-            ================================================= */
+            =====================================================
+            */
 
             scrollToBottom(
                 "smooth"
@@ -1098,16 +1793,22 @@
 
 
             /*
-               حذف الرسالة المؤقتة عند الفشل فقط.
+            =====================================================
+               حذف الرسالة المؤقتة عند الفشل
+            =====================================================
             */
+
             removeTemporaryMessage(
                 temporaryRow
             );
 
 
             /*
-               إعادة النص حتى لا يضيع.
+            =====================================================
+               إعادة النص حتى لا يضيع
+            =====================================================
             */
+
             messageInput.value =
                 originalContent;
 
@@ -1116,8 +1817,11 @@
 
 
             /*
-               اهتزاز خفيف عند الخطأ.
+            =====================================================
+               اهتزاز خفيف عند الخطأ
+            =====================================================
             */
+
             try {
 
                 messageInput.animate(
@@ -1155,7 +1859,7 @@
 
         /* =====================================================
            FINALLY
-        ===================================================== */
+           ===================================================== */
 
         finally {
 
@@ -1213,7 +1917,7 @@
 
     /* =========================================================
        FORM
-    ========================================================= */
+       ========================================================= */
 
     if (messageForm) {
 
@@ -1221,15 +1925,9 @@
             "submit",
             event => {
 
-                /*
-                   preventDefault أول شيء
-                   حتى لا يعيد المتصفح تحميل الصفحة.
-                */
                 event.preventDefault();
 
-
                 event.stopPropagation();
-
 
                 sendCurrentMessage();
             }
@@ -1239,13 +1937,10 @@
 
     /* =========================================================
        INPUT
-    ========================================================= */
+       ========================================================= */
 
     if (messageInput) {
 
-        /*
-           تغيير حجم حقل الكتابة.
-        */
         messageInput.addEventListener(
             "input",
             () => {
@@ -1260,6 +1955,7 @@
            Enter = إرسال
            Shift + Enter = سطر جديد
         */
+
         messageInput.addEventListener(
             "keydown",
             event => {
@@ -1271,21 +1967,14 @@
 
                     event.preventDefault();
 
-
                     event.stopPropagation();
 
-
                     sendCurrentMessage();
-
                 }
             }
         );
 
 
-        /*
-           عند التركيز:
-           تحديث الكيبورد والتمرير.
-        */
         messageInput.addEventListener(
             "focus",
             () => {
@@ -1320,7 +2009,7 @@
 
     /* =========================================================
        SEND BUTTON
-    ========================================================= */
+       ========================================================= */
 
     if (sendButton) {
 
@@ -1345,7 +2034,7 @@
 
     /* =========================================================
        PUBLIC API
-    ========================================================= */
+       ========================================================= */
 
     window.WFESC_MESSAGES_SEND = {
 
@@ -1363,9 +2052,13 @@
 
     /* =========================================================
        INIT
-    ========================================================= */
+       ========================================================= */
 
     resizeTextarea();
 
+
+    console.log(
+        "WFESC SEND: module loaded"
+    );
 
 })();
