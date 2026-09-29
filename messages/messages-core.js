@@ -1562,12 +1562,75 @@ function getSupportContact() {
 
 
 /* =========================================================
+CONTACT FETCH RESILIENCE
+========================================================= */
+
+/*
+ * بعض أخطاء Supabase تكون أخطاء شبكة فعلية مثل:
+ *
+ * TypeError: Failed to fetch
+ *
+ * هذه الأخطاء قد تكون مؤقتة بسبب:
+ * - انقطاع الشبكة
+ * - تأخر الاتصال
+ * - فشل مؤقت في fetch
+ * - استئناف الاتصال
+ *
+ * لذلك نعيد المحاولة قبل إظهار أي تشخيص.
+ */
+
+function isLikelyNetworkError(
+    error
+) {
+
+    if (!error) {
+        return false;
+    }
+
+    const message =
+        String(
+            error?.message ||
+            error?.name ||
+            error ||
+            ""
+        ).toLowerCase();
+
+    return (
+        message.includes("failed to fetch") ||
+        message.includes("networkerror") ||
+        message.includes("network error") ||
+        message.includes("load failed") ||
+        message.includes("fetch failed") ||
+        error?.name ===
+        "TypeError"
+    );
+
+}
+
+
+function waitForRetry(
+    milliseconds
+) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
+
+}
+
+
+/* =========================================================
 GET CONVERSATION CONTACT
 ========================================================= */
 
 async function getConversationContact(
     conversationId,
-    type
+    type,
+    fallbackContact = null
 ) {
 
     if (
@@ -1577,21 +1640,131 @@ async function getConversationContact(
         return getSupportContact();
     }
 
-    try {
+    if (!conversationId) {
 
-        const {
-            data,
-            error
-        } = await client.rpc(
-            "get_conversation_contacts",
-            {
-                target_conversation_id:
-                    conversationId
+        if (fallbackContact) {
+
+            return normalizeContact(
+                fallbackContact
+            );
+        }
+
+        return null;
+    }
+
+    const normalizedFallback =
+        fallbackContact
+            ? normalizeContact(
+                fallbackContact
+            )
+            : null;
+
+    const maxAttempts = 3;
+
+    let lastError = null;
+
+    for (
+        let attempt = 1;
+        attempt <= maxAttempts;
+        attempt++
+    ) {
+
+        try {
+
+            const {
+                data,
+                error
+            } = await client.rpc(
+                "get_conversation_contacts",
+                {
+                    target_conversation_id:
+                        conversationId
+                }
+            );
+
+            if (!error) {
+
+                if (!data) {
+
+                    return (
+                        normalizedFallback ||
+                        null
+                    );
+                }
+
+                const rawContact =
+                    Array.isArray(data)
+                        ? data[0]
+                        : data;
+
+                if (!rawContact) {
+
+                    return (
+                        normalizedFallback ||
+                        null
+                    );
+                }
+
+                return normalizeContact(
+                    rawContact,
+                    normalizedFallback
+                );
+
             }
-        );
 
-        if (error) {
+            lastError =
+                error;
 
+            /*
+             * إذا الخطأ يبدو خطأ شبكة،
+             * نعيد المحاولة.
+             */
+            if (
+                isLikelyNetworkError(
+                    error
+                )
+            ) {
+
+                if (
+                    attempt <
+                    maxAttempts
+                ) {
+
+                    await waitForRetry(
+                        350 *
+                        attempt
+                    );
+
+                    continue;
+                }
+
+                /*
+                 * بعد انتهاء المحاولات:
+                 * لا نظهر لوحة تشخيص حمراء
+                 * لأن المشكلة اتصال وليست
+                 * بالضرورة مشكلة في بيانات الحساب.
+                 */
+
+                console.warn(
+                    "WFESC: تعذر جلب جهة الاتصال بسبب مشكلة اتصال مؤقتة. سيتم استخدام البيانات المحلية.",
+                    {
+                        conversation_id:
+                            conversationId,
+
+                        attempts:
+                            maxAttempts
+                    }
+                );
+
+                return (
+                    normalizedFallback ||
+                    null
+                );
+            }
+
+            /*
+             * خطأ RPC فعلي وليس خطأ شبكة.
+             */
             wfescDebugError(
                 "فشل جلب بيانات جهة الاتصال",
                 error,
@@ -1604,42 +1777,92 @@ async function getConversationContact(
                 }
             );
 
-            return null;
-        }
+            return (
+                normalizedFallback ||
+                null
+            );
 
-        if (!data) {
-            return null;
-        }
+        } catch (error) {
 
-        const rawContact =
-            Array.isArray(data)
-                ? data[0]
-                : data;
+            lastError =
+                error;
 
-        if (!rawContact) {
-            return null;
-        }
+            if (
+                isLikelyNetworkError(
+                    error
+                )
+            ) {
 
-        return normalizeContact(
-            rawContact
-        );
+                if (
+                    attempt <
+                    maxAttempts
+                ) {
 
-    } catch (error) {
+                    await waitForRetry(
+                        350 *
+                        attempt
+                    );
 
-        wfescDebugError(
-            "استثناء أثناء جلب جهة الاتصال",
-            error,
-            {
-                rpc:
-                    "get_conversation_contacts",
+                    continue;
+                }
 
-                conversation_id:
-                    conversationId
+                console.warn(
+                    "WFESC: فشل الاتصال بـ Supabase أثناء جلب جهة الاتصال. سيتم استخدام البيانات المحلية.",
+                    {
+                        conversation_id:
+                            conversationId,
+
+                        attempts:
+                            maxAttempts,
+
+                        error:
+                            error?.message ||
+                            String(error)
+                    }
+                );
+
+                return (
+                    normalizedFallback ||
+                    null
+                );
             }
-        );
 
-        return null;
+            wfescDebugError(
+                "استثناء أثناء جلب جهة الاتصال",
+                error,
+                {
+                    rpc:
+                        "get_conversation_contacts",
+
+                    conversation_id:
+                        conversationId
+                }
+            );
+
+            return (
+                normalizedFallback ||
+                null
+            );
+        }
     }
+
+    /*
+     * حماية إضافية في حال خرجت الحلقة
+     * لأي سبب غير متوقع.
+     */
+
+    if (lastError) {
+
+        console.warn(
+            "WFESC getConversationContact fallback:",
+            lastError
+        );
+    }
+
+    return (
+        normalizedFallback ||
+        null
+    );
 
 }
 
@@ -4728,7 +4951,8 @@ async function openConversationInternal(
         const fetchedContact =
             await getConversationContact(
                 conversationId,
-                type
+                type,
+                passedContact
             );
 
         if (
