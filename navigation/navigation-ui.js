@@ -48,7 +48,8 @@
         navigation.className = "wfesc-navigation";
 
         /* =====================================================
-           FORCE FIXED BOTTOM POSITION
+           FIXED POSITION
+           ثابت دائمًا أسفل الشاشة
            ===================================================== */
 
         navigation.style.setProperty(
@@ -65,19 +66,19 @@
 
         navigation.style.setProperty(
             "bottom",
-            "12px",
+            "7px",
             "important"
         );
 
         navigation.style.setProperty(
             "left",
-            "12px",
+            "7px",
             "important"
         );
 
         navigation.style.setProperty(
             "right",
-            "12px",
+            "7px",
             "important"
         );
 
@@ -88,10 +89,30 @@
         );
 
         navigation.style.setProperty(
+            "height",
+            "auto",
+            "important"
+        );
+
+        navigation.style.setProperty(
+            "margin",
+            "0",
+            "important"
+        );
+
+        navigation.style.setProperty(
             "z-index",
             "99990",
             "important"
         );
+
+        /*
+         * مهم:
+         * لا نستخدم visualViewport
+         * لا نستخدم window.innerHeight
+         * لا نغيّر bottom عند فتح الكيبورد
+         * لا نضيف أي حركة JavaScript
+         */
 
         navigation.setAttribute(
             "aria-label",
@@ -107,13 +128,16 @@
 
             const item = document.createElement("a");
 
-            item.className = "wfesc-navigation-item";
+            item.className =
+                "wfesc-navigation-item";
 
             item.href = pageFile;
 
-            item.dataset.navigationId = button.id;
+            item.dataset.navigationId =
+                button.id;
 
-            item.dataset.navigationPage = pageFile;
+            item.dataset.navigationPage =
+                pageFile;
 
             item.setAttribute(
                 "aria-label",
@@ -123,6 +147,7 @@
             if (
                 pageFile.toLowerCase() === currentPage
             ) {
+
                 item.classList.add(
                     "wfesc-navigation-active"
                 );
@@ -131,21 +156,26 @@
                     "aria-current",
                     "page"
                 );
+
             }
 
-            const icon = document.createElement("span");
+            const icon =
+                document.createElement("span");
 
             icon.className =
                 "wfesc-navigation-icon";
 
-            icon.textContent = button.icon;
+            icon.textContent =
+                button.icon;
 
-            const title = document.createElement("span");
+            const title =
+                document.createElement("span");
 
             title.className =
                 "wfesc-navigation-title";
 
-            title.textContent = button.title;
+            title.textContent =
+                button.title;
 
             item.appendChild(icon);
             item.appendChild(title);
@@ -156,22 +186,20 @@
 
                     /*
                      * إذا كان المستخدم على نفس الصفحة
-                     * لا داعي لإعادة التحميل.
+                     * لا تعيد تحميل الصفحة.
                      */
                     if (
                         pageFile.toLowerCase() === currentPage
                     ) {
+
                         event.preventDefault();
+
                         return;
                     }
 
                     /*
-                     * لا تظهر شاشة "جاري الانتقال..."
-                     *
-                     * يتم الانتقال مباشرة إلى الصفحة.
-                     * شاشة "جاري التحميل..." الموجودة في
-                     * navigation-loader.js ستظهر عند تحميل
-                     * الصفحة الجديدة.
+                     * الانتقال طبيعي.
+                     * لا يوجد أي تحريك لشريط التنقل.
                      */
 
                 }
@@ -182,8 +210,8 @@
         });
 
         /*
-         * وضع شريط التنقل مباشرة داخل HTML
-         * لتجنب أي تأثير من CSS الخاص بالـ body.
+         * إضافة التنقل مباشرة إلى documentElement
+         * حتى لا يتأثر بتنسيقات body.
          */
         document.documentElement.appendChild(
             navigation
@@ -193,13 +221,18 @@
 
     function refreshActiveButton() {
 
-        const config = getConfig();
+        const config =
+            getConfig();
 
-        if (!config || !config.buttons) {
+        if (
+            !config ||
+            !config.buttons
+        ) {
             return;
         }
 
-        const currentPage = getCurrentPage();
+        const currentPage =
+            getCurrentPage();
 
         const items =
             document.querySelectorAll(
@@ -240,16 +273,20 @@
 
     function init() {
 
-        if (document.body) {
-
-            createNavigation();
-
-            refreshActiveButton();
-
+        if (!document.body) {
+            return;
         }
+
+        createNavigation();
+
+        refreshActiveButton();
 
     }
 
-    window.WFESCNavigationInit = init;
+    /*
+     * Public API
+     */
+    window.WFESCNavigationInit =
+        init;
 
 })();
