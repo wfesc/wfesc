@@ -1186,6 +1186,7 @@ position:absolute;
 top:100%;
 
 right:10px;
+
 left:10px;
 
 display:none;
@@ -1335,11 +1336,6 @@ display:flex;
 
 width:100%;
 
-/*
- * تتحكم بها إعدادات:
- * المسافة عن إطار الهاتف.
- */
-
 padding-inline:
     var(--message-bubble-edge-gap);
 
@@ -1372,19 +1368,7 @@ REAL MESSAGE BUBBLE
 
 .message-bubble{
 
-/*
- * مهم:
- * لا نستخدم width:78% بشكل إجباري.
- *
- * الفقاعة تكون بحجم محتواها،
- * لكن لا تتجاوز النسبة التي يحددها المستخدم.
- */
-
 width:auto !important;
-
-/*
- * المتغير يمثل الحد الأقصى للعرض.
- */
 
 max-width:
     min(
@@ -1400,18 +1384,9 @@ min-width:0 !important;
 flex:
     0 1 auto;
 
-/*
- * الارتفاع طبيعي.
- * لا يوجد height ثابت.
- */
-
 height:auto !important;
 
 min-height:0 !important;
-
-/*
- * التحكم العمودي من الإعدادات.
- */
 
 padding:
     var(--message-bubble-vertical-padding,10px)
@@ -1435,11 +1410,6 @@ border:
         --current-bubble-border,
         rgba(255,255,255,.10)
     );
-
-/*
- * المتغير القديم يبقى للتوافق
- * مع الإعدادات السابقة.
- */
 
 transform:
     scale(
@@ -1472,11 +1442,6 @@ transition:
     border-color .22s ease;
 
 }
-
-/*
-منع أي قاعدة عامة من إجبار
-الفقاعة على أخذ عرض الصف.
-*/
 
 .message-row .message-bubble{
 
@@ -2515,12 +2480,6 @@ min-width:0;
 
 .preview-message{
 
-/*
- * مثل الفقاعة الحقيقية:
- * الحجم الطبيعي للنص أولاً.
- * المتغير يحدد الحد الأقصى فقط.
- */
-
 width:auto !important;
 
 max-width:
@@ -3160,17 +3119,6 @@ flex:
 
 }
 
-/*
-
-لا يوجد هنا أي max-width للفقاعة.
-
-عرض الفقاعة يتحكم به:
-
---message-bubble-width
-
-والفقاعة القصيرة تبقى بحجم النص.
-*/
-
 .message-bubble{
 
 width:auto !important;
@@ -3445,13 +3393,6 @@ min-height:0;
 
 }
 
-/*
-
-الهيدر ثابت في أعلى المحادثة.
-
-الرسائل وحدها تقوم بالتمرير.
-*/
-
 #chatView > .chat-header{
 
 flex:
@@ -3466,12 +3407,6 @@ z-index:500 !important;
 
 }
 
-/*
-
-الرسائل تبقى فوق شريط الكتابة
-
-ولا تدخل خلف التنقل.
-*/
 
 #chatView > #chatMessages{
 
@@ -4012,10 +3947,6 @@ user-drag:none !important;
         </p>
 
 
-        <!-- =================================================
-             TEXT SIZE
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4046,10 +3977,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             BUBBLE WIDTH
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4082,10 +4009,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             BUBBLE HEIGHT
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4116,10 +4039,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             FRAME GAP
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4152,10 +4071,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             OWN COLOR
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4184,10 +4099,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             OWN COLOR INTENSITY
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4220,10 +4131,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             OWN TRANSPARENCY
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4254,10 +4161,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             OWN SHAPE
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4296,10 +4199,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             OWN RADIUS
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4330,10 +4229,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             OTHER SHAPE
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4372,10 +4267,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             OTHER COLOR
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4404,10 +4295,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             OTHER INTENSITY
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4440,10 +4327,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             OTHER TRANSPARENCY
-        ================================================== -->
-
         <div class="settings-group">
 
             <div class="settings-label">
@@ -4474,10 +4357,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             OTHER RADIUS
-        ================================================== -->
 
         <div class="settings-group">
 
@@ -4510,10 +4389,6 @@ user-drag:none !important;
         </div>
 
 
-        <!-- =================================================
-             PREVIEW
-        ================================================== -->
-
         <div class="settings-preview">
 
             <div class="preview-title">
@@ -4542,10 +4417,6 @@ user-drag:none !important;
 
         </div>
 
-
-        <!-- =================================================
-             ACTIONS
-        ================================================= -->
 
         <div class="modal-actions">
 
@@ -4729,7 +4600,10 @@ user-drag:none !important;
 <script
 src="./messages/messages-keyboard.js"
 id="wfescKeyboardScript"
-onload="window.WFESC_KEYBOARD_FILE_LOADED=true"
+onload="
+    window.__WFESC_KEYBOARD_FILE_LOADED__=true;
+    window.WFESC_KEYBOARD_FILE_LOADED=true;
+"
 ></script>
 
 
@@ -4779,40 +4653,44 @@ KEYBOARD MODULE GATE
 "use strict";
 
 
-const input =
-    document.getElementById(
-        "messageInput"
-    );
+function enableMessageInput(){
+
+    const input =
+        document.getElementById(
+            "messageInput"
+        );
 
 
-if(!input){
+    if(!input){
 
-    return;
+        return false;
 
-}
-
-
-/*
- * لا نتحكم بالكيبورد هنا.
- *
- * فقط نتحقق من وجود ملف
- * messages-keyboard.js.
- */
-
-if(
-    window.__WFESC_KEYBOARD_FILE_LOADED__ === true
-){
-
-    input.removeAttribute(
-        "readonly"
-    );
+    }
 
 
-    input.dataset.keyboardReady =
-        "true";
+    const keyboardReady =
+        window.__WFESC_KEYBOARD_FILE_LOADED__ === true ||
+        window.WFESC_KEYBOARD_FILE_LOADED === true ||
+        window.WFESC_MESSAGE_KEYBOARD_READY === true;
 
 
-}else{
+    if(
+        keyboardReady
+    ){
+
+        input.removeAttribute(
+            "readonly"
+        );
+
+
+        input.dataset.keyboardReady =
+            "true";
+
+
+        return true;
+
+    }
+
 
     input.setAttribute(
         "readonly",
@@ -4823,7 +4701,47 @@ if(
     input.dataset.keyboardReady =
         "false";
 
+
+    return false;
+
 }
+
+
+/*
+ * المحاولة الأولى.
+ */
+enableMessageInput();
+
+
+/*
+ * محاولة إضافية بعد اكتمال DOM.
+ */
+document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        enableMessageInput();
+
+    },
+    {
+        once:true
+    }
+);
+
+
+/*
+ * احتياط إضافي بسيط إذا تأخر تحميل
+ * ملف الكيبورد عن باقي السكربتات.
+ */
+setTimeout(
+    enableMessageInput,
+    100
+);
+
+setTimeout(
+    enableMessageInput,
+    500
+);
 
 })();
 
