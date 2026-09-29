@@ -432,6 +432,7 @@
                هذا ID مؤقت للواجهة فقط.
                لا نرسله إلى Supabase.
             */
+
             id:
                 `temp-${Date.now()}-${Math.random()
                     .toString(36)
@@ -681,6 +682,7 @@
         /*
            إزالة خطأ قديم من نفس الرسالة.
         */
+
         const oldError =
             row.querySelector(
                 ".wfesc-message-send-error"
@@ -805,8 +807,7 @@
 
         /*
         ========================================================
-           CSS مباشر حتى تعمل الميزة حتى بدون
-           تعديل CSS الأساسي.
+           CSS مباشر
         ========================================================
         */
 
@@ -1501,10 +1502,15 @@
                 getCurrentContactId();
 
 
+            /*
+             * FIX:
+             * كان ناقصاً القوس ) هنا.
+             */
+
             if (
                 block &&
                 contactId
-            {
+            ) {
 
                 const blockState =
                     await getBlockState(
