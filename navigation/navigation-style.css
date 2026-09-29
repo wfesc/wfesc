@@ -112,6 +112,7 @@
 /* =========================================================
    BOTTOM NAVIGATION
    ثابت دائمًا أسفل الشاشة
+   لا يتحرك ولا يختفي
    ========================================================= */
 
 #wfesc-navigation {
@@ -139,9 +140,6 @@
 
     direction: rtl;
 
-    /*
-     * Liquid Glass
-     */
     background:
         linear-gradient(
             135deg,
@@ -170,23 +168,41 @@
         saturate(150%);
 
     /*
-     * يبقى ثابت ولا يتحرك بسبب الصفحة
+     * ثبات كامل
      */
-    transform: translateZ(0);
+    transform: none !important;
 
-    will-change: opacity, transform;
+    will-change: auto !important;
 
-    transition:
-        opacity .25s ease,
-        transform .25s ease,
-        visibility .25s ease,
-        background .25s ease,
-        box-shadow .25s ease;
+    transition: none !important;
+
+    /*
+     * يبقى ظاهرًا دائمًا
+     */
+    opacity: 1 !important;
+
+    visibility: visible !important;
 
     /*
      * يمنع أي عنصر عابر من تغطيته
      */
     isolation: isolate;
+}
+
+/* =========================================================
+   منع كلاس الإخفاء من تحريك أو إخفاء التنقل
+   ========================================================= */
+
+#wfesc-navigation.wfesc-navigation-hide {
+
+    opacity: 1 !important;
+
+    visibility: visible !important;
+
+    transform: none !important;
+
+    transition: none !important;
+
 }
 
 /*
@@ -244,18 +260,6 @@
         );
 
     opacity: .75;
-}
-
-#wfesc-navigation.wfesc-navigation-hide {
-
-    opacity: 0;
-
-    visibility: hidden;
-
-    transform:
-        translateY(15px)
-        translateZ(0);
-
 }
 
 /* =========================================================
@@ -501,6 +505,14 @@
 
         border-radius: 18px;
 
+        transform: none !important;
+
+        transition: none !important;
+
+        opacity: 1 !important;
+
+        visibility: visible !important;
+
         backdrop-filter:
             blur(22px)
             saturate(150%);
@@ -563,6 +575,14 @@
         padding: 4px;
 
         border-radius: 16px;
+
+        transform: none !important;
+
+        transition: none !important;
+
+        opacity: 1 !important;
+
+        visibility: visible !important;
 
     }
 
@@ -670,6 +690,14 @@ html.wfesc-light-mode
                 env(safe-area-inset-bottom)
             ) !important;
 
+        transform: none !important;
+
+        opacity: 1 !important;
+
+        visibility: visible !important;
+
+        transition: none !important;
+
     }
 
     @media (min-width: 601px) {
@@ -685,6 +713,14 @@ html.wfesc-light-mode
                     12px +
                     env(safe-area-inset-bottom)
                 ) !important;
+
+            transform: none !important;
+
+            opacity: 1 !important;
+
+            visibility: visible !important;
+
+            transition: none !important;
 
         }
 
