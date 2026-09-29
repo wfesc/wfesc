@@ -15,6 +15,15 @@
    - Shake animation on every navigation
    - Keeps search state after opening a result
    - Attempts to load older messages when needed
+
+   BLOCK INTEGRATION:
+   - Detect users who blocked the current user
+   - Hide blocked user's identity
+   - Hide blocked user's avatar
+   - Show "قام المستخدم بحظرك"
+   - Prevent opening a blocked user's chat
+   - Re-check block state before opening
+   - Keep existing messages/history intact
    ========================================================= */
 
 (function () {
@@ -28,6 +37,10 @@
 
     const CORE = () =>
         window.WFESC_MESSAGES_CORE || null;
+
+
+    const BLOCK = () =>
+        window.WFESC_MESSAGES_BLOCK || null;
 
 
     let searchMode = "messages";
@@ -55,6 +68,13 @@
     let pendingMessageContent = "";
 
     let observerStarted = false;
+
+
+    /*
+     * Cache حالة الحظر حتى لا نرسل طلب Supabase
+     * لكل عنصر بشكل متكرر.
+     */
+    const blockStatusCache = new Map();
 
 
     const els = {
@@ -89,10 +109,18 @@
     }
 
 
+    function getBlock() {
+
+        return BLOCK();
+
+    }
+
+
     function getClient() {
 
         return (
             getCore()?.client ||
+            getBlock()?.client ||
             window.WFESCSupabase ||
             window.supabase ||
             null
@@ -325,6 +353,33 @@
 
             user?.userId ||
 
+            user?.sender_id ||
+
+            user?.senderId ||
+
+            null
+
+        );
+
+    }
+
+
+    function getSenderId(row) {
+
+        return (
+
+            row?.sender_id ||
+
+            row?.senderId ||
+
+            row?.user_id ||
+
+            row?.userId ||
+
+            row?.author_id ||
+
+            row?.authorId ||
+
             null
 
         );
@@ -357,6 +412,379 @@
         }
 
         return String(value);
+
+    }
+
+
+    /* =========================================================
+       BLOCK STATUS
+    ========================================================= */
+
+    async function getBlockStatus(
+        userId,
+        forceRefresh = false
+    ) {
+
+        const normalizedId =
+            normalizeId(userId);
+
+
+        if (!normalizedId) {
+
+            return {
+
+                blocked:false,
+
+                blockedBy:false
+
+            };
+
+        }
+
+
+        if (
+            !forceRefresh &&
+            blockStatusCache.has(
+                normalizedId
+            )
+        ) {
+
+            return (
+                blockStatusCache.get(
+                    normalizedId
+                )
+            );
+
+        }
+
+
+        const block =
+            getBlock();
+
+
+        if (!block) {
+
+            const fallback = {
+
+                blocked:false,
+
+                blockedBy:false
+
+            };
+
+
+            blockStatusCache.set(
+                normalizedId,
+                fallback
+            );
+
+
+            return fallback;
+
+        }
+
+
+        let blocked = false;
+
+        let blockedBy = false;
+
+
+        try {
+
+            if (
+                typeof block.isBlocked ===
+                "function"
+            ) {
+
+                blocked =
+                    !!(
+                        await block.isBlocked(
+                            userId
+                        )
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SEARCH] isBlocked failed:",
+                error
+            );
+
+        }
+
+
+        try {
+
+            if (
+                typeof block.isBlockedBy ===
+                "function"
+            ) {
+
+                blockedBy =
+                    !!(
+                        await block.isBlockedBy(
+                            userId
+                        )
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC SEARCH] isBlockedBy failed:",
+                error
+            );
+
+        }
+
+
+        const status = {
+
+            blocked,
+
+            blockedBy
+
+        };
+
+
+        blockStatusCache.set(
+            normalizedId,
+            status
+        );
+
+
+        return status;
+
+    }
+
+
+    function clearBlockStatusCache() {
+
+        blockStatusCache.clear();
+
+    }
+
+
+    function setupBlockStateListeners() {
+
+        const eventNames = [
+
+            "wfesc:block-changed",
+
+            "wfesc:user-blocked",
+
+            "wfesc:user-unblocked",
+
+            "wfesc:blocked",
+
+            "wfesc:unblocked"
+
+        ];
+
+
+        eventNames.forEach(
+            function (eventName) {
+
+                document.addEventListener(
+                    eventName,
+                    function () {
+
+                        clearBlockStatusCache();
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    async function decorateUserBlockStatus(
+        users
+    ) {
+
+        if (!Array.isArray(users)) {
+
+            return [];
+
+        }
+
+
+        const result =
+            await Promise.all(
+
+                users.map(
+                    async function (user) {
+
+                        const userId =
+                            getUserId(user);
+
+
+                        const rpcBlocked =
+                            isBlockedYou(user);
+
+
+                        if (!userId) {
+
+                            return {
+
+                                user,
+
+                                status:{
+
+                                    blocked:false,
+
+                                    blockedBy:
+                                        rpcBlocked
+
+                                }
+
+                            };
+
+                        }
+
+
+                        const status =
+                            await getBlockStatus(
+                                userId
+                            );
+
+
+                        return {
+
+                            user,
+
+                            status:{
+
+                                blocked:
+                                    !!(
+                                        status.blocked
+                                    ),
+
+                                blockedBy:
+                                    !!(
+                                        status.blockedBy ||
+                                        rpcBlocked
+                                    )
+
+                            }
+
+                        };
+
+                    }
+                )
+
+            );
+
+
+        return result;
+
+    }
+
+
+    async function decorateMessageBlockStatus(
+        rows
+    ) {
+
+        if (!Array.isArray(rows)) {
+
+            return [];
+
+        }
+
+
+        const ids = [];
+
+        const seen =
+            new Set();
+
+
+        rows.forEach(
+            function (row) {
+
+                const id =
+                    normalizeId(
+                        getSenderId(row)
+                    );
+
+
+                if (
+                    id &&
+                    !seen.has(id)
+                ) {
+
+                    seen.add(id);
+
+                    ids.push(id);
+
+                }
+
+            }
+        );
+
+
+        const statuses =
+            new Map();
+
+
+        await Promise.all(
+
+            ids.map(
+                async function (id) {
+
+                    const status =
+                        await getBlockStatus(
+                            id
+                        );
+
+
+                    statuses.set(
+                        id,
+                        status
+                    );
+
+                }
+            )
+
+        );
+
+
+        return rows.map(
+            function (row) {
+
+                const senderId =
+                    normalizeId(
+                        getSenderId(row)
+                    );
+
+
+                const status =
+                    statuses.get(
+                        senderId
+                    ) || {
+
+                        blocked:false,
+
+                        blockedBy:false
+
+                    };
+
+
+                return {
+
+                    ...row,
+
+                    __wfescBlockStatus:
+                        status
+
+                };
+
+            }
+        );
 
     }
 
@@ -470,6 +898,8 @@
 
         setupConversationObserver();
 
+        setupBlockStateListeners();
+
         updateModeButtons();
 
         updateMatchNavigator();
@@ -547,10 +977,25 @@
             }
 
 
+            .wfesc-user-search-result.wfesc-blocked-by-me {
+
+                cursor:not-allowed;
+
+            }
+
+
             .wfesc-user-search-result.wfesc-blocked-you
             .wfesc-search-blocked-label {
 
                 color:#ff3b30;
+
+            }
+
+
+            .wfesc-user-search-result.wfesc-blocked-by-me
+            .wfesc-search-blocked-label {
+
+                color:#ff9800;
 
             }
 
@@ -646,6 +1091,35 @@
             }
 
 
+            .wfesc-search-avatar-blocked {
+
+                width:46px;
+
+                height:46px;
+
+                min-width:46px;
+
+                border-radius:50%;
+
+                display:flex;
+
+                align-items:center;
+
+                justify-content:center;
+
+                background:#351515;
+
+                color:#ff3b30;
+
+                border:1px solid rgba(255,59,48,.45);
+
+                font-weight:900;
+
+                font-size:18px;
+
+            }
+
+
             .wfesc-search-user-row {
 
                 display:flex;
@@ -711,6 +1185,13 @@
             }
 
 
+            .wfesc-search-hidden-identity {
+
+                color:#ff3b30 !important;
+
+            }
+
+
             .wfesc-search-message-row {
 
                 cursor:pointer;
@@ -718,6 +1199,13 @@
                 user-select:none !important;
 
                 -webkit-user-select:none !important;
+
+            }
+
+
+            .wfesc-search-message-row.wfesc-message-blocked-user {
+
+                cursor:not-allowed;
 
             }
 
@@ -1219,8 +1707,24 @@
                     : [];
 
 
+            const decoratedUsers =
+                await decorateUserBlockStatus(
+                    users
+                );
+
+
+            if (
+                token !==
+                searchRequestToken
+            ) {
+
+                return;
+
+            }
+
+
             renderUserResults(
-                users,
+                decoratedUsers,
                 text
             );
 
@@ -1271,10 +1775,29 @@
 
 
         users.forEach(
-            function (user) {
+            function (entry) {
+
+                const user =
+                    entry?.user || {};
+
+
+                const status =
+                    entry?.status || {
+
+                        blocked:false,
+
+                        blockedBy:
+                            isBlockedYou(user)
+
+                    };
+
 
                 const blockedYou =
-                    isBlockedYou(user);
+                    !!status.blockedBy;
+
+
+                const blockedByMe =
+                    !!status.blocked;
 
 
                 const item =
@@ -1285,137 +1808,296 @@
 
                 item.className =
                     "search-result wfesc-user-search-result" +
+
                     (
                         blockedYou
                             ? " wfesc-blocked-you"
                             : ""
+                    ) +
+
+                    (
+                        blockedByMe
+                            ? " wfesc-blocked-by-me"
+                            : ""
                     );
 
 
-                const avatar =
-                    getAvatar(user);
+                const userId =
+                    getUserId(user);
 
 
-                const name =
-                    getDisplayName(user);
+                item.dataset.userId =
+                    normalizeId(userId);
 
 
-                const username =
-                    getUsername(user);
+                /*
+                 * إذا كان المستخدم حاظراً لنا:
+                 * لا نعرض اسمه الحقيقي أو صورته أو username.
+                 */
+                if (blockedYou) {
 
+                    item.innerHTML = `
 
-                let avatarHTML =
-                    "";
-
-
-                if (avatar) {
-
-                    avatarHTML = `
-
-                        <img
-                            class="wfesc-search-avatar"
-                            src="${escapeHTML(avatar)}"
-                            alt=""
-                            draggable="false"
+                        <div
+                            class="wfesc-search-user-row"
                         >
+
+                            <div
+                                class="wfesc-search-avatar-blocked"
+                                aria-hidden="true"
+                            >
+                                !
+                            </div>
+
+                            <div
+                                class="wfesc-search-user-info"
+                            >
+
+                                <div
+                                    class="wfesc-search-user-name wfesc-search-hidden-identity"
+                                >
+                                    قام المستخدم بحظرك
+                                </div>
+
+                                <div
+                                    class="wfesc-search-blocked-label"
+                                >
+                                    لا يمكنك بدء محادثة مع هذا المستخدم
+                                </div>
+
+                            </div>
+
+                        </div>
 
                     `;
 
                 } else {
 
-                    avatarHTML = `
-
-                        <div
-                            class="wfesc-search-avatar-fallback"
-                        >
-                            ${escapeHTML(
-                                getInitial(name)
-                            )}
-                        </div>
-
-                    `;
-
-                }
+                    const avatar =
+                        getAvatar(user);
 
 
-                let usernameHTML =
-                    "";
+                    const name =
+                        getDisplayName(user);
 
 
-                if (username) {
-
-                    usernameHTML = `
-
-                        <div
-                            class="wfesc-search-user-username"
-                        >
-                            @${highlightText(
-                                username,
-                                text
-                            )}
-                        </div>
-
-                    `;
-
-                }
+                    const username =
+                        getUsername(user);
 
 
-                let blockedHTML =
-                    "";
+                    let avatarHTML =
+                        "";
 
 
-                if (blockedYou) {
+                    if (avatar) {
 
-                    blockedHTML = `
+                        avatarHTML = `
 
-                        <div
-                            class="wfesc-search-blocked-label"
-                        >
-                            قام بحظرك
-                        </div>
+                            <img
+                                class="wfesc-search-avatar"
+                                src="${escapeHTML(avatar)}"
+                                alt=""
+                                draggable="false"
+                            >
 
-                    `;
+                        `;
 
-                }
+                    } else {
 
-
-                item.innerHTML = `
-
-                    <div
-                        class="wfesc-search-user-row"
-                    >
-
-                        ${avatarHTML}
-
-                        <div
-                            class="wfesc-search-user-info"
-                        >
+                        avatarHTML = `
 
                             <div
-                                class="wfesc-search-user-name"
+                                class="wfesc-search-avatar-fallback"
                             >
-                                ${highlightText(
-                                    name,
+                                ${escapeHTML(
+                                    getInitial(name)
+                                )}
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    let usernameHTML =
+                        "";
+
+
+                    if (username) {
+
+                        usernameHTML = `
+
+                            <div
+                                class="wfesc-search-user-username"
+                            >
+                                @${highlightText(
+                                    username,
                                     text
                                 )}
                             </div>
 
-                            ${usernameHTML}
+                        `;
 
-                            ${blockedHTML}
+                    }
+
+
+                    let blockedHTML =
+                        "";
+
+
+                    if (blockedByMe) {
+
+                        blockedHTML = `
+
+                            <div
+                                class="wfesc-search-blocked-label"
+                            >
+                                قمت بحظر هذا المستخدم
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    item.innerHTML = `
+
+                        <div
+                            class="wfesc-search-user-row"
+                        >
+
+                            ${avatarHTML}
+
+                            <div
+                                class="wfesc-search-user-info"
+                            >
+
+                                <div
+                                    class="wfesc-search-user-name"
+                                >
+                                    ${highlightText(
+                                        name,
+                                        text
+                                    )}
+                                </div>
+
+                                ${usernameHTML}
+
+                                ${blockedHTML}
+
+                            </div>
 
                         </div>
 
-                    </div>
+                    `;
 
-                `;
+                }
 
 
                 item.addEventListener(
                     "click",
-                    function () {
+                    async function () {
 
+                        /*
+                         * من حظرنا:
+                         * لا نفتح المحادثة.
+                         */
                         if (blockedYou) {
+
+                            shakeBlockedUser(
+                                item
+                            );
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * المستخدم الذي قمنا بحظره:
+                         * لا نفتح محادثة جديدة.
+                         */
+                        if (blockedByMe) {
+
+                            shakeBlockedUser(
+                                item
+                            );
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * فحص أخير قبل الفتح،
+                         * لمنع تجاوز حالة الحظر إذا تغيرت
+                         * بعد ظهور نتيجة البحث.
+                         */
+                        const latestStatus =
+                            await getBlockStatus(
+                                userId,
+                                true
+                            );
+
+
+                        if (
+                            latestStatus.blockedBy
+                        ) {
+
+                            clearBlockStatusCache();
+
+                            item.classList.add(
+                                "wfesc-blocked-you"
+                            );
+
+
+                            item.innerHTML = `
+
+                                <div
+                                    class="wfesc-search-user-row"
+                                >
+
+                                    <div
+                                        class="wfesc-search-avatar-blocked"
+                                    >
+                                        !
+                                    </div>
+
+                                    <div
+                                        class="wfesc-search-user-info"
+                                    >
+
+                                        <div
+                                            class="wfesc-search-user-name wfesc-search-hidden-identity"
+                                        >
+                                            قام المستخدم بحظرك
+                                        </div>
+
+                                        <div
+                                            class="wfesc-search-blocked-label"
+                                        >
+                                            لا يمكنك بدء محادثة مع هذا المستخدم
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            `;
+
+
+                            shakeBlockedUser(
+                                item
+                            );
+
+                            return;
+
+                        }
+
+
+                        if (
+                            latestStatus.blocked
+                        ) {
 
                             shakeBlockedUser(
                                 item
@@ -1507,6 +2189,42 @@
         }
 
 
+        /*
+         * فحص حظر مباشر قبل RPC.
+         */
+        const status =
+            await getBlockStatus(
+                userId,
+                true
+            );
+
+
+        if (
+            status.blockedBy
+        ) {
+
+            showSearchError(
+                "قام المستخدم بحظرك ولا يمكن بدء المحادثة."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            status.blocked
+        ) {
+
+            showSearchError(
+                "قمت بحظر هذا المستخدم ولا يمكن بدء المحادثة."
+            );
+
+            return;
+
+        }
+
+
         const client =
             getClient();
 
@@ -1522,6 +2240,42 @@
 
 
         try {
+
+            /*
+             * فحص إضافي مباشرة قبل RPC.
+             */
+            const finalStatus =
+                await getBlockStatus(
+                    userId,
+                    true
+                );
+
+
+            if (
+                finalStatus.blockedBy
+            ) {
+
+                showSearchError(
+                    "قام المستخدم بحظرك ولا يمكن بدء المحادثة."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                finalStatus.blocked
+            ) {
+
+                showSearchError(
+                    "قمت بحظر هذا المستخدم ولا يمكن بدء المحادثة."
+                );
+
+                return;
+
+            }
+
 
             const rpcResult =
                 await client.rpc(
@@ -1560,6 +2314,29 @@
 
                 showSearchError(
                     "تعذر فتح المحادثة."
+                );
+
+                return;
+
+            }
+
+
+            /*
+             * إعادة الفحص بعد إنشاء/استرجاع المحادثة.
+             */
+            const afterRpcStatus =
+                await getBlockStatus(
+                    userId,
+                    true
+                );
+
+
+            if (
+                afterRpcStatus.blockedBy
+            ) {
+
+                showSearchError(
+                    "قام المستخدم بحظرك ولا يمكن فتح المحادثة."
                 );
 
                 return;
@@ -1834,6 +2611,22 @@
             );
 
 
+            rows =
+                await decorateMessageBlockStatus(
+                    rows
+                );
+
+
+            if (
+                token !==
+                searchRequestToken
+            ) {
+
+                return;
+
+            }
+
+
             searchRows =
                 rows;
 
@@ -1915,8 +2708,32 @@
                     );
 
 
+                const blockStatus =
+                    row?.__wfescBlockStatus || {
+
+                        blocked:false,
+
+                        blockedBy:false
+
+                    };
+
+
+                const blockedBy =
+                    !!blockStatus.blockedBy;
+
+
+                const blockedByMe =
+                    !!blockStatus.blocked;
+
+
                 item.className =
-                    "search-result wfesc-search-message-row";
+                    "search-result wfesc-search-message-row" +
+
+                    (
+                        blockedBy
+                            ? " wfesc-message-blocked-user"
+                            : ""
+                    );
 
 
                 const content =
@@ -1959,7 +2776,7 @@
                     "";
 
 
-                const senderName =
+                let senderName =
 
                     row.display_name ||
 
@@ -1974,15 +2791,44 @@
                     "مستخدم";
 
 
-                const avatar =
+                let avatar =
                     getAvatar(row);
+
+
+                /*
+                 * إذا كان المرسل هو المستخدم الذي حظرنا:
+                 * نخفي اسمه وصورته، لكن لا نحذف محتوى الرسالة
+                 * لأن سجل الرسائل يبقى محفوظًا.
+                 */
+                if (blockedBy) {
+
+                    senderName =
+                        "قام المستخدم بحظرك";
+
+                    avatar =
+                        "";
+
+                }
 
 
                 let avatarHTML =
                     "";
 
 
-                if (avatar) {
+                if (blockedBy) {
+
+                    avatarHTML = `
+
+                        <div
+                            class="wfesc-search-avatar-blocked"
+                            aria-hidden="true"
+                        >
+                            !
+                        </div>
+
+                    `;
+
+                } else if (avatar) {
 
                     avatarHTML = `
 
@@ -2012,6 +2858,39 @@
                 }
 
 
+                let blockedLabel =
+                    "";
+
+
+                if (blockedBy) {
+
+                    blockedLabel = `
+
+                        <div
+                            class="wfesc-search-blocked-label"
+                            style="color:#ff3b30;"
+                        >
+                            قام المستخدم بحظرك
+                        </div>
+
+                    `;
+
+                } else if (blockedByMe) {
+
+                    blockedLabel = `
+
+                        <div
+                            class="wfesc-search-blocked-label"
+                            style="color:#ff9800;"
+                        >
+                            قمت بحظر هذا المستخدم
+                        </div>
+
+                    `;
+
+                }
+
+
                 item.innerHTML = `
 
                     <div
@@ -2025,12 +2904,24 @@
                         >
 
                             <div
-                                class="result-name wfesc-search-user-name"
+                                class="result-name wfesc-search-user-name ${
+                                    blockedBy
+                                        ? "wfesc-search-hidden-identity"
+                                        : ""
+                                }"
                             >
-                                ${escapeHTML(
-                                    senderName
-                                )}
+                                ${
+                                    blockedBy
+                                        ? escapeHTML(
+                                            senderName
+                                        )
+                                        : escapeHTML(
+                                            senderName
+                                        )
+                                }
                             </div>
+
+                            ${blockedLabel}
 
                             <div
                                 class="result-preview wfesc-search-result-preview"
@@ -2084,13 +2975,21 @@
 
                 item.addEventListener(
                     "click",
-                    function () {
+                    async function () {
 
                         selectedSearchRowIndex =
                             index;
 
 
-                        openMessageSearchResult(
+                        /*
+                         * إذا كان الطرف قد حظرنا،
+                         * نسمح بعرض السجل فقط إذا كانت
+                         * المحادثة مفتوحة أصلًا.
+                         *
+                         * أما فتح محادثة جديدة من نتيجة البحث
+                         * فيتم منعه داخل openMessageSearchResult.
+                         */
+                        await openMessageSearchResult(
                             {
                                 conversationId,
                                 messageId,
@@ -2169,6 +3068,11 @@
             getCurrentConversationId();
 
 
+        /*
+         * إذا كانت المحادثة مفتوحة أصلًا،
+         * يسمح للمستخدم بمشاهدة السجل والتنقل داخله
+         * حتى لو كان الطرف قد حظره.
+         */
         if (
 
             currentConversationId &&
@@ -2200,8 +3104,133 @@
         }
 
 
+        /*
+         * المحادثة ليست مفتوحة.
+         *
+         * نحاول معرفة الطرف المرتبط بنتيجة البحث
+         * قبل فتح المحادثة.
+         */
+        let targetUserId =
+            getSenderId(
+                result.row
+            );
+
+
+        /*
+         * إذا لم يكن sender_id موجودًا،
+         * نحاول أخذ جهة الاتصال من قائمة المحادثات.
+         */
         const core =
             getCore();
+
+
+        let knownConversation =
+            null;
+
+
+        if (
+            core &&
+            typeof core.getConversations ===
+                "function"
+        ) {
+
+            const conversations =
+                core.getConversations?.() ||
+                [];
+
+
+            if (
+                Array.isArray(
+                    conversations
+                )
+            ) {
+
+                knownConversation =
+                    conversations.find(
+                        function (item) {
+
+                            return (
+
+                                normalizeId(
+                                    item?.conversation_id
+                                ) ===
+                                normalizeId(
+                                    conversationId
+                                ) ||
+
+                                normalizeId(
+                                    item?.id
+                                ) ===
+                                normalizeId(
+                                    conversationId
+                                )
+
+                            );
+
+                        }
+                    ) || null;
+
+            }
+
+        }
+
+
+        let contact =
+            knownConversation?.contact ||
+
+            knownConversation?.other_user ||
+
+            knownConversation?.user ||
+
+            null;
+
+
+        if (!targetUserId && contact) {
+
+            targetUserId =
+                getUserId(contact);
+
+        }
+
+
+        /*
+         * فحص الحظر قبل فتح المحادثة.
+         */
+        if (targetUserId) {
+
+            const blockStatus =
+                await getBlockStatus(
+                    targetUserId,
+                    true
+                );
+
+
+            if (
+                blockStatus.blockedBy
+            ) {
+
+                showSearchError(
+                    "قام المستخدم بحظرك ولا يمكن فتح هذه المحادثة."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                blockStatus.blocked
+            ) {
+
+                showSearchError(
+                    "قمت بحظر هذا المستخدم ولا يمكن فتح هذه المحادثة."
+                );
+
+                return;
+
+            }
+
+        }
 
 
         if (
@@ -2231,66 +3260,10 @@
 
         try {
 
-            let conversation =
-                null;
-
-
-            const conversations =
-                core.getConversations?.() ||
-                [];
-
-
             /*
-             * FIXED:
-             * Array.isArray must be closed before
-             * opening the if block.
+             * إذا لم تكن جهة الاتصال معروفة،
+             * نحاول جلبها من Core.
              */
-
-            if (
-                Array.isArray(
-                    conversations
-                )
-            ) {
-
-                conversation =
-                    conversations.find(
-                        function (item) {
-
-                            return (
-
-                                normalizeId(
-                                    item?.conversation_id
-                                ) ===
-                                normalizeId(
-                                    conversationId
-                                ) ||
-
-                                normalizeId(
-                                    item?.id
-                                ) ===
-                                normalizeId(
-                                    conversationId
-                                )
-
-                            );
-
-                        }
-                    ) || null;
-
-            }
-
-
-            let contact =
-
-                conversation?.contact ||
-
-                conversation?.other_user ||
-
-                conversation?.user ||
-
-                null;
-
-
             if (
                 !contact &&
                 typeof core.getConversationContact ===
@@ -2316,13 +3289,62 @@
             }
 
 
+            /*
+             * بعد جلب جهة الاتصال،
+             * نعيد فحص الحظر.
+             */
+            if (!targetUserId && contact) {
+
+                targetUserId =
+                    getUserId(contact);
+
+            }
+
+
+            if (targetUserId) {
+
+                const finalBlockStatus =
+                    await getBlockStatus(
+                        targetUserId,
+                        true
+                    );
+
+
+                if (
+                    finalBlockStatus.blockedBy
+                ) {
+
+                    showSearchError(
+                        "قام المستخدم بحظرك ولا يمكن فتح هذه المحادثة."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    finalBlockStatus.blocked
+                ) {
+
+                    showSearchError(
+                        "قمت بحظر هذا المستخدم ولا يمكن فتح هذه المحادثة."
+                    );
+
+                    return;
+
+                }
+
+            }
+
+
             await core.openConversation(
 
                 conversationId,
 
                 contact,
 
-                conversation?.type ||
+                knownConversation?.type ||
                     "direct"
 
             );
@@ -4164,7 +5186,9 @@
 
             return conversationSearchRows.slice();
 
-        }
+        },
+
+        clearBlockStatusCache
 
     };
 
