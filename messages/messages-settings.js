@@ -94,6 +94,12 @@
 
     let blockToastTimer = null;
 
+    /*
+     * آخر مستخدم حصلت له عملية حظر/إلغاء حظر.
+     * يستخدم فقط لتثبيت التحديثات ومنع حالات السباق.
+     */
+    let lastBlockTargetId = null;
+
 
     /* =====================================================
        HELPERS
@@ -2438,6 +2444,75 @@
     }
 
 
+    /*
+     * جلب نسخة أحدث من جهة الاتصال.
+     *
+     * هذا مهم لأن core قد يحتوي أحياناً على
+     * contact placeholder أو بيانات قديمة.
+     */
+    async function resolveFreshContact(
+        contact,
+        userId
+    ) {
+
+        const core =
+            getCore();
+
+
+        if (
+            !userId
+        ) {
+
+            return contact || null;
+
+        }
+
+
+        if (
+            core &&
+            typeof core.getConversationContact ===
+            "function"
+        ) {
+
+            try {
+
+                const freshContact =
+                    await core.getConversationContact(
+                        userId
+                    );
+
+
+                if (
+                    freshContact &&
+                    typeof freshContact ===
+                    "object"
+                ) {
+
+                    return Object.assign(
+                        {},
+                        contact || {},
+                        freshContact
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "[WFESC SETTINGS BLOCK] fresh contact lookup failed",
+                    error
+                );
+
+            }
+
+        }
+
+
+        return contact || null;
+
+    }
+
+
     function formatBlockDate(value) {
 
         if (!value) {
@@ -2958,6 +3033,34 @@
 
 
             #wfescSettingsBlockOverlay
+            .wfesc-block-dialog-final {
+
+                margin-top:10px;
+
+                padding:
+                    10px 11px;
+
+                border-radius:13px;
+
+                color:#dcdcdc;
+
+                background:
+                    rgba(255,255,255,.035);
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.06);
+
+                font-size:12px;
+
+                font-weight:700;
+
+                line-height:1.8;
+
+            }
+
+
+            #wfescSettingsBlockOverlay
             .wfesc-block-buttons {
 
                 display:flex;
@@ -3224,6 +3327,7 @@
 
     /* =====================================================
        BLOCK CONFIRMATION
+       نافذة واحدة فقط
     ===================================================== */
 
     function openBlockConfirmation(
@@ -3233,6 +3337,17 @@
     ) {
 
         closeBlockConfirmation();
+
+
+        if (!userId) {
+
+            showBlockToast(
+                "تعذر تحديد المستخدم"
+            );
+
+            return;
+
+        }
 
 
         const overlay =
@@ -3273,6 +3388,18 @@
 
         const note =
             "لماذا قمت بالحظر؟ فلا يوجد داعي للحظر، كن إنسانًا طيب القلب وراضي";
+
+
+        const finalMessage =
+            isUnblock
+                ? (
+                    "سيتم إلغاء الحظر عن المستخدم " +
+                    (userName || "المستخدم")
+                )
+                : (
+                    "سيتم حظر المستخدم " +
+                    (userName || "المستخدم")
+                );
 
 
         dialog.innerHTML = `
@@ -3316,175 +3443,10 @@
 
 
             <div
-                class="wfesc-block-buttons"
-            >
-
-                <button
-                    type="button"
-                    class="
-                        wfesc-block-button
-                        ${
-                            isUnblock
-                                ? "wfesc-block-unblock"
-                                : "wfesc-block-confirm"
-                        }
-                    "
-                    data-action="continue"
-                >
-                    متابعة
-                </button>
-
-
-                <button
-                    type="button"
-                    class="
-                        wfesc-block-button
-                        wfesc-block-cancel
-                    "
-                    data-action="cancel"
-                >
-                    إلغاء
-                </button>
-
-            </div>
-
-        `;
-
-
-        overlay.appendChild(
-            dialog
-        );
-
-
-        document.body.appendChild(
-            overlay
-        );
-
-
-        const cancel =
-            dialog.querySelector(
-                '[data-action="cancel"]'
-            );
-
-
-        if (cancel) {
-
-            cancel.addEventListener(
-                "click",
-                closeBlockConfirmation
-            );
-
-        }
-
-
-        const continueButton =
-            dialog.querySelector(
-                '[data-action="continue"]'
-            );
-
-
-        if (continueButton) {
-
-            continueButton.addEventListener(
-                "click",
-                function () {
-
-                    openFinalBlockConfirmation(
-                        mode,
-                        userId,
-                        userName
-                    );
-
-                }
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       FINAL CONFIRMATION
-    ===================================================== */
-
-    function openFinalBlockConfirmation(
-        mode,
-        userId,
-        userName
-    ) {
-
-        closeBlockConfirmation();
-
-
-        const overlay =
-            document.createElement(
-                "div"
-            );
-
-
-        overlay.id =
-            "wfescSettingsBlockOverlay";
-
-
-        const dialog =
-            document.createElement(
-                "div"
-            );
-
-
-        dialog.className =
-            "wfesc-block-dialog";
-
-
-        const isUnblock =
-            mode === "unblock";
-
-
-        const title =
-            isUnblock
-                ? "تأكيد إلغاء الحظر"
-                : "تأكيد الحظر";
-
-
-        const message =
-            isUnblock
-                ? (
-                    "سيتم إلغاء الحظر عن المستخدم " +
-                    userName
-                )
-                : (
-                    "سيتم حظر المستخدم " +
-                    userName
-                );
-
-
-        dialog.innerHTML = `
-
-            <div
-                class="wfesc-block-icon"
-            >
-                ${
-                    isUnblock
-                        ? "🔓"
-                        : "🚫"
-                }
-            </div>
-
-
-            <div
-                class="wfesc-block-dialog-title"
+                class="wfesc-block-dialog-final"
             >
                 ${escapeHTML(
-                    title
-                )}
-            </div>
-
-
-            <div
-                class="wfesc-block-dialog-text"
-            >
-                ${escapeHTML(
-                    message
+                    finalMessage
                 )}
             </div>
 
@@ -3591,6 +3553,12 @@
         userId
     ) {
 
+        lastBlockTargetId =
+            userId
+                ? String(userId)
+                : null;
+
+
         try {
 
             window.dispatchEvent(
@@ -3667,6 +3635,17 @@
         }
 
 
+        if (!userId) {
+
+            showBlockToast(
+                "تعذر تحديد المستخدم"
+            );
+
+            return;
+
+        }
+
+
         const button =
             dialog?.querySelector(
                 '[data-action="confirm"]'
@@ -3725,6 +3704,9 @@
                 );
 
 
+                /*
+                 * تحديث مباشر للمودال.
+                 */
                 await refreshBlockSection();
 
 
@@ -3769,34 +3751,15 @@
 
 
             /*
-             * الحظر لا يحذف الرسائل.
-             * يغلق المحادثة فقط من الواجهة.
+             * مهم:
+             *
+             * لا نغلق المحادثة هنا.
+             * الرسائل القديمة تبقى ظاهرة.
+             * الحظر يمنع الإرسال فقط.
              */
 
-            const core =
-                getCore();
 
-
-            if (
-                core &&
-                typeof core.closeConversation ===
-                "function"
-            ) {
-
-                try {
-
-                    await core.closeConversation();
-
-                } catch (error) {
-
-                    console.warn(
-                        "[WFESC SETTINGS BLOCK] close conversation failed",
-                        error
-                    );
-
-                }
-
-            }
+            await refreshBlockSection();
 
 
         } catch (error) {
@@ -4304,14 +4267,78 @@
         );
 
 
-        const contact =
+        let contact =
             getCurrentContact();
 
 
-        const userId =
+        let userId =
             getContactUserId(
                 contact
             );
+
+
+        if (
+            !contact ||
+            !userId
+        ) {
+
+            /*
+             * محاولة أخيرة من المحادثة الحالية.
+             */
+            const core =
+                getCore();
+
+
+            try {
+
+                if (
+                    core &&
+                    typeof core.getCurrentConversation ===
+                    "function"
+                ) {
+
+                    const conversation =
+                        core.getCurrentConversation();
+
+
+                    const conversationContact =
+                        conversation?.contact ||
+                        conversation?.user ||
+                        conversation?.other_user ||
+                        null;
+
+
+                    const conversationUserId =
+                        getContactUserId(
+                            conversationContact
+                        );
+
+
+                    if (
+                        conversationContact &&
+                        conversationUserId
+                    ) {
+
+                        contact =
+                            conversationContact;
+
+                        userId =
+                            conversationUserId;
+
+                    }
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "[WFESC SETTINGS BLOCK] conversation fallback failed",
+                    error
+                );
+
+            }
+
+        }
 
 
         if (
@@ -4393,6 +4420,47 @@
 
         try {
 
+            /*
+             * نجلب جهة الاتصال من Core مرة ثانية
+             * حتى لا نعتمد على placeholder قديم.
+             */
+            contact =
+                await resolveFreshContact(
+                    contact,
+                    userId
+                );
+
+
+            if (
+                token !==
+                blockRefreshToken
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+             * بعد تحديث contact، نتأكد أن المعرف
+             * ما زال هو نفس المستخدم.
+             */
+            const freshUserId =
+                getContactUserId(
+                    contact
+                );
+
+
+            if (
+                freshUserId
+            ) {
+
+                userId =
+                    freshUserId;
+
+            }
+
+
             const blockedByMePromise =
                 typeof block.isBlocked ===
                 "function"
@@ -4448,6 +4516,29 @@
             }
 
 
+            /*
+             * إذا كانت هناك عملية حظر حصلت للتو
+             * وكان المعرف المتذكر هو نفس المستخدم،
+             * نضمن أن القسم يتحدث مباشرة.
+             */
+            if (
+                lastBlockTargetId &&
+                String(lastBlockTargetId) ===
+                String(userId)
+            ) {
+
+                /*
+                 * لا نغير البيانات هنا.
+                 * مجرد تثبيت المعرف الحالي.
+                 */
+                userId =
+                    String(
+                        lastBlockTargetId
+                    );
+
+            }
+
+
             renderBlockSection(
                 section,
                 {
@@ -4462,8 +4553,13 @@
                             blockedMeResult
                         ),
                     blockInfo:
-                        blockInfoResult ||
-                        null
+                        blockInfoResult &&
+                        String(
+                            blockInfoResult.blocked_id
+                        ) ===
+                        String(userId)
+                            ? blockInfoResult
+                            : null
                 }
             );
 
@@ -4517,7 +4613,22 @@
 
     window.addEventListener(
         "wfesc:user-blocked",
-        function () {
+        function (event) {
+
+            const userId =
+                event?.detail?.userId ||
+                null;
+
+
+            if (userId) {
+
+                lastBlockTargetId =
+                    String(
+                        userId
+                    );
+
+            }
+
 
             const modal =
                 $("messageViewSettingsModal");
@@ -4540,7 +4651,22 @@
 
     window.addEventListener(
         "wfesc:user-unblocked",
-        function () {
+        function (event) {
+
+            const userId =
+                event?.detail?.userId ||
+                null;
+
+
+            if (userId) {
+
+                lastBlockTargetId =
+                    String(
+                        userId
+                    );
+
+            }
+
 
             const modal =
                 $("messageViewSettingsModal");
@@ -4563,7 +4689,22 @@
 
     window.addEventListener(
         "wfesc:block-changed",
-        function () {
+        function (event) {
+
+            const userId =
+                event?.detail?.userId ||
+                null;
+
+
+            if (userId) {
+
+                lastBlockTargetId =
+                    String(
+                        userId
+                    );
+
+            }
+
 
             const modal =
                 $("messageViewSettingsModal");
