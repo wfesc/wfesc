@@ -1325,6 +1325,10 @@ let operationLock = false;
 
 let wfescSearchResultsBox = null;
 
+let startupSessionLoaded = false;
+
+let lastKnownSessionUserId = null;
+
 
 /* =========================================================
    COMMON HELPERS
@@ -1544,6 +1548,40 @@ function escapeUrl(url){
 }
 
 
+function normalizeCommentId(
+    comment
+){
+
+    return (
+        comment?.id
+        ??
+        comment?.comment_id
+        ??
+        comment?.target_comment_id
+        ??
+        ""
+    );
+}
+
+
+function normalizeCommentContent(
+    comment
+){
+
+    return (
+        comment?.content
+        ??
+        comment?.comment_content
+        ??
+        comment?.body
+        ??
+        comment?.text
+        ??
+        ""
+    );
+}
+
+
 /* =========================================================
    PROFILE
 ========================================================= */
@@ -1587,29 +1625,6 @@ async function getProfile(userId){
     }
 
     return data || null;
-}
-
-
-async function enrichPostProfile(post){
-
-    if(
-        post?.username ||
-        post?.display_name ||
-        post?.avatar_url
-    ){
-
-        return {
-            id:post.user_id,
-            username:post.username,
-            display_name:post.display_name,
-            avatar_url:post.avatar_url,
-            bio:post.bio || ""
-        };
-    }
-
-    return getProfile(
-        post?.user_id
-    );
 }
 
 
@@ -1967,15 +1982,20 @@ async function createPostElement(
         "post";
 
     article.dataset.id =
-        post.id;
+        String(post.id);
+
+    article.dataset.postId =
+        String(post.id);
 
     article.id =
         `post-${post.id}`;
 
-    const profile =
-        await enrichPostProfile(
-            post
-        );
+
+    /*
+     * مهم:
+     * لا نستدعي getProfile هنا.
+     * الناشر لا يحتاج أن يظهر داخل بطاقة منشوره.
+     */
 
     const stats =
         await getPostStats(
@@ -1987,60 +2007,12 @@ async function createPostElement(
             post.id
         );
 
-    const displayName =
-        profile?.display_name
-        ||
-        profile?.username
-        ||
-        "مستخدم";
-
-    const username =
-        profile?.username
-        ||
-        "";
 
     article.innerHTML = `
 
         ${mediaMarkup(post)}
 
         <div class="post-info">
-
-            <div class="post-user-row">
-
-                <img
-                    class="avatar"
-                    src="${esc(profileAvatar(profile))}"
-                    alt="">
-
-                <div>
-
-                    <div class="post-user">
-                        ${esc(displayName)}
-                    </div>
-
-                    ${
-                        username
-                        ?
-                        `
-                        <span class="post-user-sub">
-                            @${esc(username)}
-                        </span>
-                        `
-                        :
-                        ""
-                    }
-
-                    <span class="post-date">
-                        ${esc(
-                            formatDate(
-                                post.created_at
-                            )
-                        )}
-                    </span>
-
-                </div>
-
-            </div>
 
             ${
                 post.title
@@ -2098,6 +2070,14 @@ async function createPostElement(
                 :
                 ""
             }
+
+            <span class="post-date">
+                ${esc(
+                    formatDate(
+                        post.created_at
+                    )
+                )}
+            </span>
 
         </div>
 
@@ -3082,8 +3062,7 @@ async function searchProfiles(
         new Map();
 
     /*
-     * نحاول أولاً RPC البحث الموجود مسبقاً
-     * داخل نظام WFESC.
+     * نحاول أولاً RPC البحث الموجود مسبقاً.
      */
     try{
 
@@ -3294,47 +3273,57 @@ async function searchUsersAndPosts(
 
     try{
 
-        const postsPromise =
-            supabaseClient.rpc(
-                "wfesc_search_posts_feed",
-                {
-                    search_text:cleanText,
-                    p_limit:30,
-                    p_offset:0
-                }
-            );
+        let posts = [];
 
-        const usersPromise =
-            searchProfiles(
+        let postSearchError =
+            null;
+
+        try{
+
+            const postsResponse =
+                await supabaseClient.rpc(
+                    "wfesc_search_posts_feed",
+                    {
+                        search_text:cleanText,
+                        p_limit:30,
+                        p_offset:0
+                    }
+                );
+
+            if(postsResponse.error){
+
+                postSearchError =
+                    postsResponse.error;
+
+            }else{
+
+                posts =
+                    getArray(
+                        postsResponse.data
+                    )
+                    .filter(
+                        post =>
+                            post &&
+                            !post.deleted_at
+                    );
+            }
+
+        }catch(error){
+
+            postSearchError =
+                error;
+        }
+
+
+        const users =
+            await searchProfiles(
                 cleanText
             );
 
-        const [
-            postsResponse,
-            users
-        ] =
-            await Promise.all([
-                postsPromise,
-                usersPromise
-            ]);
-
-        if(postsResponse.error){
-
-            throw postsResponse.error;
-        }
-
-        const posts =
-            getArray(
-                postsResponse.data
-            )
-            .filter(
-                post =>
-                    post &&
-                    !post.deleted_at
-            );
 
         box.innerHTML =
             "";
+
 
         if(
             !users.length &&
@@ -3347,9 +3336,19 @@ async function searchUsersAndPosts(
                 );
 
             empty.className =
+                postSearchError
+                ?
+                "wfesc-search-error"
+                :
                 "wfesc-search-empty";
 
             empty.textContent =
+                postSearchError
+                ?
+                (
+                    "تعذر الوصول إلى نتائج المنشورات حالياً."
+                )
+                :
                 "لا توجد نتائج مطابقة.";
 
             box.appendChild(
@@ -3358,6 +3357,7 @@ async function searchUsersAndPosts(
 
             return;
         }
+
 
         if(users.length){
 
@@ -3379,6 +3379,7 @@ async function searchUsersAndPosts(
             );
         }
 
+
         if(posts.length){
 
             box.appendChild(
@@ -3397,6 +3398,27 @@ async function searchUsersAndPosts(
                         )
                     );
                 }
+            );
+        }
+
+        if(
+            !posts.length &&
+            postSearchError
+        ){
+
+            const notice =
+                document.createElement(
+                    "div"
+                );
+
+            notice.className =
+                "wfesc-search-error";
+
+            notice.textContent =
+                "تعذر جلب نتائج المنشورات، لكن نتائج المستخدمين متاحة.";
+
+            box.appendChild(
+                notice
             );
         }
 
@@ -4133,8 +4155,16 @@ async function createCommentElement(
         ? "comment reply"
         : "comment";
 
+    const commentId =
+        normalizeCommentId(
+            comment
+        );
+
     wrapper.dataset.id =
-        comment.id;
+        String(
+            commentId
+        );
+
 
     const profile = {
 
@@ -4153,10 +4183,12 @@ async function createCommentElement(
             comment.bio
     };
 
+
     const stats =
         await getCommentStats(
-            comment.id
+            commentId
         );
+
 
     const isOwner =
         boolValue(
@@ -4172,6 +4204,13 @@ async function createCommentElement(
                 currentUser.id
             )
         );
+
+
+    const commentContent =
+        normalizeCommentContent(
+            comment
+        );
+
 
     wrapper.innerHTML = `
 
@@ -4209,7 +4248,7 @@ async function createCommentElement(
         </div>
 
         <div class="comment-content">
-            ${esc(comment.content)}
+            ${esc(commentContent)}
         </div>
 
         <div class="comment-meta">
@@ -4308,7 +4347,7 @@ async function createCommentElement(
             async event => {
 
                 await reactToComment(
-                    comment.id,
+                    commentId,
                     "like",
                     wrapper,
                     event.currentTarget
@@ -4327,7 +4366,7 @@ async function createCommentElement(
             async event => {
 
                 await reactToComment(
-                    comment.id,
+                    commentId,
                     "dislike",
                     wrapper,
                     event.currentTarget
@@ -4374,7 +4413,7 @@ async function createCommentElement(
                     `@${comment.username || ""} `;
 
                 input.dataset.parentId =
-                    String(comment.id);
+                    String(commentId);
 
                 showToast(
                     "اكتب الرد ثم اضغط إرسال"
@@ -4393,7 +4432,7 @@ async function createCommentElement(
 
                 await loadReplies(
                     wrapper,
-                    comment.id
+                    commentId
                 );
 
             }
@@ -4821,7 +4860,9 @@ async function editCommentFlow(
     const value =
         window.prompt(
             "تعديل التعليق:",
-            comment.content || ""
+            normalizeCommentContent(
+                comment
+            )
         );
 
     if(value === null){
@@ -4840,13 +4881,18 @@ async function editCommentFlow(
         return;
     }
 
+    const commentId =
+        normalizeCommentId(
+            comment
+        );
+
     try{
 
         await callRpc(
             "wfesc_update_comment",
             {
                 target_comment_id:
-                    comment.id,
+                    commentId,
                 new_content:
                     content
             }
@@ -5504,11 +5550,6 @@ async function updateLoggedUser(){
         ||
         "";
 
-    /*
-     * لا نعرض profile-summary فوق المنشورات.
-     * كان هذا هو القسم الذي يظهر فيه
-     * اسم وصورة الحساب والنصوص الغريبة.
-     */
     profileSummary.classList.remove(
         "show"
     );
@@ -5516,7 +5557,8 @@ async function updateLoggedUser(){
 
 
 async function handleSession(
-    session
+    session,
+    shouldReload = true
 ){
 
     currentUser =
@@ -5524,11 +5566,21 @@ async function handleSession(
         ||
         null;
 
+    lastKnownSessionUserId =
+        currentUser?.id
+        ||
+        null;
+
     await updateLoggedUser();
 
-    await loadPosts({
-        feed:currentFeed
-    });
+    if(
+        shouldReload
+    ){
+
+        await loadPosts({
+            feed:currentFeed
+        });
+    }
 }
 
 
@@ -5537,13 +5589,40 @@ async function handleSession(
 ========================================================= */
 
 supabaseClient.auth.onAuthStateChange(
-    (_event, session) => {
+    (event, session) => {
 
         setTimeout(
             () => {
 
+                const nextUserId =
+                    session?.user?.id
+                    ||
+                    null;
+
+                const userChanged =
+                    String(
+                        nextUserId || ""
+                    ) !==
+                    String(
+                        lastKnownSessionUserId || ""
+                    );
+
+                const shouldReload =
+                    event !== "INITIAL_SESSION"
+                    &&
+                    (
+                        userChanged
+                        ||
+                        event === "SIGNED_IN"
+                        ||
+                        event === "SIGNED_OUT"
+                        ||
+                        event === "TOKEN_REFRESHED"
+                    );
+
                 handleSession(
-                    session
+                    session,
+                    shouldReload
                 ).catch(
                     error => {
 
@@ -5611,6 +5690,14 @@ async function restoreSession(){
         ||
         null;
 
+    lastKnownSessionUserId =
+        currentUser?.id
+        ||
+        null;
+
+    startupSessionLoaded =
+        true;
+
     await updateLoggedUser();
 
     await loadPosts({
@@ -5625,7 +5712,7 @@ async function restoreSession(){
 
 window.WFESC_POSTS_CORE = {
 
-    version:"1.1.0",
+    version:"1.1.1",
 
     supabase:
         supabaseClient,
@@ -5677,11 +5764,16 @@ window.WFESC_POSTS_CORE = {
    GLOBAL SETTINGS BRIDGE
 ========================================================= */
 
-window.WFESC_POSTS_SETTINGS = {
+window.WFESC_POSTS_SETTINGS =
+    window.WFESC_POSTS_SETTINGS
+    ||
+    {};
 
-    animations:true,
+window.WFESC_POSTS_SETTINGS.animations =
+    true;
 
-    setAnimations(
+window.WFESC_POSTS_SETTINGS.setAnimations =
+    function(
         enabled
     ){
 
@@ -5692,8 +5784,7 @@ window.WFESC_POSTS_SETTINGS = {
             "no-animation",
             !this.animations
         );
-    }
-};
+    };
 
 
 /* =========================================================
@@ -5831,12 +5922,9 @@ window.addEventListener(
      POSTS FEATURE FILES
 ===================================================== -->
 
-<!--
-<script src="./posts-featwres/posts-loader.js"></script>
 <script src="./posts-featwres/posts-extra.js"></script>
 <script src="./posts-featwres/posts-ui.js"></script>
 <script src="./posts-featwres/posts-settingrss.js"></script>
--->
 
 <!-- =====================================================
      NAVIGATION
