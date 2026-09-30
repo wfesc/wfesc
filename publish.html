@@ -17,8 +17,11 @@
 
     <title>النشر | WFESC</title>
 
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <!-- نظام تنقل WFESC -->
-    <script src="navigation-features/navigation-loader.js"></script>
+    <script src="./navigation/navigation-loader.js"></script>
 
     <style>
 
@@ -53,6 +56,20 @@
             padding-bottom: 105px;
         }
 
+        button,
+        textarea,
+        select,
+        input {
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
         .publish-page {
             width: 100%;
             min-height: 100vh;
@@ -65,13 +82,16 @@
             margin: 0 auto;
         }
 
-        /* العنوان */
+        /* =========================
+           HEADER
+        ========================= */
 
         .publish-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
+
             margin-bottom: 20px;
         }
 
@@ -111,7 +131,9 @@
             font-size: 25px;
         }
 
-        /* البطاقة */
+        /* =========================
+           CARD
+        ========================= */
 
         .publish-card {
             width: 100%;
@@ -132,12 +154,15 @@
                 rgba(0,0,0,0.3);
         }
 
-        /* اسم الحساب */
+        /* =========================
+           USER
+        ========================= */
 
         .publish-user {
             display: flex;
             align-items: center;
             gap: 11px;
+
             margin-bottom: 17px;
         }
 
@@ -148,6 +173,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+
+            overflow: hidden;
 
             border-radius: 50%;
 
@@ -166,6 +193,15 @@
             font-size: 19px;
         }
 
+        .publish-avatar img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            display: none;
+        }
+
         .publish-user-name {
             font-size: 14px;
             font-weight: 700;
@@ -177,7 +213,9 @@
             margin-top: 3px;
         }
 
-        /* النص */
+        /* =========================
+           TEXT
+        ========================= */
 
         .publish-text {
             width: 100%;
@@ -200,11 +238,6 @@
 
             color: #fff;
 
-            font-family:
-                Arial,
-                Tahoma,
-                sans-serif;
-
             font-size: 14px;
 
             line-height: 1.8;
@@ -219,7 +252,9 @@
                 rgba(255,255,255,0.22);
         }
 
-        /* معاينة الصورة */
+        /* =========================
+           MEDIA PREVIEW
+        ========================= */
 
         .publish-preview {
             display: none;
@@ -245,8 +280,10 @@
 
         .publish-preview img {
             width: 100%;
-            max-height: 380px;
+            max-height: 420px;
+
             object-fit: contain;
+
             display: block;
         }
 
@@ -273,7 +310,9 @@
             font-size: 16px;
         }
 
-        /* الأدوات */
+        /* =========================
+           TOOLS
+        ========================= */
 
         .publish-tools {
             display: grid;
@@ -300,27 +339,81 @@
 
             color: #fff;
 
-            font-family:
-                Arial,
-                Tahoma,
-                sans-serif;
-
             font-size: 12px;
 
             font-weight: 700;
 
             cursor: pointer;
+
+            transition:
+                transform 0.15s ease,
+                background 0.15s ease;
         }
 
         .publish-tool:active {
             transform: scale(0.97);
         }
 
+        .publish-tool:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
         #imageInput {
             display: none;
         }
 
-        /* عداد الحروف */
+        /* =========================
+           SETTINGS
+        ========================= */
+
+        .publish-settings {
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 9px;
+
+            margin-top: 13px;
+        }
+
+        .publish-setting {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .publish-setting label {
+            color: #888;
+            font-size: 11px;
+        }
+
+        .publish-select {
+            width: 100%;
+            height: 44px;
+
+            padding: 0 12px;
+
+            border-radius: 12px;
+
+            outline: none;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            background:
+                #111;
+
+            color: #fff;
+
+            font-size: 12px;
+        }
+
+        /* =========================
+           BOTTOM
+        ========================= */
 
         .publish-bottom {
             display: flex;
@@ -330,7 +423,7 @@
 
             gap: 10px;
 
-            margin-top: 12px;
+            margin-top: 13px;
         }
 
         .character-count {
@@ -339,6 +432,7 @@
         }
 
         .publish-button {
+            min-width: 135px;
             height: 48px;
 
             padding:
@@ -352,11 +446,6 @@
                 #fff;
 
             color: #050505;
-
-            font-family:
-                Arial,
-                Tahoma,
-                sans-serif;
 
             font-size: 13px;
 
@@ -378,7 +467,9 @@
             cursor: not-allowed;
         }
 
-        /* رسالة الحالة */
+        /* =========================
+           STATUS
+        ========================= */
 
         .publish-status {
             display: none;
@@ -409,7 +500,27 @@
             display: block;
         }
 
-        /* الموبايل */
+        .publish-status.success {
+            border-color:
+                rgba(100,255,150,0.2);
+
+            color: #b9ffd0;
+        }
+
+        .publish-status.error {
+            border-color:
+                rgba(255,80,80,0.22);
+
+            color: #ffb2b2;
+        }
+
+        .publish-status.loading {
+            color: #ddd;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
 
         @media (max-width: 600px) {
 
@@ -427,7 +538,7 @@
                 border-radius: 19px;
             }
 
-            .publish-tools {
+            .publish-settings {
                 grid-template-columns:
                     1fr 1fr;
             }
@@ -447,13 +558,14 @@
 
 </head>
 
+
 <body>
 
     <main class="publish-page">
 
         <div class="publish-container">
 
-            <!-- العنوان -->
+            <!-- HEADER -->
 
             <header class="publish-header">
 
@@ -479,21 +591,36 @@
             </header>
 
 
-            <!-- بطاقة النشر -->
+            <!-- PUBLISH CARD -->
 
             <section class="publish-card">
 
-                <!-- المستخدم -->
+                <!-- USER -->
 
                 <div class="publish-user">
 
-                    <div class="publish-avatar">
-                        W
+                    <div
+                        id="publishAvatar"
+                        class="publish-avatar"
+                    >
+
+                        <span id="publishAvatarLetter">
+                            W
+                        </span>
+
+                        <img
+                            id="publishAvatarImage"
+                            alt="صورة الحساب"
+                        >
+
                     </div>
 
                     <div>
 
-                        <div class="publish-user-name">
+                        <div
+                            id="publishUserName"
+                            class="publish-user-name"
+                        >
                             WFESC
                         </div>
 
@@ -506,7 +633,7 @@
                 </div>
 
 
-                <!-- النص -->
+                <!-- TEXT -->
 
                 <textarea
                     id="publishText"
@@ -516,7 +643,7 @@
                 ></textarea>
 
 
-                <!-- معاينة الصورة -->
+                <!-- IMAGE PREVIEW -->
 
                 <div
                     id="publishPreview"
@@ -540,7 +667,7 @@
                 </div>
 
 
-                <!-- الأدوات -->
+                <!-- TOOLS -->
 
                 <div class="publish-tools">
 
@@ -566,11 +693,69 @@
                 <input
                     id="imageInput"
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                 >
 
 
-                <!-- أسفل البطاقة -->
+                <!-- SETTINGS -->
+
+                <div class="publish-settings">
+
+                    <div class="publish-setting">
+
+                        <label for="visibilitySelect">
+                            الخصوصية
+                        </label>
+
+                        <select
+                            id="visibilitySelect"
+                            class="publish-select"
+                        >
+
+                            <option value="public">
+                                🌐 عام
+                            </option>
+
+                            <option value="friends">
+                                👥 الأصدقاء
+                            </option>
+
+                            <option value="private">
+                                🔒 خاص
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="publish-setting">
+
+                        <label for="typeSelect">
+                            نوع المنشور
+                        </label>
+
+                        <select
+                            id="typeSelect"
+                            class="publish-select"
+                        >
+
+                            <option value="image">
+                                🖼️ منشور صورة
+                            </option>
+
+                            <option value="text">
+                                📝 منشور نصي
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BOTTOM -->
 
                 <div class="publish-bottom">
 
@@ -592,7 +777,7 @@
                 </div>
 
 
-                <!-- حالة النشر -->
+                <!-- STATUS -->
 
                 <div
                     id="publishStatus"
@@ -607,6 +792,45 @@
 
 
     <script>
+
+        /* =========================================================
+           WFESC PUBLISH CORE
+           القسم الثاني - نظام النشر النهائي
+        ========================================================= */
+
+
+        /* =========================================================
+           SUPABASE
+        ========================================================= */
+
+        const WFESC_SUPABASE_URL =
+            "https://mcgbzfgbaxwmutniorlw.supabase.co";
+
+        const WFESC_SUPABASE_KEY =
+            "sb_publishable_5b7pTbiGY2D6vDLRsWgVzA_X926lBeM";
+
+
+        const supabaseClient =
+            window.supabase.createClient(
+                WFESC_SUPABASE_URL,
+                WFESC_SUPABASE_KEY
+            );
+
+
+        /* =========================================================
+           STORAGE
+           
+           إذا كان Bucket الخاص بصور المنشورات عندك باسم آخر،
+           نغير هذا السطر فقط.
+        ========================================================= */
+
+        const POST_MEDIA_BUCKET =
+            "posts-media";
+
+
+        /* =========================================================
+           ELEMENTS
+        ========================================================= */
 
         const publishText =
             document.getElementById(
@@ -658,10 +882,82 @@
                 "publishStatus"
             );
 
+        const visibilitySelect =
+            document.getElementById(
+                "visibilitySelect"
+            );
 
-        /*
-         * عداد الحروف
-         */
+        const typeSelect =
+            document.getElementById(
+                "typeSelect"
+            );
+
+        const publishUserName =
+            document.getElementById(
+                "publishUserName"
+            );
+
+        const publishAvatarLetter =
+            document.getElementById(
+                "publishAvatarLetter"
+            );
+
+        const publishAvatarImage =
+            document.getElementById(
+                "publishAvatarImage"
+            );
+
+
+        /* =========================================================
+           STATE
+        ========================================================= */
+
+        let selectedImageFile = null;
+
+        let selectedImagePreviewURL = null;
+
+        let isPublishing = false;
+
+
+        /* =========================================================
+           STATUS
+        ========================================================= */
+
+        function showStatus(
+            message,
+            type = ""
+        ) {
+
+            publishStatus.textContent =
+                message;
+
+            publishStatus.className =
+                "publish-status show";
+
+            if (type) {
+
+                publishStatus.classList.add(
+                    type
+                );
+
+            }
+
+        }
+
+
+        function hideStatus() {
+
+            publishStatus.textContent = "";
+
+            publishStatus.className =
+                "publish-status";
+
+        }
+
+
+        /* =========================================================
+           CHARACTER COUNT
+        ========================================================= */
 
         function updateCharacterCount() {
 
@@ -680,13 +976,119 @@
         );
 
 
-        /*
-         * إضافة صورة
-         */
+        /* =========================================================
+           AUTH
+        ========================================================= */
+
+        async function getCurrentUser() {
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient.auth.getUser();
+
+            if (error) {
+                return null;
+            }
+
+            return data?.user || null;
+
+        }
+
+
+        /* =========================================================
+           PROFILE
+        ========================================================= */
+
+        async function loadCurrentProfile(
+            user
+        ) {
+
+            if (!user) {
+                return;
+            }
+
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .from("profiles")
+                    .select(
+                        "username, avatar_url"
+                    )
+                    .eq(
+                        "id",
+                        user.id
+                    )
+                    .maybeSingle();
+
+
+            if (error) {
+
+                publishUserName.textContent =
+                    user.email ||
+                    "مستخدم WFESC";
+
+                return;
+
+            }
+
+
+            const username =
+                data?.username ||
+                user.user_metadata?.username ||
+                user.email ||
+                "مستخدم WFESC";
+
+
+            publishUserName.textContent =
+                username;
+
+
+            if (
+                data?.avatar_url
+            ) {
+
+                publishAvatarImage.src =
+                    data.avatar_url;
+
+                publishAvatarImage.style.display =
+                    "block";
+
+                publishAvatarLetter.style.display =
+                    "none";
+
+            } else {
+
+                const firstLetter =
+                    username
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase() ||
+                    "W";
+
+                publishAvatarLetter.textContent =
+                    firstLetter;
+
+            }
+
+        }
+
+
+        /* =========================================================
+           IMAGE SELECT
+        ========================================================= */
 
         imageButton.addEventListener(
             "click",
             function () {
+
+                if (isPublishing) {
+                    return;
+                }
 
                 imageInput.click();
 
@@ -699,7 +1101,8 @@
             function () {
 
                 const file =
-                    this.files[0];
+                    this.files?.[0];
+
 
                 if (!file) {
                     return;
@@ -712,77 +1115,150 @@
                     )
                 ) {
 
+                    showStatus(
+                        "الملف المحدد ليس صورة صالحة.",
+                        "error"
+                    );
+
+                    this.value = "";
+
                     return;
 
                 }
 
 
-                const reader =
-                    new FileReader();
+                const maxSize =
+                    10 * 1024 * 1024;
 
 
-                reader.onload =
-                    function (event) {
+                if (
+                    file.size > maxSize
+                ) {
 
-                        previewImage.src =
-                            event.target.result;
+                    showStatus(
+                        "حجم الصورة يجب ألا يتجاوز 10MB.",
+                        "error"
+                    );
 
-                        publishPreview.classList.add(
-                            "show"
-                        );
+                    this.value = "";
 
-                    };
+                    return;
+
+                }
 
 
-                reader.readAsDataURL(file);
+                selectedImageFile =
+                    file;
+
+
+                if (
+                    selectedImagePreviewURL
+                ) {
+
+                    URL.revokeObjectURL(
+                        selectedImagePreviewURL
+                    );
+
+                }
+
+
+                selectedImagePreviewURL =
+                    URL.createObjectURL(
+                        file
+                    );
+
+
+                previewImage.src =
+                    selectedImagePreviewURL;
+
+
+                publishPreview.classList.add(
+                    "show"
+                );
+
+
+                hideStatus();
 
             }
         );
 
 
-        /*
-         * حذف الصورة
-         */
+        /* =========================================================
+           REMOVE IMAGE
+        ========================================================= */
 
         removeImage.addEventListener(
             "click",
             function () {
 
-                imageInput.value = "";
-
-                previewImage.src = "";
-
-                publishPreview.classList.remove(
-                    "show"
-                );
+                removeSelectedImage();
 
             }
         );
 
 
-        /*
-         * مسح المنشور
-         */
+        function removeSelectedImage() {
+
+            selectedImageFile =
+                null;
+
+            imageInput.value =
+                "";
+
+
+            if (
+                selectedImagePreviewURL
+            ) {
+
+                URL.revokeObjectURL(
+                    selectedImagePreviewURL
+                );
+
+                selectedImagePreviewURL =
+                    null;
+
+            }
+
+
+            previewImage.src =
+                "";
+
+
+            publishPreview.classList.remove(
+                "show"
+            );
+
+        }
+
+
+        /* =========================================================
+           CLEAR
+        ========================================================= */
 
         clearButton.addEventListener(
             "click",
             function () {
 
-                publishText.value = "";
+                if (isPublishing) {
+                    return;
+                }
 
-                imageInput.value = "";
 
-                previewImage.src = "";
+                publishText.value =
+                    "";
 
-                publishPreview.classList.remove(
-                    "show"
-                );
+                visibilitySelect.value =
+                    "public";
 
-                publishStatus.classList.remove(
-                    "show"
-                );
+                typeSelect.value =
+                    "image";
 
-                publishStatus.textContent = "";
+
+                removeSelectedImage();
+
+
+                hideStatus();
+
 
                 updateCharacterCount();
 
@@ -790,55 +1266,677 @@
         );
 
 
-        /*
-         * النشر التجريبي
-         */
+        /* =========================================================
+           FILE EXTENSION
+        ========================================================= */
 
-        publishButton.addEventListener(
-            "click",
-            function () {
+        function getFileExtension(
+            file
+        ) {
 
-                const text =
-                    publishText.value.trim();
+            const name =
+                file.name || "";
+
+            const parts =
+                name.split(".");
 
 
-                if (
-                    !text &&
-                    !imageInput.files.length
-                ) {
+            if (
+                parts.length < 2
+            ) {
 
-                    publishStatus.textContent =
-                        "اكتب شيئًا أو أضف صورة قبل النشر.";
+                return "jpg";
 
-                    publishStatus.classList.add(
-                        "show"
+            }
+
+
+            return parts
+                .pop()
+                .toLowerCase()
+                .replace(
+                    /[^a-z0-9]/g,
+                    ""
+                ) || "jpg";
+
+        }
+
+
+        /* =========================================================
+           SAFE FILE NAME
+        ========================================================= */
+
+        function createStorageFileName(
+            userId,
+            file
+        ) {
+
+            const extension =
+                getFileExtension(
+                    file
+                );
+
+
+            const randomPart =
+                Math.random()
+                    .toString(36)
+                    .slice(2);
+
+
+            const time =
+                Date.now();
+
+
+            return (
+                userId +
+                "/" +
+                time +
+                "-" +
+                randomPart +
+                "." +
+                extension
+            );
+
+        }
+
+
+        /* =========================================================
+           UPLOAD IMAGE
+        ========================================================= */
+
+        async function uploadPostImage(
+            userId,
+            file
+        ) {
+
+            const filePath =
+                createStorageFileName(
+                    userId,
+                    file
+                );
+
+
+            const {
+                error: uploadError
+            } =
+                await supabaseClient
+                    .storage
+                    .from(
+                        POST_MEDIA_BUCKET
+                    )
+                    .upload(
+                        filePath,
+                        file,
+                        {
+                            cacheControl:
+                                "3600",
+
+                            upsert:
+                                false,
+
+                            contentType:
+                                file.type
+                        }
                     );
 
-                    return;
+
+            if (
+                uploadError
+            ) {
+
+                throw new Error(
+                    uploadError.message ||
+                    "فشل رفع الصورة."
+                );
+
+            }
+
+
+            const {
+                data
+            } =
+                supabaseClient
+                    .storage
+                    .from(
+                        POST_MEDIA_BUCKET
+                    )
+                    .getPublicUrl(
+                        filePath
+                    );
+
+
+            if (
+                !data?.publicUrl
+            ) {
+
+                throw new Error(
+                    "تم رفع الصورة ولكن تعذر الحصول على رابطها."
+                );
+
+            }
+
+
+            return data.publicUrl;
+
+        }
+
+
+        /* =========================================================
+           CREATE POST
+        ========================================================= */
+
+        async function createPost() {
+
+            if (isPublishing) {
+                return;
+            }
+
+
+            const user =
+                await getCurrentUser();
+
+
+            if (!user) {
+
+                showStatus(
+                    "يجب تسجيل الدخول أولاً حتى تتمكن من النشر.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            const content =
+                publishText.value.trim();
+
+
+            const visibility =
+                visibilitySelect.value;
+
+
+            const postType =
+                typeSelect.value;
+
+
+            if (
+                !content &&
+                !selectedImageFile
+            ) {
+
+                showStatus(
+                    "اكتب محتوى أو أضف صورة قبل النشر.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            if (
+                content.length > 5000
+            ) {
+
+                showStatus(
+                    "المحتوى تجاوز الحد المسموح به.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            if (
+                postType === "image" &&
+                !selectedImageFile &&
+                !content
+            ) {
+
+                showStatus(
+                    "أضف صورة أو اكتب محتوى قبل النشر.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            isPublishing =
+                true;
+
+
+            publishButton.disabled =
+                true;
+
+            clearButton.disabled =
+                true;
+
+            imageButton.disabled =
+                true;
+
+
+            showStatus(
+                "جاري تجهيز المنشور...",
+                "loading"
+            );
+
+
+            let mediaURL =
+                null;
+
+            let mediaType =
+                null;
+
+
+            try {
+
+                /*
+                 * رفع الصورة أولاً
+                 */
+
+                if (
+                    selectedImageFile
+                ) {
+
+                    showStatus(
+                        "جاري رفع الصورة...",
+                        "loading"
+                    );
+
+
+                    mediaURL =
+                        await uploadPostImage(
+                            user.id,
+                            selectedImageFile
+                        );
+
+
+                    mediaType =
+                        selectedImageFile.type;
 
                 }
 
 
                 /*
-                 * حاليًا واجهة نشر فقط.
-                 * الربط مع قاعدة البيانات يأتي لاحقًا.
+                 * إنشاء المنشور عبر RPC
                  */
 
-                publishStatus.textContent =
-                    "تم تجهيز المنشور بنجاح. ربط النشر الفعلي بقاعدة البيانات يمكن إضافته لاحقًا.";
-
-                publishStatus.classList.add(
-                    "show"
+                showStatus(
+                    "جاري إنشاء المنشور...",
+                    "loading"
                 );
+
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabaseClient
+                        .rpc(
+                            "wfesc_create_post",
+                            {
+                                post_title:
+                                    null,
+
+                                post_content:
+                                    content ||
+                                    null,
+
+                                post_media_url:
+                                    mediaURL,
+
+                                post_media_type:
+                                    mediaType,
+
+                                post_type:
+                                    postType,
+
+                                post_visibility:
+                                    visibility
+                            }
+                        );
+
+
+                if (
+                    error
+                ) {
+
+                    throw new Error(
+                        error.message ||
+                        "فشل إنشاء المنشور."
+                    );
+
+                }
+
+
+                /*
+                 * نجاح
+                 */
+
+                showStatus(
+                    "تم نشر المنشور بنجاح.",
+                    "success"
+                );
+
+
+                /*
+                 * تنظيف الواجهة
+                 */
+
+                publishText.value =
+                    "";
+
+                removeSelectedImage();
+
+                visibilitySelect.value =
+                    "public";
+
+                typeSelect.value =
+                    "image";
+
+                updateCharacterCount();
+
+
+                /*
+                 * الانتقال للمنشورات بعد
+                 * مدة قصيرة حتى تظهر الرسالة.
+                 */
+
+                setTimeout(
+                    function () {
+
+                        window.location.href =
+                            "posts.html";
+
+                    },
+                    900
+                );
+
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "WFESC PUBLISH ERROR:",
+                    error
+                );
+
+
+                showStatus(
+                    getPublishErrorMessage(
+                        error
+                    ),
+                    "error"
+                );
+
+            } finally {
+
+                isPublishing =
+                    false;
+
+                publishButton.disabled =
+                    false;
+
+                clearButton.disabled =
+                    false;
+
+                imageButton.disabled =
+                    false;
+
+            }
+
+        }
+
+
+        /* =========================================================
+           ERROR MESSAGE
+        ========================================================= */
+
+        function getPublishErrorMessage(
+            error
+        ) {
+
+            const message =
+                String(
+                    error?.message ||
+                    ""
+                );
+
+
+            if (
+                message
+                    .toLowerCase()
+                    .includes(
+                        "bucket"
+                    )
+            ) {
+
+                return (
+                    "تعذر رفع الصورة لأن Storage غير مضبوط حالياً. " +
+                    "تأكد من اسم Bucket الخاص بصور المنشورات."
+                );
+
+            }
+
+
+            if (
+                message
+                    .toLowerCase()
+                    .includes(
+                        "not authenticated"
+                    )
+            ) {
+
+                return (
+                    "انتهت جلسة تسجيل الدخول. سجل الدخول مرة أخرى."
+                );
+
+            }
+
+
+            if (
+                message
+                    .toLowerCase()
+                    .includes(
+                        "row-level security"
+                    )
+            ) {
+
+                return (
+                    "تم رفض العملية من صلاحيات قاعدة البيانات. " +
+                    "تحقق من صلاحيات النشر في Supabase."
+                );
+
+            }
+
+
+            return (
+                "تعذر نشر المنشور حالياً. " +
+                message
+            );
+
+        }
+
+
+        /* =========================================================
+           PUBLISH BUTTON
+        ========================================================= */
+
+        publishButton.addEventListener(
+            "click",
+            createPost
+        );
+
+
+        /* =========================================================
+           ENTER SAFETY
+           
+           Ctrl + Enter / Enter مع ضغط Ctrl
+           يمكنه نشر المنشور.
+        ========================================================= */
+
+        publishText.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    event.ctrlKey
+                ) {
+
+                    event.preventDefault();
+
+                    createPost();
+
+                }
 
             }
         );
 
 
-        updateCharacterCount();
+        /* =========================================================
+           TYPE CONTROL
+        ========================================================= */
+
+        typeSelect.addEventListener(
+            "change",
+            function () {
+
+                /*
+                 * إذا اختار المستخدم منشوراً نصياً
+                 * لا نحذف الصورة الموجودة تلقائياً.
+                 * يمكنه إزالتها بنفسه.
+                 */
+
+                if (
+                    this.value === "text"
+                ) {
+
+                    imageButton.style.opacity =
+                        "0.65";
+
+                } else {
+
+                    imageButton.style.opacity =
+                        "1";
+
+                }
+
+            }
+        );
+
+
+        /* =========================================================
+           AUTH STATE
+        ========================================================= */
+
+        supabaseClient.auth.onAuthStateChange(
+            async function (
+                event,
+                session
+            ) {
+
+                if (
+                    session?.user
+                ) {
+
+                    await loadCurrentProfile(
+                        session.user
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =========================================================
+           INITIALIZATION
+        ========================================================= */
+
+        async function initializePublishPage() {
+
+            updateCharacterCount();
+
+
+            const user =
+                await getCurrentUser();
+
+
+            if (!user) {
+
+                showStatus(
+                    "سجل الدخول أولاً حتى تتمكن من إنشاء منشور.",
+                    "error"
+                );
+
+                publishButton.disabled =
+                    true;
+
+                imageButton.disabled =
+                    true;
+
+                clearButton.disabled =
+                    false;
+
+                return;
+
+            }
+
+
+            publishButton.disabled =
+                false;
+
+            imageButton.disabled =
+                false;
+
+
+            await loadCurrentProfile(
+                user
+            );
+
+        }
+
+
+        initializePublishPage();
+
+
+        /* =========================================================
+           EXTERNAL BRIDGE
+           
+           جاهز لاحقاً لنقله إلى:
+           posts-featwres/publish/
+        ========================================================= */
+
+        window.WFESC_PUBLISH_CORE = {
+
+            createPost,
+
+            getCurrentUser,
+
+            uploadPostImage,
+
+            removeSelectedImage,
+
+            updateCharacterCount,
+
+            showStatus,
+
+            supabase:
+                supabaseClient,
+
+            storageBucket:
+                POST_MEDIA_BUCKET
+
+        };
+
 
     </script>
-<script src="./navigation/navigation-loader.js"></script>
+
 </body>
 
 </html>
