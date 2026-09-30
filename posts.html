@@ -705,6 +705,22 @@ body.no-animation *::after{
     color:#c99
 }
 
+.error-detail{
+    margin-top:14px;
+    padding:12px;
+    background:#090909;
+    border:1px solid #352020;
+    border-radius:10px;
+    color:#d99;
+    font-size:10px;
+    line-height:1.8;
+    direction:ltr;
+    text-align:left;
+    white-space:pre-wrap;
+    word-break:break-word;
+    overflow-wrap:anywhere
+}
+
 .retry-button{
     margin-top:13px;
     border:1px solid #333;
@@ -1351,12 +1367,14 @@ function visibilityLabel(value){
 function postTypeLabel(value){
 
     if(value === "text"){
-        return "نص";
+        return "نصي";
     }
 
-    return value === "video"
-        ? "فيديو"
-        : "صورة";
+    if(value === "video"){
+        return "فيديو";
+    }
+
+    return "صورة";
 }
 
 
@@ -1530,12 +1548,48 @@ async function callRpc(
 
     if(response.error){
 
+        const rpcError =
+            response.error;
+
         console.error(
             `WFESC RPC error: ${functionName}`,
-            response.error
+            rpcError
         );
 
-        throw response.error;
+        const details = [
+            rpcError.message,
+            rpcError.details,
+            rpcError.hint,
+            rpcError.code
+                ? `code: ${rpcError.code}`
+                : ""
+        ]
+        .filter(Boolean)
+        .join("\n");
+
+        const error =
+            new Error(
+                details
+                ||
+                `حدث خطأ أثناء استدعاء ${functionName}`
+            );
+
+        error.code =
+            rpcError.code || "";
+
+        error.details =
+            rpcError.details || "";
+
+        error.hint =
+            rpcError.hint || "";
+
+        error.functionName =
+            functionName;
+
+        error.original =
+            rpcError;
+
+        throw error;
     }
 
     return response.data;
@@ -2301,12 +2355,12 @@ async function fetchFeed(
 
         default:
 
-            /*
-             * مهم:
-             * دالة wfesc_get_public_posts في قاعدة البيانات
-             * تستخدم result_limit و result_offset
-             * وليس p_limit و p_offset.
-             */
+            /* =================================================
+               FIX:
+               wfesc_get_public_posts تستخدم:
+               result_limit
+               result_offset
+            ================================================= */
 
             return callRpc(
                 "wfesc_get_public_posts",
@@ -2443,6 +2497,15 @@ async function loadPosts(
             error
         );
 
+        const errorMessage =
+            error?.message
+            ||
+            error?.details
+            ||
+            String(error)
+            ||
+            "خطأ غير معروف";
+
         postsList.innerHTML =
             `
             <div class="empty-posts error-posts">
@@ -2457,6 +2520,10 @@ async function loadPosts(
                     id="retry-posts-button">
                     إعادة المحاولة
                 </button>
+
+                <div class="error-detail">
+                    ${esc(errorMessage)}
+                </div>
 
             </div>
             `;
@@ -2963,6 +3030,12 @@ async function loadCommentsIntoPost(
             `
             <div class="comments-empty">
                 تعذر تحميل التعليقات.
+                <br>
+                ${esc(
+                    error?.message
+                    ||
+                    ""
+                )}
             </div>
             `;
     }
@@ -3673,7 +3746,8 @@ async function loadReplies(
                 await createCommentElement(
                     reply,
                     reply.post_id,
-                    wrapper.closest(".post")
+                    wrapper.closest(".post"),
+                    true
                 );
 
             repliesList.appendChild(
@@ -3692,6 +3766,12 @@ async function loadReplies(
             `
             <div class="comments-empty">
                 تعذر تحميل الردود.
+                <br>
+                ${esc(
+                    error?.message
+                    ||
+                    ""
+                )}
             </div>
             `;
     }
@@ -4435,6 +4515,31 @@ async function restoreSession(){
             "WFESC getSession error:",
             error
         );
+
+        const sessionError =
+            new Error(
+                [
+                    error.message,
+                    error.details,
+                    error.hint,
+                    error.code
+                        ? `code: ${error.code}`
+                        : ""
+                ]
+                .filter(Boolean)
+                .join("\n")
+            );
+
+        sessionError.code =
+            error.code || "";
+
+        sessionError.details =
+            error.details || "";
+
+        sessionError.hint =
+            error.hint || "";
+
+        throw sessionError;
     }
 
     currentUser =
@@ -4554,6 +4659,15 @@ window.addEventListener(
                         error
                     );
 
+                    const errorMessage =
+                        error?.message
+                        ||
+                        error?.details
+                        ||
+                        String(error)
+                        ||
+                        "خطأ غير معروف";
+
                     postsList.innerHTML =
                         `
                         <div class="empty-posts error-posts">
@@ -4569,6 +4683,10 @@ window.addEventListener(
                                 إعادة المحاولة
                             </button>
 
+                            <div class="error-detail">
+                                ${esc(errorMessage)}
+                            </div>
+
                         </div>
                         `;
 
@@ -4582,8 +4700,60 @@ window.addEventListener(
 
                                 restoreSession()
                                     .catch(
-                                        console.error
+                                        error => {
+
+                                            console.error(
+                                                "WFESC startup retry error:",
+                                                error
+                                            );
+
+                                            const message =
+                                                error?.message
+                                                ||
+                                                String(error)
+                                                ||
+                                                "خطأ غير معروف";
+
+                                            postsList.innerHTML =
+                                                `
+                                                <div class="empty-posts error-posts">
+
+                                                    حدث خطأ أثناء تشغيل صفحة المنشورات.
+
+                                                    <br>
+
+                                                    <button
+                                                        type="button"
+                                                        class="retry-button"
+                                                        id="startup-retry-2">
+                                                        إعادة المحاولة
+                                                    </button>
+
+                                                    <div class="error-detail">
+                                                        ${esc(message)}
+                                                    </div>
+
+                                                </div>
+                                                `;
+
+                                            document
+                                                .getElementById(
+                                                    "startup-retry-2"
+                                                )
+                                                ?.addEventListener(
+                                                    "click",
+                                                    () => {
+
+                                                        restoreSession()
+                                                            .catch(
+                                                                console.error
+                                                            );
+
+                                                    }
+                                                );
+                                        }
                                     );
+
                             }
                         );
                 }
