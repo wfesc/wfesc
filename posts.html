@@ -1350,6 +1350,10 @@ function visibilityLabel(value){
 
 function postTypeLabel(value){
 
+    if(value === "text"){
+        return "نص";
+    }
+
     return value === "video"
         ? "فيديو"
         : "صورة";
@@ -1716,7 +1720,8 @@ function mediaMarkup(post){
 
     if(
         post.post_type === "video" ||
-        post.media_type === "video"
+        post.media_type === "video" ||
+        String(post.media_type || "").startsWith("video/")
     ){
 
         if(isVideoExpired(post)){
@@ -1743,16 +1748,25 @@ function mediaMarkup(post){
         `;
     }
 
-    return `
-        <div class="post-media">
+    if(
+        post.post_type === "image" ||
+        post.media_type === "image" ||
+        String(post.media_type || "").startsWith("image/")
+    ){
 
-            <img
-                loading="lazy"
-                src="${mediaUrl}"
-                alt="منشور WFESC">
+        return `
+            <div class="post-media">
 
-        </div>
-    `;
+                <img
+                    loading="lazy"
+                    src="${mediaUrl}"
+                    alt="منشور WFESC">
+
+            </div>
+        `;
+    }
+
+    return "";
 }
 
 
@@ -2194,13 +2208,25 @@ async function createPostElement(
 
                 try{
 
+                    const parentId =
+                        input.dataset.parentId
+                        ?
+                        Number(
+                            input.dataset.parentId
+                        )
+                        :
+                        null;
+
                     await addComment(
                         post.id,
-                        content
+                        content,
+                        parentId
                     );
 
                     input.value =
                         "";
+
+                    delete input.dataset.parentId;
 
                     await loadCommentsIntoPost(
                         article,
@@ -2275,11 +2301,18 @@ async function fetchFeed(
 
         default:
 
+            /*
+             * مهم:
+             * دالة wfesc_get_public_posts في قاعدة البيانات
+             * تستخدم result_limit و result_offset
+             * وليس p_limit و p_offset.
+             */
+
             return callRpc(
                 "wfesc_get_public_posts",
                 {
-                    p_limit:limit,
-                    p_offset:offset
+                    result_limit:limit,
+                    result_offset:offset
                 }
             );
     }
@@ -3640,8 +3673,7 @@ async function loadReplies(
                 await createCommentElement(
                     reply,
                     reply.post_id,
-                    document,
-                    true
+                    wrapper.closest(".post")
                 );
 
             repliesList.appendChild(
@@ -4284,8 +4316,6 @@ refreshPosts.addEventListener(
 
 /* =========================================================
    PUBLISH BUTTON — TOP PLUS
-   ---------------------------------------------------------
-   الزر ＋ ينقل مباشرة إلى publish.html
 ========================================================= */
 
 document
