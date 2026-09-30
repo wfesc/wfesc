@@ -2104,7 +2104,7 @@
 
                 /* =================================================
                    TEXT
-                   
+
                    ممنوع إرسال media
                 ================================================= */
 
@@ -2132,10 +2132,7 @@
                 );
 
 
-                const {
-                    data,
-                    error
-                } =
+                const rpcResult =
                     await supabaseClient
                         .rpc(
                             "wfesc_create_post",
@@ -2162,12 +2159,64 @@
                         );
 
 
+                console.log(
+                    "WFESC RPC RESULT:",
+                    rpcResult
+                );
+
+
+                const {
+                    data,
+                    error: rpcError
+                } = rpcResult;
+
+
                 if (
-                    error
+                    rpcError
                 ) {
 
+                    console.error(
+                        "WFESC RPC ERROR:",
+                        {
+                            message:
+                                rpcError.message,
+
+                            details:
+                                rpcError.details,
+
+                            hint:
+                                rpcError.hint,
+
+                            code:
+                                rpcError.code,
+
+                            status:
+                                rpcError.status,
+
+                            name:
+                                rpcError.name,
+
+                            fullError:
+                                rpcError
+                        }
+                    );
+
+
+                    const detailedMessage =
+                        [
+                            rpcError.message,
+                            rpcError.details,
+                            rpcError.hint,
+                            rpcError.code
+                        ]
+                            .filter(Boolean)
+                            .join(
+                                " | "
+                            );
+
+
                     throw new Error(
-                        error.message ||
+                        detailedMessage ||
                         "فشل إنشاء المنشور."
                     );
 
