@@ -6,41 +6,74 @@
 <title>WFESC Posts</title>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0
+}
+
+html{
+    scroll-behavior:smooth
+}
 
 body{
     background:#050505;
     color:#eee;
     font-family:Arial,Tahoma,sans-serif;
     min-height:100vh;
-    padding-bottom:80px
+    padding-bottom:95px
 }
 
-button,input{font-family:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
+button,
+input,
+textarea,
+select{
+    font-family:inherit
+}
+
+button{
+    cursor:pointer
+}
+
+button:disabled{
+    opacity:.55;
+    cursor:not-allowed
+}
+
+.hidden{
+    display:none!important
+}
+
+body.no-animation *,
+body.no-animation *::before,
+body.no-animation *::after{
+    animation:none!important;
+    transition:none!important;
+    scroll-behavior:auto!important
+}
 
 /* =====================================================
-   ملاحظة:
-   Loader المنشورات الداخلي متوقف.
-   Loader التنقل في navigation هو المسؤول عن الانتقال.
+   INTERNAL LOADER
 ===================================================== */
 
 #posts-loader{
-    display:none!important;
+    display:none!important
 }
 
 #posts-loader.hide{
-    display:none!important;
+    display:none!important
 }
 
 .loader-box,
 .loader-logo,
 .loader-text,
 .loader-line{
-    display:none!important;
+    display:none!important
 }
+
+/* =====================================================
+   HEADER
+===================================================== */
 
 .posts-header{
     position:fixed;
@@ -63,6 +96,45 @@ button{cursor:pointer}
     letter-spacing:3px
 }
 
+.header-left,
+.header-right{
+    position:absolute;
+    top:0;
+    height:64px;
+    display:flex;
+    align-items:center;
+    gap:6px
+}
+
+.header-left{
+    left:10px
+}
+
+.header-right{
+    right:10px
+}
+
+.header-button{
+    width:38px;
+    height:38px;
+    border:1px solid #222;
+    border-radius:50%;
+    background:#101010;
+    color:#ddd;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px
+}
+
+.header-button:hover{
+    background:#181818
+}
+
+/* =====================================================
+   USER
+===================================================== */
+
 .logged-user{
     position:fixed;
     top:76px;
@@ -77,22 +149,105 @@ button{cursor:pointer}
     display:none
 }
 
+/* =====================================================
+   CONTAINER
+===================================================== */
+
 .posts-container{
     width:100%;
-    max-width:600px;
+    max-width:650px;
     margin:auto;
     padding:88px 12px 30px
 }
+
+/* =====================================================
+   TOOLBAR
+===================================================== */
+
+.posts-toolbar{
+    display:flex;
+    gap:7px;
+    flex-wrap:wrap;
+    margin-bottom:14px
+}
+
+.toolbar-button{
+    flex:1 1 auto;
+    min-height:38px;
+    border:1px solid #202020;
+    background:#0e0e0e;
+    color:#ddd;
+    border-radius:20px;
+    padding:8px 13px;
+    font-size:12px
+}
+
+.toolbar-button.active{
+    background:#fff;
+    color:#000;
+    border-color:#fff
+}
+
+.toolbar-button.publish-button{
+    background:#171717;
+    border-color:#303030
+}
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+.search-box{
+    display:none;
+    margin-bottom:13px
+}
+
+.search-box.show{
+    display:flex
+}
+
+.search-box input{
+    width:100%;
+    height:42px;
+    background:#0b0b0b;
+    border:1px solid #222;
+    border-radius:22px;
+    color:#eee;
+    outline:none;
+    padding:0 15px;
+    font-size:13px
+}
+
+.search-box input:focus{
+    border-color:#555
+}
+
+/* =====================================================
+   POST
+===================================================== */
 
 .post{
     background:#0c0c0c;
     border:1px solid #181818;
     border-radius:14px;
     overflow:hidden;
-    margin-bottom:22px
+    margin-bottom:22px;
+    animation:wfescPostIn .22s ease
+}
+
+@keyframes wfescPostIn{
+    from{
+        opacity:0;
+        transform:translateY(7px)
+    }
+    to{
+        opacity:1;
+        transform:translateY(0)
+    }
 }
 
 .post-media{
+    position:relative;
     width:100%;
     background:#000
 }
@@ -104,6 +259,18 @@ button{cursor:pointer}
     max-height:650px;
     object-fit:contain;
     background:#000
+}
+
+.post-expired-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.72);
+    color:#ddd;
+    font-size:13px;
+    font-weight:bold
 }
 
 .post-info{
@@ -131,6 +298,13 @@ button{cursor:pointer}
     font-weight:bold
 }
 
+.post-user-sub{
+    display:block;
+    color:#666;
+    font-size:10px;
+    margin-top:3px
+}
+
 .post-date{
     display:block;
     color:#666;
@@ -141,15 +315,39 @@ button{cursor:pointer}
 .post-title{
     font-size:17px;
     font-weight:bold;
-    margin-bottom:8px
+    margin-bottom:8px;
+    line-height:1.5
 }
 
 .post-content{
     color:#aaa;
     font-size:14px;
     line-height:1.8;
-    white-space:pre-wrap
+    white-space:pre-wrap;
+    word-break:break-word
 }
+
+.post-visibility{
+    display:inline-flex;
+    margin-top:10px;
+    padding:4px 8px;
+    border-radius:12px;
+    background:#141414;
+    border:1px solid #242424;
+    color:#777;
+    font-size:9px
+}
+
+.post-expiry{
+    display:block;
+    color:#777;
+    font-size:9px;
+    margin-top:7px
+}
+
+/* =====================================================
+   ACTIONS
+===================================================== */
 
 .post-actions{
     display:flex;
@@ -167,20 +365,359 @@ button{cursor:pointer}
     font-size:12px
 }
 
+.post-action:hover{
+    background:#171717
+}
+
 .post-action.active{
     background:#fff;
-    color:#000
+    color:#000;
+    border-color:#fff
 }
+
+.post-action.danger{
+    color:#e88;
+    border-color:#382020
+}
+
+.post-action .count{
+    margin-right:4px;
+    color:inherit
+}
+
+/* =====================================================
+   STATS
+===================================================== */
+
+.post-stats{
+    display:flex;
+    gap:12px;
+    padding:0 15px 11px;
+    color:#666;
+    font-size:10px
+}
+
+.post-stats span{
+    white-space:nowrap
+}
+
+/* =====================================================
+   COMMENTS
+===================================================== */
+
+.comments-wrap{
+    display:none;
+    border-top:1px solid #171717;
+    padding:14px 15px 16px
+}
+
+.comments-wrap.show{
+    display:block
+}
+
+.comments-loading,
+.comments-empty{
+    color:#666;
+    text-align:center;
+    padding:15px 5px;
+    font-size:11px
+}
+
+.comment-form{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:14px
+}
+
+.comment-form textarea{
+    width:100%;
+    min-height:78px;
+    resize:vertical;
+    background:#090909;
+    border:1px solid #202020;
+    border-radius:12px;
+    color:#eee;
+    outline:none;
+    padding:10px;
+    font-size:12px;
+    line-height:1.7
+}
+
+.comment-form textarea:focus{
+    border-color:#444
+}
+
+.comment-form-row{
+    display:flex;
+    justify-content:flex-start;
+    gap:7px
+}
+
+.comment-submit{
+    border:1px solid #fff;
+    background:#fff;
+    color:#000;
+    border-radius:18px;
+    padding:8px 13px;
+    font-size:11px
+}
+
+.comment-cancel{
+    border:1px solid #222;
+    background:#111;
+    color:#aaa;
+    border-radius:18px;
+    padding:8px 13px;
+    font-size:11px
+}
+
+.comment{
+    border:1px solid #191919;
+    background:#0a0a0a;
+    border-radius:12px;
+    padding:11px;
+    margin-bottom:8px
+}
+
+.comment.reply{
+    margin-right:25px;
+    background:#0d0d0d
+}
+
+.comment-head{
+    display:flex;
+    align-items:center;
+    gap:8px
+}
+
+.comment-avatar{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    object-fit:cover;
+    border:1px solid #222
+}
+
+.comment-user{
+    font-size:11px;
+    font-weight:bold
+}
+
+.comment-date{
+    display:block;
+    color:#5c5c5c;
+    font-size:9px;
+    margin-top:2px
+}
+
+.comment-content{
+    color:#bbb;
+    font-size:12px;
+    line-height:1.7;
+    white-space:pre-wrap;
+    margin-top:8px;
+    word-break:break-word
+}
+
+.comment-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:9px
+}
+
+.comment-button{
+    border:1px solid #202020;
+    background:#111;
+    color:#aaa;
+    border-radius:15px;
+    padding:5px 8px;
+    font-size:9px
+}
+
+.comment-button.active{
+    background:#fff;
+    color:#000;
+    border-color:#fff
+}
+
+/* =====================================================
+   PUBLISH / EDIT MODAL
+===================================================== */
+
+.modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.72);
+    backdrop-filter:blur(5px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100000
+}
+
+.modal-backdrop.show{
+    display:flex
+}
+
+.modal{
+    width:min(95vw,520px);
+    max-height:90vh;
+    overflow:auto;
+    background:#0d0d0d;
+    border:1px solid #252525;
+    border-radius:17px;
+    box-shadow:0 20px 80px rgba(0,0,0,.55);
+    padding:16px
+}
+
+.modal-title{
+    font-size:16px;
+    font-weight:bold;
+    margin-bottom:15px
+}
+
+.modal-field{
+    margin-bottom:12px
+}
+
+.modal-field label{
+    display:block;
+    margin-bottom:6px;
+    color:#888;
+    font-size:10px
+}
+
+.modal-field input,
+.modal-field textarea,
+.modal-field select{
+    width:100%;
+    background:#090909;
+    color:#eee;
+    border:1px solid #222;
+    border-radius:11px;
+    outline:none;
+    padding:10px;
+    font-size:12px
+}
+
+.modal-field textarea{
+    min-height:120px;
+    resize:vertical;
+    line-height:1.8
+}
+
+.modal-field input:focus,
+.modal-field textarea:focus,
+.modal-field select:focus{
+    border-color:#444
+}
+
+.modal-help{
+    color:#666;
+    font-size:9px;
+    line-height:1.7;
+    margin-top:5px
+}
+
+.modal-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    margin-top:16px
+}
+
+.modal-button{
+    min-width:90px;
+    border:1px solid #222;
+    background:#111;
+    color:#ddd;
+    border-radius:18px;
+    padding:9px 13px;
+    font-size:11px
+}
+
+.modal-button.primary{
+    background:#fff;
+    color:#000;
+    border-color:#fff
+}
+
+.modal-button.danger{
+    color:#f08b8b;
+    border-color:#412525
+}
+
+/* =====================================================
+   PROFILE / MENU
+===================================================== */
+
+.profile-summary{
+    display:none;
+    background:#0c0c0c;
+    border:1px solid #181818;
+    border-radius:14px;
+    padding:15px;
+    margin-bottom:14px
+}
+
+.profile-summary.show{
+    display:flex
+}
+
+.profile-summary-avatar{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    object-fit:cover;
+    border:1px solid #252525
+}
+
+.profile-summary-info{
+    padding-right:10px
+}
+
+.profile-summary-name{
+    font-size:14px;
+    font-weight:bold
+}
+
+.profile-summary-bio{
+    margin-top:5px;
+    color:#777;
+    font-size:11px;
+    line-height:1.6
+}
+
+/* =====================================================
+   EMPTY / ERROR
+===================================================== */
 
 .empty-posts{
     text-align:center;
     padding:80px 20px;
-    color:#666
+    color:#666;
+    font-size:12px
 }
 
 .error-posts{
     color:#c99
 }
+
+.retry-button{
+    margin-top:13px;
+    border:1px solid #333;
+    background:#111;
+    color:#ddd;
+    border-radius:18px;
+    padding:8px 14px;
+    font-size:11px
+}
+
+/* =====================================================
+   TOAST
+===================================================== */
 
 #toast{
     position:fixed;
@@ -204,15 +741,43 @@ button{cursor:pointer}
     opacity:1;
     transform:translateX(-50%) translateY(0)
 }
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width:480px){
+
+    .posts-container{
+        padding-left:9px;
+        padding-right:9px
+    }
+
+    .posts-title{
+        font-size:16px
+    }
+
+    .post-title{
+        font-size:16px
+    }
+
+    .post-content{
+        font-size:13px
+    }
+
+    .post-action{
+        padding:8px 10px
+    }
+}
 </style>
 </head>
 
 <body>
 
-<!--
-    Loader قديم محفوظ فقط حتى لا تتأثر أي إضافات تعتمد على وجوده.
-    لكنه غير ظاهر.
--->
+<!-- =====================================================
+     OLD INTERNAL LOADER
+===================================================== -->
+
 <div id="posts-loader" aria-hidden="true">
     <div class="loader-box">
         <div class="loader-logo">WFESC</div>
@@ -223,94 +788,502 @@ button{cursor:pointer}
     </div>
 </div>
 
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
 <header class="posts-header">
+
+    <div class="header-left">
+
+        <button
+            type="button"
+            class="header-button"
+            id="search-toggle"
+            aria-label="بحث">
+            🔎
+        </button>
+
+        <button
+            type="button"
+            class="header-button"
+            id="refresh-posts"
+            aria-label="تحديث">
+            ↻
+        </button>
+
+    </div>
+
     <div class="posts-title">POSTS</div>
+
+    <div class="header-right">
+
+        <button
+            type="button"
+            class="header-button"
+            id="open-publish-top"
+            aria-label="نشر">
+            ＋
+        </button>
+
+    </div>
+
 </header>
+
+<!-- =====================================================
+     LOGGED USER
+===================================================== -->
 
 <div id="logged-user" class="logged-user"></div>
 
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
 <main id="posts-container" class="posts-container">
-    <div class="empty-posts">جاري تحميل المنشورات...</div>
+
+    <div class="posts-toolbar">
+
+        <button
+            type="button"
+            class="toolbar-button active"
+            data-feed="public">
+            الرئيسية
+        </button>
+
+        <button
+            type="button"
+            class="toolbar-button"
+            data-feed="friends">
+            الأصدقاء
+        </button>
+
+        <button
+            type="button"
+            class="toolbar-button"
+            data-feed="trending">
+            الرائج
+        </button>
+
+        <button
+            type="button"
+            class="toolbar-button"
+            data-feed="saved">
+            المحفوظات
+        </button>
+
+        <button
+            type="button"
+            class="toolbar-button publish-button"
+            id="open-publish">
+            نشر منشور
+        </button>
+
+    </div>
+
+    <div
+        id="search-box"
+        class="search-box">
+
+        <input
+            id="post-search-input"
+            type="search"
+            placeholder="ابحث في المنشورات..."
+            autocomplete="off">
+
+    </div>
+
+    <div
+        id="profile-summary"
+        class="profile-summary">
+
+        <img
+            id="profile-summary-avatar"
+            class="profile-summary-avatar"
+            src="./sorg.jpg"
+            alt="">
+
+        <div class="profile-summary-info">
+
+            <div
+                id="profile-summary-name"
+                class="profile-summary-name">
+            </div>
+
+            <div
+                id="profile-summary-bio"
+                class="profile-summary-bio">
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="posts-list">
+
+        <div class="empty-posts">
+            جاري تحميل المنشورات...
+        </div>
+
+    </div>
+
 </main>
 
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
 <div id="toast"></div>
+
+<!-- =====================================================
+     PUBLISH / EDIT MODAL
+===================================================== -->
+
+<div
+    id="post-modal-backdrop"
+    class="modal-backdrop">
+
+    <div class="modal">
+
+        <div
+            id="post-modal-title"
+            class="modal-title">
+            إنشاء منشور
+        </div>
+
+        <form id="post-form">
+
+            <div class="modal-field">
+
+                <label for="post-title-input">
+                    عنوان المنشور
+                </label>
+
+                <input
+                    id="post-title-input"
+                    type="text"
+                    maxlength="180"
+                    required
+                    placeholder="اكتب عنوان المنشور">
+
+            </div>
+
+            <div class="modal-field">
+
+                <label for="post-content-input">
+                    المحتوى
+                </label>
+
+                <textarea
+                    id="post-content-input"
+                    maxlength="20000"
+                    placeholder="اكتب محتوى المنشور...">
+                </textarea>
+
+            </div>
+
+            <div class="modal-field">
+
+                <label for="post-media-url-input">
+                    رابط الصورة أو الفيديو
+                </label>
+
+                <input
+                    id="post-media-url-input"
+                    type="url"
+                    placeholder="https://...">
+
+                <div class="modal-help">
+                    حاليًا يعتمد النظام على رابط الوسائط.
+                    رفع الملفات إلى Storage سيتم ربطه لاحقًا من قسم النشر.
+                </div>
+
+            </div>
+
+            <div class="modal-field">
+
+                <label for="post-media-type-input">
+                    نوع الوسائط
+                </label>
+
+                <select id="post-media-type-input">
+
+                    <option value="image">
+                        صورة
+                    </option>
+
+                    <option value="video">
+                        فيديو
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="modal-field">
+
+                <label for="post-visibility-input">
+                    الخصوصية
+                </label>
+
+                <select id="post-visibility-input">
+
+                    <option value="public">
+                        عام
+                    </option>
+
+                    <option value="friends">
+                        الأصدقاء
+                    </option>
+
+                    <option value="private">
+                        خاص
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    id="post-modal-close"
+                    class="modal-button">
+                    إلغاء
+                </button>
+
+                <button
+                    type="submit"
+                    id="post-submit"
+                    class="modal-button primary">
+                    نشر
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 "use strict";
 
-/* =====================================================
-   WFESC POSTS — CORE
+/* =========================================================
+   WFESC POSTS — FINAL CORE
+   ---------------------------------------------------------
+   هذا الملف هو قلب نظام المنشورات.
 
-   هذا الملف هو الأساس فقط.
-   الإضافات الجديدة ستوضع في ملفات منفصلة لاحقاً.
+   المسؤوليات:
+   - Supabase
+   - Authentication
+   - Feed
+   - Publishing
+   - Editing
+   - Soft delete
+   - Likes
+   - Dislikes
+   - Comments
+   - Replies
+   - Comment likes/dislikes
+   - Saving
+   - Search
+   - Friends feed
+   - Trending feed
+   - Saved feed
+   - Profile posts
+   - Stats
+   - Profile loading
+   - Error handling
+   - External feature bridge
 
-   لا يوجد هنا نظام الإعدادات أو النشر أو البحث
-   أو الإضافات الجديدة.
-===================================================== */
+   الملفات التابعة لاحقاً يمكنها الوصول للنواة
+   من خلال:
+   window.WFESC_POSTS_CORE
+========================================================= */
 
-const SUPABASE_URL="https://mcgbzfgbaxwmutniorlw.supabase.co";
 
-const SUPABASE_KEY=
-"sb_publishable_5b7pTbiGY2D6vDLRsWgVzA_X926lBeM";
+/* =========================================================
+   SUPABASE
+========================================================= */
 
-const supabaseClient=
-window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const SUPABASE_URL =
+    "https://mcgbzfgbaxwmutniorlw.supabase.co";
 
-const postsContainer=
-document.getElementById("posts-container");
+const SUPABASE_KEY =
+    "sb_publishable_5b7pTBiGY2D6vDLRsWgVzA_X926lBeM";
 
-const loggedUser=
-document.getElementById("logged-user");
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 
-const toast=
-document.getElementById("toast");
 
-const loader=
-document.getElementById("posts-loader");
+/* =========================================================
+   DOM
+========================================================= */
 
-let currentUser=null;
-let postsCache=[];
-const profilesCache={};
+const postsContainer =
+    document.getElementById("posts-container");
+
+const postsList =
+    document.getElementById("posts-list");
+
+const loggedUser =
+    document.getElementById("logged-user");
+
+const toast =
+    document.getElementById("toast");
+
+const loader =
+    document.getElementById("posts-loader");
+
+const searchToggle =
+    document.getElementById("search-toggle");
+
+const refreshPosts =
+    document.getElementById("refresh-posts");
+
+const searchBox =
+    document.getElementById("search-box");
+
+const searchInput =
+    document.getElementById("post-search-input");
+
+const profileSummary =
+    document.getElementById("profile-summary");
+
+const profileSummaryAvatar =
+    document.getElementById("profile-summary-avatar");
+
+const profileSummaryName =
+    document.getElementById("profile-summary-name");
+
+const profileSummaryBio =
+    document.getElementById("profile-summary-bio");
+
+const modalBackdrop =
+    document.getElementById("post-modal-backdrop");
+
+const modalTitle =
+    document.getElementById("post-modal-title");
+
+const postForm =
+    document.getElementById("post-form");
+
+const postTitleInput =
+    document.getElementById("post-title-input");
+
+const postContentInput =
+    document.getElementById("post-content-input");
+
+const postMediaUrlInput =
+    document.getElementById("post-media-url-input");
+
+const postMediaTypeInput =
+    document.getElementById("post-media-type-input");
+
+const postVisibilityInput =
+    document.getElementById("post-visibility-input");
+
+const postModalClose =
+    document.getElementById("post-modal-close");
+
+const postSubmit =
+    document.getElementById("post-submit");
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentUser = null;
+
+let postsCache = [];
+
+let profilesCache = {};
+
+let currentFeed = "public";
+
+let currentSearchTimer = null;
+
+let editingPostId = null;
+
+let loadedPostIds = new Set();
+
+let commentsOpen = new Set();
+
+let operationLock = false;
+
+
+/* =========================================================
+   COMMON HELPERS
+========================================================= */
 
 function esc(value){
-    return String(value??"").replace(
-        /[&<>"']/g,
-        char=>({
-            "&":"&amp;",
-            "<":"&lt;",
-            ">":"&gt;",
-            "\"":"&quot;",
-            "'":"&#039;"
-        }[char])
-    );
+
+    return String(value ?? "")
+        .replace(
+            /[&<>"']/g,
+            character => ({
+                "&":"&amp;",
+                "<":"&lt;",
+                ">":"&gt;",
+                "\"":"&quot;",
+                "'":"&#039;"
+            }[character])
+        );
 }
 
+
 function showToast(message){
-    toast.textContent=message;
+
+    if(!toast){
+        return;
+    }
+
+    toast.textContent =
+        String(message ?? "");
 
     toast.classList.add("show");
 
-    clearTimeout(window.__wfescToastTimer);
-
-    window.__wfescToastTimer=setTimeout(
-        ()=>toast.classList.remove("show"),
-        3000
+    clearTimeout(
+        window.__wfescToastTimer
     );
+
+    window.__wfescToastTimer =
+        setTimeout(
+            () => {
+                toast.classList.remove("show");
+            },
+            3000
+        );
 }
 
+
 function formatDate(date){
-    if(!date)return "";
 
-    const d=new Date(date);
+    if(!date){
+        return "";
+    }
 
-    if(Number.isNaN(d.getTime()))return "";
+    const parsed =
+        new Date(date);
 
-    return d.toLocaleString(
+    if(
+        Number.isNaN(
+            parsed.getTime()
+        )
+    ){
+        return "";
+    }
+
+    return parsed.toLocaleString(
         "ar-IQ",
         {
             dateStyle:"short",
@@ -319,27 +1292,175 @@ function formatDate(date){
     );
 }
 
+
 function profileAvatar(profile){
-    return profile&&profile.avatar_url
-        ?profile.avatar_url
-        :"./sorg.jpg";
+
+    return profile?.avatar_url
+        ||
+        "./sorg.jpg";
 }
+
+
+function getRpcRow(data){
+
+    if(
+        Array.isArray(data)
+    ){
+        return data[0] || null;
+    }
+
+    return data || null;
+}
+
+
+function getArray(data){
+
+    if(
+        Array.isArray(data)
+    ){
+        return data;
+    }
+
+    if(
+        data &&
+        Array.isArray(data.data)
+    ){
+        return data.data;
+    }
+
+    return [];
+}
+
+
+function boolValue(value){
+
+    if(
+        value === true ||
+        value === false
+    ){
+        return value;
+    }
+
+    if(
+        value === 1 ||
+        value === "1" ||
+        value === "true" ||
+        value === "TRUE"
+    ){
+        return true;
+    }
+
+    return false;
+}
+
+
+function numericValue(
+    value,
+    fallback = 0
+){
+
+    const n =
+        Number(value);
+
+    return Number.isFinite(n)
+        ? n
+        : fallback;
+}
+
+
+function visibilityLabel(value){
+
+    const map = {
+        public:"عام",
+        friends:"الأصدقاء",
+        private:"خاص"
+    };
+
+    return (
+        map[value]
+        ||
+        "غير معروف"
+    );
+}
+
+
+function postTypeLabel(value){
+
+    return value === "video"
+        ? "فيديو"
+        : "صورة";
+}
+
+
+function isVideoExpired(post){
+
+    return (
+        post?.post_type === "video" &&
+        post?.expires_at &&
+        new Date(post.expires_at).getTime()
+            <= Date.now()
+    );
+}
+
+
+function escapeUrl(url){
+
+    const value =
+        String(url ?? "").trim();
+
+    if(!value){
+        return "";
+    }
+
+    try{
+
+        const parsed =
+            new URL(value);
+
+        if(
+            parsed.protocol !== "https:" &&
+            parsed.protocol !== "http:"
+        ){
+            return "";
+        }
+
+        return parsed.toString();
+
+    }catch{
+
+        return "";
+    }
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
 
 async function getProfile(userId){
 
-    if(!userId)return null;
+    if(!userId){
+        return null;
+    }
 
-    if(profilesCache[userId]){
+    if(
+        profilesCache[userId]
+    ){
         return profilesCache[userId];
     }
 
-    const {data,error}=await supabaseClient
-        .from("profiles")
-        .select("*")
-        .eq("id",userId)
-        .maybeSingle();
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("profiles")
+            .select("*")
+            .eq("id",userId)
+            .maybeSingle();
 
     if(error){
+
         console.warn(
             "WFESC profile error:",
             error
@@ -349,85 +1470,375 @@ async function getProfile(userId){
     }
 
     if(data){
-        profilesCache[userId]=data;
+
+        profilesCache[userId] =
+            data;
     }
 
-    return data||null;
+    return data || null;
 }
 
-async function getPostCounts(postId){
 
-    const [likes,dislikes]=await Promise.all([
+async function enrichPostProfile(post){
 
-        supabaseClient
-            .from("likes")
-            .select(
-                "id",
-                {
-                    count:"exact",
-                    head:true
-                }
-            )
-            .eq("post_id",postId),
+    if(
+        post?.username ||
+        post?.display_name ||
+        post?.avatar_url
+    ){
+        return {
+            id:post.user_id,
+            username:post.username,
+            display_name:post.display_name,
+            avatar_url:post.avatar_url,
+            bio:post.bio || ""
+        };
+    }
 
-        supabaseClient
-            .from("dislikes")
-            .select(
-                "id",
-                {
-                    count:"exact",
-                    head:true
-                }
-            )
-            .eq("post_id",postId)
-
-    ]);
-
-    return {
-        likes:likes.count||0,
-        dislikes:dislikes.count||0
-    };
+    return getProfile(
+        post?.user_id
+    );
 }
+
+
+async function loadProfileSummary(userId){
+
+    if(!userId){
+
+        profileSummary.classList.remove(
+            "show"
+        );
+
+        return;
+    }
+
+    const profile =
+        await getProfile(userId);
+
+    if(!profile){
+
+        profileSummary.classList.remove(
+            "show"
+        );
+
+        return;
+    }
+
+    profileSummaryAvatar.src =
+        profileAvatar(profile);
+
+    profileSummaryName.textContent =
+        profile.display_name
+        ||
+        profile.username
+        ||
+        "مستخدم";
+
+    profileSummaryBio.textContent =
+        profile.bio
+        ||
+        "";
+
+    profileSummary.classList.add(
+        "show"
+    );
+}
+
+
+/* =========================================================
+   RPC HELPER
+========================================================= */
+
+async function callRpc(
+    functionName,
+    params = {}
+){
+
+    const response =
+        await supabaseClient.rpc(
+            functionName,
+            params
+        );
+
+    if(response.error){
+
+        console.error(
+            `WFESC RPC error: ${functionName}`,
+            response.error
+        );
+
+        throw response.error;
+    }
+
+    return response.data;
+}
+
+
+/* =========================================================
+   POST STATS
+========================================================= */
+
+async function getPostStats(
+    postId
+){
+
+    try{
+
+        const data =
+            await callRpc(
+                "wfesc_post_stats",
+                {
+                    post_id:postId
+                }
+            );
+
+        const row =
+            getRpcRow(data);
+
+        if(!row){
+
+            return {
+                likes:0,
+                dislikes:0,
+                comments:0,
+                viewerLiked:false,
+                viewerDisliked:false
+            };
+        }
+
+        return {
+
+            likes:
+                numericValue(
+                    row.likes
+                    ??
+                    row.like_count
+                    ??
+                    row.likes_count
+                ),
+
+            dislikes:
+                numericValue(
+                    row.dislikes
+                    ??
+                    row.dislike_count
+                    ??
+                    row.dislikes_count
+                ),
+
+            comments:
+                numericValue(
+                    row.comments
+                    ??
+                    row.comment_count
+                    ??
+                    row.comments_count
+                ),
+
+            viewerLiked:
+                boolValue(
+                    row.viewer_liked
+                    ??
+                    row.liked_by_user
+                    ??
+                    row.user_liked
+                ),
+
+            viewerDisliked:
+                boolValue(
+                    row.viewer_disliked
+                    ??
+                    row.disliked_by_user
+                    ??
+                    row.user_disliked
+                )
+        };
+
+    }catch(error){
+
+        console.warn(
+            "WFESC post stats error:",
+            error
+        );
+
+        return {
+
+            likes:0,
+            dislikes:0,
+            comments:0,
+            viewerLiked:false,
+            viewerDisliked:false
+        };
+    }
+}
+
+
+/* =========================================================
+   SAVED STATUS
+========================================================= */
+
+async function getSavedStatus(
+    postId
+){
+
+    if(!currentUser){
+        return false;
+    }
+
+    try{
+
+        const result =
+            await callRpc(
+                "wfesc_is_post_saved",
+                {
+                    post_id:postId
+                }
+            );
+
+        const row =
+            getRpcRow(result);
+
+        if(
+            typeof result === "boolean"
+        ){
+            return result;
+        }
+
+        if(
+            typeof row === "boolean"
+        ){
+            return row;
+        }
+
+        if(row){
+
+            return boolValue(
+                row.is_saved
+                ??
+                row.saved
+                ??
+                row.result
+            );
+        }
+
+        return boolValue(
+            result
+        );
+
+    }catch(error){
+
+        console.warn(
+            "WFESC saved status error:",
+            error
+        );
+
+        return false;
+    }
+}
+
+
+/* =========================================================
+   MEDIA
+========================================================= */
 
 function mediaMarkup(post){
 
-    if(!post.media_url){
+    if(!post?.media_url){
         return "";
     }
 
-    if(post.media_type==="video"){
+    const mediaUrl =
+        esc(post.media_url);
+
+    if(
+        post.post_type === "video" ||
+        post.media_type === "video"
+    ){
+
+        if(isVideoExpired(post)){
+
+            return `
+                <div class="post-media">
+                    <div class="post-expired-overlay">
+                        انتهت مدة عرض هذا الفيديو
+                    </div>
+                </div>
+            `;
+        }
 
         return `
             <div class="post-media">
+
                 <video
                     controls
                     preload="metadata"
-                    src="${esc(post.media_url)}">
+                    src="${mediaUrl}">
                 </video>
+
             </div>
         `;
     }
 
     return `
         <div class="post-media">
+
             <img
                 loading="lazy"
-                src="${esc(post.media_url)}"
+                src="${mediaUrl}"
                 alt="منشور WFESC">
+
         </div>
     `;
 }
 
-async function createPostElement(post,profile){
 
-    const article=document.createElement("article");
+/* =========================================================
+   POST CARD
+========================================================= */
 
-    article.className="post";
-    article.dataset.id=post.id;
+async function createPostElement(
+    post
+){
 
-    const counts=await getPostCounts(post.id);
+    const article =
+        document.createElement(
+            "article"
+        );
 
-    article.innerHTML=`
+    article.className =
+        "post";
+
+    article.dataset.id =
+        post.id;
+
+    const profile =
+        await enrichPostProfile(
+            post
+        );
+
+    const stats =
+        await getPostStats(
+            post.id
+        );
+
+    const saved =
+        await getSavedStatus(
+            post.id
+        );
+
+    const displayName =
+        profile?.display_name
+        ||
+        profile?.username
+        ||
+        "مستخدم";
+
+    const username =
+        profile?.username
+        ||
+        "";
+
+    article.innerHTML = `
 
         ${mediaMarkup(post)}
 
@@ -443,11 +1854,27 @@ async function createPostElement(post,profile){
                 <div>
 
                     <div class="post-user">
-                        ${esc(profile?.username||"مستخدم")}
+                        ${esc(displayName)}
                     </div>
 
+                    ${
+                        username
+                        ?
+                        `
+                        <span class="post-user-sub">
+                            @${esc(username)}
+                        </span>
+                        `
+                        :
+                        ""
+                    }
+
                     <span class="post-date">
-                        ${formatDate(post.created_at)}
+                        ${esc(
+                            formatDate(
+                                post.created_at
+                            )
+                        )}
                     </span>
 
                 </div>
@@ -457,9 +1884,11 @@ async function createPostElement(post,profile){
             ${
                 post.title
                 ?
-                `<div class="post-title">
+                `
+                <div class="post-title">
                     ${esc(post.title)}
-                </div>`
+                </div>
+                `
                 :
                 ""
             }
@@ -467,12 +1896,66 @@ async function createPostElement(post,profile){
             ${
                 post.content
                 ?
-                `<div class="post-content">
+                `
+                <div class="post-content">
                     ${esc(post.content)}
-                </div>`
+                </div>
+                `
                 :
                 ""
             }
+
+            <span class="post-visibility">
+                ${esc(
+                    visibilityLabel(
+                        post.visibility
+                    )
+                )}
+                ·
+                ${esc(
+                    postTypeLabel(
+                        post.post_type
+                    )
+                )}
+            </span>
+
+            ${
+                post.post_type === "video" &&
+                post.expires_at &&
+                !isVideoExpired(post)
+                ?
+                `
+                <span class="post-expiry">
+                    ينتهي عرض الفيديو:
+                    ${esc(
+                        formatDate(
+                            post.expires_at
+                        )
+                    )}
+                </span>
+                `
+                :
+                ""
+            }
+
+        </div>
+
+        <div class="post-stats">
+
+            <span>
+                ❤️
+                ${stats.likes}
+            </span>
+
+            <span>
+                👎
+                ${stats.dislikes}
+            </span>
+
+            <span>
+                💬
+                ${stats.comments}
+            </span>
 
         </div>
 
@@ -480,103 +1963,607 @@ async function createPostElement(post,profile){
 
             <button
                 type="button"
-                class="post-action like-button">
+                class="post-action like-button ${
+                    stats.viewerLiked
+                    ? "active"
+                    : ""
+                }">
 
                 ❤️
-                <span>${counts.likes}</span>
+                <span class="count">
+                    ${stats.likes}
+                </span>
 
             </button>
 
             <button
                 type="button"
-                class="post-action dislike-button">
+                class="post-action dislike-button ${
+                    stats.viewerDisliked
+                    ? "active"
+                    : ""
+                }">
 
                 👎
-                <span>${counts.dislikes}</span>
+                <span class="count">
+                    ${stats.dislikes}
+                </span>
 
             </button>
+
+            <button
+                type="button"
+                class="post-action comment-toggle">
+
+                💬
+                <span class="count">
+                    ${stats.comments}
+                </span>
+
+            </button>
+
+            <button
+                type="button"
+                class="post-action save-button ${
+                    saved
+                    ? "active"
+                    : ""
+                }">
+
+                🔖
+                <span class="count">
+                    ${saved ? "محفوظ" : "حفظ"}
+                </span>
+
+            </button>
+
+            ${
+                currentUser &&
+                String(post.user_id) ===
+                String(currentUser.id)
+                ?
+                `
+                <button
+                    type="button"
+                    class="post-action edit-button">
+                    تعديل
+                </button>
+
+                <button
+                    type="button"
+                    class="post-action danger delete-button">
+                    حذف
+                </button>
+                `
+                :
+                ""
+            }
+
+        </div>
+
+        <div class="comments-wrap">
+
+            ${
+                currentUser
+                ?
+                `
+                <form class="comment-form">
+
+                    <textarea
+                        class="comment-input"
+                        maxlength="5000"
+                        placeholder="اكتب تعليقك...">
+                    </textarea>
+
+                    <div class="comment-form-row">
+
+                        <button
+                            type="submit"
+                            class="comment-submit">
+                            إرسال التعليق
+                        </button>
+
+                        <button
+                            type="button"
+                            class="comment-cancel hidden">
+                            إلغاء التعديل
+                        </button>
+
+                    </div>
+
+                </form>
+                `
+                :
+                `
+                <div class="comments-empty">
+                    سجّل الدخول حتى تتمكن من التعليق.
+                </div>
+                `
+            }
+
+            <div class="comments-list">
+
+                <div class="comments-loading">
+                    جاري تحميل التعليقات...
+                </div>
+
+            </div>
 
         </div>
     `;
 
-    article
-        .querySelector(".like-button")
-        .addEventListener(
-            "click",
-            ()=>reactPost(post.id,"like")
-        );
+
+    /* =====================================================
+       LIKE
+    ===================================================== */
 
     article
-        .querySelector(".dislike-button")
-        .addEventListener(
+        .querySelector(
+            ".like-button"
+        )
+        ?.addEventListener(
             "click",
-            ()=>reactPost(post.id,"dislike")
+            async () => {
+
+                await reactPost(
+                    post.id,
+                    stats.viewerLiked
+                        ? "unlike"
+                        : "like"
+                );
+
+            }
         );
+
+
+    /* =====================================================
+       DISLIKE
+    ===================================================== */
+
+    article
+        .querySelector(
+            ".dislike-button"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await reactPost(
+                    post.id,
+                    stats.viewerDisliked
+                        ? "undislike"
+                        : "dislike"
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       COMMENT TOGGLE
+    ===================================================== */
+
+    article
+        .querySelector(
+            ".comment-toggle"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await toggleComments(
+                    article,
+                    post.id
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       SAVE
+    ===================================================== */
+
+    article
+        .querySelector(
+            ".save-button"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await toggleSavePost(
+                    article,
+                    post.id,
+                    saved
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       EDIT
+    ===================================================== */
+
+    article
+        .querySelector(
+            ".edit-button"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                openEditModal(
+                    post
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       DELETE
+    ===================================================== */
+
+    article
+        .querySelector(
+            ".delete-button"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await deletePost(
+                    post.id
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       COMMENT FORM
+    ===================================================== */
+
+    const commentForm =
+        article.querySelector(
+            ".comment-form"
+        );
+
+    if(commentForm){
+
+        commentForm.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+                const input =
+                    commentForm.querySelector(
+                        ".comment-input"
+                    );
+
+                const content =
+                    input.value.trim();
+
+                if(!content){
+
+                    showToast(
+                        "اكتب تعليقًا أولاً"
+                    );
+
+                    return;
+                }
+
+                try{
+
+                    await addComment(
+                        post.id,
+                        content
+                    );
+
+                    input.value =
+                        "";
+
+                    await loadCommentsIntoPost(
+                        article,
+                        post.id
+                    );
+
+                    await refreshSinglePostStats(
+                        article,
+                        post.id
+                    );
+
+                }catch(error){
+
+                    showToast(
+                        error.message
+                        ||
+                        "تعذر إضافة التعليق"
+                    );
+                }
+
+            }
+        );
+    }
 
     return article;
 }
 
-async function loadPosts(){
 
-    /*
-       لا نستخدم Loader الشاشة هنا.
-       فقط نعرض حالة التحميل داخل المحتوى.
-    */
+/* =========================================================
+   FEED RPC
+========================================================= */
 
-    postsContainer.innerHTML=
-        '<div class="empty-posts">جاري تحميل المنشورات...</div>';
+async function fetchFeed(
+    feedName,
+    offset = 0,
+    limit = 30
+){
 
-    const {data,error}=await supabaseClient
-        .from("posts")
-        .select("*")
-        .order(
-            "created_at",
-            {
-                ascending:false
-            }
-        );
+    switch(feedName){
 
-    if(error){
+        case "friends":
 
-        console.error(
-            "WFESC posts error:",
-            error
-        );
-
-        postsContainer.innerHTML=
-            '<div class="empty-posts error-posts">تعذر تحميل المنشورات من قاعدة البيانات.</div>';
-
-        return;
-    }
-
-    postsCache=data||[];
-
-    if(!postsCache.length){
-
-        postsContainer.innerHTML=
-            '<div class="empty-posts">لا توجد منشورات حالياً.</div>';
-
-        return;
-    }
-
-    postsContainer.innerHTML="";
-
-    for(const post of postsCache){
-
-        const profile=
-            await getProfile(post.user_id);
-
-        const article=
-            await createPostElement(
-                post,
-                profile
+            return callRpc(
+                "wfesc_get_friends_posts",
+                {
+                    p_limit:limit,
+                    p_offset:offset
+                }
             );
 
-        postsContainer.appendChild(article);
+        case "trending":
+
+            return callRpc(
+                "wfesc_get_trending_posts",
+                {
+                    p_limit:limit,
+                    p_offset:offset
+                }
+            );
+
+        case "saved":
+
+            return callRpc(
+                "wfesc_get_saved_posts",
+                {
+                    p_limit:limit,
+                    p_offset:offset
+                }
+            );
+
+        case "public":
+
+        default:
+
+            return callRpc(
+                "wfesc_get_public_posts",
+                {
+                    p_limit:limit,
+                    p_offset:offset
+                }
+            );
     }
 }
 
-async function reactPost(postId,type){
+
+/* =========================================================
+   LOAD POSTS
+========================================================= */
+
+async function loadPosts(
+    options = {}
+){
+
+    const {
+        feed = currentFeed,
+        offset = 0,
+        searchText = ""
+    } = options;
+
+    currentFeed =
+        feed;
+
+    postsList.innerHTML =
+        `
+        <div class="empty-posts">
+            جاري تحميل المنشورات...
+        </div>
+        `;
+
+    loadedPostIds.clear();
+
+    try{
+
+        let data;
+
+        if(
+            searchText.trim()
+        ){
+
+            data =
+                await callRpc(
+                    "wfesc_search_posts_feed",
+                    {
+                        search_text:
+                            searchText.trim(),
+                        p_limit:30,
+                        p_offset:0
+                    }
+                );
+
+        }else{
+
+            data =
+                await fetchFeed(
+                    feed,
+                    offset,
+                    30
+                );
+        }
+
+        let posts =
+            getArray(
+                data
+            );
+
+        posts =
+            posts.filter(
+                post =>
+                    post &&
+                    !post.deleted_at
+            );
+
+        postsCache =
+            posts;
+
+        if(!posts.length){
+
+            postsList.innerHTML =
+                `
+                <div class="empty-posts">
+                    ${
+                        searchText.trim()
+                        ?
+                        "لا توجد نتائج مطابقة."
+                        :
+                        "لا توجد منشورات لعرضها حالياً."
+                    }
+                </div>
+                `;
+
+            return;
+        }
+
+        postsList.innerHTML =
+            "";
+
+        for(
+            const post of posts
+        ){
+
+            if(
+                loadedPostIds.has(
+                    String(post.id)
+                )
+            ){
+                continue;
+            }
+
+            loadedPostIds.add(
+                String(post.id)
+            );
+
+            const article =
+                await createPostElement(
+                    post
+                );
+
+            postsList.appendChild(
+                article
+            );
+        }
+
+    }catch(error){
+
+        console.error(
+            "WFESC loadPosts error:",
+            error
+        );
+
+        postsList.innerHTML =
+            `
+            <div class="empty-posts error-posts">
+
+                تعذر تحميل المنشورات.
+
+                <br>
+
+                <button
+                    type="button"
+                    class="retry-button"
+                    id="retry-posts-button">
+                    إعادة المحاولة
+                </button>
+
+            </div>
+            `;
+
+        document
+            .getElementById(
+                "retry-posts-button"
+            )
+            ?.addEventListener(
+                "click",
+                () => loadPosts({
+                    feed:currentFeed
+                })
+            );
+    }
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+async function performSearch(){
+
+    const text =
+        searchInput.value.trim();
+
+    if(!text){
+
+        await loadPosts({
+            feed:currentFeed
+        });
+
+        return;
+    }
+
+    await loadPosts({
+        feed:currentFeed,
+        searchText:text
+    });
+}
+
+
+searchInput.addEventListener(
+    "input",
+    () => {
+
+        clearTimeout(
+            currentSearchTimer
+        );
+
+        currentSearchTimer =
+            setTimeout(
+                () => {
+                    performSearch()
+                        .catch(error=>{
+                            console.error(
+                                "WFESC search error:",
+                                error
+                            );
+                        });
+                },
+                400
+            );
+    }
+);
+
+
+/* =========================================================
+   REACTIONS
+========================================================= */
+
+async function reactPost(
+    postId,
+    type
+){
 
     if(!currentUser){
 
@@ -587,188 +2574,2137 @@ async function reactPost(postId,type){
         return;
     }
 
-    if(type==="like"){
-
-        const {data}=await supabaseClient
-            .from("likes")
-            .select("id")
-            .eq("post_id",postId)
-            .eq("user_id",currentUser.id)
-            .maybeSingle();
-
-        if(data){
-
-            await supabaseClient
-                .from("likes")
-                .delete()
-                .eq("id",data.id);
-
-        }else{
-
-            await supabaseClient
-                .from("dislikes")
-                .delete()
-                .eq("post_id",postId)
-                .eq("user_id",currentUser.id);
-
-            await supabaseClient
-                .from("likes")
-                .insert({
-                    post_id:postId,
-                    user_id:currentUser.id
-                });
-        }
-
-    }else{
-
-        const {data}=await supabaseClient
-            .from("dislikes")
-            .select("id")
-            .eq("post_id",postId)
-            .eq("user_id",currentUser.id)
-            .maybeSingle();
-
-        if(data){
-
-            await supabaseClient
-                .from("dislikes")
-                .delete()
-                .eq("id",data.id);
-
-        }else{
-
-            await supabaseClient
-                .from("likes")
-                .delete()
-                .eq("post_id",postId)
-                .eq("user_id",currentUser.id);
-
-            await supabaseClient
-                .from("dislikes")
-                .insert({
-                    post_id:postId,
-                    user_id:currentUser.id
-                });
-        }
+    if(operationLock){
+        return;
     }
 
-    /*
-       هذا مؤقت كما هو في النسخة الأصلية.
-       بالخطوة التالية نغيّره إلى تحديث مباشر
-       بدون إعادة تحميل المنشورات.
-    */
-    await loadPosts();
-}
+    operationLock =
+        true;
 
-async function restoreSession(){
+    try{
 
-    const {data}=await supabaseClient.auth.getSession();
+        switch(type){
 
-    currentUser=
-        data.session
-        ?
-        data.session.user
-        :
-        null;
+            case "like":
 
-    if(currentUser){
+                await callRpc(
+                    "wfesc_like_post",
+                    {
+                        post_id:postId
+                    }
+                );
 
-        const profile=
-            await getProfile(
-                currentUser.id
+                break;
+
+            case "unlike":
+
+                await callRpc(
+                    "wfesc_unlike_post",
+                    {
+                        post_id:postId
+                    }
+                );
+
+                break;
+
+            case "dislike":
+
+                await callRpc(
+                    "wfesc_dislike_post",
+                    {
+                        post_id:postId
+                    }
+                );
+
+                break;
+
+            case "undislike":
+
+                await callRpc(
+                    "wfesc_undislike_post",
+                    {
+                        post_id:postId
+                    }
+                );
+
+                break;
+
+            default:
+                return;
+        }
+
+        const article =
+            document.querySelector(
+                `.post[data-id="${CSS.escape(String(postId))}"]`
             );
 
-        loggedUser.style.display="block";
+        if(article){
 
-        loggedUser.textContent=
-            profile?.username
-            ||
-            currentUser.email
-            ||
-            "";
-    }
+            await refreshSinglePostStats(
+                article,
+                postId
+            );
 
-    /*
-       تحميل المنشورات صار مستقلاً عن Loader التنقل.
-       لا يوجد انتظار لإخفاء Loader هنا.
-    */
+        }
 
-    loadPosts().catch(error=>{
+    }catch(error){
 
         console.error(
-            "WFESC posts loading error:",
+            "WFESC reaction error:",
             error
         );
 
-        postsContainer.innerHTML=
-            '<div class="empty-posts error-posts">حدث خطأ أثناء تحميل المنشورات.</div>';
-    });
+        showToast(
+            error.message
+            ||
+            "تعذر تحديث التفاعل"
+        );
+
+    }finally{
+
+        operationLock =
+            false;
+    }
 }
 
-supabaseClient.auth.onAuthStateChange(
-    async(_event,session)=>{
 
-        currentUser=
-            session
-            ?
-            session.user
-            :
-            null;
+/* =========================================================
+   REFRESH SINGLE POST STATS
+========================================================= */
 
-        if(currentUser){
+async function refreshSinglePostStats(
+    article,
+    postId
+){
 
-            const profile=
-                await getProfile(
-                    currentUser.id
-                );
+    if(!article){
+        return;
+    }
 
-            loggedUser.style.display="block";
+    const stats =
+        await getPostStats(
+            postId
+        );
 
-            loggedUser.textContent=
-                profile?.username
-                ||
-                currentUser.email
-                ||
-                "";
+    const likeButton =
+        article.querySelector(
+            ".like-button"
+        );
+
+    const dislikeButton =
+        article.querySelector(
+            ".dislike-button"
+        );
+
+    const commentButton =
+        article.querySelector(
+            ".comment-toggle"
+        );
+
+    if(likeButton){
+
+        likeButton.classList.toggle(
+            "active",
+            stats.viewerLiked
+        );
+
+        const count =
+            likeButton.querySelector(
+                ".count"
+            );
+
+        if(count){
+            count.textContent =
+                stats.likes;
+        }
+    }
+
+    if(dislikeButton){
+
+        dislikeButton.classList.toggle(
+            "active",
+            stats.viewerDisliked
+        );
+
+        const count =
+            dislikeButton.querySelector(
+                ".count"
+            );
+
+        if(count){
+            count.textContent =
+                stats.dislikes;
+        }
+    }
+
+    if(commentButton){
+
+        const count =
+            commentButton.querySelector(
+                ".count"
+            );
+
+        if(count){
+            count.textContent =
+                stats.comments;
+        }
+    }
+
+    const statNodes =
+        article.querySelectorAll(
+            ".post-stats span"
+        );
+
+    if(statNodes[0]){
+
+        statNodes[0].textContent =
+            `❤️ ${stats.likes}`;
+    }
+
+    if(statNodes[1]){
+
+        statNodes[1].textContent =
+            `👎 ${stats.dislikes}`;
+    }
+
+    if(statNodes[2]){
+
+        statNodes[2].textContent =
+            `💬 ${stats.comments}`;
+    }
+}
+
+
+/* =========================================================
+   SAVE POST
+========================================================= */
+
+async function toggleSavePost(
+    article,
+    postId,
+    currentlySaved
+){
+
+    if(!currentUser){
+
+        showToast(
+            "سجّل الدخول أولاً لحفظ المنشور"
+        );
+
+        return;
+    }
+
+    try{
+
+        if(currentlySaved){
+
+            await callRpc(
+                "wfesc_unsave_post",
+                {
+                    post_id:postId
+                }
+            );
 
         }else{
 
-            loggedUser.style.display="none";
+            await callRpc(
+                "wfesc_save_post",
+                {
+                    post_id:postId
+                }
+            );
+        }
 
-            loggedUser.textContent="";
+        const button =
+            article.querySelector(
+                ".save-button"
+            );
+
+        if(button){
+
+            const newState =
+                !currentlySaved;
+
+            button.classList.toggle(
+                "active",
+                newState
+            );
+
+            const count =
+                button.querySelector(
+                    ".count"
+                );
+
+            if(count){
+
+                count.textContent =
+                    newState
+                    ? "محفوظ"
+                    : "حفظ";
+            }
+        }
+
+        showToast(
+            currentlySaved
+            ? "تم إلغاء حفظ المنشور"
+            : "تم حفظ المنشور"
+        );
+
+    }catch(error){
+
+        console.error(
+            "WFESC save error:",
+            error
+        );
+
+        showToast(
+            error.message
+            ||
+            "تعذر تحديث الحفظ"
+        );
+    }
+}
+
+
+/* =========================================================
+   COMMENTS
+========================================================= */
+
+async function toggleComments(
+    article,
+    postId
+){
+
+    const box =
+        article.querySelector(
+            ".comments-wrap"
+        );
+
+    if(!box){
+        return;
+    }
+
+    const willOpen =
+        !box.classList.contains(
+            "show"
+        );
+
+    box.classList.toggle(
+        "show",
+        willOpen
+    );
+
+    if(!willOpen){
+
+        commentsOpen.delete(
+            String(postId)
+        );
+
+        return;
+    }
+
+    commentsOpen.add(
+        String(postId)
+    );
+
+    await loadCommentsIntoPost(
+        article,
+        postId
+    );
+}
+
+
+async function loadCommentsIntoPost(
+    article,
+    postId
+){
+
+    const list =
+        article.querySelector(
+            ".comments-list"
+        );
+
+    if(!list){
+        return;
+    }
+
+    list.innerHTML =
+        `
+        <div class="comments-loading">
+            جاري تحميل التعليقات...
+        </div>
+        `;
+
+    try{
+
+        const data =
+            await callRpc(
+                "wfesc_get_post_comments",
+                {
+                    target_post_id:postId,
+                    p_limit:50,
+                    p_offset:0
+                }
+            );
+
+        const comments =
+            getArray(
+                data
+            );
+
+        if(!comments.length){
+
+            list.innerHTML =
+                `
+                <div class="comments-empty">
+                    لا توجد تعليقات حتى الآن.
+                </div>
+                `;
+
+            return;
+        }
+
+        list.innerHTML =
+            "";
+
+        for(
+            const comment of comments
+        ){
+
+            const element =
+                await createCommentElement(
+                    comment,
+                    postId,
+                    article
+                );
+
+            list.appendChild(
+                element
+            );
+        }
+
+    }catch(error){
+
+        console.error(
+            "WFESC comments error:",
+            error
+        );
+
+        list.innerHTML =
+            `
+            <div class="comments-empty">
+                تعذر تحميل التعليقات.
+            </div>
+            `;
+    }
+}
+
+
+/* =========================================================
+   CREATE COMMENT
+========================================================= */
+
+async function addComment(
+    postId,
+    content,
+    parentId = null
+){
+
+    if(!currentUser){
+
+        throw new Error(
+            "يجب تسجيل الدخول أولاً."
+        );
+    }
+
+    const result =
+        await callRpc(
+            "wfesc_add_comment",
+            {
+                target_post_id:postId,
+                comment_content:content,
+                target_parent_id:parentId
+            }
+        );
+
+    return result;
+}
+
+
+/* =========================================================
+   COMMENT STATS
+========================================================= */
+
+async function getCommentStats(
+    commentId
+){
+
+    try{
+
+        const data =
+            await callRpc(
+                "wfesc_comment_stats",
+                {
+                    comment_id:commentId
+                }
+            );
+
+        const row =
+            getRpcRow(data);
+
+        if(!row){
+
+            return {
+                likes:0,
+                dislikes:0,
+                replies:0,
+                liked:false,
+                disliked:false
+            };
+        }
+
+        return {
+
+            likes:
+                numericValue(
+                    row.likes
+                    ??
+                    row.like_count
+                    ??
+                    row.likes_count
+                ),
+
+            dislikes:
+                numericValue(
+                    row.dislikes
+                    ??
+                    row.dislike_count
+                    ??
+                    row.dislikes_count
+                ),
+
+            replies:
+                numericValue(
+                    row.replies
+                    ??
+                    row.reply_count
+                    ??
+                    row.replies_count
+                ),
+
+            liked:
+                boolValue(
+                    row.viewer_liked
+                    ??
+                    row.liked_by_user
+                    ??
+                    row.user_liked
+                ),
+
+            disliked:
+                boolValue(
+                    row.viewer_disliked
+                    ??
+                    row.disliked_by_user
+                    ??
+                    row.user_disliked
+                )
+        };
+
+    }catch(error){
+
+        console.warn(
+            "WFESC comment stats error:",
+            error
+        );
+
+        return {
+
+            likes:0,
+            dislikes:0,
+            replies:0,
+            liked:false,
+            disliked:false
+        };
+    }
+}
+
+
+/* =========================================================
+   COMMENT ELEMENT
+========================================================= */
+
+async function createCommentElement(
+    comment,
+    postId,
+    article,
+    isReply = false
+){
+
+    const wrapper =
+        document.createElement(
+            "div"
+        );
+
+    wrapper.className =
+        isReply
+        ? "comment reply"
+        : "comment";
+
+    wrapper.dataset.id =
+        comment.id;
+
+    const profile = {
+
+        avatar_url:
+            comment.avatar_url,
+
+        username:
+            comment.username,
+
+        display_name:
+            comment.display_name
+            ||
+            comment.full_name,
+
+        bio:
+            comment.bio
+    };
+
+    const stats =
+        await getCommentStats(
+            comment.id
+        );
+
+    const isOwner =
+        boolValue(
+            comment.is_owner
+        )
+        ||
+        (
+            currentUser &&
+            String(
+                comment.user_id
+            ) ===
+            String(
+                currentUser.id
+            )
+        );
+
+    wrapper.innerHTML = `
+
+        <div class="comment-head">
+
+            <img
+                class="comment-avatar"
+                src="${esc(profileAvatar(profile))}"
+                alt="">
+
+            <div>
+
+                <div class="comment-user">
+                    ${
+                        esc(
+                            profile.display_name
+                            ||
+                            profile.username
+                            ||
+                            "مستخدم"
+                        )
+                    }
+                </div>
+
+                <span class="comment-date">
+                    ${esc(
+                        formatDate(
+                            comment.created_at
+                        )
+                    )}
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="comment-content">
+            ${esc(comment.content)}
+        </div>
+
+        <div class="comment-meta">
+
+            <button
+                type="button"
+                class="comment-button comment-like ${
+                    stats.liked
+                    ? "active"
+                    : ""
+                }">
+
+                ❤️
+                ${stats.likes}
+
+            </button>
+
+            <button
+                type="button"
+                class="comment-button comment-dislike ${
+                    stats.disliked
+                    ? "active"
+                    : ""
+                }">
+
+                👎
+                ${stats.dislikes}
+
+            </button>
+
+            ${
+                !isReply
+                ?
+                `
+                <button
+                    type="button"
+                    class="comment-button reply-button">
+                    رد
+                </button>
+                `
+                :
+                ""
+            }
+
+            ${
+                stats.replies > 0 && !isReply
+                ?
+                `
+                <button
+                    type="button"
+                    class="comment-button replies-button">
+                    الردود ${stats.replies}
+                </button>
+                `
+                :
+                ""
+            }
+
+            ${
+                isOwner
+                ?
+                `
+                <button
+                    type="button"
+                    class="comment-button edit-comment-button">
+                    تعديل
+                </button>
+                `
+                :
+                ""
+            }
+
+        </div>
+
+        ${
+            !isReply
+            ?
+            `
+            <div
+                class="replies-list hidden">
+            </div>
+            `
+            :
+            ""
+        }
+
+    `;
+
+
+    /* =====================================================
+       COMMENT LIKE
+    ===================================================== */
+
+    wrapper
+        .querySelector(
+            ".comment-like"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await reactToComment(
+                    comment.id,
+                    "like",
+                    wrapper
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       COMMENT DISLIKE
+    ===================================================== */
+
+    wrapper
+        .querySelector(
+            ".comment-dislike"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await reactToComment(
+                    comment.id,
+                    "dislike",
+                    wrapper
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       REPLY
+    ===================================================== */
+
+    wrapper
+        .querySelector(
+            ".reply-button"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                if(!currentUser){
+
+                    showToast(
+                        "سجّل الدخول أولاً للرد"
+                    );
+
+                    return;
+                }
+
+                const commentForm =
+                    article.querySelector(
+                        ".comment-form"
+                    );
+
+                const input =
+                    commentForm?.querySelector(
+                        ".comment-input"
+                    );
+
+                if(!input){
+                    return;
+                }
+
+                input.focus();
+
+                input.value =
+                    `@${comment.username || ""} `;
+
+                input.dataset.parentId =
+                    String(comment.id);
+
+                showToast(
+                    "اكتب الرد ثم اضغط إرسال"
+                );
+            }
+        );
+
+
+    /* =====================================================
+       REPLIES
+    ===================================================== */
+
+    wrapper
+        .querySelector(
+            ".replies-button"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await loadReplies(
+                    wrapper,
+                    comment.id
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       EDIT COMMENT
+    ===================================================== */
+
+    wrapper
+        .querySelector(
+            ".edit-comment-button"
+        )
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await editCommentFlow(
+                    comment,
+                    article
+                );
+
+            }
+        );
+
+    return wrapper;
+}
+
+
+/* =========================================================
+   COMMENT REACTIONS
+========================================================= */
+
+async function reactToComment(
+    commentId,
+    type,
+    wrapper
+){
+
+    if(!currentUser){
+
+        showToast(
+            "سجّل الدخول أولاً"
+        );
+
+        return;
+    }
+
+    try{
+
+        if(type === "like"){
+
+            const current =
+                await supabaseClient
+                    .from("comment_likes")
+                    .select("id")
+                    .eq(
+                        "comment_id",
+                        commentId
+                    )
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    )
+                    .maybeSingle();
+
+            if(current.data){
+
+                await supabaseClient
+                    .from("comment_likes")
+                    .delete()
+                    .eq(
+                        "id",
+                        current.data.id
+                    );
+
+            }else{
+
+                await supabaseClient
+                    .from("comment_dislikes")
+                    .delete()
+                    .eq(
+                        "comment_id",
+                        commentId
+                    )
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    );
+
+                await supabaseClient
+                    .from("comment_likes")
+                    .upsert(
+                        {
+                            comment_id:
+                                commentId,
+                            user_id:
+                                currentUser.id
+                        },
+                        {
+                            onConflict:
+                                "user_id,comment_id"
+                        }
+                    );
+            }
+
+        }else{
+
+            const current =
+                await supabaseClient
+                    .from("comment_dislikes")
+                    .select("id")
+                    .eq(
+                        "comment_id",
+                        commentId
+                    )
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    )
+                    .maybeSingle();
+
+            if(current.data){
+
+                await supabaseClient
+                    .from("comment_dislikes")
+                    .delete()
+                    .eq(
+                        "id",
+                        current.data.id
+                    );
+
+            }else{
+
+                await supabaseClient
+                    .from("comment_likes")
+                    .delete()
+                    .eq(
+                        "comment_id",
+                        commentId
+                    )
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    );
+
+                await supabaseClient
+                    .from("comment_dislikes")
+                    .upsert(
+                        {
+                            comment_id:
+                                commentId,
+                            user_id:
+                                currentUser.id
+                        },
+                        {
+                            onConflict:
+                                "user_id,comment_id"
+                        }
+                    );
+            }
+        }
+
+        const stats =
+            await getCommentStats(
+                commentId
+            );
+
+        const likeButton =
+            wrapper.querySelector(
+                ".comment-like"
+            );
+
+        const dislikeButton =
+            wrapper.querySelector(
+                ".comment-dislike"
+            );
+
+        if(likeButton){
+
+            likeButton.classList.toggle(
+                "active",
+                stats.liked
+            );
+
+            likeButton.textContent =
+                `❤️ ${stats.likes}`;
+        }
+
+        if(dislikeButton){
+
+            dislikeButton.classList.toggle(
+                "active",
+                stats.disliked
+            );
+
+            dislikeButton.textContent =
+                `👎 ${stats.dislikes}`;
+        }
+
+    }catch(error){
+
+        console.error(
+            "WFESC comment reaction error:",
+            error
+        );
+
+        showToast(
+            error.message
+            ||
+            "تعذر تحديث التفاعل"
+        );
+    }
+}
+
+
+/* =========================================================
+   LOAD REPLIES
+========================================================= */
+
+async function loadReplies(
+    wrapper,
+    commentId
+){
+
+    const repliesList =
+        wrapper.querySelector(
+            ".replies-list"
+        );
+
+    if(!repliesList){
+        return;
+    }
+
+    const opening =
+        repliesList.classList.contains(
+            "hidden"
+        );
+
+    if(!opening){
+
+        repliesList.classList.add(
+            "hidden"
+        );
+
+        return;
+    }
+
+    repliesList.classList.remove(
+        "hidden"
+    );
+
+    repliesList.innerHTML =
+        `
+        <div class="comments-loading">
+            جاري تحميل الردود...
+        </div>
+        `;
+
+    try{
+
+        const data =
+            await callRpc(
+                "wfesc_get_comment_replies",
+                {
+                    comment_id:commentId,
+                    p_limit:50,
+                    p_offset:0
+                }
+            );
+
+        const replies =
+            getArray(data);
+
+        if(!replies.length){
+
+            repliesList.innerHTML =
+                `
+                <div class="comments-empty">
+                    لا توجد ردود.
+                </div>
+                `;
+
+            return;
+        }
+
+        repliesList.innerHTML =
+            "";
+
+        for(
+            const reply of replies
+        ){
+
+            const element =
+                await createCommentElement(
+                    reply,
+                    reply.post_id,
+                    document,
+                    true
+                );
+
+            repliesList.appendChild(
+                element
+            );
+        }
+
+    }catch(error){
+
+        console.error(
+            "WFESC replies error:",
+            error
+        );
+
+        repliesList.innerHTML =
+            `
+            <div class="comments-empty">
+                تعذر تحميل الردود.
+            </div>
+            `;
+    }
+}
+
+
+/* =========================================================
+   EDIT COMMENT
+   ---------------------------------------------------------
+   لا يوجد هنا حذف للتعليق لأن RPC الحالي
+   wfesc_delete_comment ينفذ DELETE فعلي.
+   نترك الحذف إلى أن يتم بناء soft-delete
+   للتعليقات حتى لا نخالف مبدأ الاحتفاظ بالبيانات.
+========================================================= */
+
+async function editCommentFlow(
+    comment,
+    article
+){
+
+    if(!currentUser){
+        return;
+    }
+
+    const value =
+        window.prompt(
+            "تعديل التعليق:",
+            comment.content || ""
+        );
+
+    if(value === null){
+        return;
+    }
+
+    const content =
+        value.trim();
+
+    if(!content){
+
+        showToast(
+            "التعليق لا يمكن أن يكون فارغًا"
+        );
+
+        return;
+    }
+
+    try{
+
+        await callRpc(
+            "wfesc_update_comment",
+            {
+                target_comment_id:
+                    comment.id,
+                new_content:
+                    content
+            }
+        );
+
+        const postId =
+            article
+                .closest(".post")
+                ?.dataset.id;
+
+        if(postId){
+
+            await loadCommentsIntoPost(
+                article.closest(".post"),
+                postId
+            );
+        }
+
+        showToast(
+            "تم تعديل التعليق"
+        );
+
+    }catch(error){
+
+        console.error(
+            "WFESC comment update error:",
+            error
+        );
+
+        showToast(
+            error.message
+            ||
+            "تعذر تعديل التعليق"
+        );
+    }
+}
+
+
+/* =========================================================
+   PUBLISH MODAL
+========================================================= */
+
+function openPublishModal(){
+
+    editingPostId =
+        null;
+
+    modalTitle.textContent =
+        "إنشاء منشور";
+
+    postSubmit.textContent =
+        "نشر";
+
+    postTitleInput.value =
+        "";
+
+    postContentInput.value =
+        "";
+
+    postMediaUrlInput.value =
+        "";
+
+    postMediaTypeInput.value =
+        "image";
+
+    postVisibilityInput.value =
+        "public";
+
+    modalBackdrop.classList.add(
+        "show"
+    );
+}
+
+
+function openEditModal(
+    post
+){
+
+    if(!currentUser){
+
+        showToast(
+            "سجّل الدخول أولاً"
+        );
+
+        return;
+    }
+
+    editingPostId =
+        post.id;
+
+    modalTitle.textContent =
+        "تعديل المنشور";
+
+    postSubmit.textContent =
+        "حفظ التعديل";
+
+    postTitleInput.value =
+        post.title || "";
+
+    postContentInput.value =
+        post.content || "";
+
+    postMediaUrlInput.value =
+        post.media_url || "";
+
+    postMediaTypeInput.value =
+        post.post_type
+        ||
+        post.media_type
+        ||
+        "image";
+
+    postVisibilityInput.value =
+        post.visibility
+        ||
+        "public";
+
+    modalBackdrop.classList.add(
+        "show"
+    );
+}
+
+
+function closePostModal(){
+
+    modalBackdrop.classList.remove(
+        "show"
+    );
+
+    editingPostId =
+        null;
+}
+
+
+postModalClose.addEventListener(
+    "click",
+    closePostModal
+);
+
+
+modalBackdrop.addEventListener(
+    "click",
+    event => {
+
+        if(
+            event.target ===
+            modalBackdrop
+        ){
+            closePostModal();
         }
     }
 );
 
-window.addEventListener(
-    "load",
-    ()=>{
 
-        /*
-           نتأكد أن Loader الداخلي غير موجود بصرياً.
-           Loader التنقل هو المسؤول عن الانتقال.
-        */
+/* =========================================================
+   MEDIA VALIDATION
+========================================================= */
 
-        if(loader){
-            loader.classList.add("hide");
-            loader.style.display="none";
+async function validateMedia(
+    url,
+    type
+){
+
+    if(
+        !url &&
+        type
+    ){
+
+        throw new Error(
+            "رابط الوسائط مطلوب."
+        );
+    }
+
+    const safeUrl =
+        escapeUrl(url);
+
+    if(!safeUrl){
+
+        throw new Error(
+            "رابط الوسائط غير صالح."
+        );
+    }
+
+    try{
+
+        await callRpc(
+            "wfesc_validate_post_media",
+            {
+                media_url:safeUrl,
+                media_type:type
+            }
+        );
+
+    }catch(error){
+
+        throw new Error(
+            error.message
+            ||
+            "الوسائط غير صالحة."
+        );
+    }
+
+    return safeUrl;
+}
+
+
+/* =========================================================
+   CREATE POST
+========================================================= */
+
+async function createPost(){
+
+    if(!currentUser){
+
+        throw new Error(
+            "سجّل الدخول أولاً لإنشاء منشور."
+        );
+    }
+
+    const title =
+        postTitleInput.value.trim();
+
+    const content =
+        postContentInput.value.trim();
+
+    const mediaType =
+        postMediaTypeInput.value;
+
+    const visibility =
+        postVisibilityInput.value;
+
+    const mediaUrl =
+        await validateMedia(
+            postMediaUrlInput.value.trim(),
+            mediaType
+        );
+
+    if(!title){
+
+        throw new Error(
+            "عنوان المنشور مطلوب."
+        );
+    }
+
+    await callRpc(
+        "wfesc_create_post",
+        {
+            post_title:title,
+            post_content:content,
+            post_media_url:mediaUrl,
+            post_media_type:mediaType,
+            post_type:mediaType,
+            post_visibility:visibility
+        }
+    );
+}
+
+
+/* =========================================================
+   UPDATE POST
+========================================================= */
+
+async function updatePost(){
+
+    if(!currentUser){
+
+        throw new Error(
+            "سجّل الدخول أولاً."
+        );
+    }
+
+    if(!editingPostId){
+
+        throw new Error(
+            "لم يتم تحديد المنشور."
+        );
+    }
+
+    const title =
+        postTitleInput.value.trim();
+
+    const content =
+        postContentInput.value.trim();
+
+    const visibility =
+        postVisibilityInput.value;
+
+    if(!title){
+
+        throw new Error(
+            "عنوان المنشور مطلوب."
+        );
+    }
+
+    await callRpc(
+        "wfesc_update_post",
+        {
+            target_post_id:
+                editingPostId,
+            new_title:
+                title,
+            new_content:
+                content,
+            new_visibility:
+                visibility
+        }
+    );
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+postForm.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+        if(postSubmit.disabled){
+            return;
         }
 
-        restoreSession().catch(error=>{
+        postSubmit.disabled =
+            true;
+
+        const wasEditing =
+            Boolean(
+                editingPostId
+            );
+
+        postSubmit.textContent =
+            wasEditing
+            ? "جاري الحفظ..."
+            : "جاري النشر...";
+
+        try{
+
+            if(wasEditing){
+
+                await updatePost();
+
+                showToast(
+                    "تم تعديل المنشور"
+                );
+
+            }else{
+
+                await createPost();
+
+                showToast(
+                    "تم نشر المنشور"
+                );
+            }
+
+            closePostModal();
+
+            await loadPosts({
+                feed:currentFeed
+            });
+
+        }catch(error){
 
             console.error(
-                "WFESC posts startup error:",
+                "WFESC publish/update error:",
                 error
             );
 
-            postsContainer.innerHTML=
-                '<div class="empty-posts error-posts">حدث خطأ أثناء تشغيل صفحة المنشورات.</div>';
-        });
+            showToast(
+                error.message
+                ||
+                "تعذر إكمال العملية"
+            );
+
+        }finally{
+
+            postSubmit.disabled =
+                false;
+
+            postSubmit.textContent =
+                wasEditing
+                ? "حفظ التعديل"
+                : "نشر";
+        }
     }
 );
+
+
+/* =========================================================
+   DELETE POST - SOFT DELETE
+========================================================= */
+
+async function deletePost(
+    postId
+){
+
+    if(!currentUser){
+
+        showToast(
+            "سجّل الدخول أولاً"
+        );
+
+        return;
+    }
+
+    const confirmed =
+        window.confirm(
+            "هل تريد حذف المنشور؟\n\nسيتم الحذف من الواجهة باستخدام الحذف الناعم، ولن يتم حذف السجل مباشرة من قاعدة البيانات."
+        );
+
+    if(!confirmed){
+        return;
+    }
+
+    try{
+
+        await callRpc(
+            "wfesc_delete_post",
+            {
+                target_post_id:
+                    postId
+            }
+        );
+
+        const article =
+            document.querySelector(
+                `.post[data-id="${CSS.escape(String(postId))}"]`
+            );
+
+        if(article){
+
+            article.remove();
+        }
+
+        postsCache =
+            postsCache.filter(
+                post =>
+                    String(post.id) !==
+                    String(postId)
+            );
+
+        showToast(
+            "تم حذف المنشور من العرض"
+        );
+
+    }catch(error){
+
+        console.error(
+            "WFESC delete post error:",
+            error
+        );
+
+        showToast(
+            error.message
+            ||
+            "تعذر حذف المنشور"
+        );
+    }
+}
+
+
+/* =========================================================
+   FEED BUTTONS
+========================================================= */
+
+document
+    .querySelectorAll(
+        "[data-feed]"
+    )
+    .forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    const feed =
+                        button.dataset.feed;
+
+                    currentFeed =
+                        feed;
+
+                    document
+                        .querySelectorAll(
+                            "[data-feed]"
+                        )
+                        .forEach(
+                            item => {
+                                item.classList.toggle(
+                                    "active",
+                                    item === button
+                                );
+                            }
+                        );
+
+                    searchInput.value =
+                        "";
+
+                    profileSummary.classList.remove(
+                        "show"
+                    );
+
+                    try{
+
+                        await loadPosts({
+                            feed
+                        });
+
+                    }catch(error){
+
+                        console.error(
+                            "WFESC feed switch error:",
+                            error
+                        );
+                    }
+                }
+            );
+        }
+    );
+
+
+/* =========================================================
+   SEARCH TOGGLE
+========================================================= */
+
+searchToggle.addEventListener(
+    "click",
+    () => {
+
+        searchBox.classList.toggle(
+            "show"
+        );
+
+        if(
+            searchBox.classList.contains(
+                "show"
+            )
+        ){
+
+            searchInput.focus();
+
+        }else{
+
+            searchInput.value =
+                "";
+
+            loadPosts({
+                feed:currentFeed
+            }).catch(console.error);
+        }
+    }
+);
+
+
+/* =========================================================
+   REFRESH
+========================================================= */
+
+refreshPosts.addEventListener(
+    "click",
+    async () => {
+
+        await loadPosts({
+            feed:currentFeed
+        });
+
+        showToast(
+            "تم تحديث المنشورات"
+        );
+    }
+);
+
+
+/* =========================================================
+   PUBLISH BUTTONS
+========================================================= */
+
+document
+    .getElementById(
+        "open-publish"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
+
+            if(!currentUser){
+
+                showToast(
+                    "سجّل الدخول أولاً للنشر"
+                );
+
+                return;
+            }
+
+            openPublishModal();
+        }
+    );
+
+
+document
+    .getElementById(
+        "open-publish-top"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
+
+            if(!currentUser){
+
+                showToast(
+                    "سجّل الدخول أولاً للنشر"
+                );
+
+                return;
+            }
+
+            openPublishModal();
+        }
+    );
+
+
+/* =========================================================
+   AUTH UI
+========================================================= */
+
+async function updateLoggedUser(){
+
+    if(!currentUser){
+
+        loggedUser.style.display =
+            "none";
+
+        loggedUser.textContent =
+            "";
+
+        return;
+    }
+
+    const profile =
+        await getProfile(
+            currentUser.id
+        );
+
+    loggedUser.style.display =
+        "block";
+
+    loggedUser.textContent =
+        profile?.username
+        ||
+        currentUser.email
+        ||
+        "";
+
+    await loadProfileSummary(
+        currentUser.id
+    );
+}
+
+
+async function handleSession(
+    session
+){
+
+    currentUser =
+        session?.user
+        ||
+        null;
+
+    await updateLoggedUser();
+
+    await loadPosts({
+        feed:currentFeed
+    });
+}
+
+
+/* =========================================================
+   AUTH STATE
+   ---------------------------------------------------------
+   نؤجل الاستدعاء بدل إجراء Supabase calls
+   مباشرة داخل callback نفسه.
+========================================================= */
+
+supabaseClient.auth.onAuthStateChange(
+    (_event, session) => {
+
+        setTimeout(
+            () => {
+
+                handleSession(
+                    session
+                ).catch(
+                    error => {
+
+                        console.error(
+                            "WFESC auth state error:",
+                            error
+                        );
+                    }
+                );
+
+            },
+            0
+        );
+    }
+);
+
+
+/* =========================================================
+   RESTORE SESSION
+========================================================= */
+
+async function restoreSession(){
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.auth.getSession();
+
+    if(error){
+
+        console.error(
+            "WFESC getSession error:",
+            error
+        );
+    }
+
+    currentUser =
+        data?.session?.user
+        ||
+        null;
+
+    await updateLoggedUser();
+
+    await loadPosts({
+        feed:currentFeed
+    });
+}
+
+
+/* =========================================================
+   EXTERNAL CORE BRIDGE
+   ---------------------------------------------------------
+   الملفات المستقبلية تستخدم هذا الكائن
+   بدل إعادة كتابة نفس المنطق.
+========================================================= */
+
+window.WFESC_POSTS_CORE = {
+
+    version:"1.0.0",
+
+    supabase:
+        supabaseClient,
+
+    getCurrentUser:
+        () => currentUser,
+
+    getPostsCache:
+        () => postsCache,
+
+    getCurrentFeed:
+        () => currentFeed,
+
+    loadPosts,
+
+    loadCommentsIntoPost,
+
+    createPost,
+
+    updatePost,
+
+    deletePost,
+
+    reactPost,
+
+    toggleSavePost,
+
+    addComment,
+
+    getPostStats,
+
+    getCommentStats,
+
+    getProfile,
+
+    performSearch,
+
+    openPublishModal,
+
+    openEditModal,
+
+    closePostModal,
+
+    showToast
+};
+
+
+/* =========================================================
+   GLOBAL SETTINGS BRIDGE
+   ---------------------------------------------------------
+   يتوافق مع navigation/settings لاحقاً.
+========================================================= */
+
+window.WFESC_POSTS_SETTINGS = {
+
+    animations:true,
+
+    setAnimations(
+        enabled
+    ){
+
+        this.animations =
+            Boolean(enabled);
+
+        document.body.classList.toggle(
+            "no-animation",
+            !this.animations
+        );
+    }
+};
+
+
+/* =========================================================
+   WINDOW LOAD
+========================================================= */
+
+window.addEventListener(
+    "load",
+    () => {
+
+        if(loader){
+
+            loader.classList.add(
+                "hide"
+            );
+
+            loader.style.display =
+                "none";
+        }
+
+        restoreSession()
+            .catch(
+                error => {
+
+                    console.error(
+                        "WFESC posts startup error:",
+                        error
+                    );
+
+                    postsList.innerHTML =
+                        `
+                        <div class="empty-posts error-posts">
+
+                            حدث خطأ أثناء تشغيل صفحة المنشورات.
+
+                            <br>
+
+                            <button
+                                type="button"
+                                class="retry-button"
+                                id="startup-retry">
+                                إعادة المحاولة
+                            </button>
+
+                        </div>
+                        `;
+
+                    document
+                        .getElementById(
+                            "startup-retry"
+                        )
+                        ?.addEventListener(
+                            "click",
+                            () => {
+
+                                restoreSession()
+                                    .catch(
+                                        console.error
+                                    );
+                            }
+                        );
+                }
+            );
+    }
+);
+
 </script>
 
-<!-- نظام التنقل الحالي يبقى مستقلاً عن قلب posts.html -->
+<!-- =====================================================
+     POSTS FEATURE FILES
+     لاحقاً سيتم تفعيلها بعد إكمال قلب النظام.
+     حاليًا لا نعتمد عليها حتى يبقى posts.html مستقلاً.
+===================================================== -->
+
+<!--
+<script src="./posts-featwres/posts-loader.js"></script>
+<script src="./posts-featwres/posts-extra.js"></script>
+<script src="./posts-featwres/posts-ui.js"></script>
+<script src="./posts-featwres/posts-settingrss.js"></script>
+-->
+
+<!-- =====================================================
+     NAVIGATION
+     يبقى مستقلاً عن قلب POSTS
+===================================================== -->
+
 <script src="./navigation/navigation-loader.js"></script>
 
 </body>
