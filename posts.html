@@ -223,6 +223,130 @@ body.no-animation *::after{
 }
 
 /* =====================================================
+   SEARCH RESULTS
+===================================================== */
+
+.wfesc-search-results{
+    display:none;
+    margin-bottom:14px;
+    background:#0b0b0b;
+    border:1px solid #181818;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 15px 40px rgba(0,0,0,.18)
+}
+
+.wfesc-search-results.show{
+    display:block
+}
+
+.wfesc-search-section{
+    padding:11px 13px;
+    color:#777;
+    font-size:11px;
+    border-bottom:1px solid #171717;
+    background:#0d0d0d
+}
+
+.wfesc-search-user{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 13px;
+    border:0;
+    border-bottom:1px solid #151515;
+    background:transparent;
+    color:#eee;
+    text-align:right;
+    cursor:pointer;
+    transition:.2s ease
+}
+
+.wfesc-search-user:hover{
+    background:#121212
+}
+
+.wfesc-search-user-avatar{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    object-fit:cover;
+    background:#171717;
+    border:1px solid #292929;
+    flex:0 0 auto
+}
+
+.wfesc-search-user-info{
+    min-width:0;
+    flex:1
+}
+
+.wfesc-search-user-name{
+    font-size:12px;
+    font-weight:bold;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+}
+
+.wfesc-search-user-username{
+    margin-top:3px;
+    color:#666;
+    font-size:10px
+}
+
+.wfesc-search-post{
+    width:100%;
+    display:block;
+    padding:12px 13px;
+    border:0;
+    border-bottom:1px solid #151515;
+    background:transparent;
+    color:#eee;
+    text-align:right;
+    cursor:pointer;
+    transition:.2s ease
+}
+
+.wfesc-search-post:hover{
+    background:#121212
+}
+
+.wfesc-search-post-title{
+    font-size:12px;
+    font-weight:bold;
+    line-height:1.5
+}
+
+.wfesc-search-post-content{
+    margin-top:5px;
+    color:#777;
+    font-size:10px;
+    line-height:1.7
+}
+
+.wfesc-search-post-date{
+    margin-top:5px;
+    color:#555;
+    font-size:9px
+}
+
+.wfesc-search-empty,
+.wfesc-search-loading,
+.wfesc-search-error{
+    padding:18px;
+    text-align:center;
+    color:#666;
+    font-size:11px;
+    line-height:1.7
+}
+
+.wfesc-search-error{
+    color:#c99
+}
+
+/* =====================================================
    POST
 ===================================================== */
 
@@ -654,7 +778,7 @@ body.no-animation *::after{
 ===================================================== */
 
 .profile-summary{
-    display:none;
+    display:none!important;
     background:#0c0c0c;
     border:1px solid #181818;
     border-radius:14px;
@@ -663,7 +787,7 @@ body.no-animation *::after{
 }
 
 .profile-summary.show{
-    display:flex
+    display:none!important
 }
 
 .profile-summary-avatar{
@@ -897,7 +1021,7 @@ body.no-animation *::after{
         <input
             id="post-search-input"
             type="search"
-            placeholder="ابحث في المنشورات..."
+            placeholder="ابحث في المنشورات والمستخدمين..."
             autocomplete="off">
 
     </div>
@@ -928,7 +1052,8 @@ body.no-animation *::after{
 
     </div>
 
-    <div id="posts-list">
+    <div
+        id="posts-list">
 
         <div class="empty-posts">
             جاري تحميل المنشورات...
@@ -1197,6 +1322,8 @@ let loadedPostIds = new Set();
 let commentsOpen = new Set();
 
 let operationLock = false;
+
+let wfescSearchResultsBox = null;
 
 
 /* =========================================================
@@ -1470,6 +1597,7 @@ async function enrichPostProfile(post){
         post?.display_name ||
         post?.avatar_url
     ){
+
         return {
             id:post.user_id,
             username:post.username,
@@ -1608,7 +1736,7 @@ async function getPostStats(
             await callRpc(
                 "wfesc_post_stats",
                 {
-                    post_id:postId
+                    target_post_id:postId
                 }
             );
 
@@ -1630,29 +1758,29 @@ async function getPostStats(
 
             likes:
                 numericValue(
+                    row.likes_count
+                    ??
                     row.likes
                     ??
                     row.like_count
-                    ??
-                    row.likes_count
                 ),
 
             dislikes:
                 numericValue(
+                    row.dislikes_count
+                    ??
                     row.dislikes
                     ??
                     row.dislike_count
-                    ??
-                    row.dislikes_count
                 ),
 
             comments:
                 numericValue(
+                    row.comments_count
+                    ??
                     row.comments
                     ??
                     row.comment_count
-                    ??
-                    row.comments_count
                 ),
 
             viewerLiked:
@@ -1711,18 +1839,18 @@ async function getSavedStatus(
             await callRpc(
                 "wfesc_is_post_saved",
                 {
-                    post_id:postId
+                    target_post_id:postId
                 }
             );
-
-        const row =
-            getRpcRow(result);
 
         if(
             typeof result === "boolean"
         ){
             return result;
         }
+
+        const row =
+            getRpcRow(result);
 
         if(
             typeof row === "boolean"
@@ -1840,6 +1968,9 @@ async function createPostElement(
 
     article.dataset.id =
         post.id;
+
+    article.id =
+        `post-${post.id}`;
 
     const profile =
         await enrichPostProfile(
@@ -2129,11 +2260,19 @@ async function createPostElement(
         )
         ?.addEventListener(
             "click",
-            async () => {
+            async event => {
+
+                const button =
+                    event.currentTarget;
+
+                const isActive =
+                    button.classList.contains(
+                        "active"
+                    );
 
                 await reactPost(
                     post.id,
-                    stats.viewerLiked
+                    isActive
                         ? "unlike"
                         : "like"
                 );
@@ -2148,11 +2287,19 @@ async function createPostElement(
         )
         ?.addEventListener(
             "click",
-            async () => {
+            async event => {
+
+                const button =
+                    event.currentTarget;
+
+                const isActive =
+                    button.classList.contains(
+                        "active"
+                    );
 
                 await reactPost(
                     post.id,
-                    stats.viewerDisliked
+                    isActive
                         ? "undislike"
                         : "dislike"
                 );
@@ -2184,12 +2331,20 @@ async function createPostElement(
         )
         ?.addEventListener(
             "click",
-            async () => {
+            async event => {
+
+                const button =
+                    event.currentTarget;
+
+                const isSaved =
+                    button.classList.contains(
+                        "active"
+                    );
 
                 await toggleSavePost(
                     article,
                     post.id,
-                    saved
+                    isSaved
                 );
 
             }
@@ -2246,6 +2401,11 @@ async function createPostElement(
                         ".comment-input"
                     );
 
+                const submitButton =
+                    commentForm.querySelector(
+                        ".comment-submit"
+                    );
+
                 const content =
                     input.value.trim();
 
@@ -2257,6 +2417,28 @@ async function createPostElement(
 
                     return;
                 }
+
+                if(!currentUser){
+
+                    showToast(
+                        "سجّل الدخول أولاً"
+                    );
+
+                    return;
+                }
+
+                if(submitButton.disabled){
+                    return;
+                }
+
+                submitButton.disabled =
+                    true;
+
+                const oldText =
+                    submitButton.textContent;
+
+                submitButton.textContent =
+                    "جاري الإرسال...";
 
                 try{
 
@@ -2275,8 +2457,7 @@ async function createPostElement(
                         parentId
                     );
 
-                    input.value =
-                        "";
+                    input.value = "";
 
                     delete input.dataset.parentId;
 
@@ -2290,13 +2471,32 @@ async function createPostElement(
                         post.id
                     );
 
+                    showToast(
+                        parentId
+                        ? "تم إرسال الرد"
+                        : "تم إضافة التعليق"
+                    );
+
                 }catch(error){
+
+                    console.error(
+                        "WFESC add comment error:",
+                        error
+                    );
 
                     showToast(
                         error.message
                         ||
                         "تعذر إضافة التعليق"
                     );
+
+                }finally{
+
+                    submitButton.disabled =
+                        false;
+
+                    submitButton.textContent =
+                        oldText;
                 }
 
             }
@@ -2353,13 +2553,6 @@ async function fetchFeed(
 
         default:
 
-            /* =================================================
-               FIX:
-               wfesc_get_public_posts تستخدم:
-               result_limit
-               result_offset
-            ================================================= */
-
             return callRpc(
                 "wfesc_get_public_posts",
                 {
@@ -2394,6 +2587,9 @@ async function loadPosts(
             جاري تحميل المنشورات...
         </div>
         `;
+
+    postsList.style.display =
+        "";
 
     loadedPostIds.clear();
 
@@ -2446,13 +2642,15 @@ async function loadPosts(
             postsList.innerHTML =
                 `
                 <div class="empty-posts">
+
                     ${
                         searchText.trim()
                         ?
-                        "لا توجد نتائج مطابقة."
+                        "لا توجد منشورات مطابقة."
                         :
                         "لا توجد منشورات لعرضها حالياً."
                     }
+
                 </div>
                 `;
 
@@ -2541,6 +2739,695 @@ async function loadPosts(
 
 
 /* =========================================================
+   SEARCH RESULT UI
+========================================================= */
+
+function ensureSearchResultsUI(){
+
+    if(wfescSearchResultsBox){
+
+        return wfescSearchResultsBox;
+    }
+
+    wfescSearchResultsBox =
+        document.createElement(
+            "div"
+        );
+
+    wfescSearchResultsBox.id =
+        "wfesc-search-results";
+
+    wfescSearchResultsBox.className =
+        "wfesc-search-results";
+
+    searchBox.insertAdjacentElement(
+        "afterend",
+        wfescSearchResultsBox
+    );
+
+    return wfescSearchResultsBox;
+}
+
+
+function showSearchResultsBox(){
+
+    const box =
+        ensureSearchResultsUI();
+
+    box.classList.add(
+        "show"
+    );
+
+    return box;
+}
+
+
+function hideSearchResultsBox(){
+
+    const box =
+        ensureSearchResultsUI();
+
+    box.classList.remove(
+        "show"
+    );
+
+    box.innerHTML =
+        "";
+}
+
+
+function renderSearchSectionTitle(
+    title
+){
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+    element.className =
+        "wfesc-search-section";
+
+    element.textContent =
+        title;
+
+    return element;
+}
+
+
+function renderUserSearchResult(
+    user
+){
+
+    const item =
+        document.createElement(
+            "button"
+        );
+
+    item.type =
+        "button";
+
+    item.className =
+        "wfesc-search-user";
+
+    const avatar =
+        document.createElement(
+            "img"
+        );
+
+    avatar.className =
+        "wfesc-search-user-avatar";
+
+    avatar.src =
+        profileAvatar(user);
+
+    avatar.alt =
+        "";
+
+    const info =
+        document.createElement(
+            "div"
+        );
+
+    info.className =
+        "wfesc-search-user-info";
+
+    const name =
+        document.createElement(
+            "div"
+        );
+
+    name.className =
+        "wfesc-search-user-name";
+
+    name.textContent =
+        user.display_name
+        ||
+        user.username
+        ||
+        "مستخدم";
+
+    const username =
+        document.createElement(
+            "div"
+        );
+
+    username.className =
+        "wfesc-search-user-username";
+
+    username.textContent =
+        user.username
+        ?
+        "@" + user.username
+        :
+        "";
+
+    info.appendChild(
+        name
+    );
+
+    info.appendChild(
+        username
+    );
+
+    item.appendChild(
+        avatar
+    );
+
+    item.appendChild(
+        info
+    );
+
+    item.addEventListener(
+        "click",
+        () => {
+
+            try{
+
+                localStorage.setItem(
+                    "wfesc-profile-target-user",
+                    String(user.id)
+                );
+
+            }catch(error){}
+
+            window.location.href =
+                "profile.html?user_id=" +
+                encodeURIComponent(
+                    String(user.id)
+                );
+
+        }
+    );
+
+    return item;
+}
+
+
+function renderPostSearchResult(
+    post,
+    query
+){
+
+    const item =
+        document.createElement(
+            "button"
+        );
+
+    item.type =
+        "button";
+
+    item.className =
+        "wfesc-search-post";
+
+    const title =
+        document.createElement(
+            "div"
+        );
+
+    title.className =
+        "wfesc-search-post-title";
+
+    title.textContent =
+        post.title
+        ||
+        "منشور بدون عنوان";
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+    content.className =
+        "wfesc-search-post-content";
+
+    content.textContent =
+        String(
+            post.content
+            ||
+            ""
+        ).slice(
+            0,
+            180
+        );
+
+    const date =
+        document.createElement(
+            "div"
+        );
+
+    date.className =
+        "wfesc-search-post-date";
+
+    date.textContent =
+        formatDate(
+            post.created_at
+        );
+
+    item.appendChild(
+        title
+    );
+
+    item.appendChild(
+        content
+    );
+
+    item.appendChild(
+        date
+    );
+
+    item.addEventListener(
+        "click",
+        async () => {
+
+            hideSearchResultsBox();
+
+            postsList.style.display =
+                "";
+
+            try{
+
+                await loadPosts({
+                    feed:currentFeed,
+                    searchText:query
+                });
+
+                const target =
+                    document.querySelector(
+                        `.post[data-id="${CSS.escape(String(post.id))}"]`
+                    );
+
+                if(target){
+
+                    target.scrollIntoView({
+                        behavior:"smooth",
+                        block:"center"
+                    });
+
+                    target.style.outline =
+                        "2px solid #777";
+
+                    target.style.outlineOffset =
+                        "2px";
+
+                    setTimeout(
+                        () => {
+
+                            target.style.outline =
+                                "";
+
+                            target.style.outlineOffset =
+                                "";
+
+                        },
+                        1600
+                    );
+
+                }else{
+
+                    showToast(
+                        "تعذر فتح المنشور"
+                    );
+                }
+
+            }catch(error){
+
+                console.error(
+                    "WFESC open searched post error:",
+                    error
+                );
+
+                showToast(
+                    error.message
+                    ||
+                    "تعذر فتح المنشور"
+                );
+            }
+        }
+    );
+
+    return item;
+}
+
+
+/* =========================================================
+   USER SEARCH
+========================================================= */
+
+async function searchProfiles(
+    text
+){
+
+    const results =
+        new Map();
+
+    /*
+     * نحاول أولاً RPC البحث الموجود مسبقاً
+     * داخل نظام WFESC.
+     */
+    try{
+
+        const rpcResult =
+            await supabaseClient.rpc(
+                "search_users",
+                {
+                    search_text:text
+                }
+            );
+
+        if(!rpcResult.error){
+
+            const rows =
+                getArray(
+                    rpcResult.data
+                );
+
+            rows.forEach(
+                entry => {
+
+                    const user =
+                        entry?.user
+                        ||
+                        entry;
+
+                    const id =
+                        user?.id
+                        ||
+                        user?.user_id;
+
+                    if(
+                        id &&
+                        !results.has(
+                            String(id)
+                        )
+                    ){
+
+                        results.set(
+                            String(id),
+                            {
+                                id:id,
+                                username:
+                                    user.username
+                                    ||
+                                    "",
+                                display_name:
+                                    user.display_name
+                                    ||
+                                    user.name
+                                    ||
+                                    "",
+                                avatar_url:
+                                    user.avatar_url
+                                    ||
+                                    "",
+                                bio:
+                                    user.bio
+                                    ||
+                                    ""
+                            }
+                        );
+                    }
+                }
+            );
+        }
+
+    }catch(error){
+
+        console.warn(
+            "WFESC search_users RPC unavailable:",
+            error
+        );
+    }
+
+    /*
+     * fallback مباشر على profiles.
+     */
+    try{
+
+        const [
+            usernameResult,
+            displayNameResult
+        ] =
+        await Promise.all([
+
+            supabaseClient
+                .from("profiles")
+                .select(
+                    "id,username,display_name,avatar_url,bio"
+                )
+                .ilike(
+                    "username",
+                    `%${text}%`
+                )
+                .limit(15),
+
+            supabaseClient
+                .from("profiles")
+                .select(
+                    "id,username,display_name,avatar_url,bio"
+                )
+                .ilike(
+                    "display_name",
+                    `%${text}%`
+                )
+                .limit(15)
+
+        ]);
+
+        if(
+            !usernameResult.error
+        ){
+
+            getArray(
+                usernameResult.data
+            ).forEach(
+                user => {
+
+                    if(
+                        user?.id &&
+                        !results.has(
+                            String(user.id)
+                        )
+                    ){
+
+                        results.set(
+                            String(user.id),
+                            user
+                        );
+                    }
+                }
+            );
+        }
+
+        if(
+            !displayNameResult.error
+        ){
+
+            getArray(
+                displayNameResult.data
+            ).forEach(
+                user => {
+
+                    if(
+                        user?.id &&
+                        !results.has(
+                            String(user.id)
+                        )
+                    ){
+
+                        results.set(
+                            String(user.id),
+                            user
+                        );
+                    }
+                }
+            );
+        }
+
+    }catch(error){
+
+        console.warn(
+            "WFESC profile search fallback error:",
+            error
+        );
+    }
+
+    return Array.from(
+        results.values()
+    );
+}
+
+
+/* =========================================================
+   COMBINED SEARCH
+========================================================= */
+
+async function searchUsersAndPosts(
+    text
+){
+
+    const cleanText =
+        String(text || "").trim();
+
+    if(!cleanText){
+
+        hideSearchResultsBox();
+
+        postsList.style.display =
+            "";
+
+        return;
+    }
+
+    const box =
+        showSearchResultsBox();
+
+    postsList.style.display =
+        "none";
+
+    box.innerHTML =
+        `
+        <div class="wfesc-search-loading">
+            جاري البحث...
+        </div>
+        `;
+
+    try{
+
+        const postsPromise =
+            supabaseClient.rpc(
+                "wfesc_search_posts_feed",
+                {
+                    search_text:cleanText,
+                    p_limit:30,
+                    p_offset:0
+                }
+            );
+
+        const usersPromise =
+            searchProfiles(
+                cleanText
+            );
+
+        const [
+            postsResponse,
+            users
+        ] =
+            await Promise.all([
+                postsPromise,
+                usersPromise
+            ]);
+
+        if(postsResponse.error){
+
+            throw postsResponse.error;
+        }
+
+        const posts =
+            getArray(
+                postsResponse.data
+            )
+            .filter(
+                post =>
+                    post &&
+                    !post.deleted_at
+            );
+
+        box.innerHTML =
+            "";
+
+        if(
+            !users.length &&
+            !posts.length
+        ){
+
+            const empty =
+                document.createElement(
+                    "div"
+                );
+
+            empty.className =
+                "wfesc-search-empty";
+
+            empty.textContent =
+                "لا توجد نتائج مطابقة.";
+
+            box.appendChild(
+                empty
+            );
+
+            return;
+        }
+
+        if(users.length){
+
+            box.appendChild(
+                renderSearchSectionTitle(
+                    "المستخدمون"
+                )
+            );
+
+            users.forEach(
+                user => {
+
+                    box.appendChild(
+                        renderUserSearchResult(
+                            user
+                        )
+                    );
+                }
+            );
+        }
+
+        if(posts.length){
+
+            box.appendChild(
+                renderSearchSectionTitle(
+                    "المنشورات"
+                )
+            );
+
+            posts.forEach(
+                post => {
+
+                    box.appendChild(
+                        renderPostSearchResult(
+                            post,
+                            cleanText
+                        )
+                    );
+                }
+            );
+        }
+
+    }catch(error){
+
+        console.error(
+            "WFESC combined search error:",
+            error
+        );
+
+        box.innerHTML =
+            `
+            <div class="wfesc-search-error">
+
+                تعذر تنفيذ البحث.
+
+                <br>
+
+                ${esc(
+                    error?.message
+                    ||
+                    ""
+                )}
+
+            </div>
+            `;
+    }
+}
+
+
+/* =========================================================
    SEARCH
 ========================================================= */
 
@@ -2551,6 +3438,11 @@ async function performSearch(){
 
     if(!text){
 
+        hideSearchResultsBox();
+
+        postsList.style.display =
+            "";
+
         await loadPosts({
             feed:currentFeed
         });
@@ -2558,10 +3450,9 @@ async function performSearch(){
         return;
     }
 
-    await loadPosts({
-        feed:currentFeed,
-        searchText:text
-    });
+    await searchUsersAndPosts(
+        text
+    );
 }
 
 
@@ -2576,13 +3467,19 @@ searchInput.addEventListener(
         currentSearchTimer =
             setTimeout(
                 () => {
+
                     performSearch()
-                        .catch(error=>{
-                            console.error(
-                                "WFESC search error:",
-                                error
-                            );
-                        });
+                        .catch(
+                            error => {
+
+                                console.error(
+                                    "WFESC search error:",
+                                    error
+                                );
+
+                            }
+                        );
+
                 },
                 400
             );
@@ -2615,6 +3512,33 @@ async function reactPost(
     operationLock =
         true;
 
+    const article =
+        document.querySelector(
+            `.post[data-id="${CSS.escape(String(postId))}"]`
+        );
+
+    const button =
+        article
+        ? (
+            type === "like" ||
+            type === "unlike"
+            ?
+            article.querySelector(
+                ".like-button"
+            )
+            :
+            article.querySelector(
+                ".dislike-button"
+            )
+        )
+        : null;
+
+    if(button){
+
+        button.disabled =
+            true;
+    }
+
     try{
 
         switch(type){
@@ -2624,7 +3548,7 @@ async function reactPost(
                 await callRpc(
                     "wfesc_like_post",
                     {
-                        post_id:postId
+                        target_post_id:postId
                     }
                 );
 
@@ -2635,7 +3559,7 @@ async function reactPost(
                 await callRpc(
                     "wfesc_unlike_post",
                     {
-                        post_id:postId
+                        target_post_id:postId
                     }
                 );
 
@@ -2646,7 +3570,7 @@ async function reactPost(
                 await callRpc(
                     "wfesc_dislike_post",
                     {
-                        post_id:postId
+                        target_post_id:postId
                     }
                 );
 
@@ -2657,7 +3581,7 @@ async function reactPost(
                 await callRpc(
                     "wfesc_undislike_post",
                     {
-                        post_id:postId
+                        target_post_id:postId
                     }
                 );
 
@@ -2667,18 +3591,12 @@ async function reactPost(
                 return;
         }
 
-        const article =
-            document.querySelector(
-                `.post[data-id="${CSS.escape(String(postId))}"]`
-            );
-
         if(article){
 
             await refreshSinglePostStats(
                 article,
                 postId
             );
-
         }
 
     }catch(error){
@@ -2695,6 +3613,12 @@ async function reactPost(
         );
 
     }finally{
+
+        if(button){
+
+            button.disabled =
+                false;
+        }
 
         operationLock =
             false;
@@ -2828,6 +3752,17 @@ async function toggleSavePost(
         return;
     }
 
+    const button =
+        article?.querySelector(
+            ".save-button"
+        );
+
+    if(button){
+
+        button.disabled =
+            true;
+    }
+
     try{
 
         if(currentlySaved){
@@ -2835,7 +3770,7 @@ async function toggleSavePost(
             await callRpc(
                 "wfesc_unsave_post",
                 {
-                    post_id:postId
+                    target_post_id:postId
                 }
             );
 
@@ -2844,15 +3779,10 @@ async function toggleSavePost(
             await callRpc(
                 "wfesc_save_post",
                 {
-                    post_id:postId
+                    target_post_id:postId
                 }
             );
         }
-
-        const button =
-            article.querySelector(
-                ".save-button"
-            );
 
         if(button){
 
@@ -2896,6 +3826,14 @@ async function toggleSavePost(
             ||
             "تعذر تحديث الحفظ"
         );
+
+    }finally{
+
+        if(button){
+
+            button.disabled =
+                false;
+        }
     }
 }
 
@@ -2976,8 +3914,8 @@ async function loadCommentsIntoPost(
                 "wfesc_get_post_comments",
                 {
                     target_post_id:postId,
-                    p_limit:50,
-                    p_offset:0
+                    result_limit:50,
+                    result_offset:0
                 }
             );
 
@@ -3027,13 +3965,17 @@ async function loadCommentsIntoPost(
         list.innerHTML =
             `
             <div class="comments-empty">
+
                 تعذر تحميل التعليقات.
+
                 <br>
+
                 ${esc(
                     error?.message
                     ||
                     ""
                 )}
+
             </div>
             `;
     }
@@ -3085,7 +4027,7 @@ async function getCommentStats(
             await callRpc(
                 "wfesc_comment_stats",
                 {
-                    comment_id:commentId
+                    target_comment_id:commentId
                 }
             );
 
@@ -3107,47 +4049,47 @@ async function getCommentStats(
 
             likes:
                 numericValue(
+                    row.likes_count
+                    ??
                     row.likes
                     ??
                     row.like_count
-                    ??
-                    row.likes_count
                 ),
 
             dislikes:
                 numericValue(
+                    row.dislikes_count
+                    ??
                     row.dislikes
                     ??
                     row.dislike_count
-                    ??
-                    row.dislikes_count
                 ),
 
             replies:
                 numericValue(
+                    row.replies_count
+                    ??
                     row.replies
                     ??
                     row.reply_count
-                    ??
-                    row.replies_count
                 ),
 
             liked:
                 boolValue(
+                    row.is_liked
+                    ??
                     row.viewer_liked
                     ??
                     row.liked_by_user
-                    ??
-                    row.user_liked
                 ),
 
             disliked:
                 boolValue(
+                    row.is_disliked
+                    ??
                     row.viewer_disliked
                     ??
                     row.disliked_by_user
-                    ??
-                    row.user_disliked
                 )
         };
 
@@ -3363,12 +4305,13 @@ async function createCommentElement(
         )
         ?.addEventListener(
             "click",
-            async () => {
+            async event => {
 
                 await reactToComment(
                     comment.id,
                     "like",
-                    wrapper
+                    wrapper,
+                    event.currentTarget
                 );
 
             }
@@ -3381,12 +4324,13 @@ async function createCommentElement(
         )
         ?.addEventListener(
             "click",
-            async () => {
+            async event => {
 
                 await reactToComment(
                     comment.id,
                     "dislike",
-                    wrapper
+                    wrapper,
+                    event.currentTarget
                 );
 
             }
@@ -3483,7 +4427,8 @@ async function createCommentElement(
 async function reactToComment(
     commentId,
     type,
-    wrapper
+    wrapper,
+    clickedButton = null
 ){
 
     if(!currentUser){
@@ -3495,11 +4440,20 @@ async function reactToComment(
         return;
     }
 
+    if(clickedButton){
+
+        clickedButton.disabled =
+            true;
+    }
+
     try{
 
         if(type === "like"){
 
-            const current =
+            const {
+                data:current,
+                error:currentError
+            } =
                 await supabaseClient
                     .from("comment_likes")
                     .select("id")
@@ -3513,49 +4467,81 @@ async function reactToComment(
                     )
                     .maybeSingle();
 
-            if(current.data){
+            if(currentError){
 
-                await supabaseClient
-                    .from("comment_likes")
-                    .delete()
-                    .eq(
-                        "id",
-                        current.data.id
-                    );
+                throw currentError;
+            }
+
+            if(current){
+
+                const {
+                    error
+                } =
+                    await supabaseClient
+                        .from("comment_likes")
+                        .delete()
+                        .eq(
+                            "id",
+                            current.id
+                        );
+
+                if(error){
+
+                    throw error;
+                }
 
             }else{
 
-                await supabaseClient
-                    .from("comment_dislikes")
-                    .delete()
-                    .eq(
-                        "comment_id",
-                        commentId
-                    )
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    );
+                const {
+                    error:deleteDislikeError
+                } =
+                    await supabaseClient
+                        .from("comment_dislikes")
+                        .delete()
+                        .eq(
+                            "comment_id",
+                            commentId
+                        )
+                        .eq(
+                            "user_id",
+                            currentUser.id
+                        );
 
-                await supabaseClient
-                    .from("comment_likes")
-                    .upsert(
-                        {
-                            comment_id:
-                                commentId,
-                            user_id:
-                                currentUser.id
-                        },
-                        {
-                            onConflict:
-                                "user_id,comment_id"
-                        }
-                    );
+                if(deleteDislikeError){
+
+                    throw deleteDislikeError;
+                }
+
+                const {
+                    error:upsertLikeError
+                } =
+                    await supabaseClient
+                        .from("comment_likes")
+                        .upsert(
+                            {
+                                comment_id:
+                                    commentId,
+                                user_id:
+                                    currentUser.id
+                            },
+                            {
+                                onConflict:
+                                    "user_id,comment_id"
+                            }
+                        );
+
+                if(upsertLikeError){
+
+                    throw upsertLikeError;
+                }
             }
 
         }else{
 
-            const current =
+            const {
+                data:current,
+                error:currentError
+            } =
                 await supabaseClient
                     .from("comment_dislikes")
                     .select("id")
@@ -3569,44 +4555,73 @@ async function reactToComment(
                     )
                     .maybeSingle();
 
-            if(current.data){
+            if(currentError){
 
-                await supabaseClient
-                    .from("comment_dislikes")
-                    .delete()
-                    .eq(
-                        "id",
-                        current.data.id
-                    );
+                throw currentError;
+            }
+
+            if(current){
+
+                const {
+                    error
+                } =
+                    await supabaseClient
+                        .from("comment_dislikes")
+                        .delete()
+                        .eq(
+                            "id",
+                            current.id
+                        );
+
+                if(error){
+
+                    throw error;
+                }
 
             }else{
 
-                await supabaseClient
-                    .from("comment_likes")
-                    .delete()
-                    .eq(
-                        "comment_id",
-                        commentId
-                    )
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    );
+                const {
+                    error:deleteLikeError
+                } =
+                    await supabaseClient
+                        .from("comment_likes")
+                        .delete()
+                        .eq(
+                            "comment_id",
+                            commentId
+                        )
+                        .eq(
+                            "user_id",
+                            currentUser.id
+                        );
 
-                await supabaseClient
-                    .from("comment_dislikes")
-                    .upsert(
-                        {
-                            comment_id:
-                                commentId,
-                            user_id:
-                                currentUser.id
-                        },
-                        {
-                            onConflict:
-                                "user_id,comment_id"
-                        }
-                    );
+                if(deleteLikeError){
+
+                    throw deleteLikeError;
+                }
+
+                const {
+                    error:upsertDislikeError
+                } =
+                    await supabaseClient
+                        .from("comment_dislikes")
+                        .upsert(
+                            {
+                                comment_id:
+                                    commentId,
+                                user_id:
+                                    currentUser.id
+                            },
+                            {
+                                onConflict:
+                                    "user_id,comment_id"
+                            }
+                        );
+
+                if(upsertDislikeError){
+
+                    throw upsertDislikeError;
+                }
             }
         }
 
@@ -3659,6 +4674,14 @@ async function reactToComment(
             ||
             "تعذر تحديث التفاعل"
         );
+
+    }finally{
+
+        if(clickedButton){
+
+            clickedButton.disabled =
+                false;
+        }
     }
 }
 
@@ -3712,14 +4735,16 @@ async function loadReplies(
             await callRpc(
                 "wfesc_get_comment_replies",
                 {
-                    comment_id:commentId,
-                    p_limit:50,
-                    p_offset:0
+                    target_comment_id:commentId,
+                    result_limit:50,
+                    result_offset:0
                 }
             );
 
         const replies =
-            getArray(data);
+            getArray(
+                data
+            );
 
         if(!replies.length){
 
@@ -3763,13 +4788,17 @@ async function loadReplies(
         repliesList.innerHTML =
             `
             <div class="comments-empty">
+
                 تعذر تحميل الردود.
+
                 <br>
+
                 ${esc(
                     error?.message
                     ||
                     ""
                 )}
+
             </div>
             `;
     }
@@ -3823,15 +4852,26 @@ async function editCommentFlow(
             }
         );
 
-        const postId =
-            article
-                .closest(".post")
-                ?.dataset.id;
+        const postArticle =
+            article.closest(
+                ".post"
+            );
 
-        if(postId){
+        const postId =
+            postArticle?.dataset.id;
+
+        if(
+            postId &&
+            postArticle
+        ){
 
             await loadCommentsIntoPost(
-                article.closest(".post"),
+                postArticle,
+                postId
+            );
+
+            await refreshSinglePostStats(
+                postArticle,
                 postId
             );
         }
@@ -4307,6 +5347,7 @@ document
                         )
                         .forEach(
                             item => {
+
                                 item.classList.toggle(
                                     "active",
                                     item === button
@@ -4315,6 +5356,11 @@ document
                         );
 
                     searchInput.value =
+                        "";
+
+                    hideSearchResultsBox();
+
+                    postsList.style.display =
                         "";
 
                     profileSummary.classList.remove(
@@ -4365,9 +5411,16 @@ searchToggle.addEventListener(
             searchInput.value =
                 "";
 
+            hideSearchResultsBox();
+
+            postsList.style.display =
+                "";
+
             loadPosts({
                 feed:currentFeed
-            }).catch(console.error);
+            }).catch(
+                console.error
+            );
         }
     }
 );
@@ -4380,6 +5433,14 @@ searchToggle.addEventListener(
 refreshPosts.addEventListener(
     "click",
     async () => {
+
+        hideSearchResultsBox();
+
+        searchInput.value =
+            "";
+
+        postsList.style.display =
+            "";
 
         await loadPosts({
             feed:currentFeed
@@ -4443,8 +5504,13 @@ async function updateLoggedUser(){
         ||
         "";
 
-    await loadProfileSummary(
-        currentUser.id
+    /*
+     * لا نعرض profile-summary فوق المنشورات.
+     * كان هذا هو القسم الذي يظهر فيه
+     * اسم وصورة الحساب والنصوص الغريبة.
+     */
+    profileSummary.classList.remove(
+        "show"
     );
 }
 
@@ -4559,7 +5625,7 @@ async function restoreSession(){
 
 window.WFESC_POSTS_CORE = {
 
-    version:"1.0.0",
+    version:"1.1.0",
 
     supabase:
         supabaseClient,
