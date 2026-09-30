@@ -872,13 +872,6 @@ body.no-animation *::after{
             المحفوظات
         </button>
 
-        <button
-            type="button"
-            class="toolbar-button publish-button"
-            id="open-publish">
-            نشر منشور
-        </button>
-
     </div>
 
     <div
@@ -1075,35 +1068,6 @@ body.no-animation *::after{
 
 /* =========================================================
    WFESC POSTS — FINAL CORE
-   ---------------------------------------------------------
-   هذا الملف هو قلب نظام المنشورات.
-
-   المسؤوليات:
-   - Supabase
-   - Authentication
-   - Feed
-   - Publishing
-   - Editing
-   - Soft delete
-   - Likes
-   - Dislikes
-   - Comments
-   - Replies
-   - Comment likes/dislikes
-   - Saving
-   - Search
-   - Friends feed
-   - Trending feed
-   - Saved feed
-   - Profile posts
-   - Stats
-   - Profile loading
-   - Error handling
-   - External feature bridge
-
-   الملفات التابعة لاحقاً يمكنها الوصول للنواة
-   من خلال:
-   window.WFESC_POSTS_CORE
 ========================================================= */
 
 
@@ -2093,10 +2057,6 @@ async function createPostElement(
     `;
 
 
-    /* =====================================================
-       LIKE
-    ===================================================== */
-
     article
         .querySelector(
             ".like-button"
@@ -2115,10 +2075,6 @@ async function createPostElement(
             }
         );
 
-
-    /* =====================================================
-       DISLIKE
-    ===================================================== */
 
     article
         .querySelector(
@@ -2139,10 +2095,6 @@ async function createPostElement(
         );
 
 
-    /* =====================================================
-       COMMENT TOGGLE
-    ===================================================== */
-
     article
         .querySelector(
             ".comment-toggle"
@@ -2159,10 +2111,6 @@ async function createPostElement(
             }
         );
 
-
-    /* =====================================================
-       SAVE
-    ===================================================== */
 
     article
         .querySelector(
@@ -2182,10 +2130,6 @@ async function createPostElement(
         );
 
 
-    /* =====================================================
-       EDIT
-    ===================================================== */
-
     article
         .querySelector(
             ".edit-button"
@@ -2202,10 +2146,6 @@ async function createPostElement(
         );
 
 
-    /* =====================================================
-       DELETE
-    ===================================================== */
-
     article
         .querySelector(
             ".delete-button"
@@ -2221,10 +2161,6 @@ async function createPostElement(
             }
         );
 
-
-    /* =====================================================
-       COMMENT FORM
-    ===================================================== */
 
     const commentForm =
         article.querySelector(
@@ -3317,10 +3253,6 @@ async function createCommentElement(
     `;
 
 
-    /* =====================================================
-       COMMENT LIKE
-    ===================================================== */
-
     wrapper
         .querySelector(
             ".comment-like"
@@ -3339,10 +3271,6 @@ async function createCommentElement(
         );
 
 
-    /* =====================================================
-       COMMENT DISLIKE
-    ===================================================== */
-
     wrapper
         .querySelector(
             ".comment-dislike"
@@ -3360,10 +3288,6 @@ async function createCommentElement(
             }
         );
 
-
-    /* =====================================================
-       REPLY
-    ===================================================== */
 
     wrapper
         .querySelector(
@@ -3411,10 +3335,6 @@ async function createCommentElement(
         );
 
 
-    /* =====================================================
-       REPLIES
-    ===================================================== */
-
     wrapper
         .querySelector(
             ".replies-button"
@@ -3431,10 +3351,6 @@ async function createCommentElement(
             }
         );
 
-
-    /* =====================================================
-       EDIT COMMENT
-    ===================================================== */
 
     wrapper
         .querySelector(
@@ -3752,11 +3668,6 @@ async function loadReplies(
 
 /* =========================================================
    EDIT COMMENT
-   ---------------------------------------------------------
-   لا يوجد هنا حذف للتعليق لأن RPC الحالي
-   wfesc_delete_comment ينفذ DELETE فعلي.
-   نترك الحذف إلى أن يتم بناء soft-delete
-   للتعليقات حتى لا نخالف مبدأ الاحتفاظ بالبيانات.
 ========================================================= */
 
 async function editCommentFlow(
@@ -4372,30 +4283,10 @@ refreshPosts.addEventListener(
 
 
 /* =========================================================
-   PUBLISH BUTTONS
+   PUBLISH BUTTON — TOP PLUS
+   ---------------------------------------------------------
+   الزر ＋ ينقل مباشرة إلى publish.html
 ========================================================= */
-
-document
-    .getElementById(
-        "open-publish"
-    )
-    ?.addEventListener(
-        "click",
-        () => {
-
-            if(!currentUser){
-
-                showToast(
-                    "سجّل الدخول أولاً للنشر"
-                );
-
-                return;
-            }
-
-            openPublishModal();
-        }
-    );
-
 
 document
     .getElementById(
@@ -4405,16 +4296,9 @@ document
         "click",
         () => {
 
-            if(!currentUser){
+            window.location.href =
+                "publish.html";
 
-                showToast(
-                    "سجّل الدخول أولاً للنشر"
-                );
-
-                return;
-            }
-
-            openPublishModal();
         }
     );
 
@@ -4476,9 +4360,6 @@ async function handleSession(
 
 /* =========================================================
    AUTH STATE
-   ---------------------------------------------------------
-   نؤجل الاستدعاء بدل إجراء Supabase calls
-   مباشرة داخل callback نفسه.
 ========================================================= */
 
 supabaseClient.auth.onAuthStateChange(
@@ -4541,9 +4422,6 @@ async function restoreSession(){
 
 /* =========================================================
    EXTERNAL CORE BRIDGE
-   ---------------------------------------------------------
-   الملفات المستقبلية تستخدم هذا الكائن
-   بدل إعادة كتابة نفس المنطق.
 ========================================================= */
 
 window.WFESC_POSTS_CORE = {
@@ -4598,8 +4476,6 @@ window.WFESC_POSTS_CORE = {
 
 /* =========================================================
    GLOBAL SETTINGS BRIDGE
-   ---------------------------------------------------------
-   يتوافق مع navigation/settings لاحقاً.
 ========================================================= */
 
 window.WFESC_POSTS_SETTINGS = {
@@ -4689,8 +4565,6 @@ window.addEventListener(
 
 <!-- =====================================================
      POSTS FEATURE FILES
-     لاحقاً سيتم تفعيلها بعد إكمال قلب النظام.
-     حاليًا لا نعتمد عليها حتى يبقى posts.html مستقلاً.
 ===================================================== -->
 
 <!--
@@ -4702,7 +4576,6 @@ window.addEventListener(
 
 <!-- =====================================================
      NAVIGATION
-     يبقى مستقلاً عن قلب POSTS
 ===================================================== -->
 
 <script src="./navigation/navigation-loader.js"></script>
