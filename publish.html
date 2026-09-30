@@ -253,8 +253,17 @@
         }
 
         /* =========================
-           MEDIA PREVIEW
+           MEDIA AREA
         ========================= */
+
+        .publish-media-area {
+            display: block;
+            margin-top: 13px;
+        }
+
+        .publish-media-area.hidden {
+            display: none;
+        }
 
         .publish-preview {
             display: none;
@@ -278,20 +287,25 @@
             display: block;
         }
 
-        .publish-preview img {
+        .publish-preview img,
+        .publish-preview video {
             width: 100%;
             max-height: 420px;
 
             object-fit: contain;
 
             display: block;
+
+            background: #000;
         }
 
-        .remove-image {
+        .remove-media {
             position: absolute;
 
             top: 9px;
             left: 9px;
+
+            z-index: 3;
 
             width: 35px;
             height: 35px;
@@ -301,7 +315,7 @@
             border-radius: 50%;
 
             background:
-                rgba(0,0,0,0.75);
+                rgba(0,0,0,0.78);
 
             color: #fff;
 
@@ -311,7 +325,7 @@
         }
 
         /* =========================
-           TOOLS
+           MEDIA BUTTON
         ========================= */
 
         .publish-tools {
@@ -347,7 +361,8 @@
 
             transition:
                 transform 0.15s ease,
-                background 0.15s ease;
+                background 0.15s ease,
+                opacity 0.15s ease;
         }
 
         .publish-tool:active {
@@ -359,8 +374,24 @@
             cursor: not-allowed;
         }
 
-        #imageInput {
+        #mediaInput {
             display: none;
+        }
+
+        /* =========================
+           TYPE INFO
+        ========================= */
+
+        .publish-type-info {
+            margin-top: 9px;
+
+            color: #777;
+
+            font-size: 11px;
+
+            line-height: 1.7;
+
+            text-align: center;
         }
 
         /* =========================
@@ -381,11 +412,13 @@
         .publish-setting {
             display: flex;
             flex-direction: column;
+
             gap: 7px;
         }
 
         .publish-setting label {
             color: #888;
+
             font-size: 11px;
         }
 
@@ -411,6 +444,11 @@
             font-size: 12px;
         }
 
+        .publish-select:focus {
+            border-color:
+                rgba(255,255,255,0.2);
+        }
+
         /* =========================
            BOTTOM
         ========================= */
@@ -428,6 +466,7 @@
 
         .character-count {
             color: #777;
+
             font-size: 11px;
         }
 
@@ -535,6 +574,7 @@
 
             .publish-card {
                 padding: 14px;
+
                 border-radius: 19px;
             }
 
@@ -599,10 +639,7 @@
 
                 <div class="publish-user">
 
-                    <div
-                        id="publishAvatar"
-                        class="publish-avatar"
-                    >
+                    <div class="publish-avatar">
 
                         <span id="publishAvatarLetter">
                             W
@@ -639,67 +676,92 @@
                     id="publishText"
                     class="publish-text"
                     maxlength="5000"
-                    placeholder="بماذا تفكر؟ اكتب منشورك هنا..."
+                    placeholder="اكتب منشورك هنا..."
                 ></textarea>
 
 
-                <!-- IMAGE PREVIEW -->
+                <!-- MEDIA AREA -->
 
                 <div
-                    id="publishPreview"
-                    class="publish-preview"
+                    id="publishMediaArea"
+                    class="publish-media-area"
                 >
 
-                    <img
-                        id="previewImage"
-                        alt="معاينة الصورة"
+                    <!-- MEDIA PREVIEW -->
+
+                    <div
+                        id="publishPreview"
+                        class="publish-preview"
                     >
 
-                    <button
-                        id="removeImage"
-                        class="remove-image"
-                        type="button"
-                        aria-label="إزالة الصورة"
+                        <img
+                            id="previewImage"
+                            alt="معاينة الصورة"
+                        >
+
+                        <video
+                            id="previewVideo"
+                            controls
+                            playsinline
+                            preload="metadata"
+                        ></video>
+
+                        <button
+                            id="removeMedia"
+                            class="remove-media"
+                            type="button"
+                            aria-label="إزالة الملف"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+                    <!-- TOOLS -->
+
+                    <div class="publish-tools">
+
+                        <button
+                            id="mediaButton"
+                            class="publish-tool"
+                            type="button"
+                        >
+                            🖼️ إضافة صورة
+                        </button>
+
+                        <button
+                            id="clearButton"
+                            class="publish-tool"
+                            type="button"
+                        >
+                            🗑️ مسح
+                        </button>
+
+                    </div>
+
+
+                    <input
+                        id="mediaInput"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                     >
-                        ×
-                    </button>
+
+                    <div
+                        id="publishTypeInfo"
+                        class="publish-type-info"
+                    >
+                        صورة واحدة فقط
+                    </div>
 
                 </div>
-
-
-                <!-- TOOLS -->
-
-                <div class="publish-tools">
-
-                    <button
-                        id="imageButton"
-                        class="publish-tool"
-                        type="button"
-                    >
-                        🖼️ إضافة صورة
-                    </button>
-
-                    <button
-                        id="clearButton"
-                        class="publish-tool"
-                        type="button"
-                    >
-                        🗑️ مسح
-                    </button>
-
-                </div>
-
-
-                <input
-                    id="imageInput"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                >
 
 
                 <!-- SETTINGS -->
 
                 <div class="publish-settings">
+
+                    <!-- VISIBILITY -->
 
                     <div class="publish-setting">
 
@@ -729,6 +791,8 @@
                     </div>
 
 
+                    <!-- POST TYPE -->
+
                     <div class="publish-setting">
 
                         <label for="typeSelect">
@@ -746,6 +810,10 @@
 
                             <option value="text">
                                 📝 منشور نصي
+                            </option>
+
+                            <option value="video">
+                                🎥 منشور فيديو
                             </option>
 
                         </select>
@@ -819,13 +887,21 @@
 
         /* =========================================================
            STORAGE
-           
-           إذا كان Bucket الخاص بصور المنشورات عندك باسم آخر،
-           نغير هذا السطر فقط.
         ========================================================= */
 
         const POST_MEDIA_BUCKET =
             "posts-media";
+
+
+        /* =========================================================
+           LIMITS
+        ========================================================= */
+
+        const MAX_IMAGE_SIZE =
+            10 * 1024 * 1024;
+
+        const MAX_VIDEO_SIZE =
+            100 * 1024 * 1024;
 
 
         /* =========================================================
@@ -842,14 +918,19 @@
                 "characterCount"
             );
 
-        const imageButton =
+        const mediaArea =
             document.getElementById(
-                "imageButton"
+                "publishMediaArea"
             );
 
-        const imageInput =
+        const mediaButton =
             document.getElementById(
-                "imageInput"
+                "mediaButton"
+            );
+
+        const mediaInput =
+            document.getElementById(
+                "mediaInput"
             );
 
         const publishPreview =
@@ -862,9 +943,14 @@
                 "previewImage"
             );
 
-        const removeImage =
+        const previewVideo =
             document.getElementById(
-                "removeImage"
+                "previewVideo"
+            );
+
+        const removeMedia =
+            document.getElementById(
+                "removeMedia"
             );
 
         const clearButton =
@@ -892,6 +978,11 @@
                 "typeSelect"
             );
 
+        const publishTypeInfo =
+            document.getElementById(
+                "publishTypeInfo"
+            );
+
         const publishUserName =
             document.getElementById(
                 "publishUserName"
@@ -912,11 +1003,17 @@
            STATE
         ========================================================= */
 
-        let selectedImageFile = null;
+        let selectedMediaFile =
+            null;
 
-        let selectedImagePreviewURL = null;
+        let selectedMediaPreviewURL =
+            null;
 
-        let isPublishing = false;
+        let selectedMediaKind =
+            null;
+
+        let isPublishing =
+            false;
 
 
         /* =========================================================
@@ -947,7 +1044,8 @@
 
         function hideStatus() {
 
-            publishStatus.textContent = "";
+            publishStatus.textContent =
+                "";
 
             publishStatus.className =
                 "publish-status";
@@ -965,7 +1063,8 @@
                 publishText.value.length;
 
             characterCount.textContent =
-                length + " / 5000";
+                length +
+                " / 5000";
 
         }
 
@@ -988,11 +1087,16 @@
             } =
                 await supabaseClient.auth.getUser();
 
+
             if (error) {
                 return null;
             }
 
-            return data?.user || null;
+
+            return (
+                data?.user ||
+                null
+            );
 
         }
 
@@ -1070,8 +1174,13 @@
                         .toUpperCase() ||
                     "W";
 
+
                 publishAvatarLetter.textContent =
                     firstLetter;
+
+
+                publishAvatarLetter.style.display =
+                    "block";
 
             }
 
@@ -1079,24 +1188,160 @@
 
 
         /* =========================================================
-           IMAGE SELECT
+           POST TYPE UI
         ========================================================= */
 
-        imageButton.addEventListener(
-            "click",
+        function updatePostTypeUI() {
+
+            const postType =
+                typeSelect.value;
+
+
+            removeSelectedMedia();
+
+
+            /*
+             * TEXT
+             */
+
+            if (
+                postType === "text"
+            ) {
+
+                mediaArea.classList.add(
+                    "hidden"
+                );
+
+
+                publishText.placeholder =
+                    "اكتب منشورك النصي هنا...";
+
+
+                publishTypeInfo.textContent =
+                    "المنشور النصي يقبل النص فقط بدون صورة أو فيديو.";
+
+
+                return;
+
+            }
+
+
+            /*
+             * IMAGE
+             */
+
+            if (
+                postType === "image"
+            ) {
+
+                mediaArea.classList.remove(
+                    "hidden"
+                );
+
+
+                mediaButton.textContent =
+                    "🖼️ إضافة صورة";
+
+
+                mediaInput.accept =
+                    "image/jpeg,image/png,image/webp,image/gif";
+
+
+                publishText.placeholder =
+                    "اكتب وصفاً للصورة...";
+
+
+                publishTypeInfo.textContent =
+                    "صورة واحدة فقط. الفيديو غير مسموح في منشور الصورة.";
+
+
+                return;
+
+            }
+
+
+            /*
+             * VIDEO
+             */
+
+            if (
+                postType === "video"
+            ) {
+
+                mediaArea.classList.remove(
+                    "hidden"
+                );
+
+
+                mediaButton.textContent =
+                    "🎥 إضافة فيديو";
+
+
+                mediaInput.accept =
+                    "video/mp4,video/webm,video/ogg,video/quicktime";
+
+
+                publishText.placeholder =
+                    "اكتب وصفاً للفيديو...";
+
+
+                publishTypeInfo.textContent =
+                    "فيديو واحد فقط. منشور الفيديو ينتهي بعد 24 ساعة.";
+
+
+                return;
+
+            }
+
+        }
+
+
+        typeSelect.addEventListener(
+            "change",
             function () {
 
-                if (isPublishing) {
-                    return;
-                }
+                updatePostTypeUI();
 
-                imageInput.click();
+                hideStatus();
 
             }
         );
 
 
-        imageInput.addEventListener(
+        /* =========================================================
+           MEDIA BUTTON
+        ========================================================= */
+
+        mediaButton.addEventListener(
+            "click",
+            function () {
+
+                if (
+                    isPublishing
+                ) {
+                    return;
+                }
+
+
+                if (
+                    typeSelect.value ===
+                    "text"
+                ) {
+                    return;
+                }
+
+
+                mediaInput.click();
+
+            }
+        );
+
+
+        /* =========================================================
+           MEDIA SELECT
+        ========================================================= */
+
+        mediaInput.addEventListener(
             "change",
             function () {
 
@@ -1109,67 +1354,197 @@
                 }
 
 
+                const postType =
+                    typeSelect.value;
+
+
+                /*
+                 * TEXT
+                 */
+
                 if (
-                    !file.type.startsWith(
-                        "image/"
-                    )
+                    postType === "text"
                 ) {
 
+                    this.value = "";
+
                     showStatus(
-                        "الملف المحدد ليس صورة صالحة.",
+                        "المنشور النصي لا يقبل ملفات.",
                         "error"
                     );
-
-                    this.value = "";
 
                     return;
 
                 }
 
 
-                const maxSize =
-                    10 * 1024 * 1024;
-
+                /*
+                 * IMAGE
+                 */
 
                 if (
-                    file.size > maxSize
+                    postType === "image"
                 ) {
 
-                    showStatus(
-                        "حجم الصورة يجب ألا يتجاوز 10MB.",
-                        "error"
-                    );
+                    if (
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
 
-                    this.value = "";
+                        this.value = "";
 
-                    return;
+                        showStatus(
+                            "منشور الصورة يقبل صورة فقط.",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        file.size >
+                        MAX_IMAGE_SIZE
+                    ) {
+
+                        this.value = "";
+
+                        showStatus(
+                            "حجم الصورة يجب ألا يتجاوز 10MB.",
+                            "error"
+                        );
+
+                        return;
+
+                    }
 
                 }
 
 
-                selectedImageFile =
+                /*
+                 * VIDEO
+                 */
+
+                if (
+                    postType === "video"
+                ) {
+
+                    if (
+                        !file.type.startsWith(
+                            "video/"
+                        )
+                    ) {
+
+                        this.value = "";
+
+                        showStatus(
+                            "منشور الفيديو يقبل فيديو فقط.",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        file.size >
+                        MAX_VIDEO_SIZE
+                    ) {
+
+                        this.value = "";
+
+                        showStatus(
+                            "حجم الفيديو يجب ألا يتجاوز 100MB.",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+                }
+
+
+                selectedMediaFile =
                     file;
 
 
+                selectedMediaKind =
+                    postType;
+
+
                 if (
-                    selectedImagePreviewURL
+                    selectedMediaPreviewURL
                 ) {
 
                     URL.revokeObjectURL(
-                        selectedImagePreviewURL
+                        selectedMediaPreviewURL
                     );
 
                 }
 
 
-                selectedImagePreviewURL =
+                selectedMediaPreviewURL =
                     URL.createObjectURL(
                         file
                     );
 
 
-                previewImage.src =
-                    selectedImagePreviewURL;
+                /*
+                 * IMAGE PREVIEW
+                 */
+
+                if (
+                    postType === "image"
+                ) {
+
+                    previewVideo.pause();
+
+                    previewVideo.removeAttribute(
+                        "src"
+                    );
+
+                    previewVideo.load();
+
+                    previewVideo.style.display =
+                        "none";
+
+
+                    previewImage.src =
+                        selectedMediaPreviewURL;
+
+                    previewImage.style.display =
+                        "block";
+
+                }
+
+
+                /*
+                 * VIDEO PREVIEW
+                 */
+
+                if (
+                    postType === "video"
+                ) {
+
+                    previewImage.removeAttribute(
+                        "src"
+                    );
+
+                    previewImage.style.display =
+                        "none";
+
+
+                    previewVideo.src =
+                        selectedMediaPreviewURL;
+
+                    previewVideo.style.display =
+                        "block";
+
+                }
 
 
                 publishPreview.classList.add(
@@ -1184,44 +1559,66 @@
 
 
         /* =========================================================
-           REMOVE IMAGE
+           REMOVE MEDIA
         ========================================================= */
 
-        removeImage.addEventListener(
+        removeMedia.addEventListener(
             "click",
             function () {
 
-                removeSelectedImage();
+                removeSelectedMedia();
 
             }
         );
 
 
-        function removeSelectedImage() {
+        function removeSelectedMedia() {
 
-            selectedImageFile =
+            selectedMediaFile =
                 null;
 
-            imageInput.value =
+
+            selectedMediaKind =
+                null;
+
+
+            mediaInput.value =
                 "";
 
 
             if (
-                selectedImagePreviewURL
+                selectedMediaPreviewURL
             ) {
 
                 URL.revokeObjectURL(
-                    selectedImagePreviewURL
+                    selectedMediaPreviewURL
                 );
 
-                selectedImagePreviewURL =
+                selectedMediaPreviewURL =
                     null;
 
             }
 
 
-            previewImage.src =
-                "";
+            previewImage.removeAttribute(
+                "src"
+            );
+
+
+            previewVideo.pause();
+
+            previewVideo.removeAttribute(
+                "src"
+            );
+
+            previewVideo.load();
+
+
+            previewImage.style.display =
+                "none";
+
+            previewVideo.style.display =
+                "none";
 
 
             publishPreview.classList.remove(
@@ -1239,7 +1636,9 @@
             "click",
             function () {
 
-                if (isPublishing) {
+                if (
+                    isPublishing
+                ) {
                     return;
                 }
 
@@ -1247,14 +1646,19 @@
                 publishText.value =
                     "";
 
+
                 visibilitySelect.value =
                     "public";
+
 
                 typeSelect.value =
                     "image";
 
 
-                removeSelectedImage();
+                removeSelectedMedia();
+
+
+                updatePostTypeUI();
 
 
                 hideStatus();
@@ -1275,7 +1679,9 @@
         ) {
 
             const name =
-                file.name || "";
+                file.name ||
+                "";
+
 
             const parts =
                 name.split(".");
@@ -1285,24 +1691,47 @@
                 parts.length < 2
             ) {
 
-                return "jpg";
+                return (
+                    selectedMediaKind ===
+                    "video"
+                        ? "mp4"
+                        : "jpg"
+                );
 
             }
 
 
-            return parts
-                .pop()
-                .toLowerCase()
-                .replace(
-                    /[^a-z0-9]/g,
-                    ""
-                ) || "jpg";
+            const extension =
+                parts
+                    .pop()
+                    .toLowerCase()
+                    .replace(
+                        /[^a-z0-9]/g,
+                        ""
+                    );
+
+
+            if (
+                extension
+            ) {
+
+                return extension;
+
+            }
+
+
+            return (
+                selectedMediaKind ===
+                "video"
+                    ? "mp4"
+                    : "jpg"
+            );
 
         }
 
 
         /* =========================================================
-           SAFE FILE NAME
+           STORAGE FILE NAME
         ========================================================= */
 
         function createStorageFileName(
@@ -1340,10 +1769,10 @@
 
 
         /* =========================================================
-           UPLOAD IMAGE
+           UPLOAD POST MEDIA
         ========================================================= */
 
-        async function uploadPostImage(
+        async function uploadPostMedia(
             userId,
             file
         ) {
@@ -1385,7 +1814,7 @@
 
                 throw new Error(
                     uploadError.message ||
-                    "فشل رفع الصورة."
+                    "فشل رفع الملف."
                 );
 
             }
@@ -1409,7 +1838,7 @@
             ) {
 
                 throw new Error(
-                    "تم رفع الصورة ولكن تعذر الحصول على رابطها."
+                    "تم رفع الملف ولكن تعذر الحصول على رابطه."
                 );
 
             }
@@ -1426,7 +1855,9 @@
 
         async function createPost() {
 
-            if (isPublishing) {
+            if (
+                isPublishing
+            ) {
                 return;
             }
 
@@ -1459,43 +1890,133 @@
                 typeSelect.value;
 
 
+            /* =====================================================
+               TEXT
+            ===================================================== */
+
             if (
-                !content &&
-                !selectedImageFile
+                postType === "text"
             ) {
 
-                showStatus(
-                    "اكتب محتوى أو أضف صورة قبل النشر.",
-                    "error"
-                );
+                if (
+                    !content
+                ) {
 
-                return;
+                    showStatus(
+                        "اكتب محتوى المنشور النصي أولاً.",
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    selectedMediaFile
+                ) {
+
+                    showStatus(
+                        "المنشور النصي لا يقبل صورة أو فيديو.",
+                        "error"
+                    );
+
+                    removeSelectedMedia();
+
+                    return;
+
+                }
+
+            }
+
+
+            /* =====================================================
+               IMAGE
+            ===================================================== */
+
+            if (
+                postType === "image"
+            ) {
+
+                if (
+                    !selectedMediaFile
+                ) {
+
+                    showStatus(
+                        "منشور الصورة يحتاج إلى صورة واحدة.",
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    !selectedMediaFile.type.startsWith(
+                        "image/"
+                    )
+                ) {
+
+                    showStatus(
+                        "منشور الصورة يقبل صورة فقط.",
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+            }
+
+
+            /* =====================================================
+               VIDEO
+            ===================================================== */
+
+            if (
+                postType === "video"
+            ) {
+
+                if (
+                    !selectedMediaFile
+                ) {
+
+                    showStatus(
+                        "منشور الفيديو يحتاج إلى فيديو واحد.",
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    !selectedMediaFile.type.startsWith(
+                        "video/"
+                    )
+                ) {
+
+                    showStatus(
+                        "منشور الفيديو يقبل فيديو فقط.",
+                        "error"
+                    );
+
+                    return;
+
+                }
 
             }
 
 
             if (
-                content.length > 5000
+                content.length >
+                5000
             ) {
 
                 showStatus(
                     "المحتوى تجاوز الحد المسموح به.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-
-            if (
-                postType === "image" &&
-                !selectedImageFile &&
-                !content
-            ) {
-
-                showStatus(
-                    "أضف صورة أو اكتب محتوى قبل النشر.",
                     "error"
                 );
 
@@ -1514,7 +2035,7 @@
             clearButton.disabled =
                 true;
 
-            imageButton.disabled =
+            mediaButton.disabled =
                 true;
 
 
@@ -1527,42 +2048,83 @@
             let mediaURL =
                 null;
 
+
             let mediaType =
                 null;
 
 
             try {
 
-                /*
-                 * رفع الصورة أولاً
-                 */
+                /* =================================================
+                   رفع الوسائط
+                ================================================= */
 
                 if (
-                    selectedImageFile
+                    selectedMediaFile
                 ) {
 
-                    showStatus(
-                        "جاري رفع الصورة...",
-                        "loading"
-                    );
+                    if (
+                        postType ===
+                        "image"
+                    ) {
+
+                        showStatus(
+                            "جاري رفع الصورة...",
+                            "loading"
+                        );
+
+                    }
+
+
+                    if (
+                        postType ===
+                        "video"
+                    ) {
+
+                        showStatus(
+                            "جاري رفع الفيديو...",
+                            "loading"
+                        );
+
+                    }
 
 
                     mediaURL =
-                        await uploadPostImage(
+                        await uploadPostMedia(
                             user.id,
-                            selectedImageFile
+                            selectedMediaFile
                         );
 
 
                     mediaType =
-                        selectedImageFile.type;
+                        selectedMediaFile.type;
 
                 }
 
 
-                /*
-                 * إنشاء المنشور عبر RPC
-                 */
+                /* =================================================
+                   TEXT
+                   
+                   ممنوع إرسال media
+                ================================================= */
+
+                if (
+                    postType ===
+                    "text"
+                ) {
+
+                    mediaURL =
+                        null;
+
+                    mediaType =
+                        null;
+
+                }
+
+
+                /* =================================================
+                   CREATE RPC
+                ================================================= */
 
                 showStatus(
                     "جاري إنشاء المنشور...",
@@ -1612,37 +2174,47 @@
                 }
 
 
-                /*
-                 * نجاح
-                 */
+                console.log(
+                    "WFESC POST CREATED:",
+                    data
+                );
+
+
+                /* =================================================
+                   SUCCESS
+                ================================================= */
 
                 showStatus(
-                    "تم نشر المنشور بنجاح.",
+                    postType === "video"
+                        ? "تم نشر الفيديو. سيبقى متاحاً لمدة 24 ساعة."
+                        : "تم نشر المنشور بنجاح.",
                     "success"
                 );
 
 
-                /*
-                 * تنظيف الواجهة
-                 */
-
                 publishText.value =
                     "";
 
-                removeSelectedImage();
+
+                removeSelectedMedia();
+
 
                 visibilitySelect.value =
                     "public";
 
+
                 typeSelect.value =
                     "image";
+
+
+                updatePostTypeUI();
+
 
                 updateCharacterCount();
 
 
                 /*
-                 * الانتقال للمنشورات بعد
-                 * مدة قصيرة حتى تظهر الرسالة.
+                 * الانتقال إلى المنشورات
                  */
 
                 setTimeout(
@@ -1652,7 +2224,7 @@
                             "posts.html";
 
                     },
-                    900
+                    1000
                 );
 
 
@@ -1673,19 +2245,24 @@
                     "error"
                 );
 
+
             } finally {
 
                 isPublishing =
                     false;
 
+
                 publishButton.disabled =
                     false;
+
 
                 clearButton.disabled =
                     false;
 
-                imageButton.disabled =
-                    false;
+
+                mediaButton.disabled =
+                    typeSelect.value ===
+                    "text";
 
             }
 
@@ -1693,7 +2270,7 @@
 
 
         /* =========================================================
-           ERROR MESSAGE
+           ERROR HANDLER
         ========================================================= */
 
         function getPublishErrorMessage(
@@ -1707,28 +2284,31 @@
                 );
 
 
+            const lowerMessage =
+                message.toLowerCase();
+
+
             if (
-                message
-                    .toLowerCase()
-                    .includes(
-                        "bucket"
-                    )
+                lowerMessage.includes(
+                    "bucket"
+                )
             ) {
 
                 return (
-                    "تعذر رفع الصورة لأن Storage غير مضبوط حالياً. " +
-                    "تأكد من اسم Bucket الخاص بصور المنشورات."
+                    "تعذر رفع الملف لأن Storage غير مضبوط حالياً. " +
+                    "تأكد من اسم Bucket الخاص بالمنشورات."
                 );
 
             }
 
 
             if (
-                message
-                    .toLowerCase()
-                    .includes(
-                        "not authenticated"
-                    )
+                lowerMessage.includes(
+                    "not authenticated"
+                ) ||
+                lowerMessage.includes(
+                    "يجب تسجيل الدخول"
+                )
             ) {
 
                 return (
@@ -1739,16 +2319,78 @@
 
 
             if (
-                message
-                    .toLowerCase()
-                    .includes(
-                        "row-level security"
-                    )
+                lowerMessage.includes(
+                    "row-level security"
+                )
             ) {
 
                 return (
-                    "تم رفض العملية من صلاحيات قاعدة البيانات. " +
-                    "تحقق من صلاحيات النشر في Supabase."
+                    "تم رفض العملية من صلاحيات قاعدة البيانات."
+                );
+
+            }
+
+
+            if (
+                lowerMessage.includes(
+                    "المنشور النصي لا يقبل"
+                )
+            ) {
+
+                return (
+                    "المنشور النصي يقبل النص فقط."
+                );
+
+            }
+
+
+            if (
+                lowerMessage.includes(
+                    "منشور الصورة يقبل"
+                )
+            ) {
+
+                return (
+                    "منشور الصورة يقبل صورة واحدة فقط."
+                );
+
+            }
+
+
+            if (
+                lowerMessage.includes(
+                    "منشور الفيديو يقبل"
+                )
+            ) {
+
+                return (
+                    "منشور الفيديو يقبل فيديو واحد فقط."
+                );
+
+            }
+
+
+            if (
+                lowerMessage.includes(
+                    "يحتاج إلى فيديو"
+                )
+            ) {
+
+                return (
+                    "أضف فيديو واحد قبل النشر."
+                );
+
+            }
+
+
+            if (
+                lowerMessage.includes(
+                    "يحتاج إلى صورة"
+                )
+            ) {
+
+                return (
+                    "أضف صورة واحدة قبل النشر."
                 );
 
             }
@@ -1756,7 +2398,10 @@
 
             return (
                 "تعذر نشر المنشور حالياً. " +
-                message
+                (
+                    message ||
+                    "حدث خطأ غير معروف."
+                )
             );
 
         }
@@ -1773,56 +2418,24 @@
 
 
         /* =========================================================
-           ENTER SAFETY
-           
-           Ctrl + Enter / Enter مع ضغط Ctrl
-           يمكنه نشر المنشور.
+           CTRL + ENTER
         ========================================================= */
 
         publishText.addEventListener(
             "keydown",
-            function (event) {
+            function (
+                event
+            ) {
 
                 if (
-                    event.key === "Enter" &&
+                    event.key ===
+                    "Enter" &&
                     event.ctrlKey
                 ) {
 
                     event.preventDefault();
 
                     createPost();
-
-                }
-
-            }
-        );
-
-
-        /* =========================================================
-           TYPE CONTROL
-        ========================================================= */
-
-        typeSelect.addEventListener(
-            "change",
-            function () {
-
-                /*
-                 * إذا اختار المستخدم منشوراً نصياً
-                 * لا نحذف الصورة الموجودة تلقائياً.
-                 * يمكنه إزالتها بنفسه.
-                 */
-
-                if (
-                    this.value === "text"
-                ) {
-
-                    imageButton.style.opacity =
-                        "0.65";
-
-                } else {
-
-                    imageButton.style.opacity =
-                        "1";
 
                 }
 
@@ -1844,6 +2457,14 @@
                     session?.user
                 ) {
 
+                    publishButton.disabled =
+                        false;
+
+                    mediaButton.disabled =
+                        typeSelect.value ===
+                        "text";
+
+
                     await loadCurrentProfile(
                         session.user
                     );
@@ -1863,6 +2484,9 @@
             updateCharacterCount();
 
 
+            updatePostTypeUI();
+
+
             const user =
                 await getCurrentUser();
 
@@ -1874,14 +2498,14 @@
                     "error"
                 );
 
+
                 publishButton.disabled =
                     true;
 
-                imageButton.disabled =
+
+                mediaButton.disabled =
                     true;
 
-                clearButton.disabled =
-                    false;
 
                 return;
 
@@ -1891,8 +2515,10 @@
             publishButton.disabled =
                 false;
 
-            imageButton.disabled =
-                false;
+
+            mediaButton.disabled =
+                typeSelect.value ===
+                "text";
 
 
             await loadCurrentProfile(
@@ -1907,8 +2533,7 @@
 
         /* =========================================================
            EXTERNAL BRIDGE
-           
-           جاهز لاحقاً لنقله إلى:
+           جاهز لاحقاً للنقل إلى:
            posts-featwres/publish/
         ========================================================= */
 
@@ -1918,11 +2543,13 @@
 
             getCurrentUser,
 
-            uploadPostImage,
+            uploadPostMedia,
 
-            removeSelectedImage,
+            removeSelectedMedia,
 
             updateCharacterCount,
+
+            updatePostTypeUI,
 
             showStatus,
 
@@ -1933,7 +2560,6 @@
                 POST_MEDIA_BUCKET
 
         };
-
 
     </script>
 
