@@ -1051,92 +1051,396 @@ body{
     transform:scale(1);
 }
 
-.header{
-    height:70px;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 20px;
-
-    border-bottom:
-        1px solid
-        rgba(255,255,255,.07);
-
-    background:
-        rgba(4,6,10,.75);
-
-    backdrop-filter:blur(20px);
-}
-
-.logo{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-.logoIcon{
-    width:40px;
-    height:40px;
-
-    display:grid;
-    place-items:center;
-
-    border-radius:12px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.1);
-
-    background:
-        linear-gradient(
-            145deg,
-            #151d2d,
-            #05070b
-        );
-
-    font-weight:900;
-}
-
-.logoText strong{
-    display:block;
-    font-size:15px;
-}
-
-.logoText small{
-    color:#667080;
-    font-size:10px;
-}
-
-.online{
-    font-size:9px;
-    letter-spacing:1px;
-    color:#687487;
-}
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
 
 .content{
-    height:
-        calc(100vh - 140px);
+    position:absolute;
+
+    inset:0;
+
+    padding:
+        28px
+        18px
+        105px;
 
     display:flex;
 
     align-items:center;
     justify-content:center;
 
+    overflow:hidden;
+
+    transition:
+        opacity .35s ease,
+        transform .35s ease;
+}
+
+/* =========================================================
+   POSTS VIEW
+========================================================= */
+
+.postsView{
+    width:min(100%,520px);
+
+    display:flex;
     flex-direction:column;
 
-    gap:12px;
+    align-items:center;
+
+    gap:14px;
 }
 
-.content h1{
-    font-size:32px;
+/* =========================================================
+   POSTS SECTION LABEL
+========================================================= */
+
+.postsLabel{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 4px;
+
+    color:#7e8aa0;
+
+    font-size:11px;
+
+    letter-spacing:.8px;
 }
 
-.content p{
-    color:#6d7788;
+.postsLabel strong{
+    color:#fff;
+
+    font-size:16px;
 }
+
+.postsLabel span{
+    opacity:.7;
+}
+
+/* =========================================================
+   POST CARD
+========================================================= */
+
+.postCard{
+    width:100%;
+
+    border:
+        1px solid
+        rgba(255,255,255,.09);
+
+    border-radius:24px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20,26,39,.94),
+            rgba(7,9,14,.94)
+        );
+
+    box-shadow:
+        0 25px 70px
+        rgba(0,0,0,.42),
+
+        inset 0 1px 0
+        rgba(255,255,255,.035);
+
+    overflow:hidden;
+
+    backdrop-filter:blur(25px);
+
+    transform:translateY(0);
+
+    transition:
+        transform .3s ease,
+        border-color .3s ease;
+}
+
+.postCard:hover{
+    transform:translateY(-3px);
+
+    border-color:
+        rgba(130,155,255,.18);
+}
+
+/* =========================================================
+   POST HEADER
+========================================================= */
+
+.postHeader{
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:17px 17px 13px;
+}
+
+.postAuthor{
+    display:flex;
+
+    align-items:center;
+
+    gap:11px;
+}
+
+.postAvatar{
+    width:42px;
+    height:42px;
+
+    border-radius:14px;
+
+    display:grid;
+    place-items:center;
+
+    background:
+        linear-gradient(
+            145deg,
+            #273657,
+            #0b101c
+        );
+
+    border:
+        1px solid
+        rgba(150,170,255,.18);
+
+    color:#fff;
+
+    font-size:13px;
+    font-weight:900;
+
+    box-shadow:
+        0 0 20px
+        rgba(80,110,255,.1);
+}
+
+.postName{
+    display:flex;
+    flex-direction:column;
+
+    gap:4px;
+}
+
+.postName strong{
+    font-size:13px;
+}
+
+.postName span{
+    font-size:9px;
+
+    color:#687386;
+}
+
+.postMore{
+    width:32px;
+    height:32px;
+
+    border:0;
+
+    border-radius:11px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    color:#78849a;
+
+    font-size:17px;
+}
+
+/* =========================================================
+   POST TEXT
+========================================================= */
+
+.postText{
+    padding:
+        4px
+        18px
+        17px;
+
+    color:#d8deea;
+
+    font-size:14px;
+
+    line-height:1.8;
+
+    text-align:right;
+}
+
+.postText span{
+    color:#8099ff;
+}
+
+/* =========================================================
+   POST MEDIA
+========================================================= */
+
+.postMedia{
+    position:relative;
+
+    height:170px;
+
+    margin:0 14px;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    border:
+        1px solid
+        rgba(255,255,255,.07);
+
+    background:
+        radial-gradient(
+            circle at 50% 40%,
+            rgba(86,112,204,.35),
+            transparent 34%
+        ),
+        linear-gradient(
+            145deg,
+            #111a2c,
+            #05070c
+        );
+}
+
+.postMedia::before{
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            135deg,
+            transparent 0 38%,
+            rgba(130,155,255,.09) 39% 40%,
+            transparent 41% 62%,
+            rgba(255,255,255,.035) 63% 64%,
+            transparent 65%
+        );
+
+    opacity:.8;
+}
+
+.postMedia::after{
+    content:"WFESC";
+
+    position:absolute;
+
+    left:50%;
+    top:50%;
+
+    transform:
+        translate(-50%,-50%);
+
+    font-size:29px;
+
+    font-weight:900;
+
+    letter-spacing:7px;
+
+    color:
+        rgba(255,255,255,.12);
+
+    text-shadow:
+        0 0 30px
+        rgba(105,135,255,.3);
+}
+
+.mediaCorner{
+    position:absolute;
+
+    right:12px;
+    top:12px;
+
+    z-index:2;
+
+    padding:6px 9px;
+
+    border-radius:9px;
+
+    background:
+        rgba(0,0,0,.38);
+
+    border:
+        1px solid
+        rgba(255,255,255,.07);
+
+    color:#8f9bb0;
+
+    font-size:8px;
+}
+
+/* =========================================================
+   POST ACTIONS
+========================================================= */
+
+.postActions{
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:
+        13px 17px 16px;
+}
+
+.actionGroup{
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+}
+
+.postAction{
+    height:34px;
+
+    padding:0 11px;
+
+    border:0;
+
+    border-radius:11px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    color:#79859a;
+
+    font-size:11px;
+
+    transition:.25s ease;
+}
+
+.postAction:hover{
+    background:
+        rgba(255,255,255,.08);
+
+    color:#fff;
+}
+
+.postAction.primary{
+    color:#dbe3ff;
+
+    background:
+        rgba(95,122,220,.12);
+}
+
+.postMeta{
+    color:#566175;
+
+    font-size:9px;
+}
+
+/* =========================================================
+   BOTTOM NAVIGATION
+========================================================= */
 
 .nav{
     position:absolute;
@@ -1159,11 +1463,15 @@ body{
         rgba(255,255,255,.08);
 
     background:
-        rgba(7,9,14,.78);
+        rgba(7,9,14,.82);
 
     backdrop-filter:blur(22px);
 
     border-radius:20px;
+
+    box-shadow:
+        0 18px 50px
+        rgba(0,0,0,.35);
 }
 
 .nav button{
@@ -1182,7 +1490,14 @@ body{
 
     cursor:pointer;
 
-    transition:.25s ease;
+    transition:
+        color .25s ease,
+        background .25s ease,
+        transform .25s ease;
+}
+
+.nav button:active{
+    transform:scale(.9);
 }
 
 .nav button.active{
@@ -1240,6 +1555,47 @@ body{
         display:none;
     }
 
+    .content{
+        padding:
+            18px
+            13px
+            100px;
+    }
+
+    .postCard{
+        border-radius:21px;
+    }
+
+    .postMedia{
+        height:145px;
+    }
+
+    .postText{
+        font-size:13px;
+        line-height:1.75;
+    }
+
+}
+
+/* =========================================================
+   SMALL HEIGHT DEVICES
+========================================================= */
+
+@media(max-height:650px){
+
+    .content{
+        padding-top:10px;
+        padding-bottom:90px;
+    }
+
+    .postsView{
+        transform:scale(.92);
+    }
+
+    .postMedia{
+        height:125px;
+    }
+
 }
 
 </style>
@@ -1247,6 +1603,7 @@ body{
 </head>
 
 <body>
+
 
 <!-- =====================================================
      WFESC ENGINE BOOT
@@ -1343,47 +1700,138 @@ body{
 
 <div id="app">
 
-    <header class="header">
-
-        <div class="logo">
-
-            <div class="logoIcon">
-                W
-            </div>
-
-            <div class="logoText">
-
-                <strong>
-                    أوفِس WFESC
-                </strong>
-
-                <small>
-                    WFESC ENGINE
-                </small>
-
-            </div>
-
-        </div>
-
-        <div class="online">
-            ENGINE ONLINE
-        </div>
-
-    </header>
-
 
     <main class="content" id="content">
 
-        <h1>
-            الرئيسية
-        </h1>
+        <section class="postsView">
 
-        <p>
-            مرحباً بك داخل WFESC ENGINE
-        </p>
+            <div class="postsLabel">
+
+                <strong>
+                    المنشورات
+                </strong>
+
+                <span>
+                    WFESC
+                </span>
+
+            </div>
+
+
+            <article class="postCard">
+
+
+                <!-- POST HEADER -->
+
+                <div class="postHeader">
+
+                    <div class="postAuthor">
+
+                        <div class="postAvatar">
+                            W
+                        </div>
+
+                        <div class="postName">
+
+                            <strong>
+                                اوفس WFESC
+                            </strong>
+
+                            <span>
+                                منذ لحظات · WFESC
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="postMore"
+                        type="button">
+
+                        ⋯
+
+                    </button>
+
+                </div>
+
+
+                <!-- POST TEXT -->
+
+                <div class="postText">
+
+                    ذاكرة العراق...
+                    <span>بصورة مختلفة</span>
+
+                    <br>
+
+                    مساحة مخصصة لعرض منشورات
+                    ومحتوى WFESC داخل المحرك.
+
+                </div>
+
+
+                <!-- POST MEDIA -->
+
+                <div class="postMedia">
+
+                    <div class="mediaCorner">
+                        منشور WFESC
+                    </div>
+
+                </div>
+
+
+                <!-- POST ACTIONS -->
+
+                <div class="postActions">
+
+                    <div class="actionGroup">
+
+                        <button
+                            class="postAction primary"
+                            type="button">
+
+                            ♡ إعجاب
+
+                        </button>
+
+                        <button
+                            class="postAction"
+                            type="button">
+
+                            💬 تعليق
+
+                        </button>
+
+                        <button
+                            class="postAction"
+                            type="button">
+
+                            ↗ مشاركة
+
+                        </button>
+
+                    </div>
+
+                    <span class="postMeta">
+                        0 تفاعل
+                    </span>
+
+                </div>
+
+
+            </article>
+
+        </section>
 
     </main>
 
+
+    <!-- =================================================
+         BOTTOM NAVIGATION
+    ================================================= -->
 
     <nav class="nav">
 
@@ -1506,6 +1954,7 @@ const content =
 const buttons =
     document.querySelectorAll(".nav button");
 
+
 buttons.forEach(button => {
 
     button.addEventListener(
@@ -1523,20 +1972,201 @@ buttons.forEach(button => {
             const pageName =
                 button.dataset.page;
 
+
             content.style.opacity = "0";
 
             content.style.transform =
                 "translateY(12px)";
 
+
             setTimeout(() => {
 
-                content.innerHTML = `
-                    <h1>${pageName}</h1>
+                /*
+                 * المنشورات تبقى واجهة المنشورات
+                 * أما باقي الصفحات حالياً فهي
+                 * صفحات تجريبية مؤقتة.
+                 */
 
-                    <p>
-                        صفحة تجريبية داخل WFESC ENGINE
-                    </p>
-                `;
+                if(pageName === "المنشورات"){
+
+                    content.innerHTML = `
+
+                        <section class="postsView">
+
+                            <div class="postsLabel">
+
+                                <strong>
+                                    المنشورات
+                                </strong>
+
+                                <span>
+                                    WFESC
+                                </span>
+
+                            </div>
+
+
+                            <article class="postCard">
+
+                                <div class="postHeader">
+
+                                    <div class="postAuthor">
+
+                                        <div class="postAvatar">
+                                            W
+                                        </div>
+
+                                        <div class="postName">
+
+                                            <strong>
+                                                اوفس WFESC
+                                            </strong>
+
+                                            <span>
+                                                منذ لحظات · WFESC
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                    <button
+                                        class="postMore"
+                                        type="button">
+
+                                        ⋯
+
+                                    </button>
+
+                                </div>
+
+
+                                <div class="postText">
+
+                                    ذاكرة العراق...
+                                    <span>بصورة مختلفة</span>
+
+                                    <br>
+
+                                    مساحة مخصصة لعرض منشورات
+                                    ومحتوى WFESC داخل المحرك.
+
+                                </div>
+
+
+                                <div class="postMedia">
+
+                                    <div class="mediaCorner">
+                                        منشور WFESC
+                                    </div>
+
+                                </div>
+
+
+                                <div class="postActions">
+
+                                    <div class="actionGroup">
+
+                                        <button
+                                            class="postAction primary"
+                                            type="button">
+
+                                            ♡ إعجاب
+
+                                        </button>
+
+                                        <button
+                                            class="postAction"
+                                            type="button">
+
+                                            💬 تعليق
+
+                                        </button>
+
+                                        <button
+                                            class="postAction"
+                                            type="button">
+
+                                            ↗ مشاركة
+
+                                        </button>
+
+                                    </div>
+
+                                    <span class="postMeta">
+                                        0 تفاعل
+                                    </span>
+
+                                </div>
+
+                            </article>
+
+                        </section>
+
+                    `;
+
+                }else{
+
+                    content.innerHTML = `
+
+                        <section class="postsView">
+
+                            <div class="postsLabel">
+
+                                <strong>
+                                    ${pageName}
+                                </strong>
+
+                                <span>
+                                    WFESC
+                                </span>
+
+                            </div>
+
+                            <article class="postCard">
+
+                                <div class="postHeader">
+
+                                    <div class="postAuthor">
+
+                                        <div class="postAvatar">
+                                            W
+                                        </div>
+
+                                        <div class="postName">
+
+                                            <strong>
+                                                WFESC ENGINE
+                                            </strong>
+
+                                            <span>
+                                                نظام المحرك
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="postText">
+
+                                    هذه الواجهة حالياً
+                                    قيد البناء داخل
+                                    <span>
+                                        WFESC ENGINE
+                                    </span>
+
+                                </div>
+
+                            </article>
+
+                        </section>
+
+                    `;
+
+                }
+
 
                 content.style.transition =
                     "opacity .35s ease, transform .35s ease";
@@ -1561,6 +2191,7 @@ buttons.forEach(button => {
 ========================================================= -->
 
 <script src="./wfesc-engine/wfesc-engine.js"></script>
+
 
 <!-- =========================================================
      WFESC ENGINE NAVIGATION
