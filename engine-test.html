@@ -1,877 +1,1518 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html>  <html lang="ar" dir="rtl">    <head>    
+<meta charset="UTF-8">    
+<meta name="viewport" content="width=device-width,initial-scale=1.0">    
+<title>WFESC ENGINE — TEST 02</title>  <style>    
+*{    
+    box-sizing:border-box;    
+    margin:0;    
+    padding:0;    
+}    html,
+body{
+width:100%;
+height:100%;
+overflow:hidden;
+background:#010205;
+color:#fff;
+font-family:Arial,Tahoma,sans-serif;
+}
+
+/* =========================================================
+ENGINE SPLASH
+========================================================= */
+
+#engineBoot{
+position:fixed;
+inset:0;
+z-index:999999;
+overflow:hidden;
+background:
+radial-gradient(
+circle at 50% 45%,
+#0b1020 0%,
+#050812 28%,
+#02040a 62%,
+#010205 100%
+);
+
+display:flex;    
+align-items:center;    
+justify-content:center;    
+
+transition:    
+    opacity .8s cubic-bezier(.16,1,.3,1),    
+    transform 1s cubic-bezier(.16,1,.3,1);
+
+}
+
+#engineBoot.hide{
+opacity:0;
+transform:scale(1.12);
+pointer-events:none;
+}
+
+/* =========================================================
+BACKGROUND GRID
+========================================================= */
+
+.bootGrid{
+position:absolute;
+inset:-50%;
+opacity:.17;
+
+background-image:    
+    linear-gradient(    
+        rgba(111,143,255,.14) 1px,    
+        transparent 1px    
+    ),    
+    linear-gradient(    
+        90deg,    
+        rgba(111,143,255,.14) 1px,    
+        transparent 1px    
+    );    
+
+background-size:60px 60px;    
+
+transform:    
+    perspective(550px)    
+    rotateX(67deg)    
+    translateY(25%);    
+
+animation:gridMove 5s linear infinite;    
+
+mask-image:    
+    linear-gradient(    
+        to bottom,    
+        transparent,    
+        #000 25%,    
+        #000 72%,    
+        transparent    
+    );
+
+}
+
+@keyframes gridMove{
+from{
+background-position:0 0;
+}
+
+to{    
+    background-position:0 60px;    
+}
+
+}
 
-<head>
+/* =========================================================
+BACKGROUND HALO
+========================================================= */
 
-    <meta charset="UTF-8">
+.bootHalo{
+position:absolute;
+width:65vmax;
+height:65vmax;
+border-radius:50%;
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+background:    
+    radial-gradient(    
+        circle,    
+        rgba(74,111,255,.14) 0%,    
+        rgba(74,111,255,.055) 27%,    
+        transparent 67%    
+    );    
 
-    <title>WFESC ENGINE — TEST</title>
+filter:blur(20px);    
 
-    <style>
+animation:    
+    haloPulse 2.8s ease-in-out infinite;
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+}
 
-        html,
-        body {
-            width: 100%;
-            min-height: 100%;
-        }
+@keyframes haloPulse{
+0%,
+100%{
+transform:scale(.82);
+opacity:.55;
+}
 
-        body {
-            background: #050608;
-            color: #ffffff;
-            font-family: Arial, Tahoma, sans-serif;
-            overflow-x: hidden;
-        }
+50%{    
+    transform:scale(1.08);    
+    opacity:1;    
+}
 
+}
 
-        /* =====================================================
-           BACKGROUND
-        ===================================================== */
+/* =========================================================
+PARTICLES
+========================================================= */
 
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
+#particles{
+position:absolute;
+inset:0;
+}
 
-            background:
-                linear-gradient(
-                    rgba(255,255,255,0.025) 1px,
-                    transparent 1px
-                ),
-                linear-gradient(
-                    90deg,
-                    rgba(255,255,255,0.025) 1px,
-                    transparent 1px
-                );
+.particle{
+position:absolute;
+width:2px;
+height:2px;
+border-radius:50%;
 
-            background-size: 45px 45px;
+background:#9eb5ff;    
 
-            pointer-events: none;
-        }
+box-shadow:    
+    0 0 7px rgba(130,160,255,.9);    
 
+animation:    
+    particleRise linear infinite;    
 
-        /* =====================================================
-           APP
-        ===================================================== */
+opacity:0;
 
-        .app {
-            width: 100%;
-            min-height: 100vh;
+}
 
-            display: flex;
-            flex-direction: column;
+@keyframes particleRise{
 
-            position: relative;
-            z-index: 1;
-        }
+0%{    
+    transform:    
+        translate3d(0,80px,0)    
+        scale(.2);    
 
+    opacity:0;    
+}    
 
-        /* =====================================================
-           HEADER
-        ===================================================== */
+15%{    
+    opacity:.8;    
+}    
 
-        .header {
-            height: 70px;
+75%{    
+    opacity:.35;    
+}    
 
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+100%{    
+    transform:    
+        translate3d(0,-230px,0)    
+        scale(1.1);    
 
-            padding: 0 20px;
+    opacity:0;    
+}
 
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+}
 
-            background: rgba(5,6,8,0.85);
+/* =========================================================
+ENGINE CONTAINER
+========================================================= */
 
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-        }
+.engineCore{
+position:relative;
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+width:340px;    
+height:340px;    
 
-        .brand-mark {
-            width: 38px;
-            height: 38px;
+display:flex;    
+align-items:center;    
+justify-content:center;
 
-            border: 1px solid rgba(255,255,255,0.25);
-            border-radius: 12px;
+}
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+/* =========================================================
+OUTER ENERGY FIELD
+========================================================= */
 
-            font-size: 13px;
-            font-weight: bold;
+.energyField{
+position:absolute;
 
-            background: rgba(255,255,255,0.04);
-        }
+width:330px;    
+height:330px;    
 
-        .brand-text strong {
-            display: block;
-            font-size: 15px;
-        }
+border-radius:50%;    
 
-        .brand-text span {
-            display: block;
+border:    
+    1px solid    
+    rgba(105,139,255,.13);    
 
-            margin-top: 3px;
+box-shadow:    
+    0 0 70px rgba(71,105,255,.04);    
 
-            font-size: 10px;
+animation:    
+    fieldRotate 22s linear infinite;
 
-            color: rgba(255,255,255,0.45);
+}
 
-            letter-spacing: 1px;
-        }
+.energyField::before,
+.energyField::after{
+content:"";
 
+position:absolute;    
 
-        /* =====================================================
-           STATUS
-        ===================================================== */
+inset:18px;    
 
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 7px;
+border-radius:50%;    
 
-            font-size: 11px;
+border:    
+    1px dashed    
+    rgba(115,145,255,.18);
 
-            color: rgba(255,255,255,0.55);
-        }
+}
 
-        .status-dot {
-            width: 7px;
-            height: 7px;
+.energyField::after{
+inset:39px;
 
-            border-radius: 50%;
+border:    
+    1px solid    
+    rgba(255,255,255,.06);    
 
-            background: #63e6be;
+animation:    
+    fieldRotateReverse 13s linear infinite;
 
-            box-shadow:
-                0 0 10px rgba(99,230,190,0.7);
-        }
+}
 
+@keyframes fieldRotate{
+to{
+transform:rotate(360deg);
+}
+}
 
-        /* =====================================================
-           CONTENT
-        ===================================================== */
+@keyframes fieldRotateReverse{
+to{
+transform:rotate(-360deg);
+}
+}
 
-        .content {
-            flex: 1;
+/* =========================================================
+RADAR RING
+========================================================= */
 
-            padding: 30px 18px 110px;
+.radar{
+position:absolute;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+width:285px;    
+height:285px;    
 
-        .panel {
-            width: min(700px, 100%);
+border-radius:50%;    
 
-            padding: 30px 24px;
+background:    
+    conic-gradient(    
+        from 0deg,    
+        transparent 0deg,    
+        transparent 285deg,    
+        rgba(112,145,255,.65) 300deg,    
+        transparent 315deg,    
+        transparent 360deg    
+    );    
 
-            border: 1px solid rgba(255,255,255,0.08);
+-webkit-mask:    
+    radial-gradient(    
+        circle,    
+        transparent 0 48%,    
+        #000 49% 50%,    
+        transparent 51%    
+    );    
 
-            border-radius: 24px;
+mask:    
+    radial-gradient(    
+        circle,    
+        transparent 0 48%,    
+        #000 49% 50%,    
+        transparent 51%    
+    );    
 
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,255,255,0.055),
-                    rgba(255,255,255,0.015)
-                );
+animation:    
+    radarSpin 3.5s linear infinite;
 
-            box-shadow:
-                0 30px 80px rgba(0,0,0,0.45);
+}
 
-            transition:
-                opacity 0.3s ease,
-                transform 0.3s ease;
-        }
+@keyframes radarSpin{
+to{
+transform:rotate(360deg);
+}
+}
 
-        .panel.switching {
-            opacity: 0;
-            transform: translateY(12px);
-        }
+/* =========================================================
+TECH TICKS
+========================================================= */
 
-        .panel h1 {
-            font-size: clamp(28px, 7vw, 54px);
+.techRing{
+position:absolute;
 
-            line-height: 1;
+width:305px;    
+height:305px;    
 
-            letter-spacing: -2px;
-        }
+border-radius:50%;    
 
-        .panel h1 span {
-            color: rgba(255,255,255,0.35);
-        }
+background:    
+    repeating-conic-gradient(    
+        from 0deg,    
+        rgba(150,175,255,.55) 0deg 1deg,    
+        transparent 1deg 9deg    
+    );    
 
-        .panel p {
-            margin-top: 18px;
+-webkit-mask:    
+    radial-gradient(    
+        circle,    
+        transparent 0 46%,    
+        #000 46.5% 48%,    
+        transparent 48.5%    
+    );    
 
-            max-width: 560px;
+mask:    
+    radial-gradient(    
+        circle,    
+        transparent 0 46%,    
+        #000 46.5% 48%,    
+        transparent 48.5%    
+    );    
 
-            color: rgba(255,255,255,0.55);
+opacity:.35;    
 
-            line-height: 1.8;
+animation:    
+    fieldRotate 28s linear infinite;
 
-            font-size: 14px;
-        }
+}
 
+/* =========================================================
+INNER ORBIT
+========================================================= */
 
-        /* =====================================================
-           ENGINE INFO
-        ===================================================== */
+.orbit{
+position:absolute;
 
-        .info {
-            margin-top: 28px;
+width:245px;    
+height:245px;    
 
-            display: grid;
+border-radius:50%;    
 
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(140px, 1fr)
-                );
+border:    
+    1px solid    
+    rgba(120,145,255,.22);    
 
-            gap: 10px;
-        }
+transform:rotateX(64deg);    
 
-        .info-card {
-            padding: 15px;
+box-shadow:    
+    0 0 20px rgba(80,110,255,.05);    
 
-            border-radius: 16px;
+animation:    
+    orbitPulse 2s ease-in-out infinite;
 
-            background: rgba(255,255,255,0.035);
+}
 
-            border: 1px solid rgba(255,255,255,0.06);
-        }
+.orbit::before,
+.orbit::after{
+content:"";
 
-        .info-card small {
-            display: block;
+position:absolute;    
 
-            font-size: 10px;
+width:7px;    
+height:7px;    
 
-            color: rgba(255,255,255,0.35);
+border-radius:50%;    
 
-            margin-bottom: 7px;
-        }
+background:#a9bcff;    
 
-        .info-card strong {
-            font-size: 14px;
-        }
+box-shadow:    
+    0 0 14px #7895ff,    
+    0 0 28px #5575ff;
 
+}
 
-        /* =====================================================
-           BOTTOM NAVIGATION
-        ===================================================== */
+.orbit::before{
+top:-3px;
+left:50%;
+}
 
-        .navigation {
+.orbit::after{
+bottom:-3px;
+right:50%;
+}
 
-            position: fixed;
+@keyframes orbitPulse{
+0%,
+100%{
+transform:
+rotateX(64deg)
+scale(.94);
 
-            left: 12px;
-            right: 12px;
-            bottom: 12px;
+opacity:.45;    
+}    
 
-            height: 68px;
+50%{    
+    transform:    
+        rotateX(64deg)    
+        scale(1.05);    
 
-            display: grid;
+    opacity:1;    
+}
 
-            grid-template-columns:
-                repeat(5, 1fr);
+}
 
-            gap: 5px;
+/* =========================================================
+CENTRAL REACTOR
+========================================================= */
 
-            padding: 7px;
+.reactor{
+position:absolute;
 
-            border: 1px solid rgba(255,255,255,0.09);
+width:175px;    
+height:175px;    
 
-            border-radius: 22px;
+border-radius:50%;    
 
-            background: rgba(10,11,14,0.88);
+display:flex;    
+align-items:center;    
+justify-content:center;    
 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+background:    
+    radial-gradient(    
+        circle,    
+        #202d5d 0%,    
+        #0b1126 30%,    
+        #050916 55%,    
+        #02040a 76%,    
+        transparent 77%    
+    );    
 
-            box-shadow:
-                0 20px 60px rgba(0,0,0,0.5);
+box-shadow:    
+    0 0 35px rgba(65,100,255,.22),    
+    inset 0 0 35px rgba(90,120,255,.12);    
 
-            z-index: 10;
-        }
+animation:    
+    reactorAppear 1.4s cubic-bezier(.16,1,.3,1) forwards,    
+    reactorPulse 2s 1.4s ease-in-out infinite;    
 
-        .nav-button {
+transform:scale(0);
 
-            border: 0;
+}
 
-            border-radius: 16px;
+@keyframes reactorAppear{
+to{
+transform:scale(1);
+}
+}
 
-            background: transparent;
+@keyframes reactorPulse{
 
-            color: rgba(255,255,255,0.4);
+0%,    
+100%{    
+    filter:brightness(.9);    
+}    
 
-            font-family: inherit;
+50%{    
+    filter:brightness(1.3);    
+}
 
-            font-size: 11px;
+}
 
-            cursor: pointer;
+/* reactor shell */
 
-            transition:
-                background 0.25s ease,
-                color 0.25s ease,
-                transform 0.25s ease;
-        }
+.reactorShell{
+position:absolute;
 
-        .nav-button:hover {
-            color: #ffffff;
-        }
+inset:12px;    
 
-        .nav-button:active {
-            transform: scale(0.94);
-        }
+border-radius:50%;    
 
-        .nav-button.active {
-            background: rgba(255,255,255,0.08);
+border:    
+    1px solid    
+    rgba(146,169,255,.42);    
 
-            color: #ffffff;
-        }
+box-shadow:    
+    inset 0 0 20px rgba(96,126,255,.12);    
 
+animation:    
+    shellSpin 8s linear infinite;
 
-        /* =====================================================
-           ENGINE MESSAGE
-        ===================================================== */
+}
 
-        .engine-message {
+.reactorShell::before{
+content:"";
 
-            margin-top: 20px;
+position:absolute;    
 
-            padding: 13px 15px;
+inset:15px;    
 
-            border-radius: 13px;
+border-radius:50%;    
 
-            background: rgba(255,255,255,0.025);
+border:    
+    1px dashed    
+    rgba(133,160,255,.3);
 
-            border: 1px solid rgba(255,255,255,0.05);
+}
 
-            font-size: 11px;
+@keyframes shellSpin{
+to{
+transform:rotate(360deg);
+}
+}
 
-            color: rgba(255,255,255,0.38);
+/* reactor core */
 
-            direction: ltr;
+.core{
+position:absolute;
 
-            text-align: left;
+width:74px;    
+height:74px;    
 
-            overflow-wrap: anywhere;
-        }
+border-radius:50%;    
 
+background:    
+    radial-gradient(    
+        circle,    
+        #eef3ff 0%,    
+        #a8bbff 7%,    
+        #4b69c9 18%,    
+        #17234e 39%,    
+        #050914 68%    
+    );    
 
-        /* =====================================================
-           MOBILE
-        ===================================================== */
+border:    
+    1px solid    
+    rgba(190,207,255,.8);    
 
-        @media (max-width: 500px) {
+box-shadow:    
+    0 0 18px rgba(117,148,255,.7),    
+    0 0 55px rgba(69,104,255,.4),    
+    inset 0 0 25px rgba(160,185,255,.45);    
 
-            .header {
-                height: 64px;
-                padding: 0 15px;
-            }
+display:flex;    
+align-items:center;    
+justify-content:center;    
 
-            .content {
-                padding:
-                    22px
-                    14px
-                    100px;
-            }
+animation:    
+    corePulse 1.4s ease-in-out infinite;
 
-            .panel {
-                padding: 25px 18px;
-                border-radius: 20px;
-            }
+}
 
-            .panel h1 {
-                font-size: 36px;
-            }
+.core::before{
+content:"";
 
-            .navigation {
-                left: 8px;
-                right: 8px;
-                bottom: 8px;
-            }
+position:absolute;    
 
-            .nav-button {
-                font-size: 9px;
-            }
+inset:-14px;    
 
-        }
+border-radius:50%;    
 
-    </style>
+border:    
+    1px solid    
+    rgba(125,154,255,.25);    
 
-</head>
+animation:    
+    coreWave 1.8s ease-out infinite;
 
+}
 
-<body>
+.core::after{
+content:"";
 
+position:absolute;    
 
-    <!-- =====================================================
-         APP
-    ====================================================== -->
+inset:-29px;    
 
-    <div class="app">
+border-radius:50%;    
 
+border:    
+    1px solid    
+    rgba(125,154,255,.08);    
 
-        <!-- =================================================
-             HEADER
-        ================================================== -->
+animation:    
+    coreWave 1.8s .5s ease-out infinite;
 
-        <header class="header">
+}
 
-            <div class="brand">
+.coreText{
+position:relative;
+z-index:2;
 
-                <div class="brand-mark">
-                    WF
-                </div>
+font-size:12px;    
+font-weight:900;    
 
-                <div class="brand-text">
+letter-spacing:2px;    
 
-                    <strong>
-                        WFESC ENGINE
-                    </strong>
+color:#fff;    
 
-                    <span>
-                        CORE TEST
-                    </span>
+text-shadow:    
+    0 0 12px rgba(180,200,255,.9);
 
-                </div>
+}
 
-            </div>
+@keyframes corePulse{
+0%,
+100%{
+transform:scale(.88);
+}
 
+50%{    
+    transform:scale(1.08);    
+}
 
-            <div class="status">
+}
 
-                <span class="status-dot"></span>
+@keyframes coreWave{
+0%{
+transform:scale(.7);
+opacity:.9;
+}
 
-                <span id="statusText">
-                    ONLINE
-                </span>
+100%{    
+    transform:scale(1.5);    
+    opacity:0;    
+}
 
-            </div>
+}
 
-        </header>
+/* =========================================================
+DATA LINES
+========================================================= */
 
+.dataLine{
+position:absolute;
 
-        <!-- =================================================
-             CONTENT
-        ================================================== -->
+height:1px;    
 
-        <main class="content">
+background:    
+    linear-gradient(    
+        90deg,    
+        transparent,    
+        rgba(120,150,255,.7),    
+        transparent    
+    );    
 
-            <section
-                class="panel"
-                id="contentPanel"
-            >
+opacity:0;    
 
-                <h1 id="pageTitle">
-                    WFESC
-                    <span>ENGINE</span>
-                </h1>
+animation:    
+    dataAppear .8s forwards;
 
+}
 
-                <p id="pageDescription">
+.line1{
+width:130px;
+right:calc(50% + 150px);
+top:42%;
+animation-delay:1.1s;
+}
 
-                    هذا أول اختبار للمحرك الأساسي
-                    الخاص بمشروع WFESC.
-                    حالياً نختبر فقط عمل المحرك
-                    ونظام التنقل قبل ربطه بصفحات
-                    المشروع الحقيقية.
+.line2{
+width:100px;
+left:calc(50% + 150px);
+top:54%;
+animation-delay:1.3s;
+}
 
-                </p>
+.line3{
+width:75px;
+right:calc(50% + 160px);
+top:61%;
+animation-delay:1.5s;
+}
 
+@keyframes dataAppear{
+from{
+transform:scaleX(0);
+opacity:0;
+}
 
-                <!-- =========================================
-                     ENGINE INFORMATION
-                ========================================== -->
+to{    
+    transform:scaleX(1);    
+    opacity:.7;    
+}
 
-                <div class="info">
+}
 
+/* =========================================================
+SCANNER
+========================================================= */
 
-                    <div class="info-card">
+.scanner{
+position:absolute;
 
-                        <small>
-                            ENGINE
-                        </small>
+width:260px;    
+height:2px;    
 
-                        <strong id="engineName">
-                            —
-                        </strong>
+background:    
+    linear-gradient(    
+        90deg,    
+        transparent,    
+        rgba(176,195,255,.95),    
+        transparent    
+    );    
 
-                    </div>
+filter:    
+    blur(.3px)    
+    drop-shadow(0 0 7px #718eff);    
 
+animation:    
+    scan 2.4s ease-in-out infinite;
 
-                    <div class="info-card">
+}
 
-                        <small>
-                            VERSION
-                        </small>
+@keyframes scan{
+0%{
+transform:translateY(-120px);
+opacity:0;
+}
 
-                        <strong id="engineVersion">
-                            —
-                        </strong>
+20%{    
+    opacity:.9;    
+}    
 
-                    </div>
+50%{    
+    transform:translateY(120px);    
+    opacity:.25;    
+}    
 
+80%{    
+    opacity:.8;    
+}    
 
-                    <div class="info-card">
+100%{    
+    transform:translateY(-120px);    
+    opacity:0;    
+}
 
-                        <small>
-                            STATUS
-                        </small>
+}
 
-                        <strong id="engineStatus">
-                            —
-                        </strong>
+/* =========================================================
+BOOT TEXT
+========================================================= */
 
-                    </div>
+.bootBrand{
+position:absolute;
 
+bottom:67px;    
 
-                    <div class="info-card">
+left:0;    
+right:0;    
 
-                        <small>
-                            INITIALIZED
-                        </small>
+text-align:center;
 
-                        <strong id="engineInitialized">
-                            —
-                        </strong>
+}
 
-                    </div>
+.powered{
+font-size:10px;
 
+letter-spacing:5px;    
 
-                </div>
+color:#5d6980;    
 
+margin-bottom:10px;    
 
-                <!-- =========================================
-                     ENGINE MESSAGE
-                ========================================== -->
+opacity:0;    
 
-                <div
-                    class="engine-message"
-                    id="engineMessage"
-                >
-                    WFESC ENGINE loading...
-                </div>
+animation:    
+    textIn .8s .5s forwards;
 
-            </section>
+}
 
-        </main>
+.wfesc{
+font-size:35px;
 
+font-weight:900;    
 
-        <!-- =================================================
-             BOTTOM NAVIGATION
-        ================================================== -->
+letter-spacing:9px;    
 
-        <nav class="navigation">
+background:    
+    linear-gradient(    
+        90deg,    
+        #59657b,    
+        #fff,    
+        #8ea7ff,    
+        #fff,    
+        #59657b    
+    );    
 
+background-size:250% auto;    
 
-            <button
-                class="nav-button active"
-                data-page="الرئيسية"
-            >
-                الرئيسية
-            </button>
+-webkit-background-clip:text;    
+background-clip:text;    
 
+color:transparent;    
 
-            <button
-                class="nav-button"
-                data-page="الرسائل"
-            >
-                الرسائل
-            </button>
+animation:    
+    textShine 2.5s linear infinite,    
+    textIn .8s .75s forwards;    
 
+opacity:0;
 
-            <button
-                class="nav-button"
-                data-page="المنشورات"
-            >
-                المنشورات
-            </button>
+}
 
+.engineLabel{
+margin-top:8px;
 
-            <button
-                class="nav-button"
-                data-page="الملف الشخصي"
-            >
-                الملف الشخصي
-            </button>
+font-size:11px;    
 
+letter-spacing:8px;    
 
-            <button
-                class="nav-button"
-                data-page="الإعدادات"
-            >
-                الإعدادات
-            </button>
+color:#7b879b;    
 
+opacity:0;    
 
-        </nav>
+animation:    
+    textIn .8s 1s forwards;
 
+}
 
-    </div>
+@keyframes textShine{
+to{
+background-position:250% center;
+}
+}
 
+@keyframes textIn{
+from{
+opacity:0;
+transform:translateY(15px);
+}
 
-    <!-- =====================================================
-         TEST SCRIPT
-    ====================================================== -->
+to{    
+    opacity:1;    
+    transform:translateY(0);    
+}
 
-    <script>
+}
 
-        (function () {
+/* =========================================================
+SYSTEM STATUS
+========================================================= */
 
-            "use strict";
+.systemStatus{
+position:absolute;
 
+left:25px;    
+right:25px;    
+bottom:27px;    
 
-            /* =================================================
-               WAIT FOR ENGINE
-            ================================================== */
+display:flex;    
 
-            function startEngineTest() {
+justify-content:space-between;    
 
-                if (!window.WFESC_ENGINE) {
+color:#3f4a5c;    
 
-                    console.error(
-                        "[WFESC TEST] WFESC ENGINE not found."
-                    );
+font-size:8px;    
 
-                    document.getElementById(
-                        "engineMessage"
-                    ).textContent =
-                        "WFESC ENGINE NOT FOUND";
+letter-spacing:1.5px;
 
-                    return;
+}
 
-                }
+.statusCenter{
+color:#66758d;
 
+animation:    
+    statusPulse .8s ease-in-out infinite alternate;
 
-                const ENGINE = window.WFESC_ENGINE;
+}
 
+@keyframes statusPulse{
+from{
+opacity:.35;
+}
 
-                /* =============================================
-                   ENGINE INFORMATION
-                ============================================== */
+to{    
+    opacity:1;    
+}
 
-                const info = ENGINE.getInfo();
+}
 
+/* =========================================================
+PROGRESS
+========================================================= */
 
-                document.getElementById(
-                    "engineName"
-                ).textContent =
-                    info.name;
+.progress{
+position:absolute;
 
+bottom:47px;    
 
-                document.getElementById(
-                    "engineVersion"
-                ).textContent =
-                    info.version;
+left:50%;    
 
+width:185px;    
+height:2px;    
 
-                document.getElementById(
-                    "engineStatus"
-                ).textContent =
-                    info.status;
+transform:translateX(-50%);    
 
+background:    
+    rgba(255,255,255,.055);    
 
-                document.getElementById(
-                    "engineInitialized"
-                ).textContent =
-                    info.initialized
-                        ? "YES"
-                        : "NO";
+overflow:hidden;
 
+}
 
-                document.getElementById(
-                    "engineMessage"
-                ).textContent =
-                    "WFESC ENGINE initialized successfully.";
+.progressBar{
+width:0;
+height:100%;
 
+background:    
+    linear-gradient(    
+        90deg,    
+        transparent,    
+        #708cff,    
+        #fff    
+    );    
 
-                console.log(
-                    "[WFESC TEST] Engine info:",
-                    info
-                );
+box-shadow:    
+    0 0 14px rgba(111,140,255,.9);    
 
+animation:    
+    bootProgress 3.65s    
+    cubic-bezier(.16,1,.3,1)    
+    forwards;
 
-                /* =============================================
-                   NAVIGATION TEST
-                ============================================== */
+}
 
-                const buttons =
-                    document.querySelectorAll(
-                        ".nav-button"
-                    );
+@keyframes bootProgress{
+0%{
+width:0;
+}
 
+25%{    
+    width:18%;    
+}    
 
-                const title =
-                    document.getElementById(
-                        "pageTitle"
-                    );
+47%{    
+    width:39%;    
+}    
 
+68%{    
+    width:64%;    
+}    
 
-                const description =
-                    document.getElementById(
-                        "pageDescription"
-                    );
+86%{    
+    width:83%;    
+}    
 
+100%{    
+    width:100%;    
+}
 
-                const panel =
-                    document.getElementById(
-                        "contentPanel"
-                    );
+}
 
+/* =========================================================
+FINAL FLASH
+========================================================= */
 
-                buttons.forEach(function (button) {
+.finalFlash{
+position:absolute;
 
-                    button.addEventListener(
-                        "click",
-                        function () {
+inset:0;    
 
+background:#fff;    
 
-                            const page =
-                                this.dataset.page;
+opacity:0;    
 
+pointer-events:none;    
 
-                            if (!page) {
-                                return;
-                            }
+animation:    
+    finalFlash .5s 3.7s ease-out forwards;
 
+}
 
-                            if (
-                                this.classList.contains(
-                                    "active"
-                                )
-                            ) {
-                                return;
-                            }
+@keyframes finalFlash{
 
+0%{    
+    opacity:0;    
+}    
 
-                            buttons.forEach(
-                                function (item) {
+18%{    
+    opacity:.11;    
+}    
 
-                                    item.classList.remove(
-                                        "active"
-                                    );
+100%{    
+    opacity:0;    
+}
 
-                                }
-                            );
+}
 
+/* =========================================================
+APP
+========================================================= */
 
-                            this.classList.add(
-                                "active"
-                            );
+#app{
+position:fixed;
+inset:0;
 
+opacity:0;    
+transform:scale(1.025);    
 
-                            /* =================================
-                               SMOOTH TRANSITION
-                            ================================== */
+background:    
+    radial-gradient(    
+        circle at 50% 20%,    
+        #101827,    
+        #05070c 45%,    
+        #020305    
+    );    
 
-                            panel.classList.add(
-                                "switching"
-                            );
+transition:    
+    opacity .8s ease,    
+    transform 1s cubic-bezier(.16,1,.3,1);
 
+}
 
-                            setTimeout(
-                                function () {
+#app.show{
+opacity:1;
+transform:scale(1);
+}
 
-                                    title.innerHTML =
-                                        page +
-                                        ' <span>WFESC</span>';
+.header{
+height:70px;
 
+display:flex;    
 
-                                    description.textContent =
-                                        "أنت الآن داخل صفحة " +
-                                        page +
-                                        ". هذا مجرد اختبار لنظام التنقل داخل WFESC ENGINE.";
+align-items:center;    
+justify-content:space-between;    
 
+padding:0 20px;    
 
-                                    panel.classList.remove(
-                                        "switching"
-                                    );
+border-bottom:    
+    1px solid    
+    rgba(255,255,255,.07);    
 
+background:    
+    rgba(4,6,10,.75);    
 
-                                    console.log(
-                                        "[WFESC TEST] Page:",
-                                        page
-                                    );
+backdrop-filter:blur(20px);
 
-                                },
-                                180
-                            );
+}
 
+.logo{
+display:flex;
+align-items:center;
+gap:10px;
+}
 
-                        }
-                    );
+.logoIcon{
+width:40px;
+height:40px;
 
-                });
+display:grid;    
+place-items:center;    
 
+border-radius:12px;    
 
-                console.log(
-                    "[WFESC TEST] Navigation test ready."
-                );
+border:    
+    1px solid    
+    rgba(255,255,255,.1);    
 
-            }
+background:    
+    linear-gradient(    
+        145deg,    
+        #151d2d,    
+        #05070b    
+    );    
 
+font-weight:900;
 
-            /* =================================================
-               START AFTER DOM
-            ================================================== */
+}
 
-            if (
-                document.readyState ===
-                "loading"
-            ) {
+.logoText strong{
+display:block;
+font-size:15px;
+}
 
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    startEngineTest,
-                    { once: true }
-                );
+.logoText small{
+color:#667080;
+font-size:10px;
+}
 
-            } else {
+.online{
+font-size:9px;
+letter-spacing:1px;
+color:#687487;
+}
 
-                startEngineTest();
+.content{
+height:
+calc(100vh - 140px);
 
-            }
+display:flex;    
 
-        })();
+align-items:center;    
+justify-content:center;    
 
-    </script>
+flex-direction:column;    
 
+gap:12px;
 
-    <!-- =====================================================
-         WFESC ENGINE
-    ====================================================== -->
+}
 
-    <script
-        src="./wfesc-engine/wfesc-engine.js"
-    ></script>
+.content h1{
+font-size:32px;
+}
 
-    <script
-        src="./wfesc-engine/wfesc-navigation.js"
-    ></script>
+.content p{
+color:#6d7788;
+}
 
+.nav{
+position:absolute;
 
-</body>
+bottom:14px;    
+
+left:50%;    
+
+transform:translateX(-50%);    
+
+width:min(94%,500px);    
+height:62px;    
+
+display:flex;    
+align-items:center;    
+justify-content:space-around;    
+
+border:    
+    1px solid    
+    rgba(255,255,255,.08);    
+
+background:    
+    rgba(7,9,14,.78);    
+
+backdrop-filter:blur(22px);    
+
+border-radius:20px;
+
+}
+
+.nav button{
+width:58px;
+height:48px;
+
+border:0;    
+
+background:transparent;    
+
+color:#697384;    
+
+border-radius:15px;    
+
+font-size:21px;    
+
+cursor:pointer;    
+
+transition:.25s ease;
+
+}
+
+.nav button.active{
+color:#fff;
+
+background:    
+    rgba(255,255,255,.07);    
+
+box-shadow:    
+    0 0 20px    
+    rgba(100,130,255,.08);
+
+}
+
+/* =========================================================
+MOBILE
+========================================================= */
+
+@media(max-width:500px){
+
+.engineCore{    
+    width:315px;    
+    height:315px;    
+}    
+
+.energyField{    
+    width:305px;    
+    height:305px;    
+}    
+
+.techRing{    
+    width:282px;    
+    height:282px;    
+}    
+
+.radar{    
+    width:265px;    
+    height:265px;    
+}    
+
+.orbit{    
+    width:225px;    
+    height:225px;    
+}    
+
+.wfesc{    
+    font-size:29px;    
+    letter-spacing:7px;    
+}    
+
+.bootBrand{    
+    bottom:68px;    
+}    
+
+.dataLine{    
+    display:none;    
+}
+
+}
+</style>  </head>  <body>  <!-- =====================================================    
+WFESC ENGINE BOOT    
+===================================================== -->  <div id="engineBoot">  <div class="bootHalo"></div>
+
+<div class="bootGrid"></div>    <div id="particles"></div>    <div class="engineCore">    <div class="energyField"></div>    
+
+<div class="techRing"></div>    
+
+<div class="radar"></div>    
+
+<div class="orbit"></div>    
+
+<div class="reactor">    
+
+    <div class="reactorShell"></div>    
+
+    <div class="core">    
+        <span class="coreText">WFESC</span>    
+    </div>    
+
+</div>    
+
+<div class="scanner"></div>
+
+</div>    <div class="dataLine line1"></div>    
+<div class="dataLine line2"></div>    
+<div class="dataLine line3"></div>    <div class="bootBrand">    <div class="powered">    
+    POWERED BY    
+</div>    
+
+<div class="wfesc">    
+    WFESC    
+</div>    
+
+<div class="engineLabel">    
+    ENGINE    
+</div>
+
+</div>    <div class="progress">    
+    <div class="progressBar"></div>    
+</div>    <div class="systemStatus">    <span>    
+    WFESC ENGINE CORE    
+</span>    
+
+<span class="statusCenter">    
+    SYSTEM INITIALIZING    
+</span>    
+
+<span>    
+    BUILD 0.5.0    
+</span>
+
+</div>    <div class="finalFlash"></div>  </div>  <!-- =====================================================    
+     APPLICATION    
+===================================================== -->  <div id="app">  <header class="header">    <div class="logo">    
+
+    <div class="logoIcon">    
+        W    
+    </div>    
+
+    <div class="logoText">    
+
+        <strong>    
+            أوفِس WFESC    
+        </strong>    
+
+        <small>    
+            WFESC ENGINE    
+        </small>    
+
+    </div>    
+
+</div>    
+
+<div class="online">    
+    ENGINE ONLINE    
+</div>
+
+</header>    <main class="content" id="content">    <h1>    
+    الرئيسية    
+</h1>    
+
+<p>    
+    مرحباً بك داخل WFESC ENGINE    
+</p>
+
+</main>    <nav class="nav">    <button    
+    class="active"    
+    data-page="الرئيسية">    
+    ⌂    
+</button>    
+
+<button    
+    data-page="الرسائل">    
+    💬    
+</button>    
+
+<button    
+    data-page="المنشورات">    
+    ▣    
+</button>    
+
+<button    
+    data-page="الملف الشخصي">    
+    👤    
+</button>    
+
+<button    
+    data-page="الإعدادات">    
+    ⚙    
+</button>
+
+</nav>  </div>  <script>    /* =========================================================
+PARTICLES
+========================================================= */
+
+const particleContainer =
+document.getElementById("particles");
+
+for(let i = 0; i < 65; i++){
+
+const particle =    
+    document.createElement("div");    
+
+particle.className =    
+    "particle";    
+
+particle.style.left =    
+    Math.random() * 100 + "%";    
+
+particle.style.top =    
+    (45 + Math.random() * 55) + "%";    
+
+particle.style.animationDuration =    
+    (2.5 + Math.random() * 4.5) + "s";    
+
+particle.style.animationDelay =    
+    (Math.random() * 4) + "s";    
+
+const size =    
+    .5 + Math.random() * 1.7;    
+
+particle.style.width =    
+    size + "px";    
+
+particle.style.height =    
+    size + "px";    
+
+particleContainer.appendChild(    
+    particle    
+);
+
+}
+
+/* =========================================================
+BOOT SEQUENCE
+========================================================= */
+
+const boot =
+document.getElementById("engineBoot");
+
+const app =
+document.getElementById("app");
+
+setTimeout(() => {
+
+boot.classList.add("hide");    
+
+setTimeout(() => {    
+
+    app.classList.add("show");    
+
+},250);
+
+},4000);
+
+/* =========================================================
+NAVIGATION
+========================================================= */
+
+const content =
+document.getElementById("content");
+
+const buttons =
+document.querySelectorAll(".nav button");
+
+buttons.forEach(button => {
+
+button.addEventListener(    
+    "click",    
+    () => {    
+
+        buttons.forEach(btn => {    
+            btn.classList.remove("active");    
+        });    
+
+        button.classList.add("active");    
+
+        const pageName =    
+            button.dataset.page;    
+
+        content.style.opacity = "0";    
+        content.style.transform =    
+            "translateY(12px)";    
+
+        setTimeout(() => {    
+
+            content.innerHTML = `    
+                <h1>${pageName}</h1>    
+                <p>    
+                    صفحة تجريبية داخل WFESC ENGINE    
+                </p>    
+            `;    
+
+            content.style.transition =    
+                "opacity .35s ease, transform .35s ease";    
+
+            content.style.opacity = "1";    
+
+            content.style.transform =    
+                "translateY(0)";    
+
+        },180);    
+
+    }    
+);
+
+});
+
+/* =========================================================
+WFESC ENGINE API
+========================================================= */
+
+window.WFESC_ENGINE = {
+
+name:    
+    "WFESC ENGINE",    
+
+version:    
+    "0.5.0",    
+
+bootDuration:    
+    4000,    
+
+status:    
+    "ONLINE",    
+
+openPage(name){    
+
+    content.innerHTML = `    
+        <h1>${name}</h1>    
+        <p>    
+            تم فتح الصفحة بواسطة WFESC ENGINE    
+        </p>    
+    `;    
+
+},    
+
+getStatus(){    
+
+    return this.status;    
+
+},    
+
+getVersion(){    
+
+    return this.version;    
+
+}
+
+};
+
+</script>  </body>
 
 </html>
