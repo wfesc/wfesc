@@ -1,1518 +1,1574 @@
-<!DOCTYPE html>  <html lang="ar" dir="rtl">    <head>    
-<meta charset="UTF-8">    
-<meta name="viewport" content="width=device-width,initial-scale=1.0">    
-<title>WFESC ENGINE — TEST 02</title>  <style>    
-*{    
-    box-sizing:border-box;    
-    margin:0;    
-    padding:0;    
-}    html,
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>WFESC ENGINE — TEST 02</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,
 body{
-width:100%;
-height:100%;
-overflow:hidden;
-background:#010205;
-color:#fff;
-font-family:Arial,Tahoma,sans-serif;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#010205;
+    color:#fff;
+    font-family:Arial,Tahoma,sans-serif;
 }
 
 /* =========================================================
-ENGINE SPLASH
+   ENGINE SPLASH
 ========================================================= */
 
 #engineBoot{
-position:fixed;
-inset:0;
-z-index:999999;
-overflow:hidden;
-background:
-radial-gradient(
-circle at 50% 45%,
-#0b1020 0%,
-#050812 28%,
-#02040a 62%,
-#010205 100%
-);
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    overflow:hidden;
 
-display:flex;    
-align-items:center;    
-justify-content:center;    
+    background:
+        radial-gradient(
+            circle at 50% 45%,
+            #0b1020 0%,
+            #050812 28%,
+            #02040a 62%,
+            #010205 100%
+        );
 
-transition:    
-    opacity .8s cubic-bezier(.16,1,.3,1),    
-    transform 1s cubic-bezier(.16,1,.3,1);
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
+    transition:
+        opacity .8s cubic-bezier(.16,1,.3,1),
+        transform 1s cubic-bezier(.16,1,.3,1);
 }
 
 #engineBoot.hide{
-opacity:0;
-transform:scale(1.12);
-pointer-events:none;
+    opacity:0;
+    transform:scale(1.12);
+    pointer-events:none;
 }
 
 /* =========================================================
-BACKGROUND GRID
+   BACKGROUND GRID
 ========================================================= */
 
 .bootGrid{
-position:absolute;
-inset:-50%;
-opacity:.17;
+    position:absolute;
+    inset:-50%;
+    opacity:.17;
 
-background-image:    
-    linear-gradient(    
-        rgba(111,143,255,.14) 1px,    
-        transparent 1px    
-    ),    
-    linear-gradient(    
-        90deg,    
-        rgba(111,143,255,.14) 1px,    
-        transparent 1px    
-    );    
+    background-image:
+        linear-gradient(
+            rgba(111,143,255,.14) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(111,143,255,.14) 1px,
+            transparent 1px
+        );
 
-background-size:60px 60px;    
+    background-size:60px 60px;
 
-transform:    
-    perspective(550px)    
-    rotateX(67deg)    
-    translateY(25%);    
+    transform:
+        perspective(550px)
+        rotateX(67deg)
+        translateY(25%);
 
-animation:gridMove 5s linear infinite;    
+    animation:gridMove 5s linear infinite;
 
-mask-image:    
-    linear-gradient(    
-        to bottom,    
-        transparent,    
-        #000 25%,    
-        #000 72%,    
-        transparent    
-    );
-
+    mask-image:
+        linear-gradient(
+            to bottom,
+            transparent,
+            #000 25%,
+            #000 72%,
+            transparent
+        );
 }
 
 @keyframes gridMove{
-from{
-background-position:0 0;
-}
 
-to{    
-    background-position:0 60px;    
-}
+    from{
+        background-position:0 0;
+    }
+
+    to{
+        background-position:0 60px;
+    }
 
 }
 
 /* =========================================================
-BACKGROUND HALO
+   BACKGROUND HALO
 ========================================================= */
 
 .bootHalo{
-position:absolute;
-width:65vmax;
-height:65vmax;
-border-radius:50%;
+    position:absolute;
+    width:65vmax;
+    height:65vmax;
+    border-radius:50%;
 
-background:    
-    radial-gradient(    
-        circle,    
-        rgba(74,111,255,.14) 0%,    
-        rgba(74,111,255,.055) 27%,    
-        transparent 67%    
-    );    
+    background:
+        radial-gradient(
+            circle,
+            rgba(74,111,255,.14) 0%,
+            rgba(74,111,255,.055) 27%,
+            transparent 67%
+        );
 
-filter:blur(20px);    
+    filter:blur(20px);
 
-animation:    
-    haloPulse 2.8s ease-in-out infinite;
-
+    animation:
+        haloPulse 2.8s ease-in-out infinite;
 }
 
 @keyframes haloPulse{
-0%,
-100%{
-transform:scale(.82);
-opacity:.55;
-}
 
-50%{    
-    transform:scale(1.08);    
-    opacity:1;    
-}
+    0%,
+    100%{
+        transform:scale(.82);
+        opacity:.55;
+    }
+
+    50%{
+        transform:scale(1.08);
+        opacity:1;
+    }
 
 }
 
 /* =========================================================
-PARTICLES
+   PARTICLES
 ========================================================= */
 
 #particles{
-position:absolute;
-inset:0;
+    position:absolute;
+    inset:0;
 }
 
 .particle{
-position:absolute;
-width:2px;
-height:2px;
-border-radius:50%;
+    position:absolute;
+    width:2px;
+    height:2px;
+    border-radius:50%;
 
-background:#9eb5ff;    
+    background:#9eb5ff;
 
-box-shadow:    
-    0 0 7px rgba(130,160,255,.9);    
+    box-shadow:
+        0 0 7px rgba(130,160,255,.9);
 
-animation:    
-    particleRise linear infinite;    
+    animation:
+        particleRise linear infinite;
 
-opacity:0;
-
+    opacity:0;
 }
 
 @keyframes particleRise{
 
-0%{    
-    transform:    
-        translate3d(0,80px,0)    
-        scale(.2);    
+    0%{
+        transform:
+            translate3d(0,80px,0)
+            scale(.2);
 
-    opacity:0;    
-}    
+        opacity:0;
+    }
 
-15%{    
-    opacity:.8;    
-}    
+    15%{
+        opacity:.8;
+    }
 
-75%{    
-    opacity:.35;    
-}    
+    75%{
+        opacity:.35;
+    }
 
-100%{    
-    transform:    
-        translate3d(0,-230px,0)    
-        scale(1.1);    
+    100%{
+        transform:
+            translate3d(0,-230px,0)
+            scale(1.1);
 
-    opacity:0;    
-}
+        opacity:0;
+    }
 
 }
 
 /* =========================================================
-ENGINE CONTAINER
+   ENGINE CONTAINER
 ========================================================= */
 
 .engineCore{
-position:relative;
+    position:relative;
 
-width:340px;    
-height:340px;    
+    width:340px;
+    height:340px;
 
-display:flex;    
-align-items:center;    
-justify-content:center;
-
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
 /* =========================================================
-OUTER ENERGY FIELD
+   OUTER ENERGY FIELD
 ========================================================= */
 
 .energyField{
-position:absolute;
+    position:absolute;
 
-width:330px;    
-height:330px;    
+    width:330px;
+    height:330px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px solid    
-    rgba(105,139,255,.13);    
+    border:
+        1px solid
+        rgba(105,139,255,.13);
 
-box-shadow:    
-    0 0 70px rgba(71,105,255,.04);    
+    box-shadow:
+        0 0 70px rgba(71,105,255,.04);
 
-animation:    
-    fieldRotate 22s linear infinite;
-
+    animation:
+        fieldRotate 22s linear infinite;
 }
 
 .energyField::before,
 .energyField::after{
-content:"";
+    content:"";
 
-position:absolute;    
+    position:absolute;
 
-inset:18px;    
+    inset:18px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px dashed    
-    rgba(115,145,255,.18);
-
+    border:
+        1px dashed
+        rgba(115,145,255,.18);
 }
 
 .energyField::after{
-inset:39px;
+    inset:39px;
 
-border:    
-    1px solid    
-    rgba(255,255,255,.06);    
+    border:
+        1px solid
+        rgba(255,255,255,.06);
 
-animation:    
-    fieldRotateReverse 13s linear infinite;
-
+    animation:
+        fieldRotateReverse 13s linear infinite;
 }
 
 @keyframes fieldRotate{
-to{
-transform:rotate(360deg);
-}
+
+    to{
+        transform:rotate(360deg);
+    }
+
 }
 
 @keyframes fieldRotateReverse{
-to{
-transform:rotate(-360deg);
-}
+
+    to{
+        transform:rotate(-360deg);
+    }
+
 }
 
 /* =========================================================
-RADAR RING
+   RADAR RING
 ========================================================= */
 
 .radar{
-position:absolute;
+    position:absolute;
 
-width:285px;    
-height:285px;    
+    width:285px;
+    height:285px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-background:    
-    conic-gradient(    
-        from 0deg,    
-        transparent 0deg,    
-        transparent 285deg,    
-        rgba(112,145,255,.65) 300deg,    
-        transparent 315deg,    
-        transparent 360deg    
-    );    
+    background:
+        conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            transparent 285deg,
+            rgba(112,145,255,.65) 300deg,
+            transparent 315deg,
+            transparent 360deg
+        );
 
--webkit-mask:    
-    radial-gradient(    
-        circle,    
-        transparent 0 48%,    
-        #000 49% 50%,    
-        transparent 51%    
-    );    
+    -webkit-mask:
+        radial-gradient(
+            circle,
+            transparent 0 48%,
+            #000 49% 50%,
+            transparent 51%
+        );
 
-mask:    
-    radial-gradient(    
-        circle,    
-        transparent 0 48%,    
-        #000 49% 50%,    
-        transparent 51%    
-    );    
+    mask:
+        radial-gradient(
+            circle,
+            transparent 0 48%,
+            #000 49% 50%,
+            transparent 51%
+        );
 
-animation:    
-    radarSpin 3.5s linear infinite;
-
+    animation:
+        radarSpin 3.5s linear infinite;
 }
 
 @keyframes radarSpin{
-to{
-transform:rotate(360deg);
-}
+
+    to{
+        transform:rotate(360deg);
+    }
+
 }
 
 /* =========================================================
-TECH TICKS
+   TECH TICKS
 ========================================================= */
 
 .techRing{
-position:absolute;
+    position:absolute;
 
-width:305px;    
-height:305px;    
+    width:305px;
+    height:305px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-background:    
-    repeating-conic-gradient(    
-        from 0deg,    
-        rgba(150,175,255,.55) 0deg 1deg,    
-        transparent 1deg 9deg    
-    );    
+    background:
+        repeating-conic-gradient(
+            from 0deg,
+            rgba(150,175,255,.55) 0deg 1deg,
+            transparent 1deg 9deg
+        );
 
--webkit-mask:    
-    radial-gradient(    
-        circle,    
-        transparent 0 46%,    
-        #000 46.5% 48%,    
-        transparent 48.5%    
-    );    
+    -webkit-mask:
+        radial-gradient(
+            circle,
+            transparent 0 46%,
+            #000 46.5% 48%,
+            transparent 48.5%
+        );
 
-mask:    
-    radial-gradient(    
-        circle,    
-        transparent 0 46%,    
-        #000 46.5% 48%,    
-        transparent 48.5%    
-    );    
+    mask:
+        radial-gradient(
+            circle,
+            transparent 0 46%,
+            #000 46.5% 48%,
+            transparent 48.5%
+        );
 
-opacity:.35;    
+    opacity:.35;
 
-animation:    
-    fieldRotate 28s linear infinite;
-
+    animation:
+        fieldRotate 28s linear infinite;
 }
 
 /* =========================================================
-INNER ORBIT
+   INNER ORBIT
 ========================================================= */
 
 .orbit{
-position:absolute;
+    position:absolute;
 
-width:245px;    
-height:245px;    
+    width:245px;
+    height:245px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px solid    
-    rgba(120,145,255,.22);    
+    border:
+        1px solid
+        rgba(120,145,255,.22);
 
-transform:rotateX(64deg);    
+    transform:rotateX(64deg);
 
-box-shadow:    
-    0 0 20px rgba(80,110,255,.05);    
+    box-shadow:
+        0 0 20px rgba(80,110,255,.05);
 
-animation:    
-    orbitPulse 2s ease-in-out infinite;
-
+    animation:
+        orbitPulse 2s ease-in-out infinite;
 }
 
 .orbit::before,
 .orbit::after{
-content:"";
+    content:"";
 
-position:absolute;    
+    position:absolute;
 
-width:7px;    
-height:7px;    
+    width:7px;
+    height:7px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-background:#a9bcff;    
+    background:#a9bcff;
 
-box-shadow:    
-    0 0 14px #7895ff,    
-    0 0 28px #5575ff;
-
+    box-shadow:
+        0 0 14px #7895ff,
+        0 0 28px #5575ff;
 }
 
 .orbit::before{
-top:-3px;
-left:50%;
+    top:-3px;
+    left:50%;
 }
 
 .orbit::after{
-bottom:-3px;
-right:50%;
+    bottom:-3px;
+    right:50%;
 }
 
 @keyframes orbitPulse{
-0%,
-100%{
-transform:
-rotateX(64deg)
-scale(.94);
 
-opacity:.45;    
-}    
+    0%,
+    100%{
+        transform:
+            rotateX(64deg)
+            scale(.94);
 
-50%{    
-    transform:    
-        rotateX(64deg)    
-        scale(1.05);    
+        opacity:.45;
+    }
 
-    opacity:1;    
-}
+    50%{
+        transform:
+            rotateX(64deg)
+            scale(1.05);
+
+        opacity:1;
+    }
 
 }
 
 /* =========================================================
-CENTRAL REACTOR
+   CENTRAL REACTOR
 ========================================================= */
 
 .reactor{
-position:absolute;
+    position:absolute;
 
-width:175px;    
-height:175px;    
+    width:175px;
+    height:175px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-display:flex;    
-align-items:center;    
-justify-content:center;    
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-background:    
-    radial-gradient(    
-        circle,    
-        #202d5d 0%,    
-        #0b1126 30%,    
-        #050916 55%,    
-        #02040a 76%,    
-        transparent 77%    
-    );    
+    background:
+        radial-gradient(
+            circle,
+            #202d5d 0%,
+            #0b1126 30%,
+            #050916 55%,
+            #02040a 76%,
+            transparent 77%
+        );
 
-box-shadow:    
-    0 0 35px rgba(65,100,255,.22),    
-    inset 0 0 35px rgba(90,120,255,.12);    
+    box-shadow:
+        0 0 35px rgba(65,100,255,.22),
+        inset 0 0 35px rgba(90,120,255,.12);
 
-animation:    
-    reactorAppear 1.4s cubic-bezier(.16,1,.3,1) forwards,    
-    reactorPulse 2s 1.4s ease-in-out infinite;    
+    animation:
+        reactorAppear 1.4s cubic-bezier(.16,1,.3,1) forwards,
+        reactorPulse 2s 1.4s ease-in-out infinite;
 
-transform:scale(0);
-
+    transform:scale(0);
 }
 
 @keyframes reactorAppear{
-to{
-transform:scale(1);
-}
+
+    to{
+        transform:scale(1);
+    }
+
 }
 
 @keyframes reactorPulse{
 
-0%,    
-100%{    
-    filter:brightness(.9);    
-}    
+    0%,
+    100%{
+        filter:brightness(.9);
+    }
 
-50%{    
-    filter:brightness(1.3);    
+    50%{
+        filter:brightness(1.3);
+    }
+
 }
 
-}
-
-/* reactor shell */
+/* =========================================================
+   REACTOR SHELL
+========================================================= */
 
 .reactorShell{
-position:absolute;
+    position:absolute;
 
-inset:12px;    
+    inset:12px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px solid    
-    rgba(146,169,255,.42);    
+    border:
+        1px solid
+        rgba(146,169,255,.42);
 
-box-shadow:    
-    inset 0 0 20px rgba(96,126,255,.12);    
+    box-shadow:
+        inset 0 0 20px rgba(96,126,255,.12);
 
-animation:    
-    shellSpin 8s linear infinite;
-
+    animation:
+        shellSpin 8s linear infinite;
 }
 
 .reactorShell::before{
-content:"";
+    content:"";
 
-position:absolute;    
+    position:absolute;
 
-inset:15px;    
+    inset:15px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px dashed    
-    rgba(133,160,255,.3);
-
+    border:
+        1px dashed
+        rgba(133,160,255,.3);
 }
 
 @keyframes shellSpin{
-to{
-transform:rotate(360deg);
-}
+
+    to{
+        transform:rotate(360deg);
+    }
+
 }
 
-/* reactor core */
+/* =========================================================
+   REACTOR CORE
+========================================================= */
 
 .core{
-position:absolute;
+    position:absolute;
 
-width:74px;    
-height:74px;    
+    width:74px;
+    height:74px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-background:    
-    radial-gradient(    
-        circle,    
-        #eef3ff 0%,    
-        #a8bbff 7%,    
-        #4b69c9 18%,    
-        #17234e 39%,    
-        #050914 68%    
-    );    
+    background:
+        radial-gradient(
+            circle,
+            #eef3ff 0%,
+            #a8bbff 7%,
+            #4b69c9 18%,
+            #17234e 39%,
+            #050914 68%
+        );
 
-border:    
-    1px solid    
-    rgba(190,207,255,.8);    
+    border:
+        1px solid
+        rgba(190,207,255,.8);
 
-box-shadow:    
-    0 0 18px rgba(117,148,255,.7),    
-    0 0 55px rgba(69,104,255,.4),    
-    inset 0 0 25px rgba(160,185,255,.45);    
+    box-shadow:
+        0 0 18px rgba(117,148,255,.7),
+        0 0 55px rgba(69,104,255,.4),
+        inset 0 0 25px rgba(160,185,255,.45);
 
-display:flex;    
-align-items:center;    
-justify-content:center;    
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-animation:    
-    corePulse 1.4s ease-in-out infinite;
-
+    animation:
+        corePulse 1.4s ease-in-out infinite;
 }
 
 .core::before{
-content:"";
+    content:"";
 
-position:absolute;    
+    position:absolute;
 
-inset:-14px;    
+    inset:-14px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px solid    
-    rgba(125,154,255,.25);    
+    border:
+        1px solid
+        rgba(125,154,255,.25);
 
-animation:    
-    coreWave 1.8s ease-out infinite;
-
+    animation:
+        coreWave 1.8s ease-out infinite;
 }
 
 .core::after{
-content:"";
+    content:"";
 
-position:absolute;    
+    position:absolute;
 
-inset:-29px;    
+    inset:-29px;
 
-border-radius:50%;    
+    border-radius:50%;
 
-border:    
-    1px solid    
-    rgba(125,154,255,.08);    
+    border:
+        1px solid
+        rgba(125,154,255,.08);
 
-animation:    
-    coreWave 1.8s .5s ease-out infinite;
-
+    animation:
+        coreWave 1.8s .5s ease-out infinite;
 }
 
 .coreText{
-position:relative;
-z-index:2;
+    position:relative;
+    z-index:2;
 
-font-size:12px;    
-font-weight:900;    
+    font-size:12px;
+    font-weight:900;
 
-letter-spacing:2px;    
+    letter-spacing:2px;
 
-color:#fff;    
+    color:#fff;
 
-text-shadow:    
-    0 0 12px rgba(180,200,255,.9);
-
+    text-shadow:
+        0 0 12px rgba(180,200,255,.9);
 }
 
 @keyframes corePulse{
-0%,
-100%{
-transform:scale(.88);
-}
 
-50%{    
-    transform:scale(1.08);    
-}
+    0%,
+    100%{
+        transform:scale(.88);
+    }
+
+    50%{
+        transform:scale(1.08);
+    }
 
 }
 
 @keyframes coreWave{
-0%{
-transform:scale(.7);
-opacity:.9;
-}
 
-100%{    
-    transform:scale(1.5);    
-    opacity:0;    
-}
+    0%{
+        transform:scale(.7);
+        opacity:.9;
+    }
+
+    100%{
+        transform:scale(1.5);
+        opacity:0;
+    }
 
 }
 
 /* =========================================================
-DATA LINES
+   DATA LINES
 ========================================================= */
 
 .dataLine{
-position:absolute;
+    position:absolute;
 
-height:1px;    
+    height:1px;
 
-background:    
-    linear-gradient(    
-        90deg,    
-        transparent,    
-        rgba(120,150,255,.7),    
-        transparent    
-    );    
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(120,150,255,.7),
+            transparent
+        );
 
-opacity:0;    
+    opacity:0;
 
-animation:    
-    dataAppear .8s forwards;
-
+    animation:
+        dataAppear .8s forwards;
 }
 
 .line1{
-width:130px;
-right:calc(50% + 150px);
-top:42%;
-animation-delay:1.1s;
+    width:130px;
+    right:calc(50% + 150px);
+    top:42%;
+    animation-delay:1.1s;
 }
 
 .line2{
-width:100px;
-left:calc(50% + 150px);
-top:54%;
-animation-delay:1.3s;
+    width:100px;
+    left:calc(50% + 150px);
+    top:54%;
+    animation-delay:1.3s;
 }
 
 .line3{
-width:75px;
-right:calc(50% + 160px);
-top:61%;
-animation-delay:1.5s;
+    width:75px;
+    right:calc(50% + 160px);
+    top:61%;
+    animation-delay:1.5s;
 }
 
 @keyframes dataAppear{
-from{
-transform:scaleX(0);
-opacity:0;
-}
 
-to{    
-    transform:scaleX(1);    
-    opacity:.7;    
-}
+    from{
+        transform:scaleX(0);
+        opacity:0;
+    }
+
+    to{
+        transform:scaleX(1);
+        opacity:.7;
+    }
 
 }
 
 /* =========================================================
-SCANNER
+   SCANNER
 ========================================================= */
 
 .scanner{
-position:absolute;
+    position:absolute;
 
-width:260px;    
-height:2px;    
+    width:260px;
+    height:2px;
 
-background:    
-    linear-gradient(    
-        90deg,    
-        transparent,    
-        rgba(176,195,255,.95),    
-        transparent    
-    );    
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(176,195,255,.95),
+            transparent
+        );
 
-filter:    
-    blur(.3px)    
-    drop-shadow(0 0 7px #718eff);    
+    filter:
+        blur(.3px)
+        drop-shadow(0 0 7px #718eff);
 
-animation:    
-    scan 2.4s ease-in-out infinite;
-
+    animation:
+        scan 2.4s ease-in-out infinite;
 }
 
 @keyframes scan{
-0%{
-transform:translateY(-120px);
-opacity:0;
-}
 
-20%{    
-    opacity:.9;    
-}    
+    0%{
+        transform:translateY(-120px);
+        opacity:0;
+    }
 
-50%{    
-    transform:translateY(120px);    
-    opacity:.25;    
-}    
+    20%{
+        opacity:.9;
+    }
 
-80%{    
-    opacity:.8;    
-}    
+    50%{
+        transform:translateY(120px);
+        opacity:.25;
+    }
 
-100%{    
-    transform:translateY(-120px);    
-    opacity:0;    
-}
+    80%{
+        opacity:.8;
+    }
+
+    100%{
+        transform:translateY(-120px);
+        opacity:0;
+    }
 
 }
 
 /* =========================================================
-BOOT TEXT
+   BOOT TEXT
 ========================================================= */
 
 .bootBrand{
-position:absolute;
+    position:absolute;
 
-bottom:67px;    
+    bottom:67px;
 
-left:0;    
-right:0;    
+    left:0;
+    right:0;
 
-text-align:center;
-
+    text-align:center;
 }
 
 .powered{
-font-size:10px;
+    font-size:10px;
 
-letter-spacing:5px;    
+    letter-spacing:5px;
 
-color:#5d6980;    
+    color:#5d6980;
 
-margin-bottom:10px;    
+    margin-bottom:10px;
 
-opacity:0;    
+    opacity:0;
 
-animation:    
-    textIn .8s .5s forwards;
-
+    animation:
+        textIn .8s .5s forwards;
 }
 
 .wfesc{
-font-size:35px;
+    font-size:35px;
 
-font-weight:900;    
+    font-weight:900;
 
-letter-spacing:9px;    
+    letter-spacing:9px;
 
-background:    
-    linear-gradient(    
-        90deg,    
-        #59657b,    
-        #fff,    
-        #8ea7ff,    
-        #fff,    
-        #59657b    
-    );    
+    background:
+        linear-gradient(
+            90deg,
+            #59657b,
+            #fff,
+            #8ea7ff,
+            #fff,
+            #59657b
+        );
 
-background-size:250% auto;    
+    background-size:250% auto;
 
--webkit-background-clip:text;    
-background-clip:text;    
+    -webkit-background-clip:text;
+    background-clip:text;
 
-color:transparent;    
+    color:transparent;
 
-animation:    
-    textShine 2.5s linear infinite,    
-    textIn .8s .75s forwards;    
+    animation:
+        textShine 2.5s linear infinite,
+        textIn .8s .75s forwards;
 
-opacity:0;
-
+    opacity:0;
 }
 
 .engineLabel{
-margin-top:8px;
+    margin-top:8px;
 
-font-size:11px;    
+    font-size:11px;
 
-letter-spacing:8px;    
+    letter-spacing:8px;
 
-color:#7b879b;    
+    color:#7b879b;
 
-opacity:0;    
+    opacity:0;
 
-animation:    
-    textIn .8s 1s forwards;
-
+    animation:
+        textIn .8s 1s forwards;
 }
 
 @keyframes textShine{
-to{
-background-position:250% center;
-}
+
+    to{
+        background-position:250% center;
+    }
+
 }
 
 @keyframes textIn{
-from{
-opacity:0;
-transform:translateY(15px);
-}
 
-to{    
-    opacity:1;    
-    transform:translateY(0);    
-}
+    from{
+        opacity:0;
+        transform:translateY(15px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 
 }
 
 /* =========================================================
-SYSTEM STATUS
+   SYSTEM STATUS
 ========================================================= */
 
 .systemStatus{
-position:absolute;
+    position:absolute;
 
-left:25px;    
-right:25px;    
-bottom:27px;    
+    left:25px;
+    right:25px;
+    bottom:27px;
 
-display:flex;    
+    display:flex;
 
-justify-content:space-between;    
+    justify-content:space-between;
 
-color:#3f4a5c;    
+    color:#3f4a5c;
 
-font-size:8px;    
+    font-size:8px;
 
-letter-spacing:1.5px;
-
+    letter-spacing:1.5px;
 }
 
 .statusCenter{
-color:#66758d;
+    color:#66758d;
 
-animation:    
-    statusPulse .8s ease-in-out infinite alternate;
-
+    animation:
+        statusPulse .8s ease-in-out infinite alternate;
 }
 
 @keyframes statusPulse{
-from{
-opacity:.35;
-}
 
-to{    
-    opacity:1;    
-}
+    from{
+        opacity:.35;
+    }
+
+    to{
+        opacity:1;
+    }
 
 }
 
 /* =========================================================
-PROGRESS
+   PROGRESS
 ========================================================= */
 
 .progress{
-position:absolute;
+    position:absolute;
 
-bottom:47px;    
+    bottom:47px;
 
-left:50%;    
+    left:50%;
 
-width:185px;    
-height:2px;    
+    width:185px;
+    height:2px;
 
-transform:translateX(-50%);    
+    transform:translateX(-50%);
 
-background:    
-    rgba(255,255,255,.055);    
+    background:
+        rgba(255,255,255,.055);
 
-overflow:hidden;
-
+    overflow:hidden;
 }
 
 .progressBar{
-width:0;
-height:100%;
+    width:0;
+    height:100%;
 
-background:    
-    linear-gradient(    
-        90deg,    
-        transparent,    
-        #708cff,    
-        #fff    
-    );    
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #708cff,
+            #fff
+        );
 
-box-shadow:    
-    0 0 14px rgba(111,140,255,.9);    
+    box-shadow:
+        0 0 14px rgba(111,140,255,.9);
 
-animation:    
-    bootProgress 3.65s    
-    cubic-bezier(.16,1,.3,1)    
-    forwards;
-
+    animation:
+        bootProgress 3.65s
+        cubic-bezier(.16,1,.3,1)
+        forwards;
 }
 
 @keyframes bootProgress{
-0%{
-width:0;
-}
 
-25%{    
-    width:18%;    
-}    
+    0%{
+        width:0;
+    }
 
-47%{    
-    width:39%;    
-}    
+    25%{
+        width:18%;
+    }
 
-68%{    
-    width:64%;    
-}    
+    47%{
+        width:39%;
+    }
 
-86%{    
-    width:83%;    
-}    
+    68%{
+        width:64%;
+    }
 
-100%{    
-    width:100%;    
-}
+    86%{
+        width:83%;
+    }
+
+    100%{
+        width:100%;
+    }
 
 }
 
 /* =========================================================
-FINAL FLASH
+   FINAL FLASH
 ========================================================= */
 
 .finalFlash{
-position:absolute;
+    position:absolute;
 
-inset:0;    
+    inset:0;
 
-background:#fff;    
+    background:#fff;
 
-opacity:0;    
+    opacity:0;
 
-pointer-events:none;    
+    pointer-events:none;
 
-animation:    
-    finalFlash .5s 3.7s ease-out forwards;
-
+    animation:
+        finalFlash .5s 3.7s ease-out forwards;
 }
 
 @keyframes finalFlash{
 
-0%{    
-    opacity:0;    
-}    
+    0%{
+        opacity:0;
+    }
 
-18%{    
-    opacity:.11;    
-}    
+    18%{
+        opacity:.11;
+    }
 
-100%{    
-    opacity:0;    
-}
+    100%{
+        opacity:0;
+    }
 
 }
 
 /* =========================================================
-APP
+   APP
 ========================================================= */
 
 #app{
-position:fixed;
-inset:0;
+    position:fixed;
+    inset:0;
 
-opacity:0;    
-transform:scale(1.025);    
+    opacity:0;
+    transform:scale(1.025);
 
-background:    
-    radial-gradient(    
-        circle at 50% 20%,    
-        #101827,    
-        #05070c 45%,    
-        #020305    
-    );    
+    background:
+        radial-gradient(
+            circle at 50% 20%,
+            #101827,
+            #05070c 45%,
+            #020305
+        );
 
-transition:    
-    opacity .8s ease,    
-    transform 1s cubic-bezier(.16,1,.3,1);
-
+    transition:
+        opacity .8s ease,
+        transform 1s cubic-bezier(.16,1,.3,1);
 }
 
 #app.show{
-opacity:1;
-transform:scale(1);
+    opacity:1;
+    transform:scale(1);
 }
 
 .header{
-height:70px;
+    height:70px;
 
-display:flex;    
+    display:flex;
 
-align-items:center;    
-justify-content:space-between;    
+    align-items:center;
+    justify-content:space-between;
 
-padding:0 20px;    
+    padding:0 20px;
 
-border-bottom:    
-    1px solid    
-    rgba(255,255,255,.07);    
+    border-bottom:
+        1px solid
+        rgba(255,255,255,.07);
 
-background:    
-    rgba(4,6,10,.75);    
+    background:
+        rgba(4,6,10,.75);
 
-backdrop-filter:blur(20px);
-
+    backdrop-filter:blur(20px);
 }
 
 .logo{
-display:flex;
-align-items:center;
-gap:10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
 }
 
 .logoIcon{
-width:40px;
-height:40px;
+    width:40px;
+    height:40px;
 
-display:grid;    
-place-items:center;    
+    display:grid;
+    place-items:center;
 
-border-radius:12px;    
+    border-radius:12px;
 
-border:    
-    1px solid    
-    rgba(255,255,255,.1);    
+    border:
+        1px solid
+        rgba(255,255,255,.1);
 
-background:    
-    linear-gradient(    
-        145deg,    
-        #151d2d,    
-        #05070b    
-    );    
+    background:
+        linear-gradient(
+            145deg,
+            #151d2d,
+            #05070b
+        );
 
-font-weight:900;
-
+    font-weight:900;
 }
 
 .logoText strong{
-display:block;
-font-size:15px;
+    display:block;
+    font-size:15px;
 }
 
 .logoText small{
-color:#667080;
-font-size:10px;
+    color:#667080;
+    font-size:10px;
 }
 
 .online{
-font-size:9px;
-letter-spacing:1px;
-color:#687487;
+    font-size:9px;
+    letter-spacing:1px;
+    color:#687487;
 }
 
 .content{
-height:
-calc(100vh - 140px);
+    height:
+        calc(100vh - 140px);
 
-display:flex;    
+    display:flex;
 
-align-items:center;    
-justify-content:center;    
+    align-items:center;
+    justify-content:center;
 
-flex-direction:column;    
+    flex-direction:column;
 
-gap:12px;
-
+    gap:12px;
 }
 
 .content h1{
-font-size:32px;
+    font-size:32px;
 }
 
 .content p{
-color:#6d7788;
+    color:#6d7788;
 }
 
 .nav{
-position:absolute;
+    position:absolute;
 
-bottom:14px;    
+    bottom:14px;
 
-left:50%;    
+    left:50%;
 
-transform:translateX(-50%);    
+    transform:translateX(-50%);
 
-width:min(94%,500px);    
-height:62px;    
+    width:min(94%,500px);
+    height:62px;
 
-display:flex;    
-align-items:center;    
-justify-content:space-around;    
+    display:flex;
+    align-items:center;
+    justify-content:space-around;
 
-border:    
-    1px solid    
-    rgba(255,255,255,.08);    
+    border:
+        1px solid
+        rgba(255,255,255,.08);
 
-background:    
-    rgba(7,9,14,.78);    
+    background:
+        rgba(7,9,14,.78);
 
-backdrop-filter:blur(22px);    
+    backdrop-filter:blur(22px);
 
-border-radius:20px;
-
+    border-radius:20px;
 }
 
 .nav button{
-width:58px;
-height:48px;
+    width:58px;
+    height:48px;
 
-border:0;    
+    border:0;
 
-background:transparent;    
+    background:transparent;
 
-color:#697384;    
+    color:#697384;
 
-border-radius:15px;    
+    border-radius:15px;
 
-font-size:21px;    
+    font-size:21px;
 
-cursor:pointer;    
+    cursor:pointer;
 
-transition:.25s ease;
-
+    transition:.25s ease;
 }
 
 .nav button.active{
-color:#fff;
+    color:#fff;
 
-background:    
-    rgba(255,255,255,.07);    
+    background:
+        rgba(255,255,255,.07);
 
-box-shadow:    
-    0 0 20px    
-    rgba(100,130,255,.08);
-
+    box-shadow:
+        0 0 20px
+        rgba(100,130,255,.08);
 }
 
 /* =========================================================
-MOBILE
+   MOBILE
 ========================================================= */
 
 @media(max-width:500px){
 
-.engineCore{    
-    width:315px;    
-    height:315px;    
-}    
+    .engineCore{
+        width:315px;
+        height:315px;
+    }
 
-.energyField{    
-    width:305px;    
-    height:305px;    
-}    
+    .energyField{
+        width:305px;
+        height:305px;
+    }
 
-.techRing{    
-    width:282px;    
-    height:282px;    
-}    
+    .techRing{
+        width:282px;
+        height:282px;
+    }
 
-.radar{    
-    width:265px;    
-    height:265px;    
-}    
+    .radar{
+        width:265px;
+        height:265px;
+    }
 
-.orbit{    
-    width:225px;    
-    height:225px;    
-}    
+    .orbit{
+        width:225px;
+        height:225px;
+    }
 
-.wfesc{    
-    font-size:29px;    
-    letter-spacing:7px;    
-}    
+    .wfesc{
+        font-size:29px;
+        letter-spacing:7px;
+    }
 
-.bootBrand{    
-    bottom:68px;    
-}    
+    .bootBrand{
+        bottom:68px;
+    }
 
-.dataLine{    
-    display:none;    
+    .dataLine{
+        display:none;
+    }
+
 }
 
-}
-</style>  </head>  <body>  <!-- =====================================================    
-WFESC ENGINE BOOT    
-===================================================== -->  <div id="engineBoot">  <div class="bootHalo"></div>
+</style>
 
-<div class="bootGrid"></div>    <div id="particles"></div>    <div class="engineCore">    <div class="energyField"></div>    
+</head>
 
-<div class="techRing"></div>    
+<body>
 
-<div class="radar"></div>    
+<!-- =====================================================
+     WFESC ENGINE BOOT
+===================================================== -->
 
-<div class="orbit"></div>    
+<div id="engineBoot">
 
-<div class="reactor">    
+    <div class="bootHalo"></div>
 
-    <div class="reactorShell"></div>    
+    <div class="bootGrid"></div>
 
-    <div class="core">    
-        <span class="coreText">WFESC</span>    
-    </div>    
+    <div id="particles"></div>
 
-</div>    
+    <div class="engineCore">
 
-<div class="scanner"></div>
+        <div class="energyField"></div>
 
-</div>    <div class="dataLine line1"></div>    
-<div class="dataLine line2"></div>    
-<div class="dataLine line3"></div>    <div class="bootBrand">    <div class="powered">    
-    POWERED BY    
-</div>    
+        <div class="techRing"></div>
 
-<div class="wfesc">    
-    WFESC    
-</div>    
+        <div class="radar"></div>
 
-<div class="engineLabel">    
-    ENGINE    
+        <div class="orbit"></div>
+
+        <div class="reactor">
+
+            <div class="reactorShell"></div>
+
+            <div class="core">
+
+                <span class="coreText">
+                    WFESC
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="scanner"></div>
+
+    </div>
+
+    <div class="dataLine line1"></div>
+
+    <div class="dataLine line2"></div>
+
+    <div class="dataLine line3"></div>
+
+    <div class="bootBrand">
+
+        <div class="powered">
+            POWERED BY
+        </div>
+
+        <div class="wfesc">
+            WFESC
+        </div>
+
+        <div class="engineLabel">
+            ENGINE
+        </div>
+
+    </div>
+
+    <div class="progress">
+
+        <div class="progressBar"></div>
+
+    </div>
+
+    <div class="systemStatus">
+
+        <span>
+            WFESC ENGINE CORE
+        </span>
+
+        <span class="statusCenter">
+            SYSTEM INITIALIZING
+        </span>
+
+        <span>
+            BUILD 0.5.0
+        </span>
+
+    </div>
+
+    <div class="finalFlash"></div>
+
 </div>
 
-</div>    <div class="progress">    
-    <div class="progressBar"></div>    
-</div>    <div class="systemStatus">    <span>    
-    WFESC ENGINE CORE    
-</span>    
 
-<span class="statusCenter">    
-    SYSTEM INITIALIZING    
-</span>    
+<!-- =====================================================
+     APPLICATION
+===================================================== -->
 
-<span>    
-    BUILD 0.5.0    
-</span>
+<div id="app">
 
-</div>    <div class="finalFlash"></div>  </div>  <!-- =====================================================    
-     APPLICATION    
-===================================================== -->  <div id="app">  <header class="header">    <div class="logo">    
+    <header class="header">
 
-    <div class="logoIcon">    
-        W    
-    </div>    
+        <div class="logo">
 
-    <div class="logoText">    
+            <div class="logoIcon">
+                W
+            </div>
 
-        <strong>    
-            أوفِس WFESC    
-        </strong>    
+            <div class="logoText">
 
-        <small>    
-            WFESC ENGINE    
-        </small>    
+                <strong>
+                    أوفِس WFESC
+                </strong>
 
-    </div>    
+                <small>
+                    WFESC ENGINE
+                </small>
 
-</div>    
+            </div>
 
-<div class="online">    
-    ENGINE ONLINE    
+        </div>
+
+        <div class="online">
+            ENGINE ONLINE
+        </div>
+
+    </header>
+
+
+    <main class="content" id="content">
+
+        <h1>
+            الرئيسية
+        </h1>
+
+        <p>
+            مرحباً بك داخل WFESC ENGINE
+        </p>
+
+    </main>
+
+
+    <nav class="nav">
+
+        <button
+            class="active"
+            data-page="الرئيسية">
+
+            ⌂
+
+        </button>
+
+        <button
+            data-page="الرسائل">
+
+            💬
+
+        </button>
+
+        <button
+            data-page="المنشورات">
+
+            ▣
+
+        </button>
+
+        <button
+            data-page="الملف الشخصي">
+
+            👤
+
+        </button>
+
+        <button
+            data-page="الإعدادات">
+
+            ⚙
+
+        </button>
+
+    </nav>
+
 </div>
 
-</header>    <main class="content" id="content">    <h1>    
-    الرئيسية    
-</h1>    
 
-<p>    
-    مرحباً بك داخل WFESC ENGINE    
-</p>
+<script>
 
-</main>    <nav class="nav">    <button    
-    class="active"    
-    data-page="الرئيسية">    
-    ⌂    
-</button>    
-
-<button    
-    data-page="الرسائل">    
-    💬    
-</button>    
-
-<button    
-    data-page="المنشورات">    
-    ▣    
-</button>    
-
-<button    
-    data-page="الملف الشخصي">    
-    👤    
-</button>    
-
-<button    
-    data-page="الإعدادات">    
-    ⚙    
-</button>
-
-</nav>  </div>  <script>    /* =========================================================
-PARTICLES
+/* =========================================================
+   PARTICLES
 ========================================================= */
 
 const particleContainer =
-document.getElementById("particles");
+    document.getElementById("particles");
 
 for(let i = 0; i < 65; i++){
 
-const particle =    
-    document.createElement("div");    
+    const particle =
+        document.createElement("div");
 
-particle.className =    
-    "particle";    
+    particle.className =
+        "particle";
 
-particle.style.left =    
-    Math.random() * 100 + "%";    
+    particle.style.left =
+        Math.random() * 100 + "%";
 
-particle.style.top =    
-    (45 + Math.random() * 55) + "%";    
+    particle.style.top =
+        (45 + Math.random() * 55) + "%";
 
-particle.style.animationDuration =    
-    (2.5 + Math.random() * 4.5) + "s";    
+    particle.style.animationDuration =
+        (2.5 + Math.random() * 4.5) + "s";
 
-particle.style.animationDelay =    
-    (Math.random() * 4) + "s";    
+    particle.style.animationDelay =
+        (Math.random() * 4) + "s";
 
-const size =    
-    .5 + Math.random() * 1.7;    
+    const size =
+        .5 + Math.random() * 1.7;
 
-particle.style.width =    
-    size + "px";    
+    particle.style.width =
+        size + "px";
 
-particle.style.height =    
-    size + "px";    
+    particle.style.height =
+        size + "px";
 
-particleContainer.appendChild(    
-    particle    
-);
+    particleContainer.appendChild(
+        particle
+    );
 
 }
 
+
 /* =========================================================
-BOOT SEQUENCE
+   BOOT SEQUENCE
 ========================================================= */
 
 const boot =
-document.getElementById("engineBoot");
+    document.getElementById("engineBoot");
 
 const app =
-document.getElementById("app");
+    document.getElementById("app");
 
 setTimeout(() => {
 
-boot.classList.add("hide");    
+    boot.classList.add("hide");
 
-setTimeout(() => {    
+    setTimeout(() => {
 
-    app.classList.add("show");    
+        app.classList.add("show");
 
-},250);
+    },250);
 
 },4000);
 
+
 /* =========================================================
-NAVIGATION
+   NAVIGATION
 ========================================================= */
 
 const content =
-document.getElementById("content");
+    document.getElementById("content");
 
 const buttons =
-document.querySelectorAll(".nav button");
+    document.querySelectorAll(".nav button");
 
 buttons.forEach(button => {
 
-button.addEventListener(    
-    "click",    
-    () => {    
+    button.addEventListener(
+        "click",
+        () => {
 
-        buttons.forEach(btn => {    
-            btn.classList.remove("active");    
-        });    
+            buttons.forEach(btn => {
 
-        button.classList.add("active");    
+                btn.classList.remove("active");
 
-        const pageName =    
-            button.dataset.page;    
+            });
 
-        content.style.opacity = "0";    
-        content.style.transform =    
-            "translateY(12px)";    
+            button.classList.add("active");
 
-        setTimeout(() => {    
+            const pageName =
+                button.dataset.page;
 
-            content.innerHTML = `    
-                <h1>${pageName}</h1>    
-                <p>    
-                    صفحة تجريبية داخل WFESC ENGINE    
-                </p>    
-            `;    
+            content.style.opacity = "0";
 
-            content.style.transition =    
-                "opacity .35s ease, transform .35s ease";    
+            content.style.transform =
+                "translateY(12px)";
 
-            content.style.opacity = "1";    
+            setTimeout(() => {
 
-            content.style.transform =    
-                "translateY(0)";    
+                content.innerHTML = `
+                    <h1>${pageName}</h1>
 
-        },180);    
+                    <p>
+                        صفحة تجريبية داخل WFESC ENGINE
+                    </p>
+                `;
 
-    }    
-);
+                content.style.transition =
+                    "opacity .35s ease, transform .35s ease";
+
+                content.style.opacity = "1";
+
+                content.style.transform =
+                    "translateY(0)";
+
+            },180);
+
+        }
+    );
 
 });
 
-/* =========================================================
-WFESC ENGINE API
-========================================================= */
+</script>
 
-window.WFESC_ENGINE = {
 
-name:    
-    "WFESC ENGINE",    
+<!-- =========================================================
+     WFESC ENGINE CORE
+========================================================= -->
 
-version:    
-    "0.5.0",    
+<script src="./wfesc-engine/wfesc-engine.js"></script>
 
-bootDuration:    
-    4000,    
+<!-- =========================================================
+     WFESC ENGINE NAVIGATION
+========================================================= -->
 
-status:    
-    "ONLINE",    
+<script src="./wfesc-engine/wfesc-navigation.js"></script>
 
-openPage(name){    
 
-    content.innerHTML = `    
-        <h1>${name}</h1>    
-        <p>    
-            تم فتح الصفحة بواسطة WFESC ENGINE    
-        </p>    
-    `;    
-
-},    
-
-getStatus(){    
-
-    return this.status;    
-
-},    
-
-getVersion(){    
-
-    return this.version;    
-
-}
-
-};
-
-</script>  </body>
+</body>
 
 </html>
