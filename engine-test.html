@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>WFESC ENGINE — TEST</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            background: #050608;
+            color: #ffffff;
+            font-family: Arial, Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+
+
+        /* =====================================================
+           BACKGROUND
+        ===================================================== */
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+
+            background:
+                linear-gradient(
+                    rgba(255,255,255,0.025) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.025) 1px,
+                    transparent 1px
+                );
+
+            background-size: 45px 45px;
+
+            pointer-events: none;
+        }
+
+
+        /* =====================================================
+           APP
+        ===================================================== */
+
+        .app {
+            width: 100%;
+            min-height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+
+            position: relative;
+            z-index: 1;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+            height: 70px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 20px;
+
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+
+            background: rgba(5,6,8,0.85);
+
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 12px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 13px;
+            font-weight: bold;
+
+            background: rgba(255,255,255,0.04);
+        }
+
+        .brand-text strong {
+            display: block;
+            font-size: 15px;
+        }
+
+        .brand-text span {
+            display: block;
+
+            margin-top: 3px;
+
+            font-size: 10px;
+
+            color: rgba(255,255,255,0.45);
+
+            letter-spacing: 1px;
+        }
+
+
+        /* =====================================================
+           STATUS
+        ===================================================== */
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            font-size: 11px;
+
+            color: rgba(255,255,255,0.55);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #63e6be;
+
+            box-shadow:
+                0 0 10px rgba(99,230,190,0.7);
+        }
+
+
+        /* =====================================================
+           CONTENT
+        ===================================================== */
+
+        .content {
+            flex: 1;
+
+            padding: 30px 18px 110px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel {
+            width: min(700px, 100%);
+
+            padding: 30px 24px;
+
+            border: 1px solid rgba(255,255,255,0.08);
+
+            border-radius: 24px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.055),
+                    rgba(255,255,255,0.015)
+                );
+
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.45);
+
+            transition:
+                opacity 0.3s ease,
+                transform 0.3s ease;
+        }
+
+        .panel.switching {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        .panel h1 {
+            font-size: clamp(28px, 7vw, 54px);
+
+            line-height: 1;
+
+            letter-spacing: -2px;
+        }
+
+        .panel h1 span {
+            color: rgba(255,255,255,0.35);
+        }
+
+        .panel p {
+            margin-top: 18px;
+
+            max-width: 560px;
+
+            color: rgba(255,255,255,0.55);
+
+            line-height: 1.8;
+
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           ENGINE INFO
+        ===================================================== */
+
+        .info {
+            margin-top: 28px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(140px, 1fr)
+                );
+
+            gap: 10px;
+        }
+
+        .info-card {
+            padding: 15px;
+
+            border-radius: 16px;
+
+            background: rgba(255,255,255,0.035);
+
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .info-card small {
+            display: block;
+
+            font-size: 10px;
+
+            color: rgba(255,255,255,0.35);
+
+            margin-bottom: 7px;
+        }
+
+        .info-card strong {
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           BOTTOM NAVIGATION
+        ===================================================== */
+
+        .navigation {
+
+            position: fixed;
+
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+
+            height: 68px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(5, 1fr);
+
+            gap: 5px;
+
+            padding: 7px;
+
+            border: 1px solid rgba(255,255,255,0.09);
+
+            border-radius: 22px;
+
+            background: rgba(10,11,14,0.88);
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.5);
+
+            z-index: 10;
+        }
+
+        .nav-button {
+
+            border: 0;
+
+            border-radius: 16px;
+
+            background: transparent;
+
+            color: rgba(255,255,255,0.4);
+
+            font-family: inherit;
+
+            font-size: 11px;
+
+            cursor: pointer;
+
+            transition:
+                background 0.25s ease,
+                color 0.25s ease,
+                transform 0.25s ease;
+        }
+
+        .nav-button:hover {
+            color: #ffffff;
+        }
+
+        .nav-button:active {
+            transform: scale(0.94);
+        }
+
+        .nav-button.active {
+            background: rgba(255,255,255,0.08);
+
+            color: #ffffff;
+        }
+
+
+        /* =====================================================
+           ENGINE MESSAGE
+        ===================================================== */
+
+        .engine-message {
+
+            margin-top: 20px;
+
+            padding: 13px 15px;
+
+            border-radius: 13px;
+
+            background: rgba(255,255,255,0.025);
+
+            border: 1px solid rgba(255,255,255,0.05);
+
+            font-size: 11px;
+
+            color: rgba(255,255,255,0.38);
+
+            direction: ltr;
+
+            text-align: left;
+
+            overflow-wrap: anywhere;
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 500px) {
+
+            .header {
+                height: 64px;
+                padding: 0 15px;
+            }
+
+            .content {
+                padding:
+                    22px
+                    14px
+                    100px;
+            }
+
+            .panel {
+                padding: 25px 18px;
+                border-radius: 20px;
+            }
+
+            .panel h1 {
+                font-size: 36px;
+            }
+
+            .navigation {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+            }
+
+            .nav-button {
+                font-size: 9px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         APP
+    ====================================================== -->
+
+    <div class="app">
+
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <header class="header">
+
+            <div class="brand">
+
+                <div class="brand-mark">
+                    WF
+                </div>
+
+                <div class="brand-text">
+
+                    <strong>
+                        WFESC ENGINE
+                    </strong>
+
+                    <span>
+                        CORE TEST
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="status">
+
+                <span class="status-dot"></span>
+
+                <span id="statusText">
+                    ONLINE
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             CONTENT
+        ================================================== -->
+
+        <main class="content">
+
+            <section
+                class="panel"
+                id="contentPanel"
+            >
+
+                <h1 id="pageTitle">
+                    WFESC
+                    <span>ENGINE</span>
+                </h1>
+
+
+                <p id="pageDescription">
+
+                    هذا أول اختبار للمحرك الأساسي
+                    الخاص بمشروع WFESC.
+                    حالياً نختبر فقط عمل المحرك
+                    ونظام التنقل قبل ربطه بصفحات
+                    المشروع الحقيقية.
+
+                </p>
+
+
+                <!-- =========================================
+                     ENGINE INFORMATION
+                ========================================== -->
+
+                <div class="info">
+
+
+                    <div class="info-card">
+
+                        <small>
+                            ENGINE
+                        </small>
+
+                        <strong id="engineName">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-card">
+
+                        <small>
+                            VERSION
+                        </small>
+
+                        <strong id="engineVersion">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-card">
+
+                        <small>
+                            STATUS
+                        </small>
+
+                        <strong id="engineStatus">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-card">
+
+                        <small>
+                            INITIALIZED
+                        </small>
+
+                        <strong id="engineInitialized">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- =========================================
+                     ENGINE MESSAGE
+                ========================================== -->
+
+                <div
+                    class="engine-message"
+                    id="engineMessage"
+                >
+                    WFESC ENGINE loading...
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- =================================================
+             BOTTOM NAVIGATION
+        ================================================== -->
+
+        <nav class="navigation">
+
+
+            <button
+                class="nav-button active"
+                data-page="الرئيسية"
+            >
+                الرئيسية
+            </button>
+
+
+            <button
+                class="nav-button"
+                data-page="الرسائل"
+            >
+                الرسائل
+            </button>
+
+
+            <button
+                class="nav-button"
+                data-page="المنشورات"
+            >
+                المنشورات
+            </button>
+
+
+            <button
+                class="nav-button"
+                data-page="الملف الشخصي"
+            >
+                الملف الشخصي
+            </button>
+
+
+            <button
+                class="nav-button"
+                data-page="الإعدادات"
+            >
+                الإعدادات
+            </button>
+
+
+        </nav>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         TEST SCRIPT
+    ====================================================== -->
+
+    <script>
+
+        (function () {
+
+            "use strict";
+
+
+            /* =================================================
+               WAIT FOR ENGINE
+            ================================================== */
+
+            function startEngineTest() {
+
+                if (!window.WFESC_ENGINE) {
+
+                    console.error(
+                        "[WFESC TEST] WFESC ENGINE not found."
+                    );
+
+                    document.getElementById(
+                        "engineMessage"
+                    ).textContent =
+                        "WFESC ENGINE NOT FOUND";
+
+                    return;
+
+                }
+
+
+                const ENGINE = window.WFESC_ENGINE;
+
+
+                /* =============================================
+                   ENGINE INFORMATION
+                ============================================== */
+
+                const info = ENGINE.getInfo();
+
+
+                document.getElementById(
+                    "engineName"
+                ).textContent =
+                    info.name;
+
+
+                document.getElementById(
+                    "engineVersion"
+                ).textContent =
+                    info.version;
+
+
+                document.getElementById(
+                    "engineStatus"
+                ).textContent =
+                    info.status;
+
+
+                document.getElementById(
+                    "engineInitialized"
+                ).textContent =
+                    info.initialized
+                        ? "YES"
+                        : "NO";
+
+
+                document.getElementById(
+                    "engineMessage"
+                ).textContent =
+                    "WFESC ENGINE initialized successfully.";
+
+
+                console.log(
+                    "[WFESC TEST] Engine info:",
+                    info
+                );
+
+
+                /* =============================================
+                   NAVIGATION TEST
+                ============================================== */
+
+                const buttons =
+                    document.querySelectorAll(
+                        ".nav-button"
+                    );
+
+
+                const title =
+                    document.getElementById(
+                        "pageTitle"
+                    );
+
+
+                const description =
+                    document.getElementById(
+                        "pageDescription"
+                    );
+
+
+                const panel =
+                    document.getElementById(
+                        "contentPanel"
+                    );
+
+
+                buttons.forEach(function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+
+                            const page =
+                                this.dataset.page;
+
+
+                            if (!page) {
+                                return;
+                            }
+
+
+                            if (
+                                this.classList.contains(
+                                    "active"
+                                )
+                            ) {
+                                return;
+                            }
+
+
+                            buttons.forEach(
+                                function (item) {
+
+                                    item.classList.remove(
+                                        "active"
+                                    );
+
+                                }
+                            );
+
+
+                            this.classList.add(
+                                "active"
+                            );
+
+
+                            /* =================================
+                               SMOOTH TRANSITION
+                            ================================== */
+
+                            panel.classList.add(
+                                "switching"
+                            );
+
+
+                            setTimeout(
+                                function () {
+
+                                    title.innerHTML =
+                                        page +
+                                        ' <span>WFESC</span>';
+
+
+                                    description.textContent =
+                                        "أنت الآن داخل صفحة " +
+                                        page +
+                                        ". هذا مجرد اختبار لنظام التنقل داخل WFESC ENGINE.";
+
+
+                                    panel.classList.remove(
+                                        "switching"
+                                    );
+
+
+                                    console.log(
+                                        "[WFESC TEST] Page:",
+                                        page
+                                    );
+
+                                },
+                                180
+                            );
+
+
+                        }
+                    );
+
+                });
+
+
+                console.log(
+                    "[WFESC TEST] Navigation test ready."
+                );
+
+            }
+
+
+            /* =================================================
+               START AFTER DOM
+            ================================================== */
+
+            if (
+                document.readyState ===
+                "loading"
+            ) {
+
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    startEngineTest,
+                    { once: true }
+                );
+
+            } else {
+
+                startEngineTest();
+
+            }
+
+        })();
+
+    </script>
+
+
+    <!-- =====================================================
+         WFESC ENGINE
+    ====================================================== -->
+
+    <script
+        src="./wfesc-engine/wfesc-engine.js"
+    ></script>
+
+    <script
+        src="./wfesc-engine/wfesc-navigation.js"
+    ></script>
+
+
+</body>
+
+</html>
