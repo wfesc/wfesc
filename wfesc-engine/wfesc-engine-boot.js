@@ -2,18 +2,19 @@
    WFESC ENGINE
    Boot Controller
    TEST 02
-   Version: 0.5.1
+   Version: 0.5.2
 ========================================================= */
 
 (function (window, document) {
 
     "use strict";
 
-    const BOOT_KEY = "WFESC_ENGINE_BOOT_SHOWN";
+    const WINDOW_SESSION_KEY = "WFESC_ENGINE_SESSION";
+
 
     function createBoot() {
 
-        /* منع التكرار */
+        /* منع التكرار داخل نفس الصفحة */
         if (document.getElementById("wfesc-engine-boot")) {
             return;
         }
@@ -95,7 +96,7 @@
                 </span>
 
                 <span>
-                    BUILD 0.5.1
+                    BUILD 0.5.2
                 </span>
 
             </div>
@@ -105,6 +106,7 @@
         `;
 
         document.body.appendChild(boot);
+
 
         /* =========================================
            PARTICLES
@@ -144,9 +146,11 @@
                     size + "px";
 
                 particleContainer.appendChild(particle);
+
             }
 
         }
+
 
         /* =========================================
            ENGINE CORE
@@ -161,9 +165,9 @@
 
         }
 
+
         /* =========================================
            BOOT COMPLETE
-           4 SECONDS
         ========================================= */
 
         setTimeout(function () {
@@ -173,9 +177,7 @@
             setTimeout(function () {
 
                 if (boot.parentNode) {
-
                     boot.parentNode.removeChild(boot);
-
                 }
 
             }, 1000);
@@ -186,39 +188,32 @@
 
 
     /* =========================================
-       START ENGINE
+       START
     ========================================= */
 
     function start() {
 
         /*
-         * أول دخول فقط في جلسة المتصفح
+         * window.name يبقى ثابتًا أثناء التنقل
+         * بين صفحات نفس التبويب.
+         *
+         * عند إغلاق التبويب وفتح جلسة جديدة
+         * يكون window.name فارغًا من جديد.
          */
 
-        try {
+        if (window.name === WINDOW_SESSION_KEY) {
 
-            if (
-                sessionStorage.getItem(BOOT_KEY)
-                === "true"
-            ) {
-
-                return;
-
-            }
-
-            sessionStorage.setItem(
-                BOOT_KEY,
-                "true"
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "[WFESC ENGINE] Session storage unavailable.",
-                error
-            );
+            return;
 
         }
+
+
+        /* تسجيل أن المحرك ظهر في هذه الجلسة */
+
+        window.name = WINDOW_SESSION_KEY;
+
+
+        /* تشغيل المحرك */
 
         createBoot();
 
@@ -226,7 +221,7 @@
 
 
     /* =========================================
-       START AFTER DOM
+       DOM READY
     ========================================= */
 
     if (document.readyState === "loading") {
@@ -242,6 +237,5 @@
         start();
 
     }
-
 
 })(window, document);
