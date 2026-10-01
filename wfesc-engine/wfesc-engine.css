@@ -1,85 +1,1488 @@
 /* =========================================================
-   WFESC ENGINE BOOT
+   WFESC ENGINE
+   BOOT EXPERIENCE
+   Design: TEST 02
+   Isolated Engine Layer
+========================================================= */
+
+
+/* =========================================================
+   ENGINE BOOT
 ========================================================= */
 
 #wfesc-engine-boot{
+
     position:fixed;
+
     inset:0;
+
     z-index:999999;
 
-    background:#020202;
-    color:#fff;
+    overflow:hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 45%,
+            #0b1020 0%,
+            #050812 28%,
+            #02040a 62%,
+            #010205 100%
+        );
 
     display:flex;
+
     align-items:center;
     justify-content:center;
 
     opacity:1;
+
     visibility:visible;
 
     transition:
-        opacity .8s ease,
-        visibility .8s ease;
+        opacity .8s cubic-bezier(.16,1,.3,1),
+        transform 1s cubic-bezier(.16,1,.3,1);
 }
 
+
+/* =========================================================
+   HIDDEN STATE
+========================================================= */
+
 #wfesc-engine-boot.hidden{
+
     opacity:0;
+
     visibility:hidden;
+
+    transform:scale(1.12);
+
     pointer-events:none;
 }
 
-.wfesc-engine-content{
-    text-align:center;
-    direction:ltr;
-}
 
-.wfesc-engine-powered{
-    font-size:10px;
-    letter-spacing:5px;
-    color:#555;
-    margin-bottom:12px;
-}
+/* =========================================================
+   BACKGROUND GRID
+========================================================= */
 
-.wfesc-engine-title{
-    font-family:Arial,Tahoma,sans-serif;
-    font-size:38px;
-    font-weight:bold;
-    letter-spacing:10px;
-}
+#wfesc-engine-boot .bootGrid{
 
-.wfesc-engine-subtitle{
-    margin-top:10px;
-    font-size:11px;
-    letter-spacing:7px;
-    color:#666;
-}
+    position:absolute;
 
-.wfesc-engine-loader{
-    width:240px;
-    height:2px;
-    background:#151515;
-    margin:35px auto 0;
-    overflow:hidden;
-}
+    inset:-50%;
 
-.wfesc-engine-loader span{
-    display:block;
-    width:0;
-    height:100%;
-    background:#fff;
+    opacity:.17;
+
+    background-image:
+
+        linear-gradient(
+            rgba(111,143,255,.14) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(111,143,255,.14) 1px,
+            transparent 1px
+        );
+
+    background-size:60px 60px;
+
+    transform:
+        perspective(550px)
+        rotateX(67deg)
+        translateY(25%);
 
     animation:
-        wfesc-engine-load 4s linear forwards;
+        wfesc-engine-gridMove
+        5s
+        linear
+        infinite;
+
+    -webkit-mask-image:
+        linear-gradient(
+            to bottom,
+            transparent,
+            #000 25%,
+            #000 72%,
+            transparent
+        );
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            transparent,
+            #000 25%,
+            #000 72%,
+            transparent
+        );
 }
 
-@keyframes wfesc-engine-load{
+
+@keyframes wfesc-engine-gridMove{
 
     from{
-        width:0;
+        background-position:0 0;
     }
 
     to{
+        background-position:0 60px;
+    }
+
+}
+
+
+/* =========================================================
+   BACKGROUND HALO
+========================================================= */
+
+#wfesc-engine-boot .bootHalo{
+
+    position:absolute;
+
+    width:65vmax;
+    height:65vmax;
+
+    border-radius:50%;
+
+    background:
+
+        radial-gradient(
+            circle,
+            rgba(74,111,255,.14) 0%,
+            rgba(74,111,255,.055) 27%,
+            transparent 67%
+        );
+
+    filter:blur(20px);
+
+    animation:
+        wfesc-engine-haloPulse
+        2.8s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes wfesc-engine-haloPulse{
+
+    0%,
+    100%{
+
+        transform:scale(.82);
+
+        opacity:.55;
+
+    }
+
+    50%{
+
+        transform:scale(1.08);
+
+        opacity:1;
+
+    }
+
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+#wfesc-engine-boot #particles{
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+}
+
+
+#wfesc-engine-boot .particle{
+
+    position:absolute;
+
+    width:2px;
+    height:2px;
+
+    border-radius:50%;
+
+    background:#9eb5ff;
+
+    box-shadow:
+        0 0 7px
+        rgba(130,160,255,.9);
+
+    animation:
+        wfesc-engine-particleRise
+        linear
+        infinite;
+
+    opacity:0;
+}
+
+
+@keyframes wfesc-engine-particleRise{
+
+    0%{
+
+        transform:
+            translate3d(0,80px,0)
+            scale(.2);
+
+        opacity:0;
+
+    }
+
+    15%{
+
+        opacity:.8;
+
+    }
+
+    75%{
+
+        opacity:.35;
+
+    }
+
+    100%{
+
+        transform:
+            translate3d(0,-230px,0)
+            scale(1.1);
+
+        opacity:0;
+
+    }
+
+}
+
+
+/* =========================================================
+   ENGINE CONTAINER
+========================================================= */
+
+#wfesc-engine-boot .engineCore{
+
+    position:relative;
+
+    width:340px;
+    height:340px;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    z-index:5;
+}
+
+
+/* =========================================================
+   OUTER ENERGY FIELD
+========================================================= */
+
+#wfesc-engine-boot .energyField{
+
+    position:absolute;
+
+    width:330px;
+    height:330px;
+
+    border-radius:50%;
+
+    border:
+        1px solid
+        rgba(105,139,255,.13);
+
+    box-shadow:
+        0 0 70px
+        rgba(71,105,255,.04);
+
+    animation:
+        wfesc-engine-fieldRotate
+        22s
+        linear
+        infinite;
+}
+
+
+#wfesc-engine-boot .energyField::before,
+#wfesc-engine-boot .energyField::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:18px;
+
+    border-radius:50%;
+
+    border:
+        1px dashed
+        rgba(115,145,255,.18);
+}
+
+
+#wfesc-engine-boot .energyField::after{
+
+    inset:39px;
+
+    border:
+        1px solid
+        rgba(255,255,255,.06);
+
+    animation:
+        wfesc-engine-fieldRotateReverse
+        13s
+        linear
+        infinite;
+}
+
+
+@keyframes wfesc-engine-fieldRotate{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+
+@keyframes wfesc-engine-fieldRotateReverse{
+
+    to{
+
+        transform:rotate(-360deg);
+
+    }
+
+}
+
+
+/* =========================================================
+   RADAR
+========================================================= */
+
+#wfesc-engine-boot .radar{
+
+    position:absolute;
+
+    width:285px;
+    height:285px;
+
+    border-radius:50%;
+
+    background:
+
+        conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            transparent 285deg,
+            rgba(112,145,255,.65) 300deg,
+            transparent 315deg,
+            transparent 360deg
+        );
+
+    -webkit-mask:
+
+        radial-gradient(
+            circle,
+            transparent 0 48%,
+            #000 49% 50%,
+            transparent 51%
+        );
+
+    mask:
+
+        radial-gradient(
+            circle,
+            transparent 0 48%,
+            #000 49% 50%,
+            transparent 51%
+        );
+
+    animation:
+        wfesc-engine-radarSpin
+        3.5s
+        linear
+        infinite;
+}
+
+
+@keyframes wfesc-engine-radarSpin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+
+/* =========================================================
+   TECH TICKS
+========================================================= */
+
+#wfesc-engine-boot .techRing{
+
+    position:absolute;
+
+    width:305px;
+    height:305px;
+
+    border-radius:50%;
+
+    background:
+
+        repeating-conic-gradient(
+            from 0deg,
+            rgba(150,175,255,.55) 0deg 1deg,
+            transparent 1deg 9deg
+        );
+
+    -webkit-mask:
+
+        radial-gradient(
+            circle,
+            transparent 0 46%,
+            #000 46.5% 48%,
+            transparent 48.5%
+        );
+
+    mask:
+
+        radial-gradient(
+            circle,
+            transparent 0 46%,
+            #000 46.5% 48%,
+            transparent 48.5%
+        );
+
+    opacity:.35;
+
+    animation:
+        wfesc-engine-fieldRotate
+        28s
+        linear
+        infinite;
+}
+
+
+/* =========================================================
+   INNER ORBIT
+========================================================= */
+
+#wfesc-engine-boot .orbit{
+
+    position:absolute;
+
+    width:245px;
+    height:245px;
+
+    border-radius:50%;
+
+    border:
+        1px solid
+        rgba(120,145,255,.22);
+
+    transform:
+        rotateX(64deg);
+
+    box-shadow:
+        0 0 20px
+        rgba(80,110,255,.05);
+
+    animation:
+        wfesc-engine-orbitPulse
+        2s
+        ease-in-out
+        infinite;
+}
+
+
+#wfesc-engine-boot .orbit::before,
+#wfesc-engine-boot .orbit::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:7px;
+    height:7px;
+
+    border-radius:50%;
+
+    background:#a9bcff;
+
+    box-shadow:
+        0 0 14px #7895ff,
+        0 0 28px #5575ff;
+}
+
+
+#wfesc-engine-boot .orbit::before{
+
+    top:-3px;
+
+    left:50%;
+}
+
+
+#wfesc-engine-boot .orbit::after{
+
+    bottom:-3px;
+
+    right:50%;
+}
+
+
+@keyframes wfesc-engine-orbitPulse{
+
+    0%,
+    100%{
+
+        transform:
+            rotateX(64deg)
+            scale(.94);
+
+        opacity:.45;
+
+    }
+
+    50%{
+
+        transform:
+            rotateX(64deg)
+            scale(1.05);
+
+        opacity:1;
+
+    }
+
+}
+
+
+/* =========================================================
+   CENTRAL REACTOR
+========================================================= */
+
+#wfesc-engine-boot .reactor{
+
+    position:absolute;
+
+    width:175px;
+    height:175px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    background:
+
+        radial-gradient(
+            circle,
+            #202d5d 0%,
+            #0b1126 30%,
+            #050916 55%,
+            #02040a 76%,
+            transparent 77%
+        );
+
+    box-shadow:
+
+        0 0 35px
+        rgba(65,100,255,.22),
+
+        inset 0 0 35px
+        rgba(90,120,255,.12);
+
+    animation:
+
+        wfesc-engine-reactorAppear
+        1.4s
+        cubic-bezier(.16,1,.3,1)
+        forwards,
+
+        wfesc-engine-reactorPulse
+        2s
+        1.4s
+        ease-in-out
+        infinite;
+
+    transform:scale(0);
+}
+
+
+@keyframes wfesc-engine-reactorAppear{
+
+    to{
+
+        transform:scale(1);
+
+    }
+
+}
+
+
+@keyframes wfesc-engine-reactorPulse{
+
+    0%,
+    100%{
+
+        filter:brightness(.9);
+
+    }
+
+    50%{
+
+        filter:brightness(1.3);
+
+    }
+
+}
+
+
+/* =========================================================
+   REACTOR SHELL
+========================================================= */
+
+#wfesc-engine-boot .reactorShell{
+
+    position:absolute;
+
+    inset:12px;
+
+    border-radius:50%;
+
+    border:
+        1px solid
+        rgba(146,169,255,.42);
+
+    box-shadow:
+        inset 0 0 20px
+        rgba(96,126,255,.12);
+
+    animation:
+        wfesc-engine-shellSpin
+        8s
+        linear
+        infinite;
+}
+
+
+#wfesc-engine-boot .reactorShell::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:15px;
+
+    border-radius:50%;
+
+    border:
+        1px dashed
+        rgba(133,160,255,.3);
+}
+
+
+@keyframes wfesc-engine-shellSpin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+
+/* =========================================================
+   REACTOR CORE
+========================================================= */
+
+#wfesc-engine-boot .core{
+
+    position:absolute;
+
+    width:74px;
+    height:74px;
+
+    border-radius:50%;
+
+    background:
+
+        radial-gradient(
+            circle,
+            #eef3ff 0%,
+            #a8bbff 7%,
+            #4b69c9 18%,
+            #17234e 39%,
+            #050914 68%
+        );
+
+    border:
+        1px solid
+        rgba(190,207,255,.8);
+
+    box-shadow:
+
+        0 0 18px
+        rgba(117,148,255,.7),
+
+        0 0 55px
+        rgba(69,104,255,.4),
+
+        inset 0 0 25px
+        rgba(160,185,255,.45);
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    animation:
+        wfesc-engine-corePulse
+        1.4s
+        ease-in-out
+        infinite;
+}
+
+
+#wfesc-engine-boot .core::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-14px;
+
+    border-radius:50%;
+
+    border:
+        1px solid
+        rgba(125,154,255,.25);
+
+    animation:
+        wfesc-engine-coreWave
+        1.8s
+        ease-out
+        infinite;
+}
+
+
+#wfesc-engine-boot .core::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-29px;
+
+    border-radius:50%;
+
+    border:
+        1px solid
+        rgba(125,154,255,.08);
+
+    animation:
+        wfesc-engine-coreWave
+        1.8s
+        .5s
+        ease-out
+        infinite;
+}
+
+
+#wfesc-engine-boot .coreText{
+
+    position:relative;
+
+    z-index:2;
+
+    font-size:12px;
+
+    font-weight:900;
+
+    letter-spacing:2px;
+
+    color:#fff;
+
+    text-shadow:
+        0 0 12px
+        rgba(180,200,255,.9);
+}
+
+
+@keyframes wfesc-engine-corePulse{
+
+    0%,
+    100%{
+
+        transform:scale(.88);
+
+    }
+
+    50%{
+
+        transform:scale(1.08);
+
+    }
+
+}
+
+
+@keyframes wfesc-engine-coreWave{
+
+    0%{
+
+        transform:scale(.7);
+
+        opacity:.9;
+
+    }
+
+    100%{
+
+        transform:scale(1.5);
+
+        opacity:0;
+
+    }
+
+}
+
+
+/* =========================================================
+   DATA LINES
+========================================================= */
+
+#wfesc-engine-boot .dataLine{
+
+    position:absolute;
+
+    height:1px;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(120,150,255,.7),
+            transparent
+        );
+
+    opacity:0;
+
+    animation:
+        wfesc-engine-dataAppear
+        .8s
+        forwards;
+}
+
+
+#wfesc-engine-boot .line1{
+
+    width:130px;
+
+    right:
+        calc(50% + 150px);
+
+    top:42%;
+
+    animation-delay:1.1s;
+}
+
+
+#wfesc-engine-boot .line2{
+
+    width:100px;
+
+    left:
+        calc(50% + 150px);
+
+    top:54%;
+
+    animation-delay:1.3s;
+}
+
+
+#wfesc-engine-boot .line3{
+
+    width:75px;
+
+    right:
+        calc(50% + 160px);
+
+    top:61%;
+
+    animation-delay:1.5s;
+}
+
+
+@keyframes wfesc-engine-dataAppear{
+
+    from{
+
+        transform:scaleX(0);
+
+        opacity:0;
+
+    }
+
+    to{
+
+        transform:scaleX(1);
+
+        opacity:.7;
+
+    }
+
+}
+
+
+/* =========================================================
+   SCANNER
+========================================================= */
+
+#wfesc-engine-boot .scanner{
+
+    position:absolute;
+
+    width:260px;
+
+    height:2px;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(176,195,255,.95),
+            transparent
+        );
+
+    filter:
+        blur(.3px)
+        drop-shadow(
+            0 0 7px
+            #718eff
+        );
+
+    animation:
+        wfesc-engine-scan
+        2.4s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes wfesc-engine-scan{
+
+    0%{
+
+        transform:translateY(-120px);
+
+        opacity:0;
+
+    }
+
+    20%{
+
+        opacity:.9;
+
+    }
+
+    50%{
+
+        transform:translateY(120px);
+
+        opacity:.25;
+
+    }
+
+    80%{
+
+        opacity:.8;
+
+    }
+
+    100%{
+
+        transform:translateY(-120px);
+
+        opacity:0;
+
+    }
+
+}
+
+
+/* =========================================================
+   BOOT BRAND
+========================================================= */
+
+#wfesc-engine-boot .bootBrand{
+
+    position:absolute;
+
+    bottom:67px;
+
+    left:0;
+    right:0;
+
+    text-align:center;
+
+    z-index:10;
+}
+
+
+#wfesc-engine-boot .powered{
+
+    font-size:10px;
+
+    letter-spacing:5px;
+
+    color:#5d6980;
+
+    margin-bottom:10px;
+
+    opacity:0;
+
+    animation:
+        wfesc-engine-textIn
+        .8s
+        .5s
+        forwards;
+}
+
+
+#wfesc-engine-boot .wfesc{
+
+    font-size:35px;
+
+    font-weight:900;
+
+    letter-spacing:9px;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            #59657b,
+            #fff,
+            #8ea7ff,
+            #fff,
+            #59657b
+        );
+
+    background-size:250% auto;
+
+    -webkit-background-clip:text;
+
+    background-clip:text;
+
+    color:transparent;
+
+    animation:
+
+        wfesc-engine-textShine
+        2.5s
+        linear
+        infinite,
+
+        wfesc-engine-textIn
+        .8s
+        .75s
+        forwards;
+
+    opacity:0;
+}
+
+
+#wfesc-engine-boot .engineLabel{
+
+    margin-top:8px;
+
+    font-size:11px;
+
+    letter-spacing:8px;
+
+    color:#7b879b;
+
+    opacity:0;
+
+    animation:
+        wfesc-engine-textIn
+        .8s
+        1s
+        forwards;
+}
+
+
+@keyframes wfesc-engine-textShine{
+
+    to{
+
+        background-position:
+            250% center;
+
+    }
+
+}
+
+
+@keyframes wfesc-engine-textIn{
+
+    from{
+
+        opacity:0;
+
+        transform:
+            translateY(15px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+
+/* =========================================================
+   SYSTEM STATUS
+========================================================= */
+
+#wfesc-engine-boot .systemStatus{
+
+    position:absolute;
+
+    left:25px;
+    right:25px;
+
+    bottom:27px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    color:#3f4a5c;
+
+    font-size:8px;
+
+    letter-spacing:1.5px;
+
+    z-index:10;
+}
+
+
+#wfesc-engine-boot .statusCenter{
+
+    color:#66758d;
+
+    animation:
+        wfesc-engine-statusPulse
+        .8s
+        ease-in-out
+        infinite alternate;
+}
+
+
+@keyframes wfesc-engine-statusPulse{
+
+    from{
+
+        opacity:.35;
+
+    }
+
+    to{
+
+        opacity:1;
+
+    }
+
+}
+
+
+/* =========================================================
+   PROGRESS
+========================================================= */
+
+#wfesc-engine-boot .progress{
+
+    position:absolute;
+
+    bottom:47px;
+
+    left:50%;
+
+    width:185px;
+
+    height:2px;
+
+    transform:
+        translateX(-50%);
+
+    background:
+        rgba(255,255,255,.055);
+
+    overflow:hidden;
+
+    z-index:10;
+}
+
+
+#wfesc-engine-boot .progressBar{
+
+    width:0;
+
+    height:100%;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            transparent,
+            #708cff,
+            #fff
+        );
+
+    box-shadow:
+        0 0 14px
+        rgba(111,140,255,.9);
+
+    animation:
+
+        wfesc-engine-bootProgress
+        3.65s
+        cubic-bezier(.16,1,.3,1)
+        forwards;
+}
+
+
+@keyframes wfesc-engine-bootProgress{
+
+    0%{
+
+        width:0;
+
+    }
+
+    25%{
+
+        width:18%;
+
+    }
+
+    47%{
+
+        width:39%;
+
+    }
+
+    68%{
+
+        width:64%;
+
+    }
+
+    86%{
+
+        width:83%;
+
+    }
+
+    100%{
+
         width:100%;
+
+    }
+
+}
+
+
+/* =========================================================
+   FINAL FLASH
+========================================================= */
+
+#wfesc-engine-boot .finalFlash{
+
+    position:absolute;
+
+    inset:0;
+
+    background:#fff;
+
+    opacity:0;
+
+    pointer-events:none;
+
+    z-index:20;
+
+    animation:
+
+        wfesc-engine-finalFlash
+        .5s
+        3.7s
+        ease-out
+        forwards;
+}
+
+
+@keyframes wfesc-engine-finalFlash{
+
+    0%{
+
+        opacity:0;
+
+    }
+
+    18%{
+
+        opacity:.11;
+
+    }
+
+    100%{
+
+        opacity:0;
+
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:500px){
+
+    #wfesc-engine-boot .engineCore{
+
+        width:315px;
+        height:315px;
+
+    }
+
+
+    #wfesc-engine-boot .energyField{
+
+        width:305px;
+        height:305px;
+
+    }
+
+
+    #wfesc-engine-boot .techRing{
+
+        width:282px;
+        height:282px;
+
+    }
+
+
+    #wfesc-engine-boot .radar{
+
+        width:265px;
+        height:265px;
+
+    }
+
+
+    #wfesc-engine-boot .orbit{
+
+        width:225px;
+        height:225px;
+
+    }
+
+
+    #wfesc-engine-boot .wfesc{
+
+        font-size:29px;
+
+        letter-spacing:7px;
+
+    }
+
+
+    #wfesc-engine-boot .bootBrand{
+
+        bottom:68px;
+
+    }
+
+
+    #wfesc-engine-boot .dataLine{
+
+        display:none;
+
+    }
+
+
+    #wfesc-engine-boot .systemStatus{
+
+        left:14px;
+        right:14px;
+
+        font-size:7px;
+
+        letter-spacing:1px;
+
+    }
+
+}
+
+
+/* =========================================================
+   SMALL HEIGHT DEVICES
+========================================================= */
+
+@media(max-height:650px){
+
+    #wfesc-engine-boot .engineCore{
+
+        transform:scale(.86);
+
+    }
+
+
+    #wfesc-engine-boot .bootBrand{
+
+        bottom:60px;
+
+    }
+
+
+    #wfesc-engine-boot .systemStatus{
+
+        bottom:20px;
+
+    }
+
+
+    #wfesc-engine-boot .progress{
+
+        bottom:40px;
+
     }
 
 }
