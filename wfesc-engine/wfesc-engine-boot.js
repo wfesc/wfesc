@@ -1,106 +1,103 @@
 /* =========================================================
    WFESC ENGINE
    Boot Controller
-   Version: 1.0.0
 ========================================================= */
 
-(function (window) {
+(function (window, document) {
 
     "use strict";
 
-    if (!window.WFESC_ENGINE) {
-        console.error("[WFESC ENGINE] Core engine not found.");
-        return;
-    }
+    function startEngineBoot() {
 
-    const ENGINE = window.WFESC_ENGINE;
+        /*
+         * إنشاء شاشة المحرك
+         * بدون تعديل أي شيء من الموقع القديم
+         */
 
-    const Boot = {
+        const boot = document.createElement("div");
 
-        duration: 4000,
-        started: false,
-        finished: false,
+        boot.id = "wfesc-engine-boot";
 
-        start() {
+        boot.innerHTML = `
+            <div class="wfesc-engine-content">
 
-            if (this.started) return;
+                <div class="wfesc-engine-powered">
+                    POWERED BY
+                </div>
 
-            this.started = true;
+                <div class="wfesc-engine-title">
+                    WFESC
+                </div>
 
-            console.log("[WFESC ENGINE] Boot started");
+                <div class="wfesc-engine-subtitle">
+                    ENGINE
+                </div>
 
-            const bootScreen =
-                document.getElementById("wfesc-engine-boot");
+                <div class="wfesc-engine-loader">
+                    <span></span>
+                </div>
 
-            if (!bootScreen) {
-                console.warn(
-                    "[WFESC ENGINE] Boot screen not found."
-                );
-                return;
-            }
+            </div>
+        `;
 
-            bootScreen.classList.remove("wfesc-engine-boot-hidden");
+        /*
+         * نضيف المحرك فوق الموقع
+         */
 
-            setTimeout(() => {
-                this.finish();
-            }, this.duration);
-        },
+        document.body.appendChild(boot);
 
-        finish() {
+        /*
+         * تشغيل Core Engine إذا كان موجوداً
+         */
 
-            if (this.finished) return;
+        if (
+            window.WFESC_ENGINE &&
+            typeof window.WFESC_ENGINE.init === "function"
+        ) {
+            window.WFESC_ENGINE.init();
+        }
 
-            this.finished = true;
+        /*
+         * بعد 4 ثواني يختفي المحرك
+         */
 
-            console.log("[WFESC ENGINE] Boot finished");
+        setTimeout(function () {
 
-            const bootScreen =
-                document.getElementById("wfesc-engine-boot");
+            boot.classList.add("hidden");
 
-            if (!bootScreen) return;
+            /*
+             * بعد انتهاء الأنيميشن نحذفه
+             */
 
-            bootScreen.classList.add(
-                "wfesc-engine-boot-hidden"
-            );
+            setTimeout(function () {
 
-            setTimeout(() => {
-
-                if (bootScreen && bootScreen.parentNode) {
-                    bootScreen.parentNode.removeChild(
-                        bootScreen
-                    );
+                if (boot.parentNode) {
+                    boot.parentNode.removeChild(boot);
                 }
 
             }, 800);
-        }
 
-    };
+        }, 4000);
 
-    ENGINE.boot = Boot;
-
-    function initializeBoot() {
-
-        if (!window.WFESC_ENGINE.initialized) {
-            console.warn(
-                "[WFESC ENGINE] Engine is not initialized yet."
-            );
-        }
-
-        Boot.start();
     }
+
+
+    /*
+     * تشغيل المحرك بعد تجهيز الصفحة
+     */
 
     if (document.readyState === "loading") {
 
         document.addEventListener(
             "DOMContentLoaded",
-            initializeBoot,
-            { once: true }
+            startEngineBoot,
+            { once:true }
         );
 
     } else {
 
-        initializeBoot();
+        startEngineBoot();
 
     }
 
-})(window);
+})(window, document);
