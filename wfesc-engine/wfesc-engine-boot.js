@@ -1,62 +1,34 @@
 /* =========================================================
    WFESC ENGINE
    Boot Controller
-   TEST 02 DESIGN
+   TEST 02
+   Version: 0.5.1
 ========================================================= */
 
 (function (window, document) {
 
     "use strict";
 
-
-    /* =====================================================
-       CREATE ENGINE BOOT
-    ===================================================== */
+    const BOOT_KEY = "WFESC_ENGINE_BOOT_SHOWN";
 
     function createBoot() {
 
-        /*
-         * منع إنشاء المحرك أكثر من مرة
-         */
-
+        /* منع التكرار */
         if (document.getElementById("wfesc-engine-boot")) {
             return;
         }
 
+        const boot = document.createElement("div");
 
-        /*
-         * إنشاء شاشة المحرك
-         */
-
-        const boot =
-            document.createElement("div");
-
-        boot.id =
-            "wfesc-engine-boot";
-
-
-        /* =================================================
-           TEST 02 ENGINE STRUCTURE
-        ================================================= */
+        boot.id = "wfesc-engine-boot";
 
         boot.innerHTML = `
 
-            <!-- BACKGROUND HALO -->
-
             <div class="bootHalo"></div>
-
-
-            <!-- BACKGROUND GRID -->
 
             <div class="bootGrid"></div>
 
-
-            <!-- PARTICLES -->
-
             <div id="particles"></div>
-
-
-            <!-- ENGINE CORE -->
 
             <div class="engineCore">
 
@@ -67,9 +39,6 @@
                 <div class="radar"></div>
 
                 <div class="orbit"></div>
-
-
-                <!-- REACTOR -->
 
                 <div class="reactor">
 
@@ -85,24 +54,13 @@
 
                 </div>
 
-
-                <!-- SCANNER -->
-
                 <div class="scanner"></div>
 
             </div>
 
-
-            <!-- DATA LINES -->
-
             <div class="dataLine line1"></div>
-
             <div class="dataLine line2"></div>
-
             <div class="dataLine line3"></div>
-
-
-            <!-- BRAND -->
 
             <div class="bootBrand">
 
@@ -120,17 +78,11 @@
 
             </div>
 
-
-            <!-- PROGRESS -->
-
             <div class="progress">
 
                 <div class="progressBar"></div>
 
             </div>
-
-
-            <!-- SYSTEM STATUS -->
 
             <div class="systemStatus">
 
@@ -143,90 +95,62 @@
                 </span>
 
                 <span>
-                    BUILD 0.5.0
+                    BUILD 0.5.1
                 </span>
 
             </div>
-
-
-            <!-- FINAL FLASH -->
 
             <div class="finalFlash"></div>
 
         `;
 
-
-        /*
-         * إضافة المحرك فوق الموقع بالكامل
-         */
-
         document.body.appendChild(boot);
 
-
-        /* =================================================
+        /* =========================================
            PARTICLES
-        ================================================= */
+        ========================================= */
 
         const particleContainer =
             boot.querySelector("#particles");
 
-
         if (particleContainer) {
 
-            for (
-                let i = 0;
-                i < 65;
-                i++
-            ) {
+            for (let i = 0; i < 65; i++) {
 
                 const particle =
                     document.createElement("div");
 
-
-                particle.className =
-                    "particle";
-
+                particle.className = "particle";
 
                 particle.style.left =
-                    Math.random() * 100 + "%";
-
+                    (Math.random() * 100) + "%";
 
                 particle.style.top =
                     (45 + Math.random() * 55) + "%";
 
-
                 particle.style.animationDuration =
                     (2.5 + Math.random() * 4.5) + "s";
-
 
                 particle.style.animationDelay =
                     (Math.random() * 4) + "s";
 
-
                 const size =
-                    .5 + Math.random() * 1.7;
-
+                    0.5 + Math.random() * 1.7;
 
                 particle.style.width =
                     size + "px";
 
-
                 particle.style.height =
                     size + "px";
 
-
-                particleContainer.appendChild(
-                    particle
-                );
-
+                particleContainer.appendChild(particle);
             }
 
         }
 
-
-        /* =================================================
+        /* =========================================
            ENGINE CORE
-        ================================================= */
+        ========================================= */
 
         if (
             window.WFESC_ENGINE &&
@@ -237,32 +161,20 @@
 
         }
 
-
-        /* =================================================
-           BOOT TIMER
-        ================================================= */
+        /* =========================================
+           BOOT COMPLETE
+           4 SECONDS
+        ========================================= */
 
         setTimeout(function () {
 
-            /*
-             * بدء الخروج
-             */
-
             boot.classList.add("hidden");
-
-
-            /*
-             * إزالة المحرك بعد انتهاء
-             * transition
-             */
 
             setTimeout(function () {
 
                 if (boot.parentNode) {
 
-                    boot.parentNode.removeChild(
-                        boot
-                    );
+                    boot.parentNode.removeChild(boot);
 
                 }
 
@@ -273,27 +185,56 @@
     }
 
 
-    /* =====================================================
-       START
-    ===================================================== */
+    /* =========================================
+       START ENGINE
+    ========================================= */
 
     function start() {
+
+        /*
+         * أول دخول فقط في جلسة المتصفح
+         */
+
+        try {
+
+            if (
+                sessionStorage.getItem(BOOT_KEY)
+                === "true"
+            ) {
+
+                return;
+
+            }
+
+            sessionStorage.setItem(
+                BOOT_KEY,
+                "true"
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "[WFESC ENGINE] Session storage unavailable.",
+                error
+            );
+
+        }
 
         createBoot();
 
     }
 
 
-    if (
-        document.readyState === "loading"
-    ) {
+    /* =========================================
+       START AFTER DOM
+    ========================================= */
+
+    if (document.readyState === "loading") {
 
         document.addEventListener(
             "DOMContentLoaded",
             start,
-            {
-                once:true
-            }
+            { once: true }
         );
 
     } else {
