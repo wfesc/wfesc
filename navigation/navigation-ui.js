@@ -1,6 +1,7 @@
 
 /* =========================================================
-   WFESC NAVIGATION UI + TEMPORARY SERVICE GATE
+   WFESC NAVIGATION UI
+   GLOBAL MAINTENANCE GATE
    ========================================================= */
 
 (function () {
@@ -14,12 +15,20 @@
     }
 
     function getCurrentPage() {
-        const fileName = window.location.pathname
-            .split("/")
-            .pop()
-            .toLowerCase();
+        const parts = window.location.pathname.split("/").filter(Boolean);
+        const last = parts.length ? parts[parts.length - 1] : "";
 
-        return fileName || "index.html";
+        return !last || !last.includes(".")
+            ? "index.html"
+            : last.toLowerCase();
+    }
+
+    function isHomePage(page) {
+        const config = getConfig();
+        const home = config?.pages?.home || "index.html";
+
+        return page.toLowerCase() === home.toLowerCase()
+            || page.toLowerCase() === "index.html";
     }
 
     function createNavigation() {
@@ -27,14 +36,15 @@
 
         const config = getConfig();
 
-        if (!config || !config.buttons) {
-            console.warn("WFESC Navigation configuration is unavailable.");
+        if (!config?.buttons || !config?.pages) {
+            console.warn("WFESC: Navigation configuration unavailable.");
             return;
         }
 
         const navigation = document.createElement("nav");
         navigation.id = "wfesc-navigation";
         navigation.className = "wfesc-navigation";
+        navigation.setAttribute("aria-label", "WFESC Navigation");
 
         Object.entries({
             position: "fixed",
@@ -50,24 +60,15 @@
             navigation.style.setProperty(property, value, "important");
         });
 
-        navigation.setAttribute("aria-label", "WFESC Navigation");
-
-        const currentPage = getCurrentPage();
-
         config.buttons.forEach(function (button) {
             const pageFile = config.pages[button.page] || "index.html";
-            const item = document.createElement("a");
 
+            const item = document.createElement("a");
             item.className = "wfesc-navigation-item";
             item.href = pageFile;
             item.dataset.navigationId = button.id;
             item.dataset.navigationPage = pageFile;
             item.setAttribute("aria-label", button.title);
-
-            if (pageFile.toLowerCase() === currentPage) {
-                item.classList.add("wfesc-navigation-active");
-                item.setAttribute("aria-current", "page");
-            }
 
             const icon = document.createElement("span");
             icon.className = "wfesc-navigation-icon";
@@ -80,33 +81,39 @@
             item.append(icon, title);
 
             item.addEventListener("click", function (event) {
-                if (pageFile.toLowerCase() === currentPage) {
-                    event.preventDefault();
+                if (isHomePage(pageFile)) {
+                    // زر البداية يبقى طبيعياً.
+                    if (isHomePage(getCurrentPage())) {
+                        event.preventDefault();
+                    }
+                    return;
                 }
+
+                // كل الأقسام الأخرى تعرض نافذة الإغلاق فوراً.
+                event.preventDefault();
+                showMaintenanceGate();
             });
 
             navigation.appendChild(item);
         });
 
         document.documentElement.appendChild(navigation);
+        refreshActiveButton();
     }
 
-    /*
-     * الصفحة الرئيسية مستثناة.
-     * كل صفحة أخرى تعرض رسالة إجبارية.
-     */
-    function createMaintenanceGate() {
-        const currentPage = getCurrentPage();
+    function showMaintenanceGate() {
+        if (!document.body) return;
 
-        if (currentPage === "index.html") return;
+        const existing = document.getElementById("wfesc-maintenance-gate");
 
-        if (document.getElementById("wfesc-maintenance-gate")) return;
+        if (existing) {
+            const button = existing.querySelector(".wfesc-gate-home");
+            if (button) button.focus({ preventScroll: true });
+            return;
+        }
 
         const config = getConfig();
-        const homePage =
-            config && config.pages && config.pages.home
-                ? config.pages.home
-                : "./index.html";
+        const homePage = config?.pages?.home || "./index.html";
 
         const overlay = document.createElement("div");
         overlay.id = "wfesc-maintenance-gate";
@@ -117,6 +124,7 @@
 
         const card = document.createElement("section");
         card.className = "wfesc-gate-card";
+        card.dir = "rtl";
 
         const symbol = document.createElement("div");
         symbol.className = "wfesc-gate-symbol";
@@ -144,7 +152,10 @@
         homeButton.className = "wfesc-gate-home";
         homeButton.href = homePage;
         homeButton.textContent = "العودة إلى الصفحة الرئيسية";
-        homeButton.setAttribute("aria-label", "العودة إلى الصفحة الرئيسية");
+        homeButton.setAttribute(
+            "aria-label",
+            "العودة إلى الصفحة الرئيسية"
+        );
 
         card.append(
             symbol,
@@ -158,36 +169,27 @@
         overlay.appendChild(card);
         document.body.appendChild(overlay);
 
-        /*
-         * منع التمرير والتفاعل مع الصفحة الخلفية.
-         * النافذة لا تحتوي على زر إغلاق.
-         */
         document.documentElement.classList.add("wfesc-gate-active");
         document.body.classList.add("wfesc-gate-active");
 
-        /*
-         * إبقاء التركيز داخل النافذة على زر العودة.
-         */
         homeButton.focus({ preventScroll: true });
     }
 
     function refreshActiveButton() {
         const currentPage = getCurrentPage();
 
-        document.querySelectorAll(".wfesc-navigation-item")
-            .forEach(function (item) {
-                const page = (
-                    item.dataset.navigationPage || ""
-                ).toLowerCase();
+        document.querySelectorAll(".wfesc-navigation-item").forEach(function (item) {
+            const page = (item.dataset.navigationPage || "").toLowerCase();
+            const active = page === currentPage;
 
-                item.classList.remove("wfesc-navigation-active");
+            item.classList.toggle("wfesc-navigation-active", active);
+
+            if (active) {
+                item.setAttribute("aria-current", "page");
+            } else {
                 item.removeAttribute("aria-current");
-
-                if (page === currentPage) {
-                    item.classList.add("wfesc-navigation-active");
-                    item.setAttribute("aria-current", "page");
-                }
-            });
+            }
+        });
     }
 
     function init() {
@@ -195,7 +197,11 @@
 
         createNavigation();
         refreshActiveButton();
-        createMaintenanceGate();
+
+        // إغلاق أي صفحة فرعية عند فتحها مباشرة.
+        if (!isHomePage(getCurrentPage())) {
+            showMaintenanceGate();
+        }
     }
 
     window.WFESCNavigationInit = init;
