@@ -2,6 +2,7 @@
 /* =========================================================
    WFESC NAVIGATION UI
    GLOBAL MAINTENANCE GATE
+   Real Page Navigation + Frosted Glass Lock
    ========================================================= */
 
 (function () {
@@ -23,13 +24,27 @@
             : last.toLowerCase();
     }
 
+    function normalizePage(page) {
+        try {
+            const url = new URL(page, window.location.href);
+            return url.pathname.split("/").filter(Boolean).pop()?.toLowerCase()
+                || "index.html";
+        } catch (_) {
+            return String(page || "index.html").toLowerCase();
+        }
+    }
+
     function isHomePage(page) {
         const config = getConfig();
         const home = config?.pages?.home || "index.html";
 
-        return page.toLowerCase() === home.toLowerCase()
-            || page.toLowerCase() === "index.html";
+        return normalizePage(page) === normalizePage(home)
+            || normalizePage(page) === "index.html";
     }
+
+    /* =====================================================
+       NAVIGATION
+       ===================================================== */
 
     function createNavigation() {
         if (document.getElementById("wfesc-navigation")) return;
@@ -65,7 +80,7 @@
 
             const item = document.createElement("a");
             item.className = "wfesc-navigation-item";
-            item.href = pageFile;
+            item.href = new URL(pageFile, window.location.href).href;
             item.dataset.navigationId = button.id;
             item.dataset.navigationPage = pageFile;
             item.setAttribute("aria-label", button.title);
@@ -81,17 +96,20 @@
             item.append(icon, title);
 
             item.addEventListener("click", function (event) {
+                // الرئيسية تبقى قابلة للاستخدام بشكل طبيعي.
                 if (isHomePage(pageFile)) {
-                    // زر البداية يبقى طبيعياً.
                     if (isHomePage(getCurrentPage())) {
                         event.preventDefault();
                     }
                     return;
                 }
 
-                // كل الأقسام الأخرى تعرض نافذة الإغلاق فوراً.
-                event.preventDefault();
-                showMaintenanceGate();
+                /*
+                 * مهم:
+                 * لا نلغي الانتقال إلى القسم.
+                 * يفتح المتصفح الصفحة المطلوبة فعلياً،
+                 * ثم تظهر عليها طبقة الصيانة.
+                 */
             });
 
             navigation.appendChild(item);
@@ -101,14 +119,58 @@
         refreshActiveButton();
     }
 
+    /* =====================================================
+       PREVENT INTERACTION WITH PAGE CONTENT
+       ===================================================== */
+
+    function lockBackground(overlay) {
+        document.documentElement.classList.add("wfesc-gate-active");
+
+        if (document.body) {
+            document.body.classList.add("wfesc-gate-active");
+        }
+
+        /*
+         * يمنع التركيز والتفاعل بلوحة المفاتيح مع
+         * محتويات الصفحة الواقعة خلف نافذة الصيانة.
+         */
+        Array.from(document.body.children).forEach(function (element) {
+            if (element === overlay) return;
+
+            if (!element.hasAttribute("data-wfesc-inert-original")) {
+                element.dataset.wfescInertOriginal =
+                    element.hasAttribute("inert") ? "true" : "false";
+            }
+
+            element.setAttribute("inert", "");
+        });
+
+        /*
+         * يمنع التمرير خلف النافذة مع حفظ إعدادات الصفحة.
+         */
+        if (!document.body.hasAttribute("data-wfesc-overflow-original")) {
+            document.body.dataset.wfescOverflowOriginal =
+                document.body.style.overflow || "";
+        }
+
+        document.body.style.setProperty("overflow", "hidden", "important");
+    }
+
+    /* =====================================================
+       MAINTENANCE GATE
+       ===================================================== */
+
     function showMaintenanceGate() {
         if (!document.body) return;
 
         const existing = document.getElementById("wfesc-maintenance-gate");
 
         if (existing) {
+            lockBackground(existing);
+
             const button = existing.querySelector(".wfesc-gate-home");
             if (button) button.focus({ preventScroll: true });
+
             return;
         }
 
@@ -150,7 +212,7 @@
 
         const homeButton = document.createElement("a");
         homeButton.className = "wfesc-gate-home";
-        homeButton.href = homePage;
+        homeButton.href = new URL(homePage, window.location.href).href;
         homeButton.textContent = "العودة إلى الصفحة الرئيسية";
         homeButton.setAttribute(
             "aria-label",
@@ -167,30 +229,47 @@
         );
 
         overlay.appendChild(card);
+
+        /*
+         * تُضاف النافذة إلى body حتى تظهر فوق محتوى القسم.
+         * CSS مسؤول عن المظهر الزجاجي والشفافية.
+         */
         document.body.appendChild(overlay);
 
-        document.documentElement.classList.add("wfesc-gate-active");
-        document.body.classList.add("wfesc-gate-active");
+        lockBackground(overlay);
 
         homeButton.focus({ preventScroll: true });
     }
 
+    /* =====================================================
+       ACTIVE NAVIGATION ITEM
+       ===================================================== */
+
     function refreshActiveButton() {
         const currentPage = getCurrentPage();
 
-        document.querySelectorAll(".wfesc-navigation-item").forEach(function (item) {
-            const page = (item.dataset.navigationPage || "").toLowerCase();
-            const active = page === currentPage;
+        document.querySelectorAll(".wfesc-navigation-item").forEach(
+            function (item) {
+                const page = normalizePage(
+                    item.dataset.navigationPage || "index.html"
+                );
 
-            item.classList.toggle("wfesc-navigation-active", active);
+                const active = page === currentPage;
 
-            if (active) {
-                item.setAttribute("aria-current", "page");
-            } else {
-                item.removeAttribute("aria-current");
+                item.classList.toggle("wfesc-navigation-active", active);
+
+                if (active) {
+                    item.setAttribute("aria-current", "page");
+                } else {
+                    item.removeAttribute("aria-current");
+                }
             }
-        });
+        );
     }
+
+    /* =====================================================
+       INITIALIZATION
+       ===================================================== */
 
     function init() {
         if (!document.body) return;
@@ -198,11 +277,16 @@
         createNavigation();
         refreshActiveButton();
 
-        // إغلاق أي صفحة فرعية عند فتحها مباشرة.
+        /*
+         * الرئيسية مفتوحة.
+         * جميع الصفحات الأخرى تُحمّل فعلياً ثم تُقفل
+         * خلف نافذة الصيانة الزجاجية.
+         */
         if (!isHomePage(getCurrentPage())) {
             showMaintenanceGate();
         }
     }
 
     window.WFESCNavigationInit = init;
+
 })();
