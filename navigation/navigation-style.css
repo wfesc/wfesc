@@ -1,8 +1,7 @@
 
 /* =========================================================
    WFESC NAVIGATION STYLE
-   navigation-style.css
-   Original Navigation + Temporary Maintenance Gate
+   Original Navigation + Fullscreen Glass Maintenance Gate
    ========================================================= */
 
 * {
@@ -36,18 +35,15 @@
     background:
         radial-gradient(
             circle at center,
-            rgba(255,255,255,0.06),
-            rgba(0,0,0,0.98) 65%
+            rgba(255,255,255,.06),
+            rgba(0,0,0,.98) 65%
         );
 
     color: #fff;
-
     opacity: 1;
     visibility: visible;
 
-    transition:
-        opacity .4s ease,
-        visibility .4s ease;
+    transition: opacity .4s ease, visibility .4s ease;
 }
 
 #wfesc-navigation-loader.wfesc-navigation-loader-hidden {
@@ -104,13 +100,14 @@
 
 #wfesc-navigation {
     position: fixed !important;
-
     top: auto !important;
     left: 12px !important;
     right: 12px !important;
     bottom: 12px !important;
 
     width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
     z-index: 99990 !important;
 
     display: grid;
@@ -147,7 +144,6 @@
 
     opacity: 1 !important;
     visibility: visible !important;
-
     isolation: isolate;
 }
 
@@ -199,7 +195,7 @@
 }
 
 /* =========================================================
-   NAVIGATION ITEM
+   NAVIGATION ITEMS
    ========================================================= */
 
 .wfesc-navigation-item {
@@ -233,17 +229,12 @@
     color: #fff;
     background: rgba(255,255,255,.055);
 
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.035);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
 }
 
 .wfesc-navigation-item:active {
     transform: scale(.94);
 }
-
-/* =========================================================
-   NAVIGATION ICON
-   ========================================================= */
 
 .wfesc-navigation-icon {
     display: flex;
@@ -256,18 +247,12 @@
     font-size: 20px;
     line-height: 1;
 
-    transition:
-        transform .2s ease,
-        filter .2s ease;
+    transition: transform .2s ease, filter .2s ease;
 }
 
 .wfesc-navigation-item:hover .wfesc-navigation-icon {
     transform: translateY(-1px);
 }
-
-/* =========================================================
-   NAVIGATION TITLE
-   ========================================================= */
 
 .wfesc-navigation-title {
     max-width: 100%;
@@ -277,13 +262,8 @@
 
     font-size: 10px;
     line-height: 1.2;
-
     transition: color .2s ease;
 }
-
-/* =========================================================
-   ACTIVE BUTTON
-   ========================================================= */
 
 .wfesc-navigation-item.wfesc-navigation-active {
     color: #fff;
@@ -304,9 +284,7 @@
 .wfesc-navigation-item.wfesc-navigation-active
 .wfesc-navigation-icon {
     transform: translateY(-1px) scale(1.05);
-
-    filter:
-        drop-shadow(0 2px 8px rgba(255,255,255,.08));
+    filter: drop-shadow(0 2px 8px rgba(255,255,255,.08));
 }
 
 .wfesc-navigation-item.wfesc-navigation-active::after {
@@ -344,9 +322,7 @@
     visibility: hidden;
     pointer-events: none;
 
-    transition:
-        opacity .25s ease,
-        visibility .25s ease;
+    transition: opacity .25s ease, visibility .25s ease;
 }
 
 #wfesc-navigation-page-loader.wfesc-navigation-page-loader-show {
@@ -356,176 +332,274 @@
 }
 
 /* =========================================================
-   TEMPORARY MAINTENANCE GATE
-   Mandatory glass overlay for non-home pages
+   FULLSCREEN GLASS MAINTENANCE GATE
    ========================================================= */
 
+/*
+ * تثبيت الصفحة ومنع التمرير خلف النافذة.
+ */
 html.wfesc-gate-active,
+html.wfesc-gate-active body,
 body.wfesc-gate-active {
     overflow: hidden !important;
     overscroll-behavior: none !important;
 }
 
-#wfesc-maintenance-gate {
-    position: fixed;
-    inset: 0;
-    z-index: 2147483647;
+/*
+ * طبقة تغطي الشاشة بالكامل، بما فيها شريط التنقل.
+ */
+html body #wfesc-maintenance-gate {
+    position: fixed !important;
+    inset: 0 !important;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
 
-    width: 100%;
-    min-height: 100%;
-    padding: 22px;
+    margin: 0 !important;
+    padding: 20px !important;
 
-    direction: rtl;
-    text-align: center;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
 
-    background: rgba(0,0,0,.48);
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
 
-    -webkit-backdrop-filter: blur(13px) saturate(115%);
-    backdrop-filter: blur(13px) saturate(115%);
+    direction: rtl !important;
+    text-align: center !important;
 
-    color: #fff;
-    font-family: Arial, Tahoma, sans-serif;
+    background:
+        radial-gradient(
+            ellipse at 50% 35%,
+            rgba(30,105,150,.22),
+            transparent 65%
+        ),
+        rgba(3,6,12,.78) !important;
 
-    pointer-events: auto;
-    isolation: isolate;
+    color: #f5f8fc !important;
+    font-family: Arial, Tahoma, sans-serif !important;
 
-    animation: wfescGateAppear .45s ease both;
+    -webkit-backdrop-filter: blur(16px) saturate(125%) !important;
+    backdrop-filter: blur(16px) saturate(125%) !important;
+
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+
+    isolation: isolate !important;
+    z-index: 2147483647 !important;
+
+    animation: wfescGateAppear .4s ease-out both;
 }
 
-.wfesc-gate-card {
-    position: relative;
+/* منع أي عنصر من طبقات الصفحة من تجاوز النافذة */
+#wfesc-maintenance-gate,
+#wfesc-maintenance-gate * {
+    box-sizing: border-box;
+}
 
-    width: 100%;
-    max-width: 390px;
-    max-height: calc(100dvh - 44px);
+#wfesc-maintenance-gate .wfesc-gate-card {
+    position: relative !important;
+    z-index: 1 !important;
 
-    overflow-y: auto;
+    width: min(100%, 440px) !important;
+    max-width: 440px !important;
+    max-height: calc(100dvh - 40px) !important;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex: 0 1 auto !important;
 
-    gap: 16px;
-    padding: 30px 23px 24px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0 !important;
 
-    border: 1px solid rgba(255,255,255,.19);
-    border-radius: 25px;
+    margin: auto !important;
+    padding: clamp(23px, 5vw, 36px) clamp(20px, 5vw, 32px) !important;
+
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+
+    direction: rtl !important;
+    text-align: center !important;
+    color: #f5f8fc !important;
+
+    border: 1px solid rgba(255,255,255,.19) !important;
+    border-radius: 25px !important;
 
     background:
         linear-gradient(
             145deg,
-            rgba(255,255,255,.12),
-            rgba(255,255,255,.035)
+            rgba(255,255,255,.115),
+            rgba(255,255,255,.025) 58%,
+            rgba(40,130,180,.075)
         ),
-        rgba(17,17,17,.77);
+        rgba(15,19,27,.76) !important;
 
     box-shadow:
-        0 24px 80px rgba(0,0,0,.48),
-        inset 0 1px 0 rgba(255,255,255,.14);
+        0 25px 80px rgba(0,0,0,.48),
+        inset 0 1px 0 rgba(255,255,255,.13),
+        0 0 35px rgba(43,150,210,.08) !important;
 
-    -webkit-backdrop-filter: blur(25px) saturate(140%);
-    backdrop-filter: blur(25px) saturate(140%);
+    -webkit-backdrop-filter: blur(25px) saturate(140%) !important;
+    backdrop-filter: blur(25px) saturate(140%) !important;
+
+    pointer-events: auto !important;
 }
 
-.wfesc-gate-symbol {
-    width: 62px;
-    height: 62px;
-    flex: 0 0 auto;
+#wfesc-maintenance-gate .wfesc-gate-symbol {
+    width: 64px !important;
+    height: 64px !important;
+    flex: 0 0 64px !important;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 
-    border: 1px solid rgba(255,255,255,.17);
-    border-radius: 20px;
+    margin: 0 0 22px !important;
+    padding: 0 !important;
 
-    background: rgba(255,255,255,.075);
+    border: 1px solid rgba(111,203,255,.32) !important;
+    border-radius: 20px !important;
 
-    color: rgba(255,255,255,.9);
-    font-size: 39px;
-    line-height: 1;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(67,167,219,.24),
+            rgba(21,65,98,.16)
+        ) !important;
+
+    color: #9cddff !important;
+    font-size: 38px !important;
+    line-height: 1 !important;
+
+    box-shadow:
+        inset 0 0 20px rgba(78,177,231,.08),
+        0 0 28px rgba(55,164,225,.08) !important;
 }
 
-.wfesc-gate-card h1 {
-    margin: 0;
+#wfesc-maintenance-gate #wfesc-gate-title {
+    width: 100% !important;
 
-    color: #fff;
-    font-size: 23px;
-    font-weight: 800;
-    line-height: 1.5;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+
+    color: #fff !important;
+    font-size: clamp(23px, 5.5vw, 29px) !important;
+    font-weight: 800 !important;
+    line-height: 1.55 !important;
+    letter-spacing: -.4px !important;
+
+    text-align: center !important;
+    overflow-wrap: anywhere !important;
 }
 
-.wfesc-gate-card p {
-    margin: 0;
+#wfesc-maintenance-gate #wfesc-gate-description {
+    width: 100% !important;
 
-    color: rgba(255,255,255,.78);
-    font-size: 14px;
-    line-height: 1.95;
+    margin: 0 !important;
+    padding: 0 !important;
+
+    color: rgba(239,245,252,.84) !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    line-height: 2 !important;
+
+    text-align: center !important;
+    overflow-wrap: anywhere !important;
 }
 
-.wfesc-gate-card .wfesc-gate-signature {
-    width: 100%;
-    padding-top: 15px;
+#wfesc-maintenance-gate .wfesc-gate-signature {
+    width: 100% !important;
 
-    border-top: 1px solid rgba(255,255,255,.12);
+    margin: 20px 0 0 !important;
+    padding: 14px 0 0 !important;
 
-    color: #fff;
-    font-weight: 700;
+    border-top: 1px solid rgba(255,255,255,.12) !important;
+
+    color: #c4e8ff !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.9 !important;
+
+    text-align: center !important;
 }
 
-.wfesc-gate-card .wfesc-gate-tagline {
-    margin-top: -10px;
+#wfesc-maintenance-gate .wfesc-gate-tagline {
+    margin: 9px 0 23px !important;
+    padding: 0 !important;
 
-    color: rgba(255,255,255,.48);
-    font-size: 11px;
+    color: rgba(255,255,255,.58) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.8 !important;
+    letter-spacing: .2px !important;
+
+    text-align: center !important;
 }
 
-.wfesc-gate-home {
-    width: 100%;
-    min-height: 49px;
-    flex: 0 0 auto;
+#wfesc-maintenance-gate .wfesc-gate-home {
+    width: 100% !important;
+    min-height: 52px !important;
+    flex: 0 0 auto !important;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 
-    margin-top: 4px;
-    padding: 13px 16px;
+    margin: 0 !important;
+    padding: 13px 18px !important;
 
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 14px;
+    border: 1px solid rgba(152,218,255,.32) !important;
+    border-radius: 15px !important;
 
-    background: rgba(255,255,255,.93);
+    background:
+        linear-gradient(
+            135deg,
+            #287eb0,
+            #19577f
+        ) !important;
 
-    color: #111 !important;
-    font-size: 14px;
-    font-weight: 800;
-    text-decoration: none;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 750 !important;
+    line-height: 1.6 !important;
 
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+    text-align: center !important;
+    text-decoration: none !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+
+    box-shadow:
+        0 8px 25px rgba(12,91,142,.25),
+        inset 0 1px 0 rgba(255,255,255,.17) !important;
+
+    cursor: pointer !important;
+    pointer-events: auto !important;
 
     transition:
-        background .2s ease,
-        transform .2s ease;
+        transform .18s ease,
+        filter .18s ease,
+        box-shadow .18s ease !important;
 }
 
-.wfesc-gate-home:hover {
-    background: #fff;
+#wfesc-maintenance-gate .wfesc-gate-home:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 10px 30px rgba(12,91,142,.36) !important;
 }
 
-.wfesc-gate-home:focus-visible {
-    outline: 3px solid #fff;
-    outline-offset: 4px;
-}
-
-.wfesc-gate-home:active {
+#wfesc-maintenance-gate .wfesc-gate-home:active {
     transform: scale(.98);
-    background: #fff;
+}
+
+#wfesc-maintenance-gate .wfesc-gate-home:focus-visible {
+    outline: 2px solid #a8e1ff !important;
+    outline-offset: 4px !important;
 }
 
 @keyframes wfescGateAppear {
@@ -541,18 +615,16 @@ body.wfesc-gate-active {
     #wfesc-navigation {
         position: fixed !important;
         top: auto !important;
-
         left: 7px !important;
         right: 7px !important;
         bottom: 7px !important;
 
         width: auto !important;
-        z-index: 99990 !important;
-
         min-height: 62px;
         padding: 5px;
         border-radius: 18px;
 
+        z-index: 99990 !important;
         transform: none !important;
         transition: none !important;
         opacity: 1 !important;
@@ -577,6 +649,26 @@ body.wfesc-gate-active {
     .wfesc-navigation-title {
         font-size: 9px;
     }
+
+    #wfesc-maintenance-gate {
+        padding: 16px !important;
+    }
+
+    #wfesc-maintenance-gate .wfesc-gate-card {
+        width: 100% !important;
+        max-width: 440px !important;
+        padding: 26px 21px !important;
+        border-radius: 22px !important;
+    }
+
+    #wfesc-maintenance-gate .wfesc-gate-symbol {
+        margin-bottom: 18px !important;
+    }
+
+    #wfesc-maintenance-gate #wfesc-gate-description {
+        font-size: 14px !important;
+        line-height: 1.95 !important;
+    }
 }
 
 /* =========================================================
@@ -585,23 +677,11 @@ body.wfesc-gate-active {
 
 @media (max-width: 380px) {
     #wfesc-navigation {
-        position: fixed !important;
-        top: auto !important;
-
         left: 4px !important;
         right: 4px !important;
         bottom: 4px !important;
-
-        width: auto !important;
-        z-index: 99990 !important;
-
         padding: 4px;
         border-radius: 16px;
-
-        transform: none !important;
-        transition: none !important;
-        opacity: 1 !important;
-        visibility: visible !important;
     }
 
     .wfesc-navigation-item {
@@ -614,6 +694,43 @@ body.wfesc-gate-active {
 
     .wfesc-navigation-title {
         font-size: 8px;
+    }
+}
+
+/* =========================================================
+   SHORT SCREEN ADJUSTMENTS
+   ========================================================= */
+
+@media (max-height: 600px) {
+    #wfesc-maintenance-gate {
+        align-items: flex-start !important;
+    }
+
+    #wfesc-maintenance-gate .wfesc-gate-card {
+        margin: auto !important;
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
+    }
+
+    #wfesc-maintenance-gate .wfesc-gate-symbol {
+        width: 48px !important;
+        height: 48px !important;
+        flex-basis: 48px !important;
+        margin-bottom: 13px !important;
+        font-size: 30px !important;
+    }
+
+    #wfesc-maintenance-gate #wfesc-gate-title {
+        margin-bottom: 10px !important;
+    }
+
+    #wfesc-maintenance-gate .wfesc-gate-signature {
+        margin-top: 13px !important;
+        padding-top: 10px !important;
+    }
+
+    #wfesc-maintenance-gate .wfesc-gate-tagline {
+        margin-bottom: 16px !important;
     }
 }
 
@@ -660,33 +777,17 @@ html.wfesc-light-mode
 }
 
 /* =========================================================
-   SAFE AREA FOR PHONES
+   SAFE AREA
    ========================================================= */
 
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     #wfesc-navigation {
-        position: fixed !important;
-        top: auto !important;
-
         bottom: calc(7px + env(safe-area-inset-bottom)) !important;
-
-        transform: none !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        transition: none !important;
     }
 
     @media (min-width: 601px) {
         #wfesc-navigation {
-            position: fixed !important;
-            top: auto !important;
-
             bottom: calc(12px + env(safe-area-inset-bottom)) !important;
-
-            transform: none !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            transition: none !important;
         }
     }
 }
