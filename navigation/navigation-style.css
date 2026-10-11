@@ -1,7 +1,7 @@
 
 /* =========================================================
    WFESC NAVIGATION STYLE
-   Original Navigation + Fullscreen Glass Maintenance Gate
+   Original Navigation + Transparent Glass Maintenance Gate
    ========================================================= */
 
 * {
@@ -332,12 +332,10 @@
 }
 
 /* =========================================================
-   FULLSCREEN GLASS MAINTENANCE GATE
+   FULLSCREEN TRANSPARENT GLASS MAINTENANCE GATE
    ========================================================= */
 
-/*
- * تثبيت الصفحة ومنع التمرير خلف النافذة.
- */
+/* قفل تمرير الصفحة أثناء الإغلاق */
 html.wfesc-gate-active,
 html.wfesc-gate-active body,
 body.wfesc-gate-active {
@@ -346,7 +344,8 @@ body.wfesc-gate-active {
 }
 
 /*
- * طبقة تغطي الشاشة بالكامل، بما فيها شريط التنقل.
+ * طبقة زجاجية تغطي الشاشة كلها.
+ * شفافية أعلى حتى تظهر تفاصيل الموقع من الخلف.
  */
 html body #wfesc-maintenance-gate {
     position: fixed !important;
@@ -373,19 +372,27 @@ html body #wfesc-maintenance-gate {
     direction: rtl !important;
     text-align: center !important;
 
+    /*
+     * الطبقة الخلفية شفافة وليست معتمة.
+     * الموقع يبقى مرئياً مع ضبابية خفيفة.
+     */
     background:
         radial-gradient(
             ellipse at 50% 35%,
-            rgba(30,105,150,.22),
-            transparent 65%
+            rgba(37,135,190,.13),
+            transparent 70%
         ),
-        rgba(3,6,12,.78) !important;
+        linear-gradient(
+            135deg,
+            rgba(7,13,23,.28),
+            rgba(3,7,14,.43)
+        ) !important;
 
     color: #f5f8fc !important;
     font-family: Arial, Tahoma, sans-serif !important;
 
-    -webkit-backdrop-filter: blur(16px) saturate(125%) !important;
-    backdrop-filter: blur(16px) saturate(125%) !important;
+    -webkit-backdrop-filter: blur(5px) saturate(115%) !important;
+    backdrop-filter: blur(5px) saturate(115%) !important;
 
     opacity: 1 !important;
     visibility: visible !important;
@@ -394,14 +401,18 @@ html body #wfesc-maintenance-gate {
     isolation: isolate !important;
     z-index: 2147483647 !important;
 
-    animation: wfescGateAppear .4s ease-out both;
+    animation: wfescGateAppear .45s ease-out both;
 }
 
-/* منع أي عنصر من طبقات الصفحة من تجاوز النافذة */
+/* توحيد حساب الأبعاد */
 #wfesc-maintenance-gate,
 #wfesc-maintenance-gate * {
     box-sizing: border-box;
 }
+
+/* =========================================================
+   GLASS CARD
+   ========================================================= */
 
 #wfesc-maintenance-gate .wfesc-gate-card {
     position: relative !important;
@@ -429,28 +440,55 @@ html body #wfesc-maintenance-gate {
     text-align: center !important;
     color: #f5f8fc !important;
 
-    border: 1px solid rgba(255,255,255,.19) !important;
+    /*
+     * إطار زجاجي شفاف يظهر ما وراءه.
+     */
+    border: 1px solid rgba(255,255,255,.28) !important;
     border-radius: 25px !important;
 
     background:
         linear-gradient(
             145deg,
-            rgba(255,255,255,.115),
-            rgba(255,255,255,.025) 58%,
-            rgba(40,130,180,.075)
+            rgba(255,255,255,.16),
+            rgba(255,255,255,.055) 48%,
+            rgba(69,151,201,.10)
         ),
-        rgba(15,19,27,.76) !important;
+        rgba(12,19,30,.40) !important;
 
     box-shadow:
-        0 25px 80px rgba(0,0,0,.48),
-        inset 0 1px 0 rgba(255,255,255,.13),
-        0 0 35px rgba(43,150,210,.08) !important;
+        0 25px 80px rgba(0,0,0,.30),
+        inset 0 1px 0 rgba(255,255,255,.24),
+        inset 0 -1px 0 rgba(255,255,255,.06),
+        0 0 35px rgba(43,150,210,.07) !important;
 
-    -webkit-backdrop-filter: blur(25px) saturate(140%) !important;
-    backdrop-filter: blur(25px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(135%) !important;
+    backdrop-filter: blur(16px) saturate(135%) !important;
 
     pointer-events: auto !important;
 }
+
+/* انعكاس زجاجي أعلى الإطار */
+#wfesc-maintenance-gate .wfesc-gate-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.62),
+        transparent
+    );
+
+    pointer-events: none;
+}
+
+/* =========================================================
+   GATE SYMBOL
+   ========================================================= */
 
 #wfesc-maintenance-gate .wfesc-gate-symbol {
     width: 64px !important;
@@ -464,24 +502,28 @@ html body #wfesc-maintenance-gate {
     margin: 0 0 22px !important;
     padding: 0 !important;
 
-    border: 1px solid rgba(111,203,255,.32) !important;
+    border: 1px solid rgba(145,218,255,.44) !important;
     border-radius: 20px !important;
 
     background:
         linear-gradient(
             145deg,
-            rgba(67,167,219,.24),
-            rgba(21,65,98,.16)
+            rgba(67,167,219,.30),
+            rgba(21,65,98,.17)
         ) !important;
 
-    color: #9cddff !important;
+    color: #b6e7ff !important;
     font-size: 38px !important;
     line-height: 1 !important;
 
     box-shadow:
-        inset 0 0 20px rgba(78,177,231,.08),
-        0 0 28px rgba(55,164,225,.08) !important;
+        inset 0 0 20px rgba(78,177,231,.10),
+        0 0 28px rgba(55,164,225,.10) !important;
 }
+
+/* =========================================================
+   GATE TITLE
+   ========================================================= */
 
 #wfesc-maintenance-gate #wfesc-gate-title {
     width: 100% !important;
@@ -497,7 +539,13 @@ html body #wfesc-maintenance-gate {
 
     text-align: center !important;
     overflow-wrap: anywhere !important;
+
+    text-shadow: 0 2px 15px rgba(0,0,0,.22);
 }
+
+/* =========================================================
+   GATE DESCRIPTION
+   ========================================================= */
 
 #wfesc-maintenance-gate #wfesc-gate-description {
     width: 100% !important;
@@ -505,14 +553,20 @@ html body #wfesc-maintenance-gate {
     margin: 0 !important;
     padding: 0 !important;
 
-    color: rgba(239,245,252,.84) !important;
+    color: rgba(255,255,255,.94) !important;
     font-size: 15px !important;
     font-weight: 400 !important;
     line-height: 2 !important;
 
     text-align: center !important;
     overflow-wrap: anywhere !important;
+
+    text-shadow: 0 1px 8px rgba(0,0,0,.30);
 }
+
+/* =========================================================
+   SIGNATURE
+   ========================================================= */
 
 #wfesc-maintenance-gate .wfesc-gate-signature {
     width: 100% !important;
@@ -520,21 +574,26 @@ html body #wfesc-maintenance-gate {
     margin: 20px 0 0 !important;
     padding: 14px 0 0 !important;
 
-    border-top: 1px solid rgba(255,255,255,.12) !important;
+    border-top: 1px solid rgba(255,255,255,.22) !important;
 
-    color: #c4e8ff !important;
+    color: #d5efff !important;
     font-size: 14px !important;
     font-weight: 700 !important;
     line-height: 1.9 !important;
 
     text-align: center !important;
+    text-shadow: 0 1px 8px rgba(0,0,0,.25);
 }
+
+/* =========================================================
+   TAGLINE
+   ========================================================= */
 
 #wfesc-maintenance-gate .wfesc-gate-tagline {
     margin: 9px 0 23px !important;
     padding: 0 !important;
 
-    color: rgba(255,255,255,.58) !important;
+    color: rgba(255,255,255,.78) !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     line-height: 1.8 !important;
@@ -542,6 +601,10 @@ html body #wfesc-maintenance-gate {
 
     text-align: center !important;
 }
+
+/* =========================================================
+   HOME BUTTON
+   ========================================================= */
 
 #wfesc-maintenance-gate .wfesc-gate-home {
     width: 100% !important;
@@ -555,14 +618,14 @@ html body #wfesc-maintenance-gate {
     margin: 0 !important;
     padding: 13px 18px !important;
 
-    border: 1px solid rgba(152,218,255,.32) !important;
+    border: 1px solid rgba(174,226,255,.48) !important;
     border-radius: 15px !important;
 
     background:
         linear-gradient(
             135deg,
-            #287eb0,
-            #19577f
+            rgba(40,126,176,.94),
+            rgba(25,87,127,.94)
         ) !important;
 
     color: #fff !important;
@@ -576,8 +639,8 @@ html body #wfesc-maintenance-gate {
     overflow-wrap: anywhere !important;
 
     box-shadow:
-        0 8px 25px rgba(12,91,142,.25),
-        inset 0 1px 0 rgba(255,255,255,.17) !important;
+        0 8px 25px rgba(12,91,142,.22),
+        inset 0 1px 0 rgba(255,255,255,.24) !important;
 
     cursor: pointer !important;
     pointer-events: auto !important;
@@ -590,7 +653,7 @@ html body #wfesc-maintenance-gate {
 
 #wfesc-maintenance-gate .wfesc-gate-home:hover {
     filter: brightness(1.12);
-    box-shadow: 0 10px 30px rgba(12,91,142,.36) !important;
+    box-shadow: 0 10px 30px rgba(12,91,142,.32) !important;
 }
 
 #wfesc-maintenance-gate .wfesc-gate-home:active {
@@ -602,9 +665,17 @@ html body #wfesc-maintenance-gate {
     outline-offset: 4px !important;
 }
 
+/* =========================================================
+   GATE APPEAR ANIMATION
+   ========================================================= */
+
 @keyframes wfescGateAppear {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* =========================================================
