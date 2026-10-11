@@ -1,16 +1,12 @@
+
 /* =========================================================
-   WFESC NAVIGATION UI
-   navigation-ui.js
+   WFESC NAVIGATION UI + TEMPORARY SERVICE GATE
    ========================================================= */
 
 (function () {
-
     "use strict";
 
-    if (window.WFESCNavigationUI) {
-        return;
-    }
-
+    if (window.WFESCNavigationUI) return;
     window.WFESCNavigationUI = true;
 
     function getConfig() {
@@ -18,7 +14,6 @@
     }
 
     function getCurrentPage() {
-
         const fileName = window.location.pathname
             .split("/")
             .pop()
@@ -28,265 +23,180 @@
     }
 
     function createNavigation() {
-
-        if (document.getElementById("wfesc-navigation")) {
-            return;
-        }
+        if (document.getElementById("wfesc-navigation")) return;
 
         const config = getConfig();
 
         if (!config || !config.buttons) {
-            console.warn(
-                "WFESC Navigation configuration is unavailable."
-            );
+            console.warn("WFESC Navigation configuration is unavailable.");
             return;
         }
 
         const navigation = document.createElement("nav");
-
         navigation.id = "wfesc-navigation";
         navigation.className = "wfesc-navigation";
 
-        /* =====================================================
-           FIXED POSITION
-           ثابت دائمًا أسفل الشاشة
-           ===================================================== */
+        Object.entries({
+            position: "fixed",
+            top: "auto",
+            bottom: "7px",
+            left: "7px",
+            right: "7px",
+            width: "auto",
+            height: "auto",
+            margin: "0",
+            "z-index": "99990"
+        }).forEach(([property, value]) => {
+            navigation.style.setProperty(property, value, "important");
+        });
 
-        navigation.style.setProperty(
-            "position",
-            "fixed",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "top",
-            "auto",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "bottom",
-            "7px",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "left",
-            "7px",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "right",
-            "7px",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "width",
-            "auto",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "height",
-            "auto",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "margin",
-            "0",
-            "important"
-        );
-
-        navigation.style.setProperty(
-            "z-index",
-            "99990",
-            "important"
-        );
-
-        /*
-         * مهم:
-         * لا نستخدم visualViewport
-         * لا نستخدم window.innerHeight
-         * لا نغيّر bottom عند فتح الكيبورد
-         * لا نضيف أي حركة JavaScript
-         */
-
-        navigation.setAttribute(
-            "aria-label",
-            "WFESC Navigation"
-        );
+        navigation.setAttribute("aria-label", "WFESC Navigation");
 
         const currentPage = getCurrentPage();
 
         config.buttons.forEach(function (button) {
-
-            const pageFile =
-                config.pages[button.page] || "index.html";
-
+            const pageFile = config.pages[button.page] || "index.html";
             const item = document.createElement("a");
 
-            item.className =
-                "wfesc-navigation-item";
-
+            item.className = "wfesc-navigation-item";
             item.href = pageFile;
+            item.dataset.navigationId = button.id;
+            item.dataset.navigationPage = pageFile;
+            item.setAttribute("aria-label", button.title);
 
-            item.dataset.navigationId =
-                button.id;
-
-            item.dataset.navigationPage =
-                pageFile;
-
-            item.setAttribute(
-                "aria-label",
-                button.title
-            );
-
-            if (
-                pageFile.toLowerCase() === currentPage
-            ) {
-
-                item.classList.add(
-                    "wfesc-navigation-active"
-                );
-
-                item.setAttribute(
-                    "aria-current",
-                    "page"
-                );
-
+            if (pageFile.toLowerCase() === currentPage) {
+                item.classList.add("wfesc-navigation-active");
+                item.setAttribute("aria-current", "page");
             }
 
-            const icon =
-                document.createElement("span");
+            const icon = document.createElement("span");
+            icon.className = "wfesc-navigation-icon";
+            icon.textContent = button.icon;
 
-            icon.className =
-                "wfesc-navigation-icon";
+            const title = document.createElement("span");
+            title.className = "wfesc-navigation-title";
+            title.textContent = button.title;
 
-            icon.textContent =
-                button.icon;
+            item.append(icon, title);
 
-            const title =
-                document.createElement("span");
-
-            title.className =
-                "wfesc-navigation-title";
-
-            title.textContent =
-                button.title;
-
-            item.appendChild(icon);
-            item.appendChild(title);
-
-            item.addEventListener(
-                "click",
-                function (event) {
-
-                    /*
-                     * إذا كان المستخدم على نفس الصفحة
-                     * لا تعيد تحميل الصفحة.
-                     */
-                    if (
-                        pageFile.toLowerCase() === currentPage
-                    ) {
-
-                        event.preventDefault();
-
-                        return;
-                    }
-
-                    /*
-                     * الانتقال طبيعي.
-                     * لا يوجد أي تحريك لشريط التنقل.
-                     */
-
+            item.addEventListener("click", function (event) {
+                if (pageFile.toLowerCase() === currentPage) {
+                    event.preventDefault();
                 }
-            );
+            });
 
             navigation.appendChild(item);
-
         });
 
-        /*
-         * إضافة التنقل مباشرة إلى documentElement
-         * حتى لا يتأثر بتنسيقات body.
-         */
-        document.documentElement.appendChild(
-            navigation
-        );
-
-    }
-
-    function refreshActiveButton() {
-
-        const config =
-            getConfig();
-
-        if (
-            !config ||
-            !config.buttons
-        ) {
-            return;
-        }
-
-        const currentPage =
-            getCurrentPage();
-
-        const items =
-            document.querySelectorAll(
-                ".wfesc-navigation-item"
-            );
-
-        items.forEach(function (item) {
-
-            const page =
-                item.dataset.navigationPage || "";
-
-            item.classList.remove(
-                "wfesc-navigation-active"
-            );
-
-            item.removeAttribute(
-                "aria-current"
-            );
-
-            if (
-                page.toLowerCase() === currentPage
-            ) {
-
-                item.classList.add(
-                    "wfesc-navigation-active"
-                );
-
-                item.setAttribute(
-                    "aria-current",
-                    "page"
-                );
-
-            }
-
-        });
-
-    }
-
-    function init() {
-
-        if (!document.body) {
-            return;
-        }
-
-        createNavigation();
-
-        refreshActiveButton();
-
+        document.documentElement.appendChild(navigation);
     }
 
     /*
-     * Public API
+     * الصفحة الرئيسية مستثناة.
+     * كل صفحة أخرى تعرض رسالة إجبارية.
      */
-    window.WFESCNavigationInit =
-        init;
+    function createMaintenanceGate() {
+        const currentPage = getCurrentPage();
 
+        if (currentPage === "index.html") return;
+
+        if (document.getElementById("wfesc-maintenance-gate")) return;
+
+        const config = getConfig();
+        const homePage =
+            config && config.pages && config.pages.home
+                ? config.pages.home
+                : "./index.html";
+
+        const overlay = document.createElement("div");
+        overlay.id = "wfesc-maintenance-gate";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-labelledby", "wfesc-gate-title");
+        overlay.setAttribute("aria-describedby", "wfesc-gate-description");
+
+        const card = document.createElement("section");
+        card.className = "wfesc-gate-card";
+
+        const symbol = document.createElement("div");
+        symbol.className = "wfesc-gate-symbol";
+        symbol.setAttribute("aria-hidden", "true");
+        symbol.textContent = "⌁";
+
+        const title = document.createElement("h1");
+        title.id = "wfesc-gate-title";
+        title.textContent = "القسم مغلق مؤقتاً";
+
+        const description = document.createElement("p");
+        description.id = "wfesc-gate-description";
+        description.textContent =
+            "نعتذر عن عدم توفر هذه الخدمة حالياً بسبب عدم توفر السيرفر. عند توفر السيرفر، ستعود الخدمات ليصبح WFESC تطبيقاً متكاملاً.";
+
+        const signature = document.createElement("p");
+        signature.className = "wfesc-gate-signature";
+        signature.textContent = "تحياتي، فريق اوفس WFESC";
+
+        const tagline = document.createElement("p");
+        tagline.className = "wfesc-gate-tagline";
+        tagline.textContent = "ذاكرة العراق... بصورة مختلفة";
+
+        const homeButton = document.createElement("a");
+        homeButton.className = "wfesc-gate-home";
+        homeButton.href = homePage;
+        homeButton.textContent = "العودة إلى الصفحة الرئيسية";
+        homeButton.setAttribute("aria-label", "العودة إلى الصفحة الرئيسية");
+
+        card.append(
+            symbol,
+            title,
+            description,
+            signature,
+            tagline,
+            homeButton
+        );
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        /*
+         * منع التمرير والتفاعل مع الصفحة الخلفية.
+         * النافذة لا تحتوي على زر إغلاق.
+         */
+        document.documentElement.classList.add("wfesc-gate-active");
+        document.body.classList.add("wfesc-gate-active");
+
+        /*
+         * إبقاء التركيز داخل النافذة على زر العودة.
+         */
+        homeButton.focus({ preventScroll: true });
+    }
+
+    function refreshActiveButton() {
+        const currentPage = getCurrentPage();
+
+        document.querySelectorAll(".wfesc-navigation-item")
+            .forEach(function (item) {
+                const page = (
+                    item.dataset.navigationPage || ""
+                ).toLowerCase();
+
+                item.classList.remove("wfesc-navigation-active");
+                item.removeAttribute("aria-current");
+
+                if (page === currentPage) {
+                    item.classList.add("wfesc-navigation-active");
+                    item.setAttribute("aria-current", "page");
+                }
+            });
+    }
+
+    function init() {
+        if (!document.body) return;
+
+        createNavigation();
+        refreshActiveButton();
+        createMaintenanceGate();
+    }
+
+    window.WFESCNavigationInit = init;
 })();
