@@ -1,6 +1,8 @@
+
 /* =========================================================
    WFESC NAVIGATION STYLE
    navigation-style.css
+   Original Navigation + Temporary Maintenance Gate
    ========================================================= */
 
 * {
@@ -10,7 +12,11 @@
 #wfesc-navigation,
 #wfesc-navigation *,
 #wfesc-navigation-page-loader,
-#wfesc-navigation-page-loader * {
+#wfesc-navigation-page-loader *,
+#wfesc-navigation-loader,
+#wfesc-navigation-loader *,
+#wfesc-maintenance-gate,
+#wfesc-maintenance-gate * {
     box-sizing: border-box;
 }
 
@@ -54,19 +60,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
     gap: 18px;
-
     text-align: center;
 }
 
 .wfesc-navigation-loader-logo {
     font-family: Arial, Tahoma, sans-serif;
-
     font-size: 28px;
     font-weight: 800;
     letter-spacing: 4px;
-
     color: #fff;
 
     text-shadow:
@@ -80,39 +82,24 @@
 
     border: 3px solid rgba(255,255,255,.12);
     border-top-color: rgba(255,255,255,.9);
-
     border-radius: 50%;
 
-    animation:
-        wfescNavigationSpin .8s linear infinite;
+    animation: wfescNavigationSpin .8s linear infinite;
 }
 
 .wfesc-navigation-loader-text {
-    font-family:
-        Arial,
-        Tahoma,
-        sans-serif;
-
+    font-family: Arial, Tahoma, sans-serif;
     font-size: 13px;
     color: rgba(255,255,255,.7);
 }
 
 @keyframes wfescNavigationSpin {
-
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* =========================================================
    BOTTOM NAVIGATION
-   ثابت دائمًا أسفل الشاشة
-   لا يتحرك ولا يختفي
    ========================================================= */
 
 #wfesc-navigation {
@@ -124,20 +111,14 @@
     bottom: 12px !important;
 
     width: auto !important;
-
     z-index: 99990 !important;
 
     display: grid;
-
-    grid-template-columns:
-        repeat(6, minmax(0, 1fr));
-
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     align-items: stretch;
 
     min-height: 66px;
-
     padding: 7px;
-
     direction: rtl;
 
     background:
@@ -148,9 +129,7 @@
         ),
         rgba(12,12,12,.78);
 
-    border:
-        1px solid rgba(255,255,255,.12);
-
+    border: 1px solid rgba(255,255,255,.12);
     border-radius: 20px;
 
     box-shadow:
@@ -159,65 +138,31 @@
         inset 0 1px 0 rgba(255,255,255,.09),
         inset 0 -1px 0 rgba(255,255,255,.025);
 
-    backdrop-filter:
-        blur(22px)
-        saturate(150%);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
 
-    -webkit-backdrop-filter:
-        blur(22px)
-        saturate(150%);
-
-    /*
-     * ثبات كامل
-     */
     transform: none !important;
-
     will-change: auto !important;
-
     transition: none !important;
 
-    /*
-     * يبقى ظاهرًا دائمًا
-     */
     opacity: 1 !important;
-
     visibility: visible !important;
 
-    /*
-     * يمنع أي عنصر عابر من تغطيته
-     */
     isolation: isolate;
 }
 
-/* =========================================================
-   منع كلاس الإخفاء من تحريك أو إخفاء التنقل
-   ========================================================= */
-
 #wfesc-navigation.wfesc-navigation-hide {
-
     opacity: 1 !important;
-
     visibility: visible !important;
-
     transform: none !important;
-
     transition: none !important;
-
 }
 
-/*
- * لمعان زجاجي خفيف
- */
 #wfesc-navigation::before {
-
     content: "";
-
     position: absolute;
-
     inset: 0;
-
     pointer-events: none;
-
     border-radius: inherit;
 
     background:
@@ -230,25 +175,16 @@
         );
 
     opacity: .8;
-
     z-index: -1;
 }
 
-/*
- * انعكاس علوي
- */
 #wfesc-navigation::after {
-
     content: "";
-
     position: absolute;
-
     top: 1px;
     left: 12%;
     right: 12%;
-
     height: 1px;
-
     pointer-events: none;
 
     background:
@@ -267,32 +203,21 @@
    ========================================================= */
 
 .wfesc-navigation-item {
-
     position: relative;
-
     min-width: 0;
 
     display: flex;
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
-
     gap: 4px;
 
     padding: 7px 3px;
-
     border-radius: 15px;
 
-    color:
-        rgba(255,255,255,.58);
-
+    color: rgba(255,255,255,.58);
     text-decoration: none;
-
-    font-family:
-        Arial,
-        Tahoma,
-        sans-serif;
+    font-family: Arial, Tahoma, sans-serif;
 
     transition:
         background .2s ease,
@@ -305,31 +230,23 @@
 }
 
 .wfesc-navigation-item:hover {
-
     color: #fff;
-
-    background:
-        rgba(255,255,255,.055);
+    background: rgba(255,255,255,.055);
 
     box-shadow:
-        inset 0 1px 0
-        rgba(255,255,255,.035);
+        inset 0 1px 0 rgba(255,255,255,.035);
 }
 
 .wfesc-navigation-item:active {
-
-    transform:
-        scale(.94);
+    transform: scale(.94);
 }
 
 /* =========================================================
-   ICON
+   NAVIGATION ICON
    ========================================================= */
 
 .wfesc-navigation-icon {
-
     display: flex;
-
     align-items: center;
     justify-content: center;
 
@@ -344,31 +261,24 @@
         filter .2s ease;
 }
 
-.wfesc-navigation-item:hover
-.wfesc-navigation-icon {
-
-    transform:
-        translateY(-1px);
+.wfesc-navigation-item:hover .wfesc-navigation-icon {
+    transform: translateY(-1px);
 }
 
 /* =========================================================
-   TITLE
+   NAVIGATION TITLE
    ========================================================= */
 
 .wfesc-navigation-title {
-
     max-width: 100%;
-
     overflow: hidden;
-
     white-space: nowrap;
     text-overflow: ellipsis;
 
     font-size: 10px;
     line-height: 1.2;
 
-    transition:
-        color .2s ease;
+    transition: color .2s ease;
 }
 
 /* =========================================================
@@ -376,7 +286,6 @@
    ========================================================= */
 
 .wfesc-navigation-item.wfesc-navigation-active {
-
     color: #fff;
 
     background:
@@ -387,55 +296,33 @@
         );
 
     box-shadow:
-        inset 0 0 0 1px
-        rgba(255,255,255,.055),
-
-        inset 0 1px 0
-        rgba(255,255,255,.065),
-
-        0 3px 12px
-        rgba(0,0,0,.15);
+        inset 0 0 0 1px rgba(255,255,255,.055),
+        inset 0 1px 0 rgba(255,255,255,.065),
+        0 3px 12px rgba(0,0,0,.15);
 }
 
 .wfesc-navigation-item.wfesc-navigation-active
 .wfesc-navigation-icon {
-
-    transform:
-        translateY(-1px)
-        scale(1.05);
+    transform: translateY(-1px) scale(1.05);
 
     filter:
-        drop-shadow(
-            0 2px 8px
-            rgba(255,255,255,.08)
-        );
+        drop-shadow(0 2px 8px rgba(255,255,255,.08));
 }
 
 .wfesc-navigation-item.wfesc-navigation-active::after {
-
     content: "";
-
     position: absolute;
-
     bottom: 4px;
-
     left: 50%;
 
     width: 18px;
     height: 2px;
 
-    transform:
-        translateX(-50%);
-
+    transform: translateX(-50%);
     border-radius: 10px;
 
-    background:
-        rgba(255,255,255,.9);
-
-    box-shadow:
-        0 0 8px
-        rgba(255,255,255,.12);
-
+    background: rgba(255,255,255,.9);
+    box-shadow: 0 0 8px rgba(255,255,255,.12);
 }
 
 /* =========================================================
@@ -443,25 +330,18 @@
    ========================================================= */
 
 #wfesc-navigation-page-loader {
-
     position: fixed;
-
     inset: 0;
-
     z-index: 999998;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
-    background:
-        rgba(0,0,0,.96);
+    background: rgba(0,0,0,.96);
 
     opacity: 0;
-
     visibility: hidden;
-
     pointer-events: none;
 
     transition:
@@ -470,12 +350,187 @@
 }
 
 #wfesc-navigation-page-loader.wfesc-navigation-page-loader-show {
-
     opacity: 1;
-
     visibility: visible;
+    pointer-events: auto;
+}
+
+/* =========================================================
+   TEMPORARY MAINTENANCE GATE
+   Mandatory glass overlay for non-home pages
+   ========================================================= */
+
+html.wfesc-gate-active,
+body.wfesc-gate-active {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+}
+
+#wfesc-maintenance-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-height: 100%;
+    padding: 22px;
+
+    direction: rtl;
+    text-align: center;
+
+    background: rgba(0,0,0,.48);
+
+    -webkit-backdrop-filter: blur(13px) saturate(115%);
+    backdrop-filter: blur(13px) saturate(115%);
+
+    color: #fff;
+    font-family: Arial, Tahoma, sans-serif;
 
     pointer-events: auto;
+    isolation: isolate;
+
+    animation: wfescGateAppear .45s ease both;
+}
+
+.wfesc-gate-card {
+    position: relative;
+
+    width: 100%;
+    max-width: 390px;
+    max-height: calc(100dvh - 44px);
+
+    overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 16px;
+    padding: 30px 23px 24px;
+
+    border: 1px solid rgba(255,255,255,.19);
+    border-radius: 25px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.12),
+            rgba(255,255,255,.035)
+        ),
+        rgba(17,17,17,.77);
+
+    box-shadow:
+        0 24px 80px rgba(0,0,0,.48),
+        inset 0 1px 0 rgba(255,255,255,.14);
+
+    -webkit-backdrop-filter: blur(25px) saturate(140%);
+    backdrop-filter: blur(25px) saturate(140%);
+}
+
+.wfesc-gate-symbol {
+    width: 62px;
+    height: 62px;
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255,255,255,.17);
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.075);
+
+    color: rgba(255,255,255,.9);
+    font-size: 39px;
+    line-height: 1;
+}
+
+.wfesc-gate-card h1 {
+    margin: 0;
+
+    color: #fff;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.wfesc-gate-card p {
+    margin: 0;
+
+    color: rgba(255,255,255,.78);
+    font-size: 14px;
+    line-height: 1.95;
+}
+
+.wfesc-gate-card .wfesc-gate-signature {
+    width: 100%;
+    padding-top: 15px;
+
+    border-top: 1px solid rgba(255,255,255,.12);
+
+    color: #fff;
+    font-weight: 700;
+}
+
+.wfesc-gate-card .wfesc-gate-tagline {
+    margin-top: -10px;
+
+    color: rgba(255,255,255,.48);
+    font-size: 11px;
+}
+
+.wfesc-gate-home {
+    width: 100%;
+    min-height: 49px;
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 4px;
+    padding: 13px 16px;
+
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.93);
+
+    color: #111 !important;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.wfesc-gate-home:hover {
+    background: #fff;
+}
+
+.wfesc-gate-home:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 4px;
+}
+
+.wfesc-gate-home:active {
+    transform: scale(.98);
+    background: #fff;
+}
+
+@keyframes wfescGateAppear {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* =========================================================
@@ -483,72 +538,45 @@
    ========================================================= */
 
 @media (max-width: 600px) {
-
     #wfesc-navigation {
-
         position: fixed !important;
-
         top: auto !important;
 
         left: 7px !important;
         right: 7px !important;
-
         bottom: 7px !important;
 
         width: auto !important;
-
         z-index: 99990 !important;
 
         min-height: 62px;
-
         padding: 5px;
-
         border-radius: 18px;
 
         transform: none !important;
-
         transition: none !important;
-
         opacity: 1 !important;
-
         visibility: visible !important;
 
-        backdrop-filter:
-            blur(22px)
-            saturate(150%);
-
-        -webkit-backdrop-filter:
-            blur(22px)
-            saturate(150%);
-
+        backdrop-filter: blur(22px) saturate(150%);
+        -webkit-backdrop-filter: blur(22px) saturate(150%);
     }
 
     .wfesc-navigation-item {
-
-        padding:
-            6px 2px;
-
+        padding: 6px 2px;
         border-radius: 13px;
-
         gap: 3px;
-
     }
 
     .wfesc-navigation-icon {
-
         width: 24px;
         height: 24px;
-
         font-size: 18px;
-
     }
 
     .wfesc-navigation-title {
-
         font-size: 9px;
-
     }
-
 }
 
 /* =========================================================
@@ -556,64 +584,44 @@
    ========================================================= */
 
 @media (max-width: 380px) {
-
     #wfesc-navigation {
-
         position: fixed !important;
-
         top: auto !important;
 
         left: 4px !important;
         right: 4px !important;
-
         bottom: 4px !important;
 
         width: auto !important;
-
         z-index: 99990 !important;
 
         padding: 4px;
-
         border-radius: 16px;
 
         transform: none !important;
-
         transition: none !important;
-
         opacity: 1 !important;
-
         visibility: visible !important;
-
     }
 
     .wfesc-navigation-item {
-
-        padding:
-            5px 1px;
-
+        padding: 5px 1px;
     }
 
     .wfesc-navigation-icon {
-
         font-size: 17px;
-
     }
 
     .wfesc-navigation-title {
-
         font-size: 8px;
-
     }
-
 }
 
 /* =========================================================
    LIGHT MODE COMPATIBILITY
    ========================================================= */
 
-html.wfesc-light-mode
-#wfesc-navigation {
-
+html.wfesc-light-mode #wfesc-navigation {
     background:
         linear-gradient(
             135deg,
@@ -621,55 +629,34 @@ html.wfesc-light-mode
             rgba(248,248,248,.82)
         );
 
-    border-color:
-        rgba(0,0,0,.08);
+    border-color: rgba(0,0,0,.08);
 
     box-shadow:
-        0 10px 35px
-        rgba(0,0,0,.12),
+        0 10px 35px rgba(0,0,0,.12),
+        inset 0 1px 0 rgba(255,255,255,.7);
 
-        inset 0 1px 0
-        rgba(255,255,255,.7);
-
-    backdrop-filter:
-        blur(22px)
-        saturate(150%);
-
-    -webkit-backdrop-filter:
-        blur(22px)
-        saturate(150%);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
 }
 
-html.wfesc-light-mode
-.wfesc-navigation-item {
-
-    color:
-        rgba(0,0,0,.55);
+html.wfesc-light-mode .wfesc-navigation-item {
+    color: rgba(0,0,0,.55);
 }
 
-html.wfesc-light-mode
-.wfesc-navigation-item:hover {
-
+html.wfesc-light-mode .wfesc-navigation-item:hover {
     color: #111;
-
-    background:
-        rgba(0,0,0,.045);
+    background: rgba(0,0,0,.045);
 }
 
 html.wfesc-light-mode
 .wfesc-navigation-item.wfesc-navigation-active {
-
     color: #111;
-
-    background:
-        rgba(0,0,0,.07);
+    background: rgba(0,0,0,.07);
 }
 
 html.wfesc-light-mode
 .wfesc-navigation-item.wfesc-navigation-active::after {
-
-    background:
-        rgba(0,0,0,.75);
+    background: rgba(0,0,0,.75);
 }
 
 /* =========================================================
@@ -677,55 +664,31 @@ html.wfesc-light-mode
    ========================================================= */
 
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-
     #wfesc-navigation {
-
         position: fixed !important;
-
         top: auto !important;
 
-        bottom:
-            calc(
-                7px +
-                env(safe-area-inset-bottom)
-            ) !important;
+        bottom: calc(7px + env(safe-area-inset-bottom)) !important;
 
         transform: none !important;
-
         opacity: 1 !important;
-
         visibility: visible !important;
-
         transition: none !important;
-
     }
 
     @media (min-width: 601px) {
-
         #wfesc-navigation {
-
             position: fixed !important;
-
             top: auto !important;
 
-            bottom:
-                calc(
-                    12px +
-                    env(safe-area-inset-bottom)
-                ) !important;
+            bottom: calc(12px + env(safe-area-inset-bottom)) !important;
 
             transform: none !important;
-
             opacity: 1 !important;
-
             visibility: visible !important;
-
             transition: none !important;
-
         }
-
     }
-
 }
 
 /* =========================================================
@@ -733,17 +696,14 @@ html.wfesc-light-mode
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-
     #wfesc-navigation,
     #wfesc-navigation *,
     #wfesc-navigation-loader,
     #wfesc-navigation-page-loader,
-    .wfesc-navigation-loader-spinner {
-
+    .wfesc-navigation-loader-spinner,
+    #wfesc-maintenance-gate,
+    .wfesc-gate-home {
         animation: none !important;
-
         transition: none !important;
-
     }
-
 }
